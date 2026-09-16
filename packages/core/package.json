@@ -1,0 +1,25 @@
+{
+  "name": "@kysoql/core",
+  "version": "0.0.0",
+  "description": "Type-safe SOQL query builder and compiler",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "biome check .",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rm -rf dist coverage"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "workspace:*",
+    "typescript": "workspace:*",
+    "vitest": "workspace:*"
+  }
+}
