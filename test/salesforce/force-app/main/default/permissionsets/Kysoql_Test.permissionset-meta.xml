@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+  <description>Access to the kysoql Salesforce integration-test fixture.</description>
+  <fieldPermissions><editable>true</editable><field>Kysoql_Record__c.Account__c</field><readable>true</readable></fieldPermissions>
+  <fieldPermissions><editable>true</editable><field>Kysoql_Record__c.Active__c</field><readable>true</readable></fieldPermissions>
+  <fieldPermissions><editable>true</editable><field>Kysoql_Record__c.Amount__c</field><readable>true</readable></fieldPermissions>
+  <fieldPermissions><editable>true</editable><field>Kysoql_Record__c.Category__c</field><readable>true</readable></fieldPermissions>
+  <fieldPermissions><editable>true</editable><field>Kysoql_Record__c.External_Id__c</field><readable>true</readable></fieldPermissions>
+  <fieldPermissions><editable>true</editable><field>Kysoql_Record__c.Occurred_On__c</field><readable>true</readable></fieldPermissions>
+  <label>Kysoql Test</label>
+  <objectPermissions>
+    <allowCreate>true</allowCreate><allowDelete>true</allowDelete><allowEdit>true</allowEdit><allowRead>true</allowRead><modifyAllRecords>false</modifyAllRecords><object>Kysoql_Record__c</object><viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+</PermissionSet>

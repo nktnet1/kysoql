@@ -21,6 +21,6 @@
   },
   "dependencies": {
     "@kysoql/core": "workspace:*",
-    "jsforce": "^3.10.25"
+    "jsforce": "3.10.25"
   }
 }

@@ -23,6 +23,6 @@
     "kysoql": "./dist/cli.js"
   },
   "dependencies": {
-    "jsforce": "^3.10.25"
+    "jsforce": "3.10.25"
   }
 }

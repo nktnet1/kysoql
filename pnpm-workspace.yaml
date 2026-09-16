@@ -1,7 +1,6 @@
 packages:
   - packages/*
 
-ignoredBuiltDependencies:
-  - core-js
-  - core-js-pure
-  - esbuild
+allowBuilds:
+  core-js: false
+  core-js-pure: false

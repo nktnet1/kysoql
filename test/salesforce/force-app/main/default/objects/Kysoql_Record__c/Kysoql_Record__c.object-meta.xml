@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <deploymentStatus>Deployed</deploymentStatus>
+  <description>Fixture object used by kysoql integration and schema-generation tests.</description>
+  <label>Kysoql Record</label>
+  <nameField>
+    <label>Kysoql Record Name</label>
+    <type>Text</type>
+  </nameField>
+  <pluralLabel>Kysoql Records</pluralLabel>
+  <sharingModel>ReadWrite</sharingModel>
+</CustomObject>
