@@ -19,13 +19,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "clean": "rm -rf dist coverage"
   },
-  "devDependencies": {
-    "@biomejs/biome": "workspace:*",
-    "typescript": "workspace:*",
-    "vitest": "workspace:*"
-  },
   "dependencies": {
     "@kysoql/core": "workspace:*",
-    "jsforce": "^3.10.9"
+    "jsforce": "^3.10.25"
   }
 }
