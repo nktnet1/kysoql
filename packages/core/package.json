@@ -18,5 +18,8 @@
     "test": "vitest run --dir tests --passWithNoTests",
     "typecheck": "tsc -p tsconfig.test.json",
     "clean": "rm -rf dist coverage"
+  },
+  "dependencies": {
+    "valibot": "1.4.2"
   }
 }

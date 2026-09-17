@@ -111,6 +111,30 @@ describe("SOQL temporal literals", () => {
     expect(soqlTime(value).value).toBe(value);
   });
 
+  it("preserves validation error messages", () => {
+    expect(() => soqlDate("2026-02-30")).toThrow(
+      "SOQL date literals contain an invalid date.",
+    );
+    expect(() => soqlDateTime("2026-09-17 16:26:30Z")).toThrow(
+      "SOQL dateTime literals must use YYYY-MM-DDThh:mm:ss[.SSS]Z or YYYY-MM-DDThh:mm:ss[.SSS]+/-hh:mm.",
+    );
+    expect(() => soqlDateTime("2023-02-29T16:26:30Z")).toThrow(
+      "SOQL dateTime literals contain an invalid date.",
+    );
+    expect(() => soqlDateTime("2026-09-17T24:00:00Z")).toThrow(
+      "SOQL dateTime literals contain an invalid time.",
+    );
+    expect(() => soqlDateTime("2026-09-17T16:26:30+14:01")).toThrow(
+      "SOQL dateTime literals contain an invalid UTC offset.",
+    );
+    expect(() => soqlTime("07:30:45")).toThrow(
+      "SOQL time literals must use hh:mm:ssZ or hh:mm:ss.SSSZ.",
+    );
+    expect(() => soqlTime("24:00:00Z")).toThrow(
+      "SOQL time literals contain an invalid time.",
+    );
+  });
+
   it.each([
     "7:30:45Z",
     "07:30Z",

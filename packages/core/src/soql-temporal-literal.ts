@@ -1,3 +1,5 @@
+import * as v from "valibot";
+
 import { freeze } from "./util/object-utils.js";
 
 declare const soqlDateLiteralBrand: unique symbol;
@@ -32,135 +34,134 @@ const DATE_TIME_PATTERN =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?(?:Z|[+-]\d{2}:\d{2})$/u;
 const TIME_PATTERN = /^\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/u;
 
-export function soqlDate(value: string): SoqlDateLiteral {
-  assertDate(value, "date");
+const INVALID_DATE = "SOQL date literals contain an invalid date.";
+const INVALID_DATE_TIME_DATE =
+  "SOQL dateTime literals contain an invalid date.";
+const INVALID_DATE_TIME_TIME =
+  "SOQL dateTime literals contain an invalid time.";
+const INVALID_DATE_TIME_OFFSET =
+  "SOQL dateTime literals contain an invalid UTC offset.";
+const INVALID_DATE_TIME_FORMAT =
+  "SOQL dateTime literals must use YYYY-MM-DDThh:mm:ss[.SSS]Z or YYYY-MM-DDThh:mm:ss[.SSS]+/-hh:mm.";
+const INVALID_TIME = "SOQL time literals contain an invalid time.";
+const INVALID_TIME_FORMAT =
+  "SOQL time literals must use hh:mm:ssZ or hh:mm:ss.SSSZ.";
 
+const dateSchema = v.pipe(
+  v.string(INVALID_DATE),
+  v.regex(DATE_PATTERN, INVALID_DATE),
+  v.check(isValidDate, INVALID_DATE),
+);
+
+const dateTimeSchema = v.pipe(
+  v.string(INVALID_DATE_TIME_FORMAT),
+  v.regex(DATE_TIME_PATTERN, INVALID_DATE_TIME_FORMAT),
+  v.check(
+    (value) => isValidDate(value.slice(0, 10)),
+    INVALID_DATE_TIME_DATE,
+  ),
+  v.check(
+    (value) => isValidClockTime(value.slice(11, 19)),
+    INVALID_DATE_TIME_TIME,
+  ),
+  v.check(hasValidUtcOffset, INVALID_DATE_TIME_OFFSET),
+);
+
+const timeSchema = v.pipe(
+  v.string(INVALID_TIME_FORMAT),
+  v.regex(TIME_PATTERN, INVALID_TIME_FORMAT),
+  v.check((value) => isValidClockTime(value.slice(0, 8)), INVALID_TIME),
+);
+
+const temporalLiteralSchema = v.variant("kind", [
+  v.object({
+    kind: v.literal("SoqlDateLiteral"),
+    value: dateSchema,
+  }),
+  v.object({
+    kind: v.literal("SoqlDateTimeLiteral"),
+    value: dateTimeSchema,
+  }),
+  v.object({
+    kind: v.literal("SoqlTimeLiteral"),
+    value: timeSchema,
+  }),
+]);
+
+export function soqlDate(value: string): SoqlDateLiteral {
   return freeze({
     kind: "SoqlDateLiteral",
-    value,
+    value: parseTemporalValue(dateSchema, value),
   }) as SoqlDateLiteral;
 }
 
 export function soqlDateTime(value: string): SoqlDateTimeLiteral {
-  assertDateTime(value);
-
   return freeze({
     kind: "SoqlDateTimeLiteral",
-    value,
+    value: parseTemporalValue(dateTimeSchema, value),
   }) as SoqlDateTimeLiteral;
 }
 
 export function soqlTime(value: string): SoqlTimeLiteral {
-  assertTime(value);
-
   return freeze({
     kind: "SoqlTimeLiteral",
-    value,
+    value: parseTemporalValue(timeSchema, value),
   }) as SoqlTimeLiteral;
 }
 
 export function isSoqlTemporalLiteral(
   value: unknown,
 ): value is SoqlTemporalLiteral {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const candidate = value as {
-    readonly kind?: unknown;
-    readonly value?: unknown;
-  };
-
-  if (typeof candidate.value !== "string") {
-    return false;
-  }
-
-  try {
-    switch (candidate.kind) {
-      case "SoqlDateLiteral":
-        assertDate(candidate.value, "date");
-        return true;
-      case "SoqlDateTimeLiteral":
-        assertDateTime(candidate.value);
-        return true;
-      case "SoqlTimeLiteral":
-        assertTime(candidate.value);
-        return true;
-      default:
-        return false;
-    }
-  } catch {
-    return false;
-  }
+  return v.safeParse(temporalLiteralSchema, value).success;
 }
 
-function assertDateTime(value: string): void {
-  if (!DATE_TIME_PATTERN.test(value)) {
-    throw new TypeError(
-      "SOQL dateTime literals must use YYYY-MM-DDThh:mm:ss[.SSS]Z or YYYY-MM-DDThh:mm:ss[.SSS]+/-hh:mm.",
-    );
+function parseTemporalValue(
+  schema: v.GenericSchema<string>,
+  value: string,
+): string {
+  const result = v.safeParse(schema, value);
+
+  if (!result.success) {
+    throw new TypeError(result.issues[0].message);
   }
 
-  assertDate(value.slice(0, 10), "dateTime");
-  assertClockTime(value.slice(11, 19), "dateTime");
-
-  const timeZone = value[value.length - 1] === "Z" ? "Z" : value.slice(-6);
-
-  if (timeZone !== "Z") {
-    const offsetHours = Number(timeZone.slice(1, 3));
-    const offsetMinutes = Number(timeZone.slice(4, 6));
-
-    if (
-      offsetHours > 14 ||
-      offsetMinutes > 59 ||
-      (offsetHours === 14 && offsetMinutes !== 0)
-    ) {
-      throw new TypeError("SOQL dateTime literals contain an invalid UTC offset.");
-    }
-  }
+  return result.output;
 }
 
-function assertTime(value: string): void {
-  if (!TIME_PATTERN.test(value)) {
-    throw new TypeError(
-      "SOQL time literals must use hh:mm:ssZ or hh:mm:ss.SSSZ.",
-    );
-  }
-
-  assertClockTime(value.slice(0, 8), "time");
-}
-
-function assertDate(value: string, literalType: "date" | "dateTime"): void {
-  if (!DATE_PATTERN.test(value)) {
-    throw new TypeError(`SOQL ${literalType} literals contain an invalid date.`);
-  }
-
+function isValidDate(value: string): boolean {
   const year = Number(value.slice(0, 4));
   const month = Number(value.slice(5, 7));
   const day = Number(value.slice(8, 10));
 
   if (year < 1700 || year > 4000 || month < 1 || month > 12) {
-    throw new TypeError(`SOQL ${literalType} literals contain an invalid date.`);
+    return false;
   }
 
-  const maxDay = daysInMonth(year, month);
-
-  if (day < 1 || day > maxDay) {
-    throw new TypeError(`SOQL ${literalType} literals contain an invalid date.`);
-  }
+  return day >= 1 && day <= daysInMonth(year, month);
 }
 
-function assertClockTime(
-  value: string,
-  literalType: "dateTime" | "time",
-): void {
+function isValidClockTime(value: string): boolean {
   const hours = Number(value.slice(0, 2));
   const minutes = Number(value.slice(3, 5));
   const seconds = Number(value.slice(6, 8));
 
-  if (hours > 23 || minutes > 59 || seconds > 59) {
-    throw new TypeError(`SOQL ${literalType} literals contain an invalid time.`);
+  return hours <= 23 && minutes <= 59 && seconds <= 59;
+}
+
+function hasValidUtcOffset(value: string): boolean {
+  if (value.endsWith("Z")) {
+    return true;
   }
+
+  const timeZone = value.slice(-6);
+  const offsetHours = Number(timeZone.slice(1, 3));
+  const offsetMinutes = Number(timeZone.slice(4, 6));
+
+  return (
+    offsetHours <= 14 &&
+    offsetMinutes <= 59 &&
+    (offsetHours !== 14 || offsetMinutes === 0)
+  );
 }
 
 function daysInMonth(year: number, month: number): number {

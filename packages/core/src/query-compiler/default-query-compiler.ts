@@ -1,3 +1,5 @@
+import * as v from "valibot";
+
 import type { AndNode } from "../operation-node/and-node.js";
 import type { BinaryOperationNode } from "../operation-node/binary-operation-node.js";
 import type { OperationNode } from "../operation-node/operation-node.js";
@@ -14,6 +16,12 @@ import { isSoqlTemporalLiteral } from "../soql-temporal-literal.js";
 import { freeze } from "../util/object-utils.js";
 import type { CompiledQuery } from "./compiled-query.js";
 import type { QueryCompiler } from "./query-compiler.js";
+
+const NUMERIC_LITERAL_ERROR = "SOQL numeric literals must be finite numbers.";
+const numericLiteralSchema = v.pipe(
+  v.number(NUMERIC_LITERAL_ERROR),
+  v.finite(NUMERIC_LITERAL_ERROR),
+);
 
 export class DefaultQueryCompiler implements QueryCompiler {
   compileQuery<O = unknown>(query: SelectQueryNode): CompiledQuery<O> {
@@ -125,11 +133,15 @@ export class DefaultQueryCompiler implements QueryCompiler {
     switch (typeof value) {
       case "string":
         return `'${this.#escapeString(value, likePattern)}'`;
-      case "number":
-        if (!Number.isFinite(value)) {
-          throw new TypeError("SOQL numeric literals must be finite numbers.");
+      case "number": {
+        const result = v.safeParse(numericLiteralSchema, value);
+
+        if (!result.success) {
+          throw new TypeError(result.issues[0].message);
         }
-        return String(value);
+
+        return String(result.output);
+      }
       case "boolean":
         return value ? "TRUE" : "FALSE";
       default:
