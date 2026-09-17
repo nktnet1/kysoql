@@ -15,7 +15,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check": "biome check",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run --dir tests --passWithNoTests",
     "typecheck": "tsc -p tsconfig.test.json",
     "clean": "rm -rf dist coverage"
   }
