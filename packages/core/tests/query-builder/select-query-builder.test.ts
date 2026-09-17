@@ -465,11 +465,7 @@ describe("SelectQueryBuilder", () => {
   it("requires numeric LIMIT values at compile time", () => {
     const query = new Kysoql<FixtureSchema>().selectFrom("Account");
 
-    query.limit(0);
-    query.limit(25);
-
-    // @ts-expect-error LIMIT only accepts numeric values.
-    query.limit("25");
+    expectTypeOf(query.limit).parameter(0).toEqualTypeOf<number>();
   });
 
   it("rejects invalid ordering at compile time", () => {
