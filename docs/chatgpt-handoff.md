@@ -19,6 +19,9 @@ The package boundaries are intentional:
   consumed by core. It supports standard and custom objects.
 - `@kysoql/jsforce` is the JSforce transport/execution adapter. JSforce also
   remains the authentication/API client used by the project tooling.
+- `@kysoql/debug` is a deliberately minimal runtime playground. It must stay
+  dependency-light and log existing builder/AST behavior without introducing
+  production query semantics.
 
 Follow Kysely's public API and internal architecture closely where the model
 maps cleanly to SOQL. Do not copy SQL-only semantics such as arbitrary joins
@@ -26,7 +29,7 @@ into the SOQL API.
 
 ## Current development state
 
-Through `v1.0.11`, the project has:
+Through `v1.0.12`, the project has:
 
 - a Node 26 / pnpm / Turborepo / Biome / Vitest workspace;
 - a reproducible Salesforce scratch-org fixture and deterministic seed data;
@@ -43,7 +46,9 @@ Through `v1.0.11`, the project has:
 - typed `.where(field, operator, value)` for the initial `=` / `!=` SOQL comparison slice;
 - immutable `WhereNode`, `BinaryOperationNode`, `OperatorNode`, `ValueNode`, and `AndNode` filtering AST;
 - compile-time rejection of unknown/non-filterable fields, unsupported operators, and mismatched filter values;
-- `pnpm validate` as the type/test/build validation gate; Biome stays manual.
+- `pnpm validate` as the type/test/build validation gate; Biome stays manual;
+- `pnpm debug` as a no-Salesforce runtime playground that logs the AST produced
+  by `selectFrom()`, `select()`, and chained `where()` calls.
 
 There is intentionally no ordering, SOQL compiler, query execution, OR-expression
 builder, or broader SOQL operator surface in core yet.
@@ -90,14 +95,14 @@ state. Never rewrite an older patch after it has been handed off.
 The sequence at this point is:
 
 ```text
-v1.0.0 -> v1.0.1 -> ... -> v1.0.11
+v1.0.0 -> v1.0.1 -> ... -> v1.0.12
 ```
 
-The next patch must therefore be `v1.0.12-kysoql.patch`, generated against the
-state after `v1.0.11` is applied. Before handing it off, verify at minimum:
+The next patch must therefore be `v1.0.13-kysoql.patch`, generated against the
+state after `v1.0.12` is applied. Before handing it off, verify at minimum:
 
 ```bash
-git apply --check v1.0.12-kysoql.patch
+git apply --check v1.0.13-kysoql.patch
 git diff --check
 ```
 
@@ -119,7 +124,7 @@ this document before continuing.
 
 ## Next incremental milestone
 
-Keep the next patch small. The expected `v1.0.12` slice is to expand the typed
+Keep the next patch small. The expected `v1.0.13` slice is to expand the typed
 comparison surface beyond equality, starting with field-type-aware ordered
 comparisons (`<`, `<=`, `>`, `>=`) and `LIKE` where Salesforce field types make
 those operators valid. Keep SOQL compilation and execution out of that patch.

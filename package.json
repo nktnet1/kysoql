@@ -17,7 +17,8 @@
     "validate": "bash scripts/validate.sh",
     "clean": "turbo run clean && rm -rf node_modules",
     "salesforce:setup": "bash scripts/setup-salesforce-test-org.sh",
-    "salesforce:schema": "bash scripts/generate-salesforce-schema.sh"
+    "salesforce:schema": "bash scripts/generate-salesforce-schema.sh",
+    "debug": "pnpm --filter @kysoql/core build && pnpm --filter @kysoql/debug debug"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13",

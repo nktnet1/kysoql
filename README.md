@@ -7,6 +7,7 @@ A type-safe, Kysely-inspired SOQL query builder for TypeScript.
 - `@kysoql/core` — typed SOQL AST, query builder, compiler, and result inference.
 - `@kysoql/jsforce` — JSforce authentication/execution adapter.
 - `@kysoql/codegen` — CLI for generating strongly typed Salesforce schemas from Describe metadata.
+- `@kysoql/debug` — minimal runtime playground that logs query-builder ASTs.
 
 ## Requirements
 
@@ -42,6 +43,15 @@ pnpm build
 
 Vitest is configured at the workspace root and discovers tests under
 `packages/**/src/**/*.test.ts`. V8 coverage output is written to `coverage/`.
+
+To inspect the query builder at runtime without connecting to Salesforce, run:
+
+```bash
+pnpm debug
+```
+
+The debug package builds `@kysoql/core`, then logs the immutable AST after
+`selectFrom()`, `select()`, and chained `where()` calls.
 
 ## Current query surface
 
