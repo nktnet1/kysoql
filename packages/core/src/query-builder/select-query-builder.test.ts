@@ -17,6 +17,14 @@ interface FixtureSchema {
       true,
       true
     >;
+    readonly Internal_Note__c: SalesforceField<
+      string,
+      "string",
+      true,
+      false,
+      false,
+      false
+    >;
   }>;
   readonly Kysoql_Record__c: SalesforceObject<{
     readonly Id: SalesforceField<string, "id", false, true, true, true>;
@@ -95,6 +103,83 @@ describe("SelectQueryBuilder", () => {
       readonly Name: string | null;
       readonly AnnualRevenue: number | null;
     }>();
+  });
+
+  it("adds typed where clauses without mutating earlier builders", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const baseQuery = db.selectFrom("Account").select(["Id", "Name"]);
+    const nameQuery = baseQuery.where("Name", "=", "Acme");
+    const filteredQuery = nameQuery.where("AnnualRevenue", "!=", null);
+
+    expect(baseQuery.toOperationNode().where).toBeUndefined();
+    expect(nameQuery.toOperationNode().where).toEqual({
+      kind: "WhereNode",
+      where: {
+        kind: "BinaryOperationNode",
+        leftOperand: { kind: "ReferenceNode", name: "Name" },
+        operator: { kind: "OperatorNode", operator: "=" },
+        rightOperand: { kind: "ValueNode", value: "Acme" },
+      },
+    });
+    expect(filteredQuery.toOperationNode().where).toEqual({
+      kind: "WhereNode",
+      where: {
+        kind: "AndNode",
+        left: {
+          kind: "BinaryOperationNode",
+          leftOperand: { kind: "ReferenceNode", name: "Name" },
+          operator: { kind: "OperatorNode", operator: "=" },
+          rightOperand: { kind: "ValueNode", value: "Acme" },
+        },
+        right: {
+          kind: "BinaryOperationNode",
+          leftOperand: { kind: "ReferenceNode", name: "AnnualRevenue" },
+          operator: { kind: "OperatorNode", operator: "!=" },
+          rightOperand: { kind: "ValueNode", value: null },
+        },
+      },
+    });
+    expect(Object.isFrozen(filteredQuery.toOperationNode().where)).toBe(true);
+    expect(
+      Object.isFrozen(filteredQuery.toOperationNode().where?.where),
+    ).toBe(true);
+  });
+
+  it("preserves the selected output type after filtering", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const query = db
+      .selectFrom("Account")
+      .select(["Id", "Name"])
+      .where("Name", "=", "Acme");
+
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly Id: string;
+      readonly Name: string | null;
+    }>();
+  });
+
+  it("rejects invalid filters at compile time", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const query = db.selectFrom("Account");
+
+    query.where("Name", "=", "Acme");
+    query.where("Name", "=", null);
+    query.where("AnnualRevenue", "!=", 100);
+
+    // @ts-expect-error Number fields require numeric filter values.
+    query.where("AnnualRevenue", "=", "100");
+
+    // @ts-expect-error Non-nullable fields don't accept null filter values.
+    query.where("Id", "=", null);
+
+    // @ts-expect-error Generated metadata marks this field as non-filterable.
+    query.where("Internal_Note__c", "=", "private");
+
+    // @ts-expect-error Only the first equality comparison operators are supported in this slice.
+    query.where("Name", "like", "Acme%");
+
+    // @ts-expect-error Salesforce field is not present on Account.
+    query.where("Does_Not_Exist__c", "=", "value");
   });
 
   it("rejects unknown objects and fields at compile time", () => {

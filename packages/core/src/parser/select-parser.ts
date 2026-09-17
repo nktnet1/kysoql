@@ -1,6 +1,7 @@
 import { ReferenceNode } from "../operation-node/reference-node.js";
 import { SelectionNode } from "../operation-node/selection-node.js";
 import type { SalesforceFieldValue } from "../schema.js";
+import type { FieldDefinition, FieldName } from "./reference-parser.js";
 
 export type SelectExpression<DB, TB extends keyof DB> = FieldName<DB, TB>;
 
@@ -16,19 +17,6 @@ export type Selection<DB, TB extends keyof DB, SE> = {
   >;
 };
 
-type FieldsOf<DB, TB extends keyof DB> = DB[TB] extends {
-  readonly fields: infer Fields;
-}
-  ? Fields
-  : never;
-
-type FieldName<DB, TB extends keyof DB> = keyof FieldsOf<DB, TB> & string;
-
-type FieldDefinition<
-  DB,
-  TB extends keyof DB,
-  Field extends FieldName<DB, TB>,
-> = FieldsOf<DB, TB>[Field];
 
 export function parseSelectArg(selection: string | ReadonlyArray<string>) {
   const selections = Array.isArray(selection) ? selection : [selection];

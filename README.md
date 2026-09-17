@@ -43,6 +43,22 @@ pnpm build
 Vitest is configured at the workspace root and discovers tests under
 `packages/**/src/**/*.test.ts`. V8 coverage output is written to `coverage/`.
 
+## Current query surface
+
+The core builder currently supports schema-checked selection and the first typed
+filtering slice:
+
+```ts
+const query = new Kysoql<SalesforceSchema>()
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where("Name", "=", "Acme");
+```
+
+Selected fields, filterable fields, filter values, and currently supported
+operators are checked from the generated Salesforce schema. SOQL compilation and
+execution are intentionally being added in later increments.
+
 ## Salesforce test org
 
 A reproducible scratch-org fixture is included under `test/salesforce`. It

@@ -26,7 +26,7 @@ into the SOQL API.
 
 ## Current development state
 
-Through `v1.0.9`, the project has:
+Through `v1.0.11`, the project has:
 
 - a Node 26 / pnpm / Turborepo / Biome / Vitest workspace;
 - a reproducible Salesforce scratch-org fixture and deterministic seed data;
@@ -40,11 +40,13 @@ Through `v1.0.9`, the project has:
 - immutable `SelectQueryNode`, `SObjectNode`, `SelectionNode`, and
   `ReferenceNode` AST nodes;
 - typed `selectFrom()` and additive `.select()` overloads;
-- compile-time rejection tests for unknown objects and fields;
+- typed `.where(field, operator, value)` for the initial `=` / `!=` SOQL comparison slice;
+- immutable `WhereNode`, `BinaryOperationNode`, `OperatorNode`, `ValueNode`, and `AndNode` filtering AST;
+- compile-time rejection of unknown/non-filterable fields, unsupported operators, and mismatched filter values;
 - `pnpm validate` as the type/test/build validation gate; Biome stays manual.
 
-There is intentionally no `where`, ordering, SOQL compiler, or query execution
-surface in core yet.
+There is intentionally no ordering, SOQL compiler, query execution, OR-expression
+builder, or broader SOQL operator surface in core yet.
 
 ## Validation
 
@@ -88,14 +90,14 @@ state. Never rewrite an older patch after it has been handed off.
 The sequence at this point is:
 
 ```text
-v1.0.0 -> v1.0.1 -> ... -> v1.0.10
+v1.0.0 -> v1.0.1 -> ... -> v1.0.11
 ```
 
-The next patch must therefore be `v1.0.11-kysoql.patch`, generated against the
-state after `v1.0.10` is applied. Before handing it off, verify at minimum:
+The next patch must therefore be `v1.0.12-kysoql.patch`, generated against the
+state after `v1.0.11` is applied. Before handing it off, verify at minimum:
 
 ```bash
-git apply --check v1.0.11-kysoql.patch
+git apply --check v1.0.12-kysoql.patch
 git diff --check
 ```
 
@@ -117,15 +119,17 @@ this document before continuing.
 
 ## Next incremental milestone
 
-Keep the next patch small. The expected `v1.0.11` slice is typed `where`
-support and its boolean/comparison AST only, still without SOQL compilation or
-execution.
-The goal is to establish operator/value typing before transport concerns are
-introduced.
+Keep the next patch small. The expected `v1.0.12` slice is to expand the typed
+comparison surface beyond equality, starting with field-type-aware ordered
+comparisons (`<`, `<=`, `>`, `>=`) and `LIKE` where Salesforce field types make
+those operators valid. Keep SOQL compilation and execution out of that patch.
 
 In particular, preserve these design choices:
 
 - immutable builders and AST cloning;
+- repeated `.where()` calls combine through the Kysely-style `WhereNode` /
+  `AndNode` structure;
+- filtering must honor generated `filterable` metadata;
 - output type accumulation using Kysely's `O & Selection<...>` pattern;
 - result-facing type tests may use a Kysely-style `Simplify<T>` utility rather
   than changing the builder's generic shape merely to satisfy strict type

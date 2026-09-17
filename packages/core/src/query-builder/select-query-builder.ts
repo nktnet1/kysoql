@@ -1,4 +1,11 @@
+import { QueryNode } from "../operation-node/query-node.js";
 import { SelectQueryNode } from "../operation-node/select-query-node.js";
+import {
+  parseValueBinaryOperation,
+  type ComparisonOperatorExpression,
+  type FilterableFieldName,
+  type OperandValueExpression,
+} from "../parser/binary-operation-parser.js";
 import {
   parseSelectArg,
   type SelectArg,
@@ -8,6 +15,12 @@ import {
 import { freeze } from "../util/object-utils.js";
 
 export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
+  where<RE extends FilterableFieldName<DB, TB>>(
+    lhs: RE,
+    op: ComparisonOperatorExpression,
+    rhs: OperandValueExpression<DB, TB, RE>,
+  ): SelectQueryBuilder<DB, TB, O>;
+
   select<SE extends SelectExpression<DB, TB>>(
     selections: ReadonlyArray<SE>,
   ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>>;
@@ -26,6 +39,20 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
 
   constructor(props: SelectQueryBuilderProps) {
     this.#props = freeze(props);
+  }
+
+  where<RE extends FilterableFieldName<DB, TB>>(
+    lhs: RE,
+    op: ComparisonOperatorExpression,
+    rhs: OperandValueExpression<DB, TB, RE>,
+  ): SelectQueryBuilder<DB, TB, O> {
+    return new SelectQueryBuilderImpl<DB, TB, O>({
+      ...this.#props,
+      queryNode: QueryNode.cloneWithWhere(
+        this.#props.queryNode,
+        parseValueBinaryOperation(lhs, op, rhs),
+      ),
+    });
   }
 
   select<SE extends SelectExpression<DB, TB>>(
