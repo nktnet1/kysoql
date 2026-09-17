@@ -25,6 +25,7 @@ fi
 if [[ "$has_access_token" == false ]]; then
   target_org="${KYSOQL_TARGET_ORG:-${KYSOQL_SCRATCH_ALIAS:-kysoql-test}}"
   org_json="$(pnpm sf org display --target-org "$target_org" --json)"
+  token_json="$(pnpm sf org auth show-access-token --target-org "$target_org" --json)"
 
   SF_INSTANCE_URL="$(printf '%s' "$org_json" | node -e '
     let input = "";
@@ -38,7 +39,7 @@ if [[ "$has_access_token" == false ]]; then
     });
   ')"
 
-  SF_ACCESS_TOKEN="$(printf '%s' "$org_json" | node -e '
+  SF_ACCESS_TOKEN="$(printf '%s' "$token_json" | node -e '
     let input = "";
     process.stdin.setEncoding("utf8");
     process.stdin.on("data", (chunk) => { input += chunk; });

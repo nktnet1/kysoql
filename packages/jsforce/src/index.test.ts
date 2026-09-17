@@ -1,16 +1,26 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { createJsforceExecutor } from "./index.js";
+import {
+  createJsforceExecutor,
+  type JsforceExecutor,
+} from "./index.js";
 
 describe("createJsforceExecutor", () => {
   it("preserves the provided executor", async () => {
-    const query = vi.fn(async <Result>(): Promise<readonly Result[]> => []);
-    const executor = createJsforceExecutor({ query });
+    const calls: string[] = [];
+    const provided: JsforceExecutor = {
+      async query<Result>(soql: string): Promise<readonly Result[]> {
+        calls.push(soql);
+        return [];
+      },
+    };
+
+    const executor = createJsforceExecutor(provided);
 
     await expect(
       executor.query<{ readonly Id: string }>("SELECT Id FROM Account"),
     ).resolves.toEqual([]);
-    expect(executor.query).toBe(query);
-    expect(query).toHaveBeenCalledWith("SELECT Id FROM Account");
+    expect(executor).toBe(provided);
+    expect(calls).toEqual(["SELECT Id FROM Account"]);
   });
 });

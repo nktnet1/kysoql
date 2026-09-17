@@ -180,16 +180,22 @@ supports JSON output, which the automated setup uses for its fixture assertion.
 ## Use the org with JSforce
 
 Salesforce CLI already holds OAuth credentials for the scratch org. To inspect
-the authenticated connection details, run:
+non-secret connection details, run:
 
 ```bash
 pnpm sf org display --target-org kysoql-test
 ```
 
-`sf org display` includes sensitive authentication information such as the
-access token, so do not paste its output into issues, CI logs, or committed
-files. The `--verbose` form can additionally expose an SFDX auth URL containing
-a refresh token and should be treated as a credential.
+Current Salesforce CLI releases redact access tokens from `sf org display`.
+If you explicitly need the current token, use the dedicated credential command:
+
+```bash
+pnpm sf org auth show-access-token --target-org kysoql-test --json
+```
+
+Treat that JSON output as a credential: do not paste it into issues or CI logs,
+and never commit it. The schema-generation wrapper captures this output without
+printing the token.
 
 For a local JSforce script, use ephemeral environment variables rather than
 writing credentials into the repo:
@@ -235,9 +241,11 @@ KYSOQL_TARGET_ORG=my-scratch-org pnpm salesforce:schema -- \
 
 `SF_INSTANCE_URL` and `SF_ACCESS_TOKEN` are still supported when both are
 already present in the environment; in that case the wrapper does not invoke
-`pnpm sf org display`. Set either both variables or neither so credentials from
-different orgs cannot be mixed. Access tokens are credentials: never commit
-them or paste org-display output into logs or issues.
+the Salesforce CLI. Otherwise it reads the instance URL from `pnpm sf org
+display --json` and retrieves the token with `pnpm sf org auth
+show-access-token --json`. Set either both variables or neither so credentials
+from different orgs cannot be mixed. Access tokens are credentials: never
+commit them or print them in logs.
 
 ## Reset or delete the org
 
