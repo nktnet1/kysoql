@@ -19,10 +19,11 @@ export type {
   SelectQueryBuilder,
   SelectQueryBuilderProps,
 } from "./query-builder/select-query-builder.js";
-export { QueryCreator } from "./query-creator.js";
+export { QueryCreator, type QueryCreatorConfig } from "./query-creator.js";
 export type { CompiledQuery } from "./query-compiler/compiled-query.js";
 export { DefaultQueryCompiler } from "./query-compiler/default-query-compiler.js";
 export type { QueryCompiler } from "./query-compiler/query-compiler.js";
+export type { QueryExecutor } from "./query-executor.js";
 export type {
   SalesforceChildRelationship,
   SalesforceField,

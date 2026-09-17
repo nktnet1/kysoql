@@ -4,7 +4,7 @@ A type-safe, Kysely-inspired SOQL query builder for TypeScript.
 
 ## Workspace
 
-- `@kysoql/core` — typed SOQL AST, query builder, compiler, and result inference.
+- `@kysoql/core` — typed SOQL AST, query builder, compiler, executor contract, and result inference.
 - `@kysoql/jsforce` — JSforce authentication/execution adapter.
 - `@kysoql/codegen` — CLI for generating strongly typed Salesforce schemas from Describe metadata.
 - `@kysoql/debug` — minimal TypeScript runtime playground that logs query-builder ASTs.
@@ -52,7 +52,8 @@ pnpm debug
 
 The debug package is written in TypeScript. It builds `@kysoql/core`, compiles the
 playground to an ignored `dist/` directory, then logs the immutable AST after
-`selectFrom()`, `select()`, chained `where()` calls, and the compiled SOQL.
+`selectFrom()`, `select()`, chained `where()` calls, the compiled SOQL, and a
+mock executor call made by `.execute()`.
 
 ## Current query surface
 
@@ -75,8 +76,29 @@ Selected fields, filterable fields, filter values, and operators are checked fro
 the generated Salesforce schema. Equality (`=`, `!=`), ordered comparisons
 (`<`, `<=`, `>`, `>=`), and Kysely-style `like` are available where the field
 type supports them. `.compile()` emits SOQL for the currently implemented scalar
-selection/filter AST. Live query execution is intentionally being added in a later
-increment.
+selection/filter AST.
+
+Execution stays transport-neutral in core. Configure the JSforce adapter to run
+compiled SOQL through an existing JSforce connection:
+
+```ts
+import { Kysoql } from "@kysoql/core";
+import { createJsforceExecutor } from "@kysoql/jsforce";
+
+const db = new Kysoql<SalesforceSchema>({
+  executor: createJsforceExecutor(connection),
+});
+
+const accounts = await db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where("Name", "like", "Acme%")
+  .execute();
+```
+
+The JSforce executor follows Salesforce pagination until the query result reports
+`done`, so `.execute()` returns all fetched pages instead of silently stopping at
+the first response.
 
 ## Salesforce test org
 

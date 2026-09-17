@@ -51,12 +51,21 @@ Sources:
 - https://jsforce.github.io/jsforce/classes/query.Query.html
 - https://jsforce.github.io/jsforce/modules/query.html
 
+Re-checked against the JSforce v3 API reference on 2026-09-17 while implementing
+the first execution adapter.
+
 Useful findings:
 
 - `Connection.query<T>(soql)` returns a thenable `Query` object.
 - The default raw-query response target is a query result containing `records`, `done`, and optionally `nextRecordsUrl`.
 - `Connection.queryMore<T>(locator)` continues a paginated query.
-- Query objects also support `autoFetch`, but it is bounded by `maxFetch`; future kysoql execution should therefore follow `nextRecordsUrl` explicitly rather than relying on a silent fetch cap.
+- Query objects also support `autoFetch`, but it is bounded by `maxFetch`; Kysoql execution therefore follows `nextRecordsUrl` explicitly rather than relying on a silent fetch cap.
+
+Implemented consequence in `v1.0.16`: `@kysoql/jsforce` starts with
+`Connection.query(...)`, accumulates `records`, and repeatedly calls
+`queryMore(nextRecordsUrl)` until `done` is true. An incomplete response with
+`done: false` but no `nextRecordsUrl` is treated as an error instead of a partial
+success.
 
 ### Older JSforce query documentation
 

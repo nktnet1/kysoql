@@ -1,5 +1,7 @@
 import {
   Kysoql,
+  type CompiledQuery,
+  type QueryExecutor,
   type SalesforceField,
   type SalesforceObject,
 } from "../../core/dist/index.js";
@@ -27,7 +29,17 @@ const printQuery = (
   console.dir(query.toOperationNode(), { depth: null });
 };
 
-const db = new Kysoql<DebugSchema>();
+const executor: QueryExecutor = {
+  async executeQuery<O>(
+    compiledQuery: CompiledQuery<O>,
+  ): Promise<readonly O[]> {
+    console.log("\n==> executor.executeQuery()");
+    console.log(compiledQuery.soql);
+    return [];
+  },
+};
+
+const db = new Kysoql<DebugSchema>({ executor });
 
 const accountQuery = db.selectFrom("Account");
 printQuery('selectFrom("Account")', accountQuery);
@@ -45,3 +57,6 @@ printQuery(
 
 console.log("\n==> compile()");
 console.log(filteredQuery.compile().soql);
+
+console.log("\n==> execute()");
+console.log(await filteredQuery.execute());

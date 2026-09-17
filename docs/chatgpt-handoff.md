@@ -29,7 +29,7 @@ into the SOQL API.
 
 ## Current development state
 
-Through `v1.0.15`, the project has:
+Through `v1.0.16`, the project has:
 
 - a Node 26 / pnpm / Turborepo / Biome / Vitest workspace;
 - a reproducible Salesforce scratch-org fixture and deterministic seed data;
@@ -48,13 +48,16 @@ Through `v1.0.15`, the project has:
 - immutable `WhereNode`, `BinaryOperationNode`, `OperatorNode`, `ValueNode`, and `AndNode` filtering AST;
 - Kysely-style `CompiledQuery<O>` / `QueryCompiler` abstractions and `.compile()` for selected scalar fields, chained `AND` filters, scalar string/number/boolean/null literals, and the currently supported comparison operators;
 - `docs/research-notes.md` records external references and settled findings that would otherwise be repeatedly researched in future sessions;
+- a transport-neutral `QueryExecutor` contract plus `SelectQueryBuilder.execute()` with selected-output typing preserved;
+- `@kysoql/jsforce` adapts a JSforce connection to that executor, compiles no SOQL itself, and follows `nextRecordsUrl` through all result pages instead of silently truncating;
 - SOQL-safe escaping for quoted strings, including preserved `\%` / `\_` LIKE wildcard escapes;
 - compile-time rejection of unknown/non-filterable fields, unsupported operators, and mismatched filter values;
 - `pnpm validate` as the type/test/build validation gate; Biome stays manual;
 - `pnpm debug` as a no-Salesforce TypeScript runtime playground that logs the AST produced
-  by `selectFrom()`, `select()`, and chained `where()` calls; source files remain `.ts` and generated JavaScript lives only in ignored `dist/` output.
+  by `selectFrom()`, `select()`, and chained `where()` calls, then logs compile and mock
+  execution behavior; source files remain `.ts` and generated JavaScript lives only in ignored `dist/` output.
 
-There is intentionally no query execution, ordering, OR-expression builder, or broader SOQL operator surface in core yet. Date/dateTime/time literals still need a dedicated representation before the compiler can claim complete literal coverage; generated field values currently represent those Salesforce types as strings.
+There is intentionally no ordering, OR-expression builder, or broader SOQL operator surface in core yet. Date/dateTime/time literals still need a dedicated representation before the compiler can claim complete literal coverage; generated field values currently represent those Salesforce types as strings.
 
 ## Validation
 
@@ -98,14 +101,14 @@ state. Never rewrite an older patch after it has been handed off.
 The sequence at this point is:
 
 ```text
-v1.0.0 -> v1.0.1 -> ... -> v1.0.15
+v1.0.0 -> v1.0.1 -> ... -> v1.0.16
 ```
 
-The next patch must therefore be `v1.0.16-kysoql.patch`, generated against the
-state after `v1.0.15` is applied. Before handing it off, verify at minimum:
+The next patch must therefore be `v1.0.17-kysoql.patch`, generated against the
+state after `v1.0.16` is applied. Before handing it off, verify at minimum:
 
 ```bash
-git apply --check v1.0.16-kysoql.patch
+git apply --check v1.0.17-kysoql.patch
 git diff --check
 ```
 
@@ -127,19 +130,17 @@ this document before continuing.
 
 ## Next incremental milestone
 
-Keep the next patch small. The expected `v1.0.16` slice is the first execution
-increment: introduce the smallest Kysely-style executor abstraction needed for
-`SelectQueryBuilder.execute()` and connect `@kysoql/jsforce` to compiled SOQL.
-Use mock execution tests in core and JSforce adapter tests; do not add new SOQL
-syntax in the same patch.
+Keep the next patch small. The expected `v1.0.17` slice is explicit Salesforce
+date/dateTime/time literal representation and compilation. Generated fields for
+those Salesforce types currently use plain TypeScript strings, but SOQL requires
+unquoted dedicated literal formats; do not execute those values by guessing from
+a string. Add explicit typed wrappers or another similarly unambiguous
+representation, compiler coverage, and compile-time/runtime tests without mixing
+in ordering or additional boolean-expression syntax.
 
-When execution is added, do not silently truncate Salesforce query results. Research
-already recorded in `docs/research-notes.md` shows that raw query results can be
-paginated and that JSforce exposes `queryMore()` / `nextRecordsUrl` for continuation.
-
-Before broadening execution to every generated Salesforce scalar type, address
-date/dateTime/time literal representation explicitly rather than guessing from
-plain JavaScript strings.
+The execution layer added in `v1.0.16` should remain unchanged in that patch.
+Core owns compilation and the executor contract; the JSforce package remains a
+transport adapter and must continue to fetch every result page.
 
 In particular, preserve these design choices:
 
@@ -152,8 +153,8 @@ In particular, preserve these design choices:
   `LIKE`;
 - output type accumulation using Kysely's `O & Selection<...>` pattern;
 - `.compile()` must preserve the selected output type through the type-only `CompiledQuery<O>` carrier;
-- future execution should stay transport-neutral in core;
-- future JSforce execution must not silently truncate paginated query results;
+- execution stays transport-neutral in core;
+- JSforce execution must not silently truncate paginated query results;
 - no raw SOQL escape hatch in the safe API;
 - no arbitrary SQL joins;
 - `@kysoql/core` must not import JSforce;

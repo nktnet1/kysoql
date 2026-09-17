@@ -1,6 +1,7 @@
 import { QueryNode } from "../operation-node/query-node.js";
 import type { CompiledQuery } from "../query-compiler/compiled-query.js";
 import type { QueryCompiler } from "../query-compiler/query-compiler.js";
+import type { QueryExecutor } from "../query-executor.js";
 import { SelectQueryNode } from "../operation-node/select-query-node.js";
 import {
   parseValueBinaryOperation,
@@ -18,6 +19,8 @@ import { freeze } from "../util/object-utils.js";
 
 export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
   compile(): CompiledQuery<O>;
+
+  execute(): Promise<readonly O[]>;
 
   where<
     RE extends FilterableFieldName<DB, TB>,
@@ -50,6 +53,16 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
 
   compile(): CompiledQuery<O> {
     return this.#props.queryCompiler.compileQuery<O>(this.#props.queryNode);
+  }
+
+  async execute(): Promise<readonly O[]> {
+    if (!this.#props.queryExecutor) {
+      throw new Error(
+        "No query executor configured. Pass an executor when creating Kysoql.",
+      );
+    }
+
+    return this.#props.queryExecutor.executeQuery(this.compile());
   }
 
   where<
@@ -88,6 +101,7 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
 
 export interface SelectQueryBuilderProps {
   readonly queryCompiler: QueryCompiler;
+  readonly queryExecutor: QueryExecutor | undefined;
   readonly queryNode: SelectQueryNode;
 }
 
