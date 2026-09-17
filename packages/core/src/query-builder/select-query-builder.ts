@@ -15,12 +15,22 @@ import {
   type SelectExpression,
   type Selection,
 } from "../parser/select-parser.js";
+import {
+  parseOrderBy,
+  type SortableFieldName,
+} from "../parser/order-by-parser.js";
+import type { OrderByDirection } from "../operation-node/order-by-item-node.js";
 import { freeze } from "../util/object-utils.js";
 
 export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
   compile(): CompiledQuery<O>;
 
   execute(): Promise<readonly O[]>;
+
+  orderBy<OE extends SortableFieldName<DB, TB>>(
+    field: OE,
+    direction?: OrderByDirection,
+  ): SelectQueryBuilder<DB, TB, O>;
 
   where<
     RE extends FilterableFieldName<DB, TB>,
@@ -63,6 +73,18 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     }
 
     return this.#props.queryExecutor.executeQuery(this.compile());
+  }
+
+  orderBy<OE extends SortableFieldName<DB, TB>>(
+    field: OE,
+    direction?: OrderByDirection,
+  ): SelectQueryBuilder<DB, TB, O> {
+    return new SelectQueryBuilderImpl<DB, TB, O>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithOrderByItems(this.#props.queryNode, [
+        parseOrderBy(field, direction),
+      ]),
+    });
   }
 
   where<

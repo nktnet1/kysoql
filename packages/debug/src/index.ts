@@ -86,8 +86,13 @@ const filteredQuery = selectedQuery
   .where("OpeningTime__c", ">=", soqlTime("09:00:00.000Z"));
 printQuery("chained scalar + temporal where() calls", filteredQuery);
 
+const orderedQuery = filteredQuery
+  .orderBy("AnnualRevenue", "desc")
+  .orderBy("Name", "asc");
+printQuery("chained orderBy() calls", orderedQuery);
+
 console.log("\n==> compile()");
-console.log(filteredQuery.compile().soql);
+console.log(orderedQuery.compile().soql);
 
 console.log("\n==> execute()");
-console.log(await filteredQuery.execute());
+console.log(await orderedQuery.execute());

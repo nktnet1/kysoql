@@ -2,6 +2,8 @@ import type { AndNode } from "../operation-node/and-node.js";
 import type { BinaryOperationNode } from "../operation-node/binary-operation-node.js";
 import type { OperationNode } from "../operation-node/operation-node.js";
 import type { OperatorNode } from "../operation-node/operator-node.js";
+import type { OrderByItemNode } from "../operation-node/order-by-item-node.js";
+import type { OrderByNode } from "../operation-node/order-by-node.js";
 import type { ReferenceNode } from "../operation-node/reference-node.js";
 import type { SelectQueryNode } from "../operation-node/select-query-node.js";
 import type { SelectionNode } from "../operation-node/selection-node.js";
@@ -31,6 +33,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
       soql += ` WHERE ${this.#compileWhere(query.where)}`;
     }
 
+    if (query.orderBy) {
+      soql += ` ORDER BY ${this.#compileOrderBy(query.orderBy)}`;
+    }
+
     return soql;
   }
 
@@ -40,6 +46,20 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileWhere(where: WhereNode): string {
     return this.#compileOperation(where.where);
+  }
+
+  #compileOrderBy(orderBy: OrderByNode): string {
+    return orderBy.items.map((item) => this.#compileOrderByItem(item)).join(", ");
+  }
+
+  #compileOrderByItem(item: OrderByItemNode): string {
+    const field = this.#compileReference(item.orderBy);
+
+    if (!item.direction) {
+      return field;
+    }
+
+    return `${field} ${item.direction === "asc" ? "ASC" : "DESC"}`;
   }
 
   #compileOperation(node: OperationNode): string {

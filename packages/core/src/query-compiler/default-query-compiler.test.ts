@@ -86,6 +86,30 @@ describe("DefaultQueryCompiler", () => {
     );
   });
 
+  it("compiles additive ORDER BY fields and directions", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(["Id", "Name"])
+      .where("Name", "like", "Acme%")
+      .orderBy("Name", "asc")
+      .orderBy("Id", "desc")
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT Id, Name FROM Account WHERE Name LIKE 'Acme%' ORDER BY Name ASC, Id DESC",
+    );
+  });
+
+  it("uses Salesforce's default ascending order when direction is omitted", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .orderBy("Name")
+      .compile();
+
+    expect(compiled.soql).toBe("SELECT Id FROM Account ORDER BY Name");
+  });
+
   it("escapes SOQL strings without changing LIKE wildcard escapes", () => {
     const escapedString = new Kysoql<FixtureSchema>()
       .selectFrom("Account")

@@ -9,6 +9,11 @@ export type {
 } from "./operation-node/operator-node.js";
 export type { OperationNode } from "./operation-node/operation-node.js";
 export { Kysoql } from "./kysoql.js";
+export type {
+  OrderByDirection,
+  OrderByItemNode,
+} from "./operation-node/order-by-item-node.js";
+export type { OrderByNode } from "./operation-node/order-by-node.js";
 export type { ReferenceNode } from "./operation-node/reference-node.js";
 export type { SelectQueryNode } from "./operation-node/select-query-node.js";
 export type { SelectionNode } from "./operation-node/selection-node.js";

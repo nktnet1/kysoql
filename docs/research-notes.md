@@ -35,6 +35,22 @@ Useful findings:
 
 Kysoql consequence: preserve immutable builders, additive selected-output typing, and AST/compiler separation where those concepts map cleanly to SOQL.
 
+### ORDER BY builder shape
+
+Source: https://kysely-org.github.io/kysely-apidoc/interfaces/SelectQueryBuilder.html
+
+Re-checked on 2026-09-17 while implementing typed ordering.
+
+Useful findings:
+
+- Kysely exposes `orderBy(expression, direction?)` with lowercase `asc` / `desc` directions.
+- Repeated `orderBy()` calls are additive and preserve call order.
+- Omitting a direction leaves the database's default ascending ordering in effect.
+
+Implemented consequence in `v1.0.18`: kysoql adopts the narrow field-only form
+`orderBy(field, direction?)`. It deliberately does not expose raw expressions,
+callbacks, aliases, or null-order modifiers yet.
+
 ### General project architecture
 
 Source: https://github.com/kysely-org/kysely
@@ -147,6 +163,31 @@ The filter type maps generated Salesforce `date`, `datetime`, and `time` fields
 to the matching wrapper while leaving selected result values as strings. The
 compiler recognizes only those explicit wrappers and emits their values unquoted.
 Relative date literals such as `TODAY` are not part of this slice.
+
+### ORDER BY
+
+Sources:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-orderby.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-examples.html
+
+Re-checked on 2026-09-17 while implementing typed ordering.
+
+Useful findings:
+
+- SOQL supports multiple ordered fields in one `ORDER BY` clause.
+- `ASC` and `DESC` select ascending and descending order; ascending is the default
+  when no direction is supplied.
+- Salesforce excludes some field types from sorting, while generated Describe
+  metadata already exposes each field's `sortable` capability.
+- `NULLS FIRST` / `NULLS LAST` are separate modifiers and do not need to be part
+  of the first ordering slice.
+
+Implemented consequence in `v1.0.18`: only fields whose generated schema metadata
+has `sortable: true` are accepted by `orderBy()`. The AST accumulates order items
+immutably, and the compiler emits them after `WHERE` as a comma-separated SOQL
+`ORDER BY` clause. Explicit lowercase builder directions compile to uppercase
+SOQL `ASC` / `DESC`.
 
 ### Relationships
 

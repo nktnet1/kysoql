@@ -29,7 +29,7 @@ into the SOQL API.
 
 ## Current development state
 
-Through `v1.0.17`, the project has:
+Through `v1.0.18`, the project has:
 
 - a Node 26 / pnpm / Turborepo / Biome / Vitest workspace;
 - a reproducible Salesforce scratch-org fixture and deterministic seed data;
@@ -47,6 +47,11 @@ Through `v1.0.17`, the project has:
 - field-type-aware operator constraints: `LIKE` is limited to Salesforce string-like fields, ordered comparisons exclude unsupported field types, and only equality accepts nullable `null` values;
 - explicit `soqlDate(...)`, `soqlDateTime(...)`, and `soqlTime(...)` filter literals that validate Salesforce temporal formats and compile unquoted; generated date/dateTime/time result values intentionally remain strings;
 - immutable `WhereNode`, `BinaryOperationNode`, `OperatorNode`, `ValueNode`, and `AndNode` filtering AST;
+- typed `.orderBy(field, direction?)` constrained by generated `sortable: true`
+  metadata, with Kysely-style lowercase `asc` / `desc` directions;
+- immutable `OrderByNode` / `OrderByItemNode` ordering AST, with repeated
+  `.orderBy()` calls accumulating in call order and compiler output using SOQL
+  `ASC` / `DESC`;
 - Kysely-style `CompiledQuery<O>` / `QueryCompiler` abstractions and `.compile()` for selected scalar fields, chained `AND` filters, scalar string/number/boolean/null literals, and the currently supported comparison operators;
 - `docs/research-notes.md` records external references and settled findings that would otherwise be repeatedly researched in future sessions;
 - a transport-neutral `QueryExecutor` contract plus `SelectQueryBuilder.execute()` with selected-output typing preserved;
@@ -55,10 +60,13 @@ Through `v1.0.17`, the project has:
 - compile-time rejection of unknown/non-filterable fields, unsupported operators, and mismatched filter values;
 - `pnpm validate` as the type/test/build validation gate; Biome stays manual;
 - `pnpm debug` as a no-Salesforce TypeScript runtime playground that logs the AST produced
-  by `selectFrom()`, `select()`, and chained `where()` calls, then logs compile and mock
-  execution behavior; source files remain `.ts` and generated JavaScript lives only in ignored `dist/` output.
+  by `selectFrom()`, `select()`, chained `where()` calls, and additive
+  `orderBy()` calls, then logs compile and mock execution behavior; source files
+  remain `.ts` and generated JavaScript lives only in ignored `dist/` output.
 
-There is intentionally no ordering, OR-expression builder, relative Salesforce date-literal support such as `TODAY` / `LAST_N_DAYS:n`, or broader SOQL operator surface in core yet.
+There is intentionally no `LIMIT`, `OFFSET`, null-order modifier,
+OR-expression builder, relative Salesforce date-literal support such as `TODAY`
+/ `LAST_N_DAYS:n`, or broader SOQL operator surface in core yet.
 
 ## Validation
 
@@ -102,14 +110,14 @@ state. Never rewrite an older patch after it has been handed off.
 The sequence at this point is:
 
 ```text
-v1.0.0 -> v1.0.1 -> ... -> v1.0.17
+v1.0.0 -> v1.0.1 -> ... -> v1.0.18
 ```
 
-The next patch must therefore be `v1.0.18-kysoql.patch`, generated against the
-state after `v1.0.17` is applied. Before handing it off, verify at minimum:
+The next patch must therefore be `v1.0.19-kysoql.patch`, generated against the
+state after `v1.0.18` is applied. Before handing it off, verify at minimum:
 
 ```bash
-git apply --check v1.0.18-kysoql.patch
+git apply --check v1.0.19-kysoql.patch
 git diff --check
 ```
 
@@ -131,19 +139,19 @@ this document before continuing.
 
 ## Next incremental milestone
 
-Keep the next patch small. The expected `v1.0.18` slice is typed `ORDER BY`
+Keep the next patch small. The expected `v1.0.19` slice is typed `LIMIT`
 support. Follow Kysely-style immutable builder chaining where it maps cleanly to
-SOQL, but keep the first ordering patch intentionally narrow:
+SOQL, but keep the first limit patch intentionally narrow:
 
-- add ordering AST nodes and compiler support without touching execution;
-- allow only generated fields whose Salesforce Describe metadata marks them
-  `sortable: true`;
-- support ascending/descending direction with a typed public surface and emit
-  SOQL `ASC` / `DESC`;
-- allow repeated ordering calls to accumulate deterministically;
-- add runtime/compiler and compile-time tests plus a minimal debug example;
-- do not mix in `LIMIT`, `OFFSET`, `NULLS FIRST` / `NULLS LAST`, OR-expression
-  syntax, or new comparison operators in the same patch.
+- add a limit AST node and compiler support without touching execution;
+- expose `.limit(...)` on `SelectQueryBuilder` with a safe numeric surface;
+- verify Salesforce's accepted integer range and zero behavior from current
+  documentation before settling runtime validation;
+- a later `.limit(...)` call should deterministically replace the earlier limit
+  rather than append a second SOQL `LIMIT` clause;
+- add AST/compiler/runtime-validation tests plus a minimal debug example;
+- do not mix in `OFFSET`, `NULLS FIRST` / `NULLS LAST`, OR-expression syntax,
+  relative date literals, or new comparison operators in the same patch.
 
 The temporal literal layer added in `v1.0.17` should remain explicit. Generated
 Salesforce temporal field values continue to be strings on query results, while
@@ -157,7 +165,10 @@ In particular, preserve these design choices:
 - repeated `.where()` calls combine through the Kysely-style `WhereNode` /
   `AndNode` structure;
 - filtering must honor generated `filterable` metadata;
-- future ordering must honor generated `sortable` metadata;
+- ordering must honor generated `sortable` metadata;
+- repeated `.orderBy()` calls remain additive and preserve call order;
+- explicit ordering directions use lowercase `asc` / `desc` in the builder and
+  compile to uppercase SOQL `ASC` / `DESC`;
 - operator availability must remain Salesforce-field-type-aware;
 - the public API uses Kysely-style lowercase `like`; the compiler emits SOQL
   `LIKE`;

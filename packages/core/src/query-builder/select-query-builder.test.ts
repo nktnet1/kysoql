@@ -153,6 +153,59 @@ describe("SelectQueryBuilder", () => {
     }>();
   });
 
+  it("adds sortable ORDER BY items without mutating earlier builders", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const baseQuery = db.selectFrom("Account").select(["Id", "Name"]);
+    const nameQuery = baseQuery.orderBy("Name", "asc");
+    const orderedQuery = nameQuery.orderBy("Id", "desc");
+
+    expect(baseQuery.toOperationNode().orderBy).toBeUndefined();
+    expect(nameQuery.toOperationNode().orderBy).toEqual({
+      kind: "OrderByNode",
+      items: [
+        {
+          kind: "OrderByItemNode",
+          orderBy: { kind: "ReferenceNode", name: "Name" },
+          direction: "asc",
+        },
+      ],
+    });
+    expect(orderedQuery.toOperationNode().orderBy).toEqual({
+      kind: "OrderByNode",
+      items: [
+        {
+          kind: "OrderByItemNode",
+          orderBy: { kind: "ReferenceNode", name: "Name" },
+          direction: "asc",
+        },
+        {
+          kind: "OrderByItemNode",
+          orderBy: { kind: "ReferenceNode", name: "Id" },
+          direction: "desc",
+        },
+      ],
+    });
+    expect(Object.isFrozen(orderedQuery.toOperationNode().orderBy)).toBe(true);
+    expect(Object.isFrozen(orderedQuery.toOperationNode().orderBy?.items)).toBe(
+      true,
+    );
+    expect(
+      Object.isFrozen(orderedQuery.toOperationNode().orderBy?.items[0]),
+    ).toBe(true);
+  });
+
+  it("preserves the selected output type after ordering", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(["Id", "Name"])
+      .orderBy("AnnualRevenue", "desc");
+
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly Id: string;
+      readonly Name: string | null;
+    }>();
+  });
+
   it("adds typed where clauses without mutating earlier builders", () => {
     const db = new Kysoql<FixtureSchema>();
     const baseQuery = db.selectFrom("Account").select(["Id", "Name"]);
@@ -359,6 +412,23 @@ describe("SelectQueryBuilder", () => {
 
     // @ts-expect-error Salesforce field is not present on Account.
     query.where("Does_Not_Exist__c", "=", "value");
+  });
+
+  it("rejects invalid ordering at compile time", () => {
+    const query = new Kysoql<FixtureSchema>().selectFrom("Account");
+
+    query.orderBy("Name");
+    query.orderBy("AnnualRevenue", "asc");
+    query.orderBy("Id", "desc");
+
+    // @ts-expect-error Generated metadata marks this field as non-sortable.
+    query.orderBy("Internal_Note__c");
+
+    // @ts-expect-error Salesforce field is not present on Account.
+    query.orderBy("Does_Not_Exist__c");
+
+    // @ts-expect-error ORDER BY direction is limited to Kysely-style asc/desc.
+    query.orderBy("Name", "ascending");
   });
 
   it("rejects unknown objects and fields at compile time", () => {
