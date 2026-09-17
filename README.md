@@ -11,11 +11,12 @@ A type-safe, Kysely-inspired SOQL query builder for TypeScript.
 ## Requirements
 
 - Node.js 26 (`package.json` enforces the Node 26 range; `.node-version` pins 26.8.2 for version managers that support it).
-- pnpm 12.4.1 via Corepack.
+- pnpm 12.4.1.
+
+Activate Node 26 using whichever version manager you prefer, then install:
 
 ```bash
-nvm use
-corepack enable
+node --version
 pnpm install
 ```
 
@@ -38,8 +39,19 @@ A reproducible scratch-org fixture is included under `test/salesforce`. It
 contains standard Account/Contact data plus a `Kysoql_Record__c` custom object
 with representative scalar, picklist, external-ID, and relationship fields.
 
-See [docs/salesforce-test-org.md](docs/salesforce-test-org.md) for the complete
-create → deploy → seed → SOQL smoke-test workflow.
+For a complete local setup after authenticating or creating a Dev Hub, run:
+
+```bash
+pnpm salesforce:setup
+```
+
+The setup script installs from the lockfile, uses the workspace-local Salesforce
+CLI via `pnpm sf`, creates a scratch org, deploys metadata, assigns permissions,
+seeds deterministic data, and verifies the fixture with a SOQL query. It refuses
+to replace an existing org alias unless `--recreate` is explicitly supplied.
+
+See [docs/salesforce-test-org.md](docs/salesforce-test-org.md) for prerequisites,
+manual commands, script options, and cleanup instructions.
 
 ## Design goals
 

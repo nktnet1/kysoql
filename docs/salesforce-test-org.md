@@ -5,22 +5,78 @@ manual and integration testing. It creates a custom object with representative
 field types and a lookup relationship, then seeds deterministic Accounts,
 Contacts, and custom records.
 
+The repository intentionally invokes Salesforce CLI as `pnpm sf`. The CLI is a
+workspace dev dependency, so this uses the pinned project version instead of a
+globally installed `sf` binary.
+
 ## Prerequisites
 
 - Node.js 26.
-- Salesforce CLI (`sf`).
+- pnpm.
 - A Salesforce Dev Hub that can create scratch orgs.
 
 If you do not already have a Dev Hub, create or use a Salesforce Developer
 Edition org and enable **Dev Hub** in Setup.
 
-Authenticate the Dev Hub once:
+Authenticate it once using the local CLI:
 
 ```bash
-sf org login web --set-default-dev-hub --alias kysoql-dev-hub
+pnpm sf org login web --alias kysoql-dev-hub
 ```
 
-## Create the scratch org
+The setup script passes the Dev Hub alias explicitly, so it does not need to
+change your global or project default Dev Hub.
+
+## Automated setup
+
+From the repository root, run:
+
+```bash
+pnpm salesforce:setup
+```
+
+The script safely performs the complete fixture setup:
+
+1. verifies Node 26 and pnpm;
+2. runs `pnpm install --frozen-lockfile`;
+3. verifies or interactively authenticates the Dev Hub;
+4. refuses to overwrite an existing `kysoql-test` alias by default;
+5. creates a scratch org without changing your default target org;
+6. deploys fixture metadata;
+7. assigns the `Kysoql_Test` permission set;
+8. runs the idempotent Apex seed script; and
+9. checks that all three custom fixture records are queryable, including their
+   parent Account relationship.
+
+Useful options:
+
+```bash
+pnpm salesforce:setup -- --help
+pnpm salesforce:setup -- --alias kysoql-test-2
+pnpm salesforce:setup -- --dev-hub my-dev-hub
+pnpm salesforce:setup -- --duration-days 7
+pnpm salesforce:setup -- --recreate
+pnpm salesforce:setup -- --skip-install
+pnpm salesforce:setup -- --no-login
+```
+
+`--recreate` is deliberately opt-in. If the target alias already exists, the
+script otherwise stops without deleting anything. When recreation is requested,
+`sf org delete scratch` is used, so Salesforce CLI itself rejects deletion if
+the alias does not refer to a scratch org.
+
+If setup fails after creating a scratch org, the script leaves that org intact
+for inspection and prints an explicit cleanup command rather than deleting it
+automatically.
+
+The defaults can also be changed with `KYSOQL_DEV_HUB_ALIAS`,
+`KYSOQL_SCRATCH_ALIAS`, and `KYSOQL_SCRATCH_DURATION_DAYS`.
+
+## Manual setup
+
+The automated setup is preferred, but each step can also be run manually.
+
+### Create the scratch org
 
 Run the Salesforce commands from the fixture DX project:
 
@@ -30,14 +86,17 @@ cd test/salesforce
 pnpm sf org create scratch \
   --definition-file config/project-scratch-def.json \
   --alias kysoql-test \
-  --set-default \
+  --target-dev-hub kysoql-dev-hub \
   --duration-days 30
 ```
 
-The scratch org definition uses Developer edition. Scratch orgs are disposable;
-the default lifetime is seven days and this command pins that explicitly.
+Salesforce CLI defaults scratch orgs to seven days; this fixture explicitly asks
+for 30 days. The target Dev Hub is explicit, and no default target org is changed.
+Salesforce requires a Dev Hub either through `--target-dev-hub` or a configured
+default Dev Hub. See the Salesforce CLI command reference for the current
+`org create scratch` flags.
 
-## Deploy the fixture schema
+### Deploy the fixture schema
 
 ```bash
 pnpm sf project deploy start \
@@ -67,7 +126,7 @@ metadata.
 set's `fieldPermissions`. Salesforce rejects field-level permission metadata for
 required fields.
 
-## Seed deterministic data
+### Seed deterministic data
 
 The seed script is idempotent for its own fixture records. Running it again
 removes only records owned by the kysoql fixture and recreates them.
@@ -115,7 +174,8 @@ pnpm sf data query \
 ```
 
 These queries are useful acceptance cases for the kysoql compiler as its SOQL
-surface grows.
+surface grows. Salesforce's `data query` command executes SOQL directly and
+supports JSON output, which the automated setup uses for its fixture assertion.
 
 ## Use the org with JSforce
 
@@ -123,20 +183,25 @@ Salesforce CLI already holds OAuth credentials for the scratch org. To inspect
 the authenticated connection details, run:
 
 ```bash
-pnpm sf org display --target-org kysoql-test --verbose --json
+pnpm sf org display --target-org kysoql-test
 ```
 
-For a local JSforce script, use the returned instance URL and access token as
-ephemeral environment variables rather than writing credentials into the repo:
+`sf org display` includes sensitive authentication information such as the
+access token, so do not paste its output into issues, CI logs, or committed
+files. The `--verbose` form can additionally expose an SFDX auth URL containing
+a refresh token and should be treated as a credential.
+
+For a local JSforce script, use ephemeral environment variables rather than
+writing credentials into the repo:
 
 ```bash
 export SF_INSTANCE_URL="https://your-domain.my.salesforce.com"
 export SF_ACCESS_TOKEN="..."
 ```
 
-Never commit access tokens or the verbose org-display output. The repository's
-`.gitignore` ignores `.env` files, but shell environment variables are preferred
-for short-lived scratch-org credentials.
+Never commit access tokens or org-display output. The repository's `.gitignore`
+ignores `.env` files, but shell environment variables are preferred for
+short-lived scratch-org credentials.
 
 ## Reset or delete the org
 
@@ -147,4 +212,4 @@ To discard the entire scratch org:
 pnpm sf org delete scratch --target-org kysoql-test --no-prompt
 ```
 
-Then repeat the create, deploy, permission-set, and seed steps above.
+Then run `pnpm salesforce:setup` again.

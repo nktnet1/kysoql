@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "typecheck": "turbo run typecheck",
-    "clean": "turbo run clean && rm -rf node_modules"
+    "clean": "turbo run clean && rm -rf node_modules",
+    "salesforce:setup": "bash scripts/setup-salesforce-test-org.sh"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13",
