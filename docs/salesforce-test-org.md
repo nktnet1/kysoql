@@ -27,11 +27,11 @@ Run the Salesforce commands from the fixture DX project:
 ```bash
 cd test/salesforce
 
-sf org create scratch \
+pnpm sf org create scratch \
   --definition-file config/project-scratch-def.json \
   --alias kysoql-test \
   --set-default \
-  --duration-days 7
+  --duration-days 30
 ```
 
 The scratch org definition uses Developer edition. Scratch orgs are disposable;
@@ -40,11 +40,11 @@ the default lifetime is seven days and this command pins that explicitly.
 ## Deploy the fixture schema
 
 ```bash
-sf project deploy start \
+pnpm sf project deploy start \
   --target-org kysoql-test \
   --source-dir force-app
 
-sf org assign permset \
+pnpm sf org assign permset \
   --target-org kysoql-test \
   --name Kysoql_Test
 ```
@@ -63,13 +63,17 @@ This mix is intentional: schema generation can exercise nullability, scalar
 field mappings, picklist values, external IDs, references, and relationship
 metadata.
 
+`External_Id__c` is required, so it is intentionally omitted from the permission
+set's `fieldPermissions`. Salesforce rejects field-level permission metadata for
+required fields.
+
 ## Seed deterministic data
 
 The seed script is idempotent for its own fixture records. Running it again
 removes only records owned by the kysoql fixture and recreates them.
 
 ```bash
-sf apex run \
+pnpm sf apex run \
   --target-org kysoql-test \
   --file scripts/apex/seed.apex
 ```
@@ -81,7 +85,7 @@ It creates two Accounts, three Contacts, and three `Kysoql_Record__c` records.
 A basic custom-object query:
 
 ```bash
-sf data query \
+pnpm sf data query \
   --target-org kysoql-test \
   --query "SELECT Id, Name, External_Id__c, Amount__c, Active__c, Category__c, Occurred_On__c FROM Kysoql_Record__c ORDER BY External_Id__c"
 ```
@@ -89,7 +93,7 @@ sf data query \
 A child-to-parent relationship query:
 
 ```bash
-sf data query \
+pnpm sf data query \
   --target-org kysoql-test \
   --query "SELECT Id, Name, Account__r.Id, Account__r.Name FROM Kysoql_Record__c ORDER BY External_Id__c"
 ```
@@ -97,7 +101,7 @@ sf data query \
 A parent-to-child relationship query:
 
 ```bash
-sf data query \
+pnpm sf data query \
   --target-org kysoql-test \
   --query "SELECT Id, Name, (SELECT Id, Name, Amount__c FROM Kysoql_Records__r ORDER BY External_Id__c) FROM Account WHERE Name LIKE 'Kysoql Test %' ORDER BY Name"
 ```
@@ -105,7 +109,7 @@ sf data query \
 An aggregate query:
 
 ```bash
-sf data query \
+pnpm sf data query \
   --target-org kysoql-test \
   --query "SELECT Category__c, COUNT(Id) records, SUM(Amount__c) total FROM Kysoql_Record__c GROUP BY Category__c ORDER BY Category__c"
 ```
@@ -119,7 +123,7 @@ Salesforce CLI already holds OAuth credentials for the scratch org. To inspect
 the authenticated connection details, run:
 
 ```bash
-sf org display --target-org kysoql-test --verbose --json
+pnpm sf org display --target-org kysoql-test --verbose --json
 ```
 
 For a local JSforce script, use the returned instance URL and access token as
@@ -140,7 +144,7 @@ Re-run `scripts/apex/seed.apex` whenever you want to reset only the fixture data
 To discard the entire scratch org:
 
 ```bash
-sf org delete scratch --target-org kysoql-test --no-prompt
+pnpm sf org delete scratch --target-org kysoql-test --no-prompt
 ```
 
 Then repeat the create, deploy, permission-set, and seed steps above.

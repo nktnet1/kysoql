@@ -2,5 +2,8 @@ packages:
   - packages/*
 
 allowBuilds:
+  '@salesforce/cli': false
   core-js: false
   core-js-pure: false
+  protobufjs: false
+  yarn: false
