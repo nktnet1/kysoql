@@ -1,3 +1,13 @@
+export type {
+  SalesforceChildRelationship,
+  SalesforceField,
+  SalesforceFieldValue,
+  SalesforceObject,
+  SalesforceParentRelationship,
+  SalesforceRow,
+  SalesforceSchema,
+} from "./schema.js";
+
 export interface CompiledSoql {
   readonly soql: string;
 }

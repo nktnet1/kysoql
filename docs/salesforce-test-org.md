@@ -203,6 +203,42 @@ Never commit access tokens or org-display output. The repository's `.gitignore`
 ignores `.env` files, but shell environment variables are preferred for
 short-lived scratch-org credentials.
 
+## Generate a TypeScript schema
+
+`@kysoql/codegen` now generates a type-level schema from Salesforce Describe
+metadata. The generator uses JSforce for the API calls. In this repository,
+`salesforce:schema` reuses the authenticated Salesforce CLI scratch-org session
+and extracts its connection details without printing the access token.
+
+Generate just the two objects used by the current fixture:
+
+```bash
+pnpm salesforce:schema -- \
+  --object Account \
+  --object Kysoql_Record__c \
+  --output test/salesforce/salesforce.generated.ts
+```
+
+Omit the `--object` flags to generate every queryable object visible to the
+connected user. Object and field order is deterministic so generated changes
+remain reviewable in git. The generated schema records Salesforce field types,
+nullability, filter/sort/group capabilities, active picklist values, parent
+references, and child relationships.
+
+By default the command uses the `kysoql-test` org alias. Override it without
+changing your Salesforce CLI defaults:
+
+```bash
+KYSOQL_TARGET_ORG=my-scratch-org pnpm salesforce:schema -- \
+  --object Account
+```
+
+`SF_INSTANCE_URL` and `SF_ACCESS_TOKEN` are still supported when both are
+already present in the environment; in that case the wrapper does not invoke
+`pnpm sf org display`. Set either both variables or neither so credentials from
+different orgs cannot be mixed. Access tokens are credentials: never commit
+them or paste org-display output into logs or issues.
+
 ## Reset or delete the org
 
 Re-run `scripts/apex/seed.apex` whenever you want to reset only the fixture data.

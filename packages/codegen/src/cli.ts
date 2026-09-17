@@ -1,16 +1,54 @@
 #!/usr/bin/env node
 
-const main = async (): Promise<void> => {
-  const [, , command] = process.argv;
+import { Connection } from "jsforce";
 
-  if (command !== "generate") {
-    console.error("Usage: kysoql generate");
-    process.exitCode = 1;
+import { cliUsage, parseCli } from "./cli-options.js";
+import { generateSchema } from "./index.js";
+import type {
+  SalesforceGlobalDescription,
+  SalesforceObjectDescription,
+} from "./types.js";
+
+const requiredEnvironmentVariable = (name: string): string => {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`${name} is required.`);
+  }
+  return value;
+};
+
+const main = async (): Promise<void> => {
+  const command = parseCli(process.argv.slice(2));
+  if (command.kind === "help") {
+    console.log(cliUsage);
     return;
   }
 
-  console.error("kysoql schema generation is not implemented yet.");
-  process.exitCode = 1;
+  const connection = new Connection({
+    accessToken: requiredEnvironmentVariable("SF_ACCESS_TOKEN"),
+    instanceUrl: requiredEnvironmentVariable("SF_INSTANCE_URL"),
+  });
+
+  await generateSchema({
+    client: {
+      describeGlobal: async () =>
+        (await connection.describeGlobal()) as unknown as
+          SalesforceGlobalDescription,
+      describe: async (objectName) =>
+        (await connection.describe(objectName)) as unknown as
+          SalesforceObjectDescription,
+    },
+    objects: command.options.objects,
+    output: command.options.output,
+    schemaName: command.options.schemaName,
+  });
+
+  console.log(`Generated ${command.options.output}`);
 };
 
-await main();
+try {
+  await main();
+} catch (error) {
+  console.error(error instanceof Error ? error.message : error);
+  process.exitCode = 1;
+}
