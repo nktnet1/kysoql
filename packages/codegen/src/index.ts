@@ -2,6 +2,10 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
 import { renderSchema } from "./render.js";
+import {
+  parseSalesforceGlobalDescription,
+  parseSalesforceObjectDescription,
+} from "./validation.js";
 import type {
   SalesforceDescribeClient,
   SalesforceObjectDescription,
@@ -29,7 +33,9 @@ const selectObjectNames = async (
   client: SalesforceDescribeClient,
   requestedObjects: readonly string[] | undefined,
 ): Promise<readonly string[]> => {
-  const globalDescription = await client.describeGlobal();
+  const globalDescription = parseSalesforceGlobalDescription(
+    await client.describeGlobal(),
+  );
   const queryableObjects = new Set(
     globalDescription.sobjects
       .filter((object) => object.queryable)
@@ -64,7 +70,12 @@ export const loadSchema = async (
 ): Promise<readonly SalesforceObjectDescription[]> => {
   const objectNames = await selectObjectNames(client, requestedObjects);
   return Promise.all(
-    objectNames.map((objectName) => client.describe(objectName)),
+    objectNames.map(async (objectName) =>
+      parseSalesforceObjectDescription(
+        await client.describe(objectName),
+        objectName,
+      ),
+    ),
   );
 };
 

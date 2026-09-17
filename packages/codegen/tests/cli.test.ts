@@ -106,6 +106,24 @@ describe("kysoql CLI", () => {
     expect(process.exitCode).toBe(1);
   });
 
+  it.each(["SF_ACCESS_TOKEN", "SF_INSTANCE_URL"] as const)(
+    "rejects an empty %s value",
+    async (name) => {
+      process.env.SF_ACCESS_TOKEN = "token";
+      process.env.SF_INSTANCE_URL = "https://example.my.salesforce.com";
+      process.env[name] = "";
+      const error = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => undefined);
+
+      await runCli(["generate"]);
+
+      expect(error).toHaveBeenCalledWith(`${name} is required.`);
+      expect(mocks.Connection).not.toHaveBeenCalled();
+      expect(process.exitCode).toBe(1);
+    },
+  );
+
   it("connects, describes requested objects, writes the schema, and reports the output path", async () => {
     const directory = await mkdtemp(join(tmpdir(), "kysoql-cli-"));
     const output = join(directory, "nested", "schema.ts");

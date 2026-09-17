@@ -23,6 +23,7 @@
     "kysoql": "./dist/cli.js"
   },
   "dependencies": {
-    "jsforce": "3.10.25"
+    "jsforce": "3.10.25",
+    "valibot": "1.4.2"
   }
 }

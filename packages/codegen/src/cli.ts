@@ -8,14 +8,10 @@ import type {
   SalesforceGlobalDescription,
   SalesforceObjectDescription,
 } from "./types.js";
+import { parseRequiredEnvironmentVariable } from "./validation.js";
 
-const requiredEnvironmentVariable = (name: string): string => {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`${name} is required.`);
-  }
-  return value;
-};
+const requiredEnvironmentVariable = (name: string): string =>
+  parseRequiredEnvironmentVariable(process.env[name], name);
 
 const main = async (): Promise<void> => {
   const command = parseCli(process.argv.slice(2));

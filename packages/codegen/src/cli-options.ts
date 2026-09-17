@@ -1,3 +1,10 @@
+import {
+  parseCliValue,
+  parseGenerateCommand,
+  parseGenerateOption,
+  parseSchemaName,
+} from "./validation.js";
+
 export interface GenerateCliOptions {
   readonly output: string;
   readonly objects: readonly string[];
@@ -27,13 +34,7 @@ const readValue = (
   args: readonly string[],
   index: number,
   flag: string,
-): string => {
-  const value = args[index + 1];
-  if (!value || value.startsWith("--")) {
-    throw new Error(`${flag} requires a value.`);
-  }
-  return value;
-};
+): string => parseCliValue(args[index + 1], flag);
 
 export const parseCli = (args: readonly string[]): CliCommand => {
   if (args.length === 0 || args.includes("--help")) {
@@ -41,9 +42,7 @@ export const parseCli = (args: readonly string[]): CliCommand => {
   }
 
   const [command, ...rawRest] = args;
-  if (command !== "generate") {
-    throw new Error(`Unknown command: ${command ?? ""}`);
-  }
+  parseGenerateCommand(command);
 
   const rest = rawRest[0] === "--" ? rawRest.slice(1) : rawRest;
 
@@ -52,7 +51,7 @@ export const parseCli = (args: readonly string[]): CliCommand => {
   const objects: string[] = [];
 
   for (let index = 0; index < rest.length; index += 1) {
-    const argument = rest[index];
+    const argument = parseGenerateOption(rest[index]);
     switch (argument) {
       case "--object":
         objects.push(readValue(rest, index, argument));
@@ -66,17 +65,11 @@ export const parseCli = (args: readonly string[]): CliCommand => {
         schemaName = readValue(rest, index, argument);
         index += 1;
         break;
-      default:
-        throw new Error(`Unknown option: ${argument ?? ""}`);
     }
-  }
-
-  if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(schemaName)) {
-    throw new Error(`Invalid schema name: ${schemaName}`);
   }
 
   return {
     kind: "generate",
-    options: { objects, output, schemaName },
+    options: { objects, output, schemaName: parseSchemaName(schemaName) },
   };
 };

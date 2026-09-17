@@ -170,6 +170,18 @@ describe("loadSchema", () => {
     expect(client.describe).not.toHaveBeenCalled();
   });
 
+  it("rejects malformed describeGlobal responses before describing objects", async () => {
+    const client = createClient();
+    vi.mocked(client.describeGlobal).mockResolvedValueOnce({
+      sobjects: [{ name: "Account", queryable: "yes" }],
+    } as never);
+
+    await expect(loadSchema(client)).rejects.toThrow(
+      /Invalid Salesforce describeGlobal response:[\s\S]*sobjects\.0\.queryable/,
+    );
+    expect(client.describe).not.toHaveBeenCalled();
+  });
+
   it("propagates describeGlobal failures without describing objects", async () => {
     const client = createClient();
     vi.mocked(client.describeGlobal).mockRejectedValueOnce(
@@ -178,6 +190,51 @@ describe("loadSchema", () => {
 
     await expect(loadSchema(client)).rejects.toThrow("global describe failed");
     expect(client.describe).not.toHaveBeenCalled();
+  });
+
+  it("rejects malformed object descriptions with the object name and field path", async () => {
+    const client = createClient();
+    vi.mocked(client.describe).mockResolvedValueOnce({
+      name: "Account",
+      fields: [
+        {
+          name: "Id",
+          type: "id",
+          nillable: false,
+          sortable: true,
+          groupable: true,
+        },
+      ],
+    } as never);
+
+    await expect(loadSchema(client, ["Account"])).rejects.toThrow(
+      /Invalid Salesforce describe response for Account:[\s\S]*fields\.0\.filterable/,
+    );
+  });
+
+  it("accepts Salesforce describe responses with unused extra properties", async () => {
+    const client = createClient();
+    vi.mocked(client.describeGlobal).mockResolvedValueOnce({
+      encoding: "UTF-8",
+      maxBatchSize: 200,
+      sobjects: [
+        {
+          keyPrefix: "001",
+          name: "Account",
+          queryable: true,
+        },
+      ],
+    } as never);
+    vi.mocked(client.describe).mockResolvedValueOnce({
+      ...account,
+      activateable: false,
+      fields: account.fields.map((field) => ({
+        ...field,
+        label: field.name,
+      })),
+    } as never);
+
+    await expect(loadSchema(client, ["Account"])).resolves.toEqual([account]);
   });
 
   it("propagates describe failures", async () => {
