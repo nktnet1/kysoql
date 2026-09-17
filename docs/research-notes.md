@@ -228,6 +228,44 @@ Useful findings:
 
 Kysoql consequence: do not add SQL-style arbitrary joins to the safe API.
 
+### Remaining SOQL surface / roadmap references
+
+Sources re-checked on 2026-09-18:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-orderby.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-offset.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-comparisonoperators.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-relationships.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-relationships-query-using.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-having.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-relationships-and-polymorph-keys.html
+
+Useful findings for future milestones:
+
+- `ORDER BY` supports explicit `NULLS FIRST` / `NULLS LAST`; null placement is a
+  separate modifier from `ASC` / `DESC` and belongs in a later ordering slice.
+- SOQL condition expressions extend beyond the currently implemented scalar
+  comparisons. `IN` / `NOT IN` can use literal lists or subqueries, while
+  semi-joins/anti-joins carry additional field and nesting restrictions.
+- Relationship queries use declared Salesforce relationships only: child-to-parent
+  traversal uses dotted relationship paths and parent-to-child traversal uses
+  nested subqueries. REST/SOAP/Apex query calls support up to five levels of
+  parent-to-child relationships in API version 58.0 and later.
+- Aggregate queries introduce their own result shape. `HAVING` filters aggregate
+  results and can combine conditions with `AND`, `OR`, and `NOT`; semi/anti-join
+  subqueries are not allowed inside `HAVING`.
+- The SELECT grammar also includes subqueries, aggregate expressions,
+  `FIELDS(...)`, translated/function expressions, and polymorphic `TYPEOF`.
+  `TYPEOF` has compatibility restrictions with aggregate/grouping/function query
+  forms, so it should be modeled explicitly rather than as a generic raw select
+  expression.
+
+Kysoql consequence: pursue broad REST/SOAP SOQL coverage incrementally, with
+relationship-query and aggregate-query output typing treated as major architecture
+milestones. Do not equate "all SOQL" with blindly exposing Apex-only execution
+semantics in the transport-neutral core API.
+
 ## Salesforce CLI
 
 ### Credential retrieval change

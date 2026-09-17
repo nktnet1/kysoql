@@ -29,7 +29,7 @@ into the SOQL API.
 
 ## Current development state
 
-Through `v1.0.19`, the project has:
+Through `v1.0.21`, the project has:
 
 - a Node 26 / pnpm / Turborepo / Biome / Vitest workspace;
 - a reproducible Salesforce scratch-org fixture and deterministic seed data;
@@ -70,9 +70,17 @@ Through `v1.0.19`, the project has:
   files remain `.ts` and generated JavaScript lives only in ignored `dist/`
   output.
 
-There is intentionally no `OFFSET`, null-order modifier, OR-expression builder,
-relative Salesforce date-literal support such as `TODAY`
-/ `LAST_N_DAYS:n`, or broader SOQL operator surface in core yet.
+`v1.0.20` is a test-only fix: the compile-time LIMIT signature assertion was
+changed to a type-only Vitest assertion so invalid string input is not deliberately
+executed at runtime. `v1.0.21` is documentation-only and introduces no runtime or
+type-system behavior.
+
+There is intentionally no `OFFSET`, null-order modifier, grouped boolean-expression
+builder, `IN` / `NOT IN`, multi-select-picklist `INCLUDES` / `EXCLUDES`, relative
+Salesforce date-literal support such as `TODAY` / `LAST_N_DAYS:n`, relationship
+traversal/subqueries, aggregate query surface, `TYPEOF`, or broader specialist SOQL
+clause support in core yet. The complete planned surface is recorded below under
+"Remaining SOQL roadmap".
 
 ## Validation
 
@@ -126,17 +134,18 @@ rewrite those old artifacts retroactively. Starting with this state, the sequenc
 is authoritative again:
 
 ```text
-v1.0.0 -> v1.0.1 -> ... -> v1.0.18 -> v1.0.19
+v1.0.0 -> v1.0.1 -> ... -> v1.0.19 -> v1.0.20 -> v1.0.21
 ```
 
-The next delivered patch must therefore be `v1.0.20-kysoql.patch`, generated
-against the complete state after `v1.0.19` is applied. If a test/refactor/config
-patch is delivered before the next planned feature, that patch becomes `v1.0.20`
-and the feature moves to `v1.0.21`. Before handing off any patch, verify at
+`v1.0.20` was the LIMIT compile-time test fix. `v1.0.21` is this documentation-only
+patch. The next delivered patch must therefore be `v1.0.22-*`, generated against
+the complete state after `v1.0.21` is applied. If a test/refactor/config/docs patch
+is delivered before a planned feature, that patch consumes the version and every
+later milestone shifts forward by one. Before handing off any patch, verify at
 minimum (substituting the actual next version):
 
 ```bash
-git apply --check v1.0.20-kysoql.patch
+git apply --check v1.0.22-kysoql.patch
 git diff --check
 ```
 
@@ -156,22 +165,108 @@ git bundle create project.bundle --all
 Give the new `project.bundle` to the next session and explicitly tell it to read
 this document before continuing.
 
+## Runtime validation convention
+
+Prefer Valibot for external/runtime data validation wherever it maps cleanly to a
+schema. Use the namespace import consistently:
+
+```ts
+import * as v from "valibot";
+```
+
+For fallible external inputs, prefer `v.safeParse(...)` and report validation
+failures with `v.summarize(result.issues)` where a human-readable message is
+needed. Good targets include CLI arguments/environment variables, Salesforce
+Describe/query response shapes, transport pagination payloads, and primitive
+builder inputs such as LIMIT/OFFSET or explicit temporal literals.
+
+Do not force Valibot onto internal compiler/AST invariants whose failure means a
+programming bug rather than malformed external data. Unsupported operation-node
+branches and impossible internal states can remain ordinary invariant errors.
+
+The requested Valibot cleanup has not been applied yet. If it is the next patch,
+it consumes `v1.0.22`; the first new SOQL feature then moves to `v1.0.23`.
+
+## Remaining SOQL roadmap
+
+The practical target is broad REST/SOAP SOQL coverage with generated-schema typing.
+Apex-only execution semantics and object-specific specialist syntax should be
+separate extensions rather than forcing them into the transport-neutral safe API.
+
+Recommended order, with each item kept to its own incremental patch or tightly
+related patch series:
+
+1. **Validation cleanup (non-SOQL prerequisite).** Convert appropriate runtime
+   boundaries to Valibot as described above. This is the currently pending
+   maintenance task and should be `v1.0.22` if done next.
+2. **`OFFSET`.** Add an immutable offset node, `.offset(number)`, compiler support,
+   replacement semantics on repeated calls, and Salesforce's documented `0..2000`
+   bound. If the Valibot patch lands first, this becomes `v1.0.23`.
+3. **`ORDER BY ... NULLS FIRST|LAST`.** Extend the existing sortable-field ordering
+   model with explicit null placement while preserving the current additive order
+   list and lowercase builder conventions.
+4. **Full boolean condition expressions.** Add grouped predicates plus `OR` and
+   logical `NOT` without weakening the existing field-aware operator types. Repeated
+   top-level `.where()` can remain AND-combining sugar over the richer expression
+   AST.
+5. **Remaining comparison operators.** Add typed `IN` / `NOT IN`, then
+   multi-select-picklist-specific `INCLUDES` / `EXCLUDES`. Keep operator availability
+   driven by generated Salesforce field metadata/types.
+6. **Relative date literals.** Add explicit typed values for Salesforce literals
+   such as `TODAY`, `YESTERDAY`, `THIS_WEEK`, `LAST_N_DAYS:n`, `NEXT_N_MONTHS:n`,
+   and fiscal-period variants. Do not represent them as ordinary strings or smuggle
+   them through the absolute `soqlDate*` factories.
+7. **Relationship paths and relationship queries.** Support child-to-parent dotted
+   field paths in selection/filtering/ordering, then parent-to-child subqueries.
+   Use generated parent/child relationship metadata; never add arbitrary SQL joins.
+   Relationship query output typing will require nested result-shape inference.
+8. **Semi-joins and anti-joins.** Extend `IN` / `NOT IN` with typed subquery operands
+   and enforce Salesforce's ID/reference-field and nesting restrictions in the safe
+   API where practical.
+9. **Aggregate queries.** Add `COUNT()`, `COUNT(field)`, `COUNT_DISTINCT`, `SUM`,
+   `AVG`, `MIN`, and `MAX`, then aliases, `GROUP BY`, `HAVING`, `ROLLUP`, `CUBE`,
+   and `GROUPING()`. Generated `groupable` metadata should constrain grouping.
+   Aggregate result typing is a major architectural milestone because output rows
+   are no longer the ordinary selected SObject shape.
+10. **Broader SELECT expressions/functions.** Add typed support for `FIELDS(...)`,
+    `toLabel()`, `FORMAT()`, `convertCurrency()`, date/calendar functions,
+    `convertTimezone()`, and geolocation expressions such as `DISTANCE()` /
+    `GEOLOCATION()` where their Salesforce restrictions can be modeled safely.
+11. **Polymorphic references / `TYPEOF`.** Model `TYPEOF ... WHEN ... THEN ... ELSE
+    ... END` with dedicated AST nodes and discriminated output typing; do not flatten
+    it into ordinary field selection.
+12. **Specialist top-level clauses.** Add `USING SCOPE`, `WITH DATA CATEGORY`, and
+    other REST/SOAP-relevant `WITH`/scope clauses as separate narrowly typed
+    features. Object-specific forms such as `FOR VIEW`, `FOR REFERENCE`, and
+    Knowledge tracking/view-stat updates should come late.
+13. **Execution-context-specific syntax.** Re-evaluate Apex-oriented features such
+    as `FOR UPDATE`, `WITH USER_MODE`, `WITH SYSTEM_MODE`, bind expressions, and
+    related execution semantics separately. Core currently executes through a
+    transport-neutral compiler plus JSforce/REST adapter, so syntax whose semantics
+    only exist in Apex should not be added merely for grammar completeness.
+
+The two largest future architecture changes are relationship queries and aggregate
+queries. Both materially change the AST and inferred output type, so the earlier
+boolean/operator/date work should land first to avoid redesigning those systems
+inside nested queries later.
+
 ## Next incremental milestone
 
-Keep the next patch small. If the next delivered patch is feature work, the
-expected `v1.0.20` slice is typed `OFFSET` support. If any other patch is handed
-off first, it consumes `v1.0.20` and this milestone shifts to `v1.0.21`.
+Keep the next patch small. The currently requested maintenance slice is the
+Valibot validation cleanup described above. If it is delivered next, it must be
+`v1.0.22` and should avoid adding new SOQL syntax at the same time.
 
-For the first offset slice:
+After that, the first planned feature slice is typed `OFFSET` support (`v1.0.23`
+if Valibot consumes `v1.0.22`):
 
 - add an offset AST node and compiler support without touching execution;
 - expose `.offset(...)` on `SelectQueryBuilder` with a safe numeric surface;
 - honor Salesforce's documented `0..2000` offset range;
-- a later `.offset(...)` call should deterministically replace the earlier
-  offset rather than append a second SOQL `OFFSET` clause;
+- a later `.offset(...)` call should deterministically replace the earlier offset
+  rather than append a second SOQL `OFFSET` clause;
 - add AST/compiler/runtime-validation tests plus a minimal debug example;
-- do not mix in `NULLS FIRST` / `NULLS LAST`, OR-expression syntax, relative
-  date literals, or new comparison operators in the same patch.
+- do not mix in `NULLS FIRST` / `NULLS LAST`, OR-expression syntax, relative date
+  literals, or new comparison operators in the same patch.
 
 Preserve `v1.0.19` LIMIT behavior: limits are non-negative safe integers with no
 invented general SOQL upper cap, `LIMIT 0` is accepted, repeated `.limit()` calls
@@ -197,7 +292,8 @@ In particular, preserve these design choices:
 - the public API uses Kysely-style lowercase `like`; the compiler emits SOQL
   `LIKE`;
 - output type accumulation using Kysely's `O & Selection<...>` pattern;
-- `.compile()` must preserve the selected output type through the type-only `CompiledQuery<O>` carrier;
+- `.compile()` must preserve the selected output type through the type-only
+  `CompiledQuery<O>` carrier;
 - temporal filter literals stay explicit and type-matched to `date`, `datetime`,
   and `time` fields;
 - execution stays transport-neutral in core;
@@ -205,5 +301,5 @@ In particular, preserve these design choices:
 - no raw SOQL escape hatch in the safe API;
 - no arbitrary SQL joins;
 - `@kysoql/core` must not import JSforce;
-- keep the debug package TypeScript-first; do not add checked-in JavaScript
-  source files when generated `dist/` output is sufficient.
+- keep the debug package TypeScript-first; do not add checked-in JavaScript source
+  files when generated `dist/` output is sufficient.
