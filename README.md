@@ -111,3 +111,8 @@ incremental milestone.
 - Compile-time validation of fields, relationships, operators, grouping, sorting, and projections.
 - JSforce used for Salesforce authentication and transport.
 - No raw-string escape hatch in the safe API.
+
+## Development continuity
+
+- `docs/chatgpt-handoff.md` records the current incremental implementation state.
+- `docs/research-notes.md` records external references and settled findings that are useful to future development sessions.
