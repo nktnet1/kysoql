@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { soqlDate, soqlDateTime, soqlTime } from "./soql-temporal-literal.js";
+import { soqlDate, soqlDateTime, soqlTime } from "../src/soql-temporal-literal.js";
 
 describe("SOQL temporal literals", () => {
   it("creates frozen date literals", () => {

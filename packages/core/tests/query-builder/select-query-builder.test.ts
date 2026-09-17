@@ -1,10 +1,10 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import { Kysoql } from "../kysoql.js";
-import { soqlDate, soqlDateTime, soqlTime } from "../soql-temporal-literal.js";
-import type { SalesforceField, SalesforceObject } from "../schema.js";
-import type { Simplify } from "../util/type-utils.js";
-import type { SelectQueryBuilder } from "./select-query-builder.js";
+import { Kysoql } from "../../src/kysoql.js";
+import { soqlDate, soqlDateTime, soqlTime } from "../../src/soql-temporal-literal.js";
+import type { SalesforceField, SalesforceObject } from "../../src/schema.js";
+import type { Simplify } from "../../src/util/type-utils.js";
+import type { SelectQueryBuilder } from "../../src/query-builder/select-query-builder.js";
 
 interface FixtureSchema {
   readonly Account: SalesforceObject<{

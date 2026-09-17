@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseCli } from "./cli-options.js";
+import { parseCli } from "../src/cli-options.js";
 
 describe("parseCli", () => {
   it("accepts an argument separator after generate", () => {

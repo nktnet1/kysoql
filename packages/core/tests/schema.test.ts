@@ -4,7 +4,7 @@ import type {
   SalesforceField,
   SalesforceObject,
   SalesforceRow,
-} from "./schema.js";
+} from "../src/schema.js";
 
 type FixtureObject = SalesforceObject<{
   readonly Id: SalesforceField<string, "id", false, true, true, true>;

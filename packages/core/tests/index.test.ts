@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { kysoql } from "./index.js";
+import { kysoql } from "../src/index.js";
 
 describe("kysoql", () => {
   it("exposes the package version", () => {
