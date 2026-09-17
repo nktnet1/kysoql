@@ -29,7 +29,7 @@ into the SOQL API.
 
 ## Current development state
 
-Through `v1.0.12`, the project has:
+Through `v1.0.13`, the project has:
 
 - a Node 26 / pnpm / Turborepo / Biome / Vitest workspace;
 - a reproducible Salesforce scratch-org fixture and deterministic seed data;
@@ -43,12 +43,13 @@ Through `v1.0.12`, the project has:
 - immutable `SelectQueryNode`, `SObjectNode`, `SelectionNode`, and
   `ReferenceNode` AST nodes;
 - typed `selectFrom()` and additive `.select()` overloads;
-- typed `.where(field, operator, value)` for the initial `=` / `!=` SOQL comparison slice;
+- typed `.where(field, operator, value)` for equality, ordered comparisons (`<`, `<=`, `>`, `>=`), and Kysely-style `like`;
+- field-type-aware operator constraints: `LIKE` is limited to Salesforce string-like fields, ordered comparisons exclude unsupported field types, and only equality accepts nullable `null` values;
 - immutable `WhereNode`, `BinaryOperationNode`, `OperatorNode`, `ValueNode`, and `AndNode` filtering AST;
 - compile-time rejection of unknown/non-filterable fields, unsupported operators, and mismatched filter values;
 - `pnpm validate` as the type/test/build validation gate; Biome stays manual;
-- `pnpm debug` as a no-Salesforce runtime playground that logs the AST produced
-  by `selectFrom()`, `select()`, and chained `where()` calls.
+- `pnpm debug` as a no-Salesforce TypeScript runtime playground that logs the AST produced
+  by `selectFrom()`, `select()`, and chained `where()` calls; source files remain `.ts` and generated JavaScript lives only in ignored `dist/` output.
 
 There is intentionally no ordering, SOQL compiler, query execution, OR-expression
 builder, or broader SOQL operator surface in core yet.
@@ -95,14 +96,14 @@ state. Never rewrite an older patch after it has been handed off.
 The sequence at this point is:
 
 ```text
-v1.0.0 -> v1.0.1 -> ... -> v1.0.12
+v1.0.0 -> v1.0.1 -> ... -> v1.0.13
 ```
 
-The next patch must therefore be `v1.0.13-kysoql.patch`, generated against the
-state after `v1.0.12` is applied. Before handing it off, verify at minimum:
+The next patch must therefore be `v1.0.14-kysoql.patch`, generated against the
+state after `v1.0.13` is applied. Before handing it off, verify at minimum:
 
 ```bash
-git apply --check v1.0.13-kysoql.patch
+git apply --check v1.0.14-kysoql.patch
 git diff --check
 ```
 
@@ -124,10 +125,11 @@ this document before continuing.
 
 ## Next incremental milestone
 
-Keep the next patch small. The expected `v1.0.13` slice is to expand the typed
-comparison surface beyond equality, starting with field-type-aware ordered
-comparisons (`<`, `<=`, `>`, `>=`) and `LIKE` where Salesforce field types make
-those operators valid. Keep SOQL compilation and execution out of that patch.
+Keep the next patch small. The expected `v1.0.14` slice is the first SOQL
+compiler increment for the AST that already exists: `SELECT`, `FROM`, selected
+scalar fields, chained `AND` filters, scalar literals, and the currently supported
+comparison operators. Add `.compile()` but keep live JSforce execution out of that
+patch.
 
 In particular, preserve these design choices:
 
@@ -135,10 +137,15 @@ In particular, preserve these design choices:
 - repeated `.where()` calls combine through the Kysely-style `WhereNode` /
   `AndNode` structure;
 - filtering must honor generated `filterable` metadata;
+- operator availability must remain Salesforce-field-type-aware;
+- the public API uses Kysely-style lowercase `like`; the compiler should emit
+  valid SOQL `LIKE`;
 - output type accumulation using Kysely's `O & Selection<...>` pattern;
 - result-facing type tests may use a Kysely-style `Simplify<T>` utility rather
   than changing the builder's generic shape merely to satisfy strict type
   identity tools;
 - no raw SOQL escape hatch in the safe API;
 - no arbitrary SQL joins;
-- `@kysoql/core` must not import JSforce.
+- `@kysoql/core` must not import JSforce;
+- keep the debug package TypeScript-first; do not add checked-in JavaScript
+  source files when generated `dist/` output is sufficient.

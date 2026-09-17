@@ -196,6 +196,8 @@ importers:
 
   packages/core: {}
 
+  packages/debug: {}
+
   packages/jsforce:
     dependencies:
       '@kysoql/core':

@@ -17,6 +17,17 @@ interface FixtureSchema {
       true,
       true
     >;
+    readonly Industry: SalesforceField<
+      string,
+      "picklist",
+      true,
+      true,
+      true,
+      true,
+      never,
+      never,
+      "Technology" | "Energy"
+    >;
     readonly Internal_Note__c: SalesforceField<
       string,
       "string",
@@ -145,6 +156,34 @@ describe("SelectQueryBuilder", () => {
     ).toBe(true);
   });
 
+  it("builds field-aware ordered and LIKE comparisons", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const query = db
+      .selectFrom("Account")
+      .select(["Id", "Name", "AnnualRevenue"])
+      .where("Name", "like", "Acme%")
+      .where("AnnualRevenue", ">=", 100_000);
+
+    expect(query.toOperationNode().where).toEqual({
+      kind: "WhereNode",
+      where: {
+        kind: "AndNode",
+        left: {
+          kind: "BinaryOperationNode",
+          leftOperand: { kind: "ReferenceNode", name: "Name" },
+          operator: { kind: "OperatorNode", operator: "like" },
+          rightOperand: { kind: "ValueNode", value: "Acme%" },
+        },
+        right: {
+          kind: "BinaryOperationNode",
+          leftOperand: { kind: "ReferenceNode", name: "AnnualRevenue" },
+          operator: { kind: "OperatorNode", operator: ">=" },
+          rightOperand: { kind: "ValueNode", value: 100_000 },
+        },
+      },
+    });
+  });
+
   it("preserves the selected output type after filtering", () => {
     const db = new Kysoql<FixtureSchema>();
     const query = db
@@ -164,19 +203,43 @@ describe("SelectQueryBuilder", () => {
 
     query.where("Name", "=", "Acme");
     query.where("Name", "=", null);
+    query.where("Name", "like", "Acme%");
+    query.where("Name", "<", "Z");
+    query.where("Industry", "like", "Tech%");
     query.where("AnnualRevenue", "!=", 100);
+    query.where("AnnualRevenue", ">=", 100);
 
     // @ts-expect-error Number fields require numeric filter values.
     query.where("AnnualRevenue", "=", "100");
 
-    // @ts-expect-error Non-nullable fields don't accept null filter values.
+    // @ts-expect-error Non-nullable fields don't accept null equality values.
     query.where("Id", "=", null);
+
+    // @ts-expect-error Ordered comparisons don't accept null, even for nullable fields.
+    query.where("AnnualRevenue", ">", null);
+
+    // @ts-expect-error LIKE doesn't accept null, even for nullable string fields.
+    query.where("Name", "like", null);
+
+    // @ts-expect-error LIKE is restricted to Salesforce string-like field types.
+    query.where("AnnualRevenue", "like", "100%");
+
+    // @ts-expect-error Picklists support LIKE but not ordered comparisons in this slice.
+    query.where("Industry", ">", "Technology");
+
+    // @ts-expect-error Salesforce Id fields don't support LIKE.
+    query.where("Id", "like", "001%");
+
+    const recordQuery = db.selectFrom("Kysoql_Record__c");
+
+    // @ts-expect-error Boolean fields don't support ordered comparisons.
+    recordQuery.where("Active__c", ">", true);
+
+    // @ts-expect-error Boolean fields don't support LIKE.
+    recordQuery.where("Active__c", "like", "true%");
 
     // @ts-expect-error Generated metadata marks this field as non-filterable.
     query.where("Internal_Note__c", "=", "private");
-
-    // @ts-expect-error Only the first equality comparison operators are supported in this slice.
-    query.where("Name", "like", "Acme%");
 
     // @ts-expect-error Salesforce field is not present on Account.
     query.where("Does_Not_Exist__c", "=", "value");

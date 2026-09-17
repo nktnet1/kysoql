@@ -7,7 +7,7 @@ A type-safe, Kysely-inspired SOQL query builder for TypeScript.
 - `@kysoql/core` — typed SOQL AST, query builder, compiler, and result inference.
 - `@kysoql/jsforce` — JSforce authentication/execution adapter.
 - `@kysoql/codegen` — CLI for generating strongly typed Salesforce schemas from Describe metadata.
-- `@kysoql/debug` — minimal runtime playground that logs query-builder ASTs.
+- `@kysoql/debug` — minimal TypeScript runtime playground that logs query-builder ASTs.
 
 ## Requirements
 
@@ -50,24 +50,28 @@ To inspect the query builder at runtime without connecting to Salesforce, run:
 pnpm debug
 ```
 
-The debug package builds `@kysoql/core`, then logs the immutable AST after
+The debug package is written in TypeScript. It builds `@kysoql/core`, compiles the
+playground to an ignored `dist/` directory, then logs the immutable AST after
 `selectFrom()`, `select()`, and chained `where()` calls.
 
 ## Current query surface
 
-The core builder currently supports schema-checked selection and the first typed
-filtering slice:
+The core builder currently supports schema-checked selection and typed scalar
+filtering:
 
 ```ts
 const query = new Kysoql<SalesforceSchema>()
   .selectFrom("Account")
-  .select(["Id", "Name"])
-  .where("Name", "=", "Acme");
+  .select(["Id", "Name", "AnnualRevenue"])
+  .where("Name", "like", "Acme%")
+  .where("AnnualRevenue", ">=", 100_000);
 ```
 
-Selected fields, filterable fields, filter values, and currently supported
-operators are checked from the generated Salesforce schema. SOQL compilation and
-execution are intentionally being added in later increments.
+Selected fields, filterable fields, filter values, and operators are checked from
+the generated Salesforce schema. Equality (`=`, `!=`), ordered comparisons
+(`<`, `<=`, `>`, `>=`), and Kysely-style `like` are available where the field
+type supports them. SOQL compilation and execution are intentionally being added
+in later increments.
 
 ## Salesforce test org
 

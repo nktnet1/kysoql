@@ -2,7 +2,10 @@ export type { AndNode } from "./operation-node/and-node.js";
 export type { BinaryOperationNode } from "./operation-node/binary-operation-node.js";
 export type {
   ComparisonOperator,
+  EqualityComparisonOperator,
+  LikeComparisonOperator,
   OperatorNode,
+  OrderedComparisonOperator,
 } from "./operation-node/operator-node.js";
 export type { OperationNode } from "./operation-node/operation-node.js";
 export { Kysoql } from "./kysoql.js";

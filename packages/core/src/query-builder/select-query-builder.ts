@@ -15,10 +15,13 @@ import {
 import { freeze } from "../util/object-utils.js";
 
 export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
-  where<RE extends FilterableFieldName<DB, TB>>(
+  where<
+    RE extends FilterableFieldName<DB, TB>,
+    OP extends ComparisonOperatorExpression<DB, TB, RE>,
+  >(
     lhs: RE,
-    op: ComparisonOperatorExpression,
-    rhs: OperandValueExpression<DB, TB, RE>,
+    op: OP,
+    rhs: OperandValueExpression<DB, TB, RE, NoInfer<OP>>,
   ): SelectQueryBuilder<DB, TB, O>;
 
   select<SE extends SelectExpression<DB, TB>>(
@@ -41,10 +44,13 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     this.#props = freeze(props);
   }
 
-  where<RE extends FilterableFieldName<DB, TB>>(
+  where<
+    RE extends FilterableFieldName<DB, TB>,
+    OP extends ComparisonOperatorExpression<DB, TB, RE>,
+  >(
     lhs: RE,
-    op: ComparisonOperatorExpression,
-    rhs: OperandValueExpression<DB, TB, RE>,
+    op: OP,
+    rhs: OperandValueExpression<DB, TB, RE, NoInfer<OP>>,
   ): SelectQueryBuilder<DB, TB, O> {
     return new SelectQueryBuilderImpl<DB, TB, O>({
       ...this.#props,

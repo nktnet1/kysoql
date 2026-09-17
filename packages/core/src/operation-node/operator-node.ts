@@ -1,6 +1,13 @@
 import { freeze } from "../util/object-utils.js";
 
-export type ComparisonOperator = "=" | "!=";
+export type EqualityComparisonOperator = "=" | "!=";
+export type OrderedComparisonOperator = "<" | "<=" | ">" | ">=";
+export type LikeComparisonOperator = "like";
+
+export type ComparisonOperator =
+  | EqualityComparisonOperator
+  | OrderedComparisonOperator
+  | LikeComparisonOperator;
 
 export interface OperatorNode {
   readonly kind: "OperatorNode";
