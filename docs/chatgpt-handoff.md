@@ -29,7 +29,7 @@ into the SOQL API.
 
 ## Current development state
 
-Through `v1.0.18`, the project has:
+Through `v1.0.19`, the project has:
 
 - a Node 26 / pnpm / Turborepo / Biome / Vitest workspace;
 - a reproducible Salesforce scratch-org fixture and deterministic seed data;
@@ -49,6 +49,9 @@ Through `v1.0.18`, the project has:
 - immutable `WhereNode`, `BinaryOperationNode`, `OperatorNode`, `ValueNode`, and `AndNode` filtering AST;
 - typed `.orderBy(field, direction?)` constrained by generated `sortable: true`
   metadata, with Kysely-style lowercase `asc` / `desc` directions;
+- typed `.limit(number)` backed by an immutable `LimitNode`; limits must be
+  non-negative safe integers, `0` is accepted, and repeated calls replace the
+  previous limit;
 - immutable `OrderByNode` / `OrderByItemNode` ordering AST, with repeated
   `.orderBy()` calls accumulating in call order and compiler output using SOQL
   `ASC` / `DESC`;
@@ -58,14 +61,17 @@ Through `v1.0.18`, the project has:
 - `@kysoql/jsforce` adapts a JSforce connection to that executor, compiles no SOQL itself, and follows `nextRecordsUrl` through all result pages instead of silently truncating;
 - SOQL-safe escaping for quoted strings, including preserved `\%` / `\_` LIKE wildcard escapes;
 - compile-time rejection of unknown/non-filterable fields, unsupported operators, and mismatched filter values;
+- package tests live under `packages/*/tests/**`; package-level Vitest scripts use
+  `--dir tests` so stale generated `dist/**/*.test.js` files are never discovered;
 - `pnpm validate` as the type/test/build validation gate; Biome stays manual;
 - `pnpm debug` as a no-Salesforce TypeScript runtime playground that logs the AST produced
-  by `selectFrom()`, `select()`, chained `where()` calls, and additive
-  `orderBy()` calls, then logs compile and mock execution behavior; source files
-  remain `.ts` and generated JavaScript lives only in ignored `dist/` output.
+  by `selectFrom()`, `select()`, chained `where()` calls, additive `orderBy()`
+  calls, and `limit()`, then logs compile and mock execution behavior; source
+  files remain `.ts` and generated JavaScript lives only in ignored `dist/`
+  output.
 
-There is intentionally no `LIMIT`, `OFFSET`, null-order modifier,
-OR-expression builder, relative Salesforce date-literal support such as `TODAY`
+There is intentionally no `OFFSET`, null-order modifier, OR-expression builder,
+relative Salesforce date-literal support such as `TODAY`
 / `LAST_N_DAYS:n`, or broader SOQL operator surface in core yet.
 
 ## Validation
@@ -107,17 +113,30 @@ Never commit or print Salesforce access tokens.
 Changes are delivered as incremental patches from the immediately preceding
 state. Never rewrite an older patch after it has been handed off.
 
-The sequence at this point is:
+Patch artifact versions are strictly sequential. **Every delivered patch consumes
+the next `v1.0.x` number exactly once, regardless of whether it is feature work,
+a refactor, tests only, documentation, or configuration. Never reuse a version
+number for a follow-up patch.** The patch sequence version is independent of the
+workspace/package manifests, which remain `0.0.0` until package publishing is
+introduced.
+
+A few support patches immediately after `v1.0.18` were historically handed off
+with `v1.0.18-*` filenames before this rule was made explicit. Do not renumber or
+rewrite those old artifacts retroactively. Starting with this state, the sequence
+is authoritative again:
 
 ```text
-v1.0.0 -> v1.0.1 -> ... -> v1.0.18
+v1.0.0 -> v1.0.1 -> ... -> v1.0.18 -> v1.0.19
 ```
 
-The next patch must therefore be `v1.0.19-kysoql.patch`, generated against the
-state after `v1.0.18` is applied. Before handing it off, verify at minimum:
+The next delivered patch must therefore be `v1.0.20-kysoql.patch`, generated
+against the complete state after `v1.0.19` is applied. If a test/refactor/config
+patch is delivered before the next planned feature, that patch becomes `v1.0.20`
+and the feature moves to `v1.0.21`. Before handing off any patch, verify at
+minimum (substituting the actual next version):
 
 ```bash
-git apply --check v1.0.19-kysoql.patch
+git apply --check v1.0.20-kysoql.patch
 git diff --check
 ```
 
@@ -139,19 +158,24 @@ this document before continuing.
 
 ## Next incremental milestone
 
-Keep the next patch small. The expected `v1.0.19` slice is typed `LIMIT`
-support. Follow Kysely-style immutable builder chaining where it maps cleanly to
-SOQL, but keep the first limit patch intentionally narrow:
+Keep the next patch small. If the next delivered patch is feature work, the
+expected `v1.0.20` slice is typed `OFFSET` support. If any other patch is handed
+off first, it consumes `v1.0.20` and this milestone shifts to `v1.0.21`.
 
-- add a limit AST node and compiler support without touching execution;
-- expose `.limit(...)` on `SelectQueryBuilder` with a safe numeric surface;
-- verify Salesforce's accepted integer range and zero behavior from current
-  documentation before settling runtime validation;
-- a later `.limit(...)` call should deterministically replace the earlier limit
-  rather than append a second SOQL `LIMIT` clause;
+For the first offset slice:
+
+- add an offset AST node and compiler support without touching execution;
+- expose `.offset(...)` on `SelectQueryBuilder` with a safe numeric surface;
+- honor Salesforce's documented `0..2000` offset range;
+- a later `.offset(...)` call should deterministically replace the earlier
+  offset rather than append a second SOQL `OFFSET` clause;
 - add AST/compiler/runtime-validation tests plus a minimal debug example;
-- do not mix in `OFFSET`, `NULLS FIRST` / `NULLS LAST`, OR-expression syntax,
-  relative date literals, or new comparison operators in the same patch.
+- do not mix in `NULLS FIRST` / `NULLS LAST`, OR-expression syntax, relative
+  date literals, or new comparison operators in the same patch.
+
+Preserve `v1.0.19` LIMIT behavior: limits are non-negative safe integers with no
+invented general SOQL upper cap, `LIMIT 0` is accepted, repeated `.limit()` calls
+replace, and compilation places `LIMIT` after `ORDER BY`.
 
 The temporal literal layer added in `v1.0.17` should remain explicit. Generated
 Salesforce temporal field values continue to be strings on query results, while

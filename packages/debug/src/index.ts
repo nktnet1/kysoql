@@ -91,8 +91,11 @@ const orderedQuery = filteredQuery
   .orderBy("Name", "asc");
 printQuery("chained orderBy() calls", orderedQuery);
 
+const limitedQuery = orderedQuery.limit(25);
+printQuery("limit(25)", limitedQuery);
+
 console.log("\n==> compile()");
-console.log(orderedQuery.compile().soql);
+console.log(limitedQuery.compile().soql);
 
 console.log("\n==> execute()");
-console.log(await orderedQuery.execute());
+console.log(await limitedQuery.execute());

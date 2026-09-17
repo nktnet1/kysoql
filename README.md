@@ -42,7 +42,7 @@ pnpm build
 ```
 
 Vitest is configured at the workspace root and discovers tests under
-`packages/**/src/**/*.test.ts`. V8 coverage output is written to `coverage/`.
+`packages/**/tests/**/*.test.ts`. V8 coverage output is written to `coverage/`.
 
 To inspect the query builder at runtime without connecting to Salesforce, run:
 
@@ -53,13 +53,13 @@ pnpm debug
 The debug package is written in TypeScript. It builds `@kysoql/core`, compiles the
 playground to an ignored `dist/` directory, then logs the immutable AST after
 `selectFrom()`, `select()`, scalar and temporal `where()` calls, additive
-`orderBy()` calls, the compiled SOQL, and a mock executor call made by
-`.execute()`.
+`orderBy()` calls, `limit()`, the compiled SOQL, and a mock executor call made
+by `.execute()`.
 
 ## Current query surface
 
 The core builder currently supports schema-checked selection, typed scalar
-filtering, and sortable-field-aware ordering:
+filtering, sortable-field-aware ordering, and validated result limits:
 
 ```ts
 import { Kysoql, soqlDateTime } from "@kysoql/core";
@@ -75,24 +75,27 @@ const query = new Kysoql<SalesforceSchema>()
     soqlDateTime("2026-01-01T00:00:00Z"),
   )
   .orderBy("AnnualRevenue", "desc")
-  .orderBy("Name", "asc");
+  .orderBy("Name", "asc")
+  .limit(25);
 
 const compiled = query.compile();
 // SELECT Id, Name, AnnualRevenue, LastModifiedDate FROM Account
 // WHERE Name LIKE 'Acme%' AND AnnualRevenue >= 100000
 // AND LastModifiedDate >= 2026-01-01T00:00:00Z
-// ORDER BY AnnualRevenue DESC, Name ASC
+// ORDER BY AnnualRevenue DESC, Name ASC LIMIT 25
 ```
 
 Selected fields, filterable fields, filter values, and operators are checked from
 the generated Salesforce schema. Equality (`=`, `!=`), ordered comparisons
 (`<`, `<=`, `>`, `>=`), and Kysely-style `like` are available where the field
 type supports them. `.compile()` emits SOQL for the currently implemented scalar
-selection/filter/order AST. `.orderBy(field, direction?)` only accepts fields
+selection/filter/order/limit AST. `.orderBy(field, direction?)` only accepts fields
 whose generated Salesforce Describe metadata marks them `sortable: true`.
 Calls are additive, and directions use Kysely-style lowercase `asc` / `desc`
 while the compiler emits SOQL `ASC` / `DESC`. Omitting the direction uses
-Salesforce's default ascending order.
+Salesforce's default ascending order. `.limit(n)` accepts non-negative safe
+integers, including `0`; repeated calls replace the previous limit instead of
+emitting multiple `LIMIT` clauses.
 
 Salesforce `date`, `datetime`, and `time` fields still infer as strings when
 selected because that is how the generated API schema represents returned values.

@@ -3,6 +3,7 @@ import type { CompiledQuery } from "../query-compiler/compiled-query.js";
 import type { QueryCompiler } from "../query-compiler/query-compiler.js";
 import type { QueryExecutor } from "../query-executor.js";
 import { SelectQueryNode } from "../operation-node/select-query-node.js";
+import { parseLimit } from "../parser/limit-parser.js";
 import {
   parseValueBinaryOperation,
   type ComparisonOperatorExpression,
@@ -26,6 +27,8 @@ export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
   compile(): CompiledQuery<O>;
 
   execute(): Promise<readonly O[]>;
+
+  limit(limit: number): SelectQueryBuilder<DB, TB, O>;
 
   orderBy<OE extends SortableFieldName<DB, TB>>(
     field: OE,
@@ -73,6 +76,16 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     }
 
     return this.#props.queryExecutor.executeQuery(this.compile());
+  }
+
+  limit(limit: number): SelectQueryBuilder<DB, TB, O> {
+    return new SelectQueryBuilderImpl<DB, TB, O>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithLimit(
+        this.#props.queryNode,
+        parseLimit(limit),
+      ),
+    });
   }
 
   orderBy<OE extends SortableFieldName<DB, TB>>(

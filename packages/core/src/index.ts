@@ -9,6 +9,7 @@ export type {
 } from "./operation-node/operator-node.js";
 export type { OperationNode } from "./operation-node/operation-node.js";
 export { Kysoql } from "./kysoql.js";
+export type { LimitNode } from "./operation-node/limit-node.js";
 export type {
   OrderByDirection,
   OrderByItemNode,

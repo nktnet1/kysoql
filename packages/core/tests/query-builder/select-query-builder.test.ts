@@ -194,6 +194,54 @@ describe("SelectQueryBuilder", () => {
     ).toBe(true);
   });
 
+  it("sets and replaces LIMIT without mutating earlier builders", () => {
+    const baseQuery = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(["Id", "Name"]);
+    const limitedQuery = baseQuery.limit(25);
+    const relimitedQuery = limitedQuery.limit(0);
+
+    expect(baseQuery.toOperationNode().limit).toBeUndefined();
+    expect(limitedQuery.toOperationNode().limit).toEqual({
+      kind: "LimitNode",
+      limit: 25,
+    });
+    expect(relimitedQuery.toOperationNode().limit).toEqual({
+      kind: "LimitNode",
+      limit: 0,
+    });
+    expect(Object.isFrozen(limitedQuery.toOperationNode().limit)).toBe(true);
+    expect(Object.isFrozen(relimitedQuery.toOperationNode().limit)).toBe(true);
+  });
+
+  it("preserves the selected output type after limiting", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(["Id", "Name"])
+      .limit(25);
+
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly Id: string;
+      readonly Name: string | null;
+    }>();
+  });
+
+  it("rejects invalid LIMIT values at runtime", () => {
+    const query = new Kysoql<FixtureSchema>().selectFrom("Account");
+
+    for (const invalidLimit of [
+      -1,
+      1.5,
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+      Number.MAX_SAFE_INTEGER + 1,
+    ]) {
+      expect(() => query.limit(invalidLimit)).toThrow(
+        "SOQL LIMIT must be a non-negative safe integer.",
+      );
+    }
+  });
+
   it("preserves the selected output type after ordering", () => {
     const query = new Kysoql<FixtureSchema>()
       .selectFrom("Account")
@@ -412,6 +460,16 @@ describe("SelectQueryBuilder", () => {
 
     // @ts-expect-error Salesforce field is not present on Account.
     query.where("Does_Not_Exist__c", "=", "value");
+  });
+
+  it("requires numeric LIMIT values at compile time", () => {
+    const query = new Kysoql<FixtureSchema>().selectFrom("Account");
+
+    query.limit(0);
+    query.limit(25);
+
+    // @ts-expect-error LIMIT only accepts numeric values.
+    query.limit("25");
   });
 
   it("rejects invalid ordering at compile time", () => {

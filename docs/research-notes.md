@@ -189,6 +189,31 @@ immutably, and the compiler emits them after `WHERE` as a comma-separated SOQL
 `ORDER BY` clause. Explicit lowercase builder directions compile to uppercase
 SOQL `ASC` / `DESC`.
 
+### LIMIT
+
+Sources:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-limit.html
+- https://trailhead.salesforce.com/content/learn/modules/apex_database/apex_database_soql
+
+Re-checked on 2026-09-18 while implementing typed limits.
+
+Useful findings:
+
+- SOQL `LIMIT` is an optional `SELECT` clause that specifies the maximum number
+  of rows to return. Salesforce describes the requested count as arbitrary and
+  does not document a general SOQL `LIMIT` maximum analogous to the 2,000-row
+  `OFFSET` cap or the separate SOSL result cap.
+- `LIMIT` belongs after `ORDER BY` in the supported top-level query shape.
+- The safe builder only needs integer row counts. Kysoql accepts non-negative
+  safe integers, including `0`, and rejects negative, fractional, non-finite,
+  and unsafe JavaScript numbers before they reach the compiler.
+
+Implemented consequence in `v1.0.19`: `SelectQueryBuilder.limit(number)` stores
+a frozen `LimitNode`; a later call replaces the earlier node, and the compiler
+emits exactly one `LIMIT n` clause after `WHERE` / `ORDER BY`. No arbitrary upper
+bound is invented in core.
+
 ### Relationships
 
 Sources:

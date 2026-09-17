@@ -14,6 +14,7 @@ import {
   type CompiledQuery,
   type EqualityComparisonOperator,
   type LikeComparisonOperator,
+  type LimitNode,
   type OperationNode,
   type OperatorNode,
   type OrderByDirection,
@@ -52,6 +53,7 @@ type PublicTypeSurface = {
   compiledQuery: CompiledQuery;
   equalityComparisonOperator: EqualityComparisonOperator;
   likeComparisonOperator: LikeComparisonOperator;
+  limitNode: LimitNode;
   operationNode: OperationNode;
   operatorNode: OperatorNode;
   orderByDirection: OrderByDirection;

@@ -1,6 +1,7 @@
 import type { AndNode } from "../operation-node/and-node.js";
 import type { BinaryOperationNode } from "../operation-node/binary-operation-node.js";
 import type { OperationNode } from "../operation-node/operation-node.js";
+import type { LimitNode } from "../operation-node/limit-node.js";
 import type { OperatorNode } from "../operation-node/operator-node.js";
 import type { OrderByItemNode } from "../operation-node/order-by-item-node.js";
 import type { OrderByNode } from "../operation-node/order-by-node.js";
@@ -37,6 +38,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
       soql += ` ORDER BY ${this.#compileOrderBy(query.orderBy)}`;
     }
 
+    if (query.limit) {
+      soql += ` LIMIT ${this.#compileLimit(query.limit)}`;
+    }
+
     return soql;
   }
 
@@ -46,6 +51,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileWhere(where: WhereNode): string {
     return this.#compileOperation(where.where);
+  }
+
+  #compileLimit(limit: LimitNode): string {
+    return String(limit.limit);
   }
 
   #compileOrderBy(orderBy: OrderByNode): string {

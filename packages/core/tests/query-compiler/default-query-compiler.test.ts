@@ -100,6 +100,31 @@ describe("DefaultQueryCompiler", () => {
     );
   });
 
+  it("compiles LIMIT after WHERE and ORDER BY regardless of call order", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(["Id", "Name"])
+      .limit(25)
+      .where("Name", "like", "Acme%")
+      .orderBy("Name", "asc")
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT Id, Name FROM Account WHERE Name LIKE 'Acme%' ORDER BY Name ASC LIMIT 25",
+    );
+  });
+
+  it("compiles LIMIT 0 and only the latest chained limit", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .limit(100)
+      .limit(0)
+      .compile();
+
+    expect(compiled.soql).toBe("SELECT Id FROM Account LIMIT 0");
+  });
+
   it("uses Salesforce's default ascending order when direction is omitted", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")

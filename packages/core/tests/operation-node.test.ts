@@ -4,6 +4,7 @@ import { AndNode } from "../src/operation-node/and-node.js";
 import {
   BinaryOperationNode,
 } from "../src/operation-node/binary-operation-node.js";
+import { LimitNode } from "../src/operation-node/limit-node.js";
 import { OperatorNode } from "../src/operation-node/operator-node.js";
 import { OrderByItemNode } from "../src/operation-node/order-by-item-node.js";
 import { OrderByNode } from "../src/operation-node/order-by-node.js";
@@ -53,6 +54,13 @@ describe("operation nodes", () => {
     expect(and).toEqual({ kind: "AndNode", left: binary, right: binary });
     expectFrozen(binary);
     expectFrozen(and);
+  });
+
+  it("creates frozen LIMIT nodes", () => {
+    const limit = LimitNode.create(25);
+
+    expect(limit).toEqual({ kind: "LimitNode", limit: 25 });
+    expectFrozen(limit);
   });
 
   it("creates order items with and without explicit directions", () => {
@@ -124,6 +132,21 @@ describe("operation nodes", () => {
       expectFrozen(withAnd);
     },
   );
+
+  it("sets and replaces immutable SELECT limits", () => {
+    const base = SelectQueryNode.createFrom(SObjectNode.create("Account"));
+    const firstLimit = LimitNode.create(25);
+    const secondLimit = LimitNode.create(0);
+    const limited = SelectQueryNode.cloneWithLimit(base, firstLimit);
+    const relimited = SelectQueryNode.cloneWithLimit(limited, secondLimit);
+
+    expect(base.limit).toBeUndefined();
+    expect(limited.limit).toBe(firstLimit);
+    expect(relimited.limit).toBe(secondLimit);
+    expect(limited).not.toBe(relimited);
+    expectFrozen(limited);
+    expectFrozen(relimited);
+  });
 
   it(
     "creates and extends immutable SELECT selection and ORDER BY lists",

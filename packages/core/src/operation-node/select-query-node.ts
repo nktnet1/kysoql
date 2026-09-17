@@ -1,4 +1,5 @@
 import { freeze } from "../util/object-utils.js";
+import type { LimitNode } from "./limit-node.js";
 import type { OrderByItemNode } from "./order-by-item-node.js";
 import { OrderByNode } from "./order-by-node.js";
 import type { SelectionNode } from "./selection-node.js";
@@ -11,6 +12,7 @@ export interface SelectQueryNode {
   readonly selections?: ReadonlyArray<SelectionNode>;
   readonly where?: WhereNode;
   readonly orderBy?: OrderByNode;
+  readonly limit?: LimitNode;
 }
 
 export const SelectQueryNode = {
@@ -30,6 +32,13 @@ export const SelectQueryNode = {
       selections: select.selections
         ? freeze([...select.selections, ...selections])
         : freeze([...selections]),
+    });
+  },
+
+  cloneWithLimit(select: SelectQueryNode, limit: LimitNode): SelectQueryNode {
+    return freeze({
+      ...select,
+      limit,
     });
   },
 
