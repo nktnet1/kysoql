@@ -44,7 +44,7 @@ import {
   type SoqlTimeLiteral,
   type ValueNode,
   type WhereNode,
-} from "../src/index.js";
+} from "#/index";
 
 type PublicTypeSurface = {
   andNode: AndNode;

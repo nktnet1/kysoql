@@ -2,13 +2,13 @@
 
 import { Connection } from "jsforce";
 
-import { cliUsage, parseCli } from "./cli-options.js";
-import { generateSchema } from "./index.js";
+import { cliUsage, parseCli } from "#/cli-options";
+import { generateSchema } from "#/index";
 import type {
   SalesforceGlobalDescription,
   SalesforceObjectDescription,
-} from "./types.js";
-import { parseRequiredEnvironmentVariable } from "./validation.js";
+} from "#/types";
+import { parseRequiredEnvironmentVariable } from "#/validation";
 
 const requiredEnvironmentVariable = (name: string): string =>
   parseRequiredEnvironmentVariable(process.env[name], name);

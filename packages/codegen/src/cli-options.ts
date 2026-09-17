@@ -3,7 +3,7 @@ import {
   parseGenerateCommand,
   parseGenerateOption,
   parseSchemaName,
-} from "./validation.js";
+} from "#/validation";
 
 export interface GenerateCliOptions {
   readonly output: string;

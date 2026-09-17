@@ -2,7 +2,7 @@ import type {
   SoqlDateLiteral,
   SoqlDateTimeLiteral,
   SoqlTimeLiteral,
-} from "./soql-temporal-literal.js";
+} from "#/soql-temporal-literal";
 
 export interface SalesforceField<
   Value,

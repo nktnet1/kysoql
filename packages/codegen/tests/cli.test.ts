@@ -36,7 +36,7 @@ const restoreEnvironmentVariable = (
 const runCli = async (args: readonly string[]): Promise<void> => {
   process.argv = ["node", "kysoql", ...args];
   vi.resetModules();
-  await import("../src/cli.js");
+  await import("#/cli");
 };
 
 beforeEach(() => {

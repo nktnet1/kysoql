@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { renderSchema } from "../src/render.js";
+import { renderSchema } from "#/render";
 import type {
   SalesforceFieldDescription,
   SalesforceObjectDescription,
-} from "../src/types.js";
+} from "#/types";
 
 const field = (
   overrides: Partial<SalesforceFieldDescription> = {},

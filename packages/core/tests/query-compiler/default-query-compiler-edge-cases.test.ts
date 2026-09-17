@@ -2,22 +2,22 @@ import { describe, expect, it } from "vitest";
 
 import {
   BinaryOperationNode,
-} from "../../src/operation-node/binary-operation-node.js";
-import { OperatorNode } from "../../src/operation-node/operator-node.js";
-import type { OperationNode } from "../../src/operation-node/operation-node.js";
-import { ReferenceNode } from "../../src/operation-node/reference-node.js";
+} from "#/operation-node/binary-operation-node";
+import { OperatorNode } from "#/operation-node/operator-node";
+import type { OperationNode } from "#/operation-node/operation-node";
+import { ReferenceNode } from "#/operation-node/reference-node";
 import type {
   SelectQueryNode,
-} from "../../src/operation-node/select-query-node.js";
-import { SelectionNode } from "../../src/operation-node/selection-node.js";
-import { SObjectNode } from "../../src/operation-node/sobject-node.js";
-import { ValueNode } from "../../src/operation-node/value-node.js";
-import { WhereNode } from "../../src/operation-node/where-node.js";
-import { Kysoql } from "../../src/kysoql.js";
+} from "#/operation-node/select-query-node";
+import { SelectionNode } from "#/operation-node/selection-node";
+import { SObjectNode } from "#/operation-node/sobject-node";
+import { ValueNode } from "#/operation-node/value-node";
+import { WhereNode } from "#/operation-node/where-node";
+import { Kysoql } from "#/kysoql";
 import {
   DefaultQueryCompiler,
-} from "../../src/query-compiler/default-query-compiler.js";
-import type { SalesforceField, SalesforceObject } from "../../src/schema.js";
+} from "#/query-compiler/default-query-compiler";
+import type { SalesforceField, SalesforceObject } from "#/schema";
 
 interface FixtureSchema {
   readonly Account: SalesforceObject<{

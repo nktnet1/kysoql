@@ -2,7 +2,7 @@ import type {
   SalesforceChildRelationshipDescription,
   SalesforceFieldDescription,
   SalesforceObjectDescription,
-} from "./types.js";
+} from "#/types";
 
 const quote = (value: string): string => JSON.stringify(value);
 

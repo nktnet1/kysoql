@@ -6,7 +6,7 @@ import {
   createJsforceExecutor,
   type JsforceConnection,
   type JsforceQueryResult,
-} from "../src/index.js";
+} from "#/index";
 
 interface AccountRow {
   readonly Id: string;

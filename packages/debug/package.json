@@ -4,10 +4,19 @@
   "private": true,
   "description": "Minimal TypeScript runtime debugger for kysoql query-builder ASTs",
   "type": "module",
+  "imports": {
+    "#/*": {
+      "development": "./src/*.ts",
+      "default": "./dist/*.js"
+    }
+  },
   "scripts": {
     "check": "biome check",
     "typecheck": "pnpm --filter @kysoql/core build && tsc -p tsconfig.json --noEmit",
     "debug": "rm -rf dist && tsc -p tsconfig.json && node dist/index.js",
     "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@kysoql/core": "workspace:*"
   }
 }

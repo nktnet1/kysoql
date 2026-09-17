@@ -1,27 +1,27 @@
-import { QueryNode } from "../operation-node/query-node.js";
-import type { CompiledQuery } from "../query-compiler/compiled-query.js";
-import type { QueryCompiler } from "../query-compiler/query-compiler.js";
-import type { QueryExecutor } from "../query-executor.js";
-import { SelectQueryNode } from "../operation-node/select-query-node.js";
-import { parseLimit } from "../parser/limit-parser.js";
+import { QueryNode } from "#/operation-node/query-node";
+import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import type { QueryCompiler } from "#/query-compiler/query-compiler";
+import type { QueryExecutor } from "#/query-executor";
+import { SelectQueryNode } from "#/operation-node/select-query-node";
+import { parseLimit } from "#/parser/limit-parser";
 import {
   parseValueBinaryOperation,
   type ComparisonOperatorExpression,
   type FilterableFieldName,
   type OperandValueExpression,
-} from "../parser/binary-operation-parser.js";
+} from "#/parser/binary-operation-parser";
 import {
   parseSelectArg,
   type SelectArg,
   type SelectExpression,
   type Selection,
-} from "../parser/select-parser.js";
+} from "#/parser/select-parser";
 import {
   parseOrderBy,
   type SortableFieldName,
-} from "../parser/order-by-parser.js";
-import type { OrderByDirection } from "../operation-node/order-by-item-node.js";
-import { freeze } from "../util/object-utils.js";
+} from "#/parser/order-by-parser";
+import type { OrderByDirection } from "#/operation-node/order-by-item-node";
+import { freeze } from "#/util/object-utils";
 
 export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
   compile(): CompiledQuery<O>;

@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import type {
   SelectQueryNode,
-} from "../src/operation-node/select-query-node.js";
-import type { CompiledQuery } from "../src/query-compiler/compiled-query.js";
-import type { QueryCompiler } from "../src/query-compiler/query-compiler.js";
-import { QueryCreator } from "../src/query-creator.js";
-import type { SalesforceField, SalesforceObject } from "../src/schema.js";
+} from "#/operation-node/select-query-node";
+import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import type { QueryCompiler } from "#/query-compiler/query-compiler";
+import { QueryCreator } from "#/query-creator";
+import type { SalesforceField, SalesforceObject } from "#/schema";
 
 interface FixtureSchema {
   readonly Account: SalesforceObject<{

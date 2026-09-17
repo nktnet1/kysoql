@@ -3,6 +3,12 @@
   "version": "0.0.0",
   "description": "Type-safe SOQL query builder and compiler",
   "type": "module",
+  "imports": {
+    "#/*": {
+      "development": "./src/*.ts",
+      "default": "./dist/*.js"
+    }
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

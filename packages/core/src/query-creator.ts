@@ -1,12 +1,12 @@
-import { SelectQueryNode } from "./operation-node/select-query-node.js";
-import { DefaultQueryCompiler } from "./query-compiler/default-query-compiler.js";
-import type { QueryCompiler } from "./query-compiler/query-compiler.js";
-import type { QueryExecutor } from "./query-executor.js";
-import { SObjectNode } from "./operation-node/sobject-node.js";
+import { SelectQueryNode } from "#/operation-node/select-query-node";
+import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
+import type { QueryCompiler } from "#/query-compiler/query-compiler";
+import type { QueryExecutor } from "#/query-executor";
+import { SObjectNode } from "#/operation-node/sobject-node";
 import {
   createSelectQueryBuilder,
   type SelectQueryBuilder,
-} from "./query-builder/select-query-builder.js";
+} from "#/query-builder/select-query-builder";
 
 export interface QueryCreatorConfig {
   readonly executor?: QueryExecutor;

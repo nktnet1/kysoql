@@ -1,5 +1,5 @@
-import { freeze } from "../util/object-utils.js";
-import type { OrderByItemNode } from "./order-by-item-node.js";
+import { freeze } from "#/util/object-utils";
+import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
 
 export interface OrderByNode {
   readonly kind: "OrderByNode";

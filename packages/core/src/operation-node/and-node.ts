@@ -1,5 +1,5 @@
-import { freeze } from "../util/object-utils.js";
-import type { OperationNode } from "./operation-node.js";
+import { freeze } from "#/util/object-utils";
+import type { OperationNode } from "#/operation-node/operation-node";
 
 export interface AndNode {
   readonly kind: "AndNode";

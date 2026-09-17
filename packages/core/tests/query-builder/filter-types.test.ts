@@ -1,12 +1,12 @@
 import { it } from "vitest";
 
-import { Kysoql } from "../../src/kysoql.js";
-import type { SalesforceField, SalesforceObject } from "../../src/schema.js";
+import { Kysoql } from "#/kysoql";
+import type { SalesforceField, SalesforceObject } from "#/schema";
 import {
   soqlDate,
   soqlDateTime,
   soqlTime,
-} from "../../src/soql-temporal-literal.js";
+} from "#/soql-temporal-literal";
 
 type Field<
   Value,

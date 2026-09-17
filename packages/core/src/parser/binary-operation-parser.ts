@@ -1,22 +1,22 @@
-import { BinaryOperationNode } from "../operation-node/binary-operation-node.js";
+import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 import {
   OperatorNode,
   type ComparisonOperator,
   type EqualityComparisonOperator,
   type LikeComparisonOperator,
   type OrderedComparisonOperator,
-} from "../operation-node/operator-node.js";
-import { ReferenceNode } from "../operation-node/reference-node.js";
-import { ValueNode } from "../operation-node/value-node.js";
+} from "#/operation-node/operator-node";
+import { ReferenceNode } from "#/operation-node/reference-node";
+import { ValueNode } from "#/operation-node/value-node";
 import type {
   SalesforceField,
   SalesforceFieldFilterValue,
-} from "../schema.js";
+} from "#/schema";
 import type {
   FieldDefinition,
   FieldName,
   FieldsOf,
-} from "./reference-parser.js";
+} from "#/parser/reference-parser";
 
 export type FilterableFieldName<DB, TB extends keyof DB> = {
   [Field in FieldName<DB, TB>]: FieldsOf<DB, TB>[Field] extends {

@@ -1,17 +1,17 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
-import { renderSchema } from "./render.js";
+import { renderSchema } from "#/render";
 import {
   parseSalesforceGlobalDescription,
   parseSalesforceObjectDescription,
-} from "./validation.js";
+} from "#/validation";
 import type {
   SalesforceDescribeClient,
   SalesforceObjectDescription,
-} from "./types.js";
+} from "#/types";
 
-export { renderSchema } from "./render.js";
+export { renderSchema } from "#/render";
 export type {
   SalesforceChildRelationshipDescription,
   SalesforceDescribeClient,
@@ -20,7 +20,7 @@ export type {
   SalesforceGlobalObjectDescription,
   SalesforceObjectDescription,
   SalesforcePicklistValue,
-} from "./types.js";
+} from "#/types";
 
 export interface GenerateSchemaOptions {
   readonly client: SalesforceDescribeClient;

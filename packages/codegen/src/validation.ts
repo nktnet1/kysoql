@@ -3,7 +3,7 @@ import * as v from "valibot";
 import type {
   SalesforceGlobalDescription,
   SalesforceObjectDescription,
-} from "./types.js";
+} from "#/types";
 
 const salesforceGlobalObjectDescriptionSchema = v.object({
   name: v.string(),

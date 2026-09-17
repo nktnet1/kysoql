@@ -1,20 +1,20 @@
 import { describe, expect, it } from "vitest";
 
-import { AndNode } from "../src/operation-node/and-node.js";
+import { AndNode } from "#/operation-node/and-node";
 import {
   BinaryOperationNode,
-} from "../src/operation-node/binary-operation-node.js";
-import { LimitNode } from "../src/operation-node/limit-node.js";
-import { OperatorNode } from "../src/operation-node/operator-node.js";
-import { OrderByItemNode } from "../src/operation-node/order-by-item-node.js";
-import { OrderByNode } from "../src/operation-node/order-by-node.js";
-import { QueryNode } from "../src/operation-node/query-node.js";
-import { ReferenceNode } from "../src/operation-node/reference-node.js";
-import { SelectQueryNode } from "../src/operation-node/select-query-node.js";
-import { SelectionNode } from "../src/operation-node/selection-node.js";
-import { SObjectNode } from "../src/operation-node/sobject-node.js";
-import { ValueNode } from "../src/operation-node/value-node.js";
-import { WhereNode } from "../src/operation-node/where-node.js";
+} from "#/operation-node/binary-operation-node";
+import { LimitNode } from "#/operation-node/limit-node";
+import { OperatorNode } from "#/operation-node/operator-node";
+import { OrderByItemNode } from "#/operation-node/order-by-item-node";
+import { OrderByNode } from "#/operation-node/order-by-node";
+import { QueryNode } from "#/operation-node/query-node";
+import { ReferenceNode } from "#/operation-node/reference-node";
+import { SelectQueryNode } from "#/operation-node/select-query-node";
+import { SelectionNode } from "#/operation-node/selection-node";
+import { SObjectNode } from "#/operation-node/sobject-node";
+import { ValueNode } from "#/operation-node/value-node";
+import { WhereNode } from "#/operation-node/where-node";
 
 const expectFrozen = (value: object): void => {
   expect(Object.isFrozen(value)).toBe(true);

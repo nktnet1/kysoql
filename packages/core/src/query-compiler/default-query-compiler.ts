@@ -1,21 +1,21 @@
 import * as v from "valibot";
 
-import type { AndNode } from "../operation-node/and-node.js";
-import type { BinaryOperationNode } from "../operation-node/binary-operation-node.js";
-import type { OperationNode } from "../operation-node/operation-node.js";
-import type { LimitNode } from "../operation-node/limit-node.js";
-import type { OperatorNode } from "../operation-node/operator-node.js";
-import type { OrderByItemNode } from "../operation-node/order-by-item-node.js";
-import type { OrderByNode } from "../operation-node/order-by-node.js";
-import type { ReferenceNode } from "../operation-node/reference-node.js";
-import type { SelectQueryNode } from "../operation-node/select-query-node.js";
-import type { SelectionNode } from "../operation-node/selection-node.js";
-import type { ValueNode } from "../operation-node/value-node.js";
-import type { WhereNode } from "../operation-node/where-node.js";
-import { isSoqlTemporalLiteral } from "../soql-temporal-literal.js";
-import { freeze } from "../util/object-utils.js";
-import type { CompiledQuery } from "./compiled-query.js";
-import type { QueryCompiler } from "./query-compiler.js";
+import type { AndNode } from "#/operation-node/and-node";
+import type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
+import type { OperationNode } from "#/operation-node/operation-node";
+import type { LimitNode } from "#/operation-node/limit-node";
+import type { OperatorNode } from "#/operation-node/operator-node";
+import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
+import type { OrderByNode } from "#/operation-node/order-by-node";
+import type { ReferenceNode } from "#/operation-node/reference-node";
+import type { SelectQueryNode } from "#/operation-node/select-query-node";
+import type { SelectionNode } from "#/operation-node/selection-node";
+import type { ValueNode } from "#/operation-node/value-node";
+import type { WhereNode } from "#/operation-node/where-node";
+import { isSoqlTemporalLiteral } from "#/soql-temporal-literal";
+import { freeze } from "#/util/object-utils";
+import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import type { QueryCompiler } from "#/query-compiler/query-compiler";
 
 const NUMERIC_LITERAL_ERROR = "SOQL numeric literals must be finite numbers.";
 const numericLiteralSchema = v.pipe(

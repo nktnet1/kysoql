@@ -8,12 +8,12 @@ import type {
   SalesforceObject,
   SalesforceParentRelationship,
   SalesforceRow,
-} from "../src/schema.js";
+} from "#/schema";
 import type {
   SoqlDateLiteral,
   SoqlDateTimeLiteral,
   SoqlTimeLiteral,
-} from "../src/soql-temporal-literal.js";
+} from "#/soql-temporal-literal";
 
 type FixtureObject = SalesforceObject<{
   readonly Id: SalesforceField<string, "id", false, true, true, true>;

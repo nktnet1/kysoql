@@ -1,6 +1,6 @@
 import { expectTypeOf, it } from "vitest";
 
-import { renderSchema } from "../src/index.js";
+import { renderSchema } from "#/index";
 import type {
   SalesforceChildRelationshipDescription,
   SalesforceDescribeClient,
@@ -9,7 +9,7 @@ import type {
   SalesforceGlobalObjectDescription,
   SalesforceObjectDescription,
   SalesforcePicklistValue,
-} from "../src/index.js";
+} from "#/index";
 
 it("exports the complete codegen public API from the package entrypoint", () => {
   expectTypeOf(renderSchema).toBeFunction();

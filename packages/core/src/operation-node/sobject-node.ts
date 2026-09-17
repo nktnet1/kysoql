@@ -1,4 +1,4 @@
-import { freeze } from "../util/object-utils.js";
+import { freeze } from "#/util/object-utils";
 
 export interface SObjectNode {
   readonly kind: "SObjectNode";

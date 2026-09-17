@@ -1,10 +1,10 @@
-import { freeze } from "../util/object-utils.js";
-import type { LimitNode } from "./limit-node.js";
-import type { OrderByItemNode } from "./order-by-item-node.js";
-import { OrderByNode } from "./order-by-node.js";
-import type { SelectionNode } from "./selection-node.js";
-import type { SObjectNode } from "./sobject-node.js";
-import type { WhereNode } from "./where-node.js";
+import { freeze } from "#/util/object-utils";
+import type { LimitNode } from "#/operation-node/limit-node";
+import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
+import { OrderByNode } from "#/operation-node/order-by-node";
+import type { SelectionNode } from "#/operation-node/selection-node";
+import type { SObjectNode } from "#/operation-node/sobject-node";
+import type { WhereNode } from "#/operation-node/where-node";
 
 export interface SelectQueryNode {
   readonly kind: "SelectQueryNode";

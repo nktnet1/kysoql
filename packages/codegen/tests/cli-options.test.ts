@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cliUsage, parseCli } from "../src/cli-options.js";
+import { cliUsage, parseCli } from "#/cli-options";
 
 describe("parseCli", () => {
   it("returns help when no arguments are provided", () => {

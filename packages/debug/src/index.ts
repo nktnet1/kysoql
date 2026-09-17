@@ -7,7 +7,7 @@ import {
   type QueryExecutor,
   type SalesforceField,
   type SalesforceObject,
-} from "../../core/dist/index.js";
+} from "@kysoql/core";
 
 interface DebugSchema {
   readonly Account: SalesforceObject<{

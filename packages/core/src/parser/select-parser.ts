@@ -1,7 +1,7 @@
-import { ReferenceNode } from "../operation-node/reference-node.js";
-import { SelectionNode } from "../operation-node/selection-node.js";
-import type { SalesforceFieldValue } from "../schema.js";
-import type { FieldDefinition, FieldName } from "./reference-parser.js";
+import { ReferenceNode } from "#/operation-node/reference-node";
+import { SelectionNode } from "#/operation-node/selection-node";
+import type { SalesforceFieldValue } from "#/schema";
+import type { FieldDefinition, FieldName } from "#/parser/reference-parser";
 
 export type SelectExpression<DB, TB extends keyof DB> = FieldName<DB, TB>;
 

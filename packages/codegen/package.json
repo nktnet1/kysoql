@@ -3,6 +3,12 @@
   "version": "0.0.0",
   "description": "Schema generation CLI for kysoql",
   "type": "module",
+  "imports": {
+    "#/*": {
+      "development": "./src/*.ts",
+      "default": "./dist/*.js"
+    }
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

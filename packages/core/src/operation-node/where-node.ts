@@ -1,6 +1,6 @@
-import { freeze } from "../util/object-utils.js";
-import { AndNode } from "./and-node.js";
-import type { OperationNode } from "./operation-node.js";
+import { freeze } from "#/util/object-utils";
+import { AndNode } from "#/operation-node/and-node";
+import type { OperationNode } from "#/operation-node/operation-node";
 
 export interface WhereNode {
   readonly kind: "WhereNode";

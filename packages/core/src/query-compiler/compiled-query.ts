@@ -1,4 +1,4 @@
-import type { SelectQueryNode } from "../operation-node/select-query-node.js";
+import type { SelectQueryNode } from "#/operation-node/select-query-node";
 
 /** Type-only carrier for the selected result shape. */
 declare const outputType: unique symbol;

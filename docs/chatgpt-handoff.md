@@ -29,7 +29,7 @@ into the SOQL API.
 
 ## Current development state
 
-Through `v1.0.21`, the project has:
+Through `v1.0.26`, the project has:
 
 - a Node 26 / pnpm / Turborepo / Biome / Vitest workspace;
 - a reproducible Salesforce scratch-org fixture and deterministic seed data;
@@ -63,6 +63,7 @@ Through `v1.0.21`, the project has:
 - compile-time rejection of unknown/non-filterable fields, unsupported operators, and mismatched filter values;
 - package tests live under `packages/*/tests/**`; package-level Vitest scripts use
   `--dir tests` so stale generated `dist/**/*.test.js` files are never discovered;
+- package-internal TypeScript imports use the Node subpath alias `#/...` instead of relative `./` / `../` paths; each package maps `#/...` to `src/**/*.ts` under the `development` condition and to `dist/**/*.js` otherwise, while cross-package imports use workspace package names;
 - `pnpm validate` as the type/test/build validation gate; Biome stays manual;
 - `pnpm debug` as a no-Salesforce TypeScript runtime playground that logs the AST produced
   by `selectFrom()`, `select()`, chained `where()` calls, additive `orderBy()`
@@ -72,8 +73,11 @@ Through `v1.0.21`, the project has:
 
 `v1.0.20` is a test-only fix: the compile-time LIMIT signature assertion was
 changed to a type-only Vitest assertion so invalid string input is not deliberately
-executed at runtime. `v1.0.21` is documentation-only and introduces no runtime or
-type-system behavior.
+executed at runtime. `v1.0.21` is documentation-only. `v1.0.22` introduces
+Valibot validation in codegen, `v1.0.23` fixes exact-optional-property normalization,
+`v1.0.24` restores the prior CLI error-message contract, `v1.0.25` introduces
+Valibot validation in core, and `v1.0.26` standardizes package-internal imports on
+the `#/...` Node subpath alias. None of those patches add new SOQL syntax.
 
 There is intentionally no `OFFSET`, null-order modifier, grouped boolean-expression
 builder, `IN` / `NOT IN`, multi-select-picklist `INCLUDES` / `EXCLUDES`, relative
@@ -134,18 +138,17 @@ rewrite those old artifacts retroactively. Starting with this state, the sequenc
 is authoritative again:
 
 ```text
-v1.0.0 -> v1.0.1 -> ... -> v1.0.19 -> v1.0.20 -> v1.0.21
+v1.0.0 -> v1.0.1 -> ... -> v1.0.25 -> v1.0.26
 ```
 
-`v1.0.20` was the LIMIT compile-time test fix. `v1.0.21` is this documentation-only
-patch. The next delivered patch must therefore be `v1.0.22-*`, generated against
-the complete state after `v1.0.21` is applied. If a test/refactor/config/docs patch
-is delivered before a planned feature, that patch consumes the version and every
-later milestone shifts forward by one. Before handing off any patch, verify at
-minimum (substituting the actual next version):
+The next delivered patch must therefore be `v1.0.27-*`, generated against the
+complete state after `v1.0.26` is applied. If a test/refactor/config/docs patch is
+delivered before a planned feature, that patch consumes the version and every later
+milestone shifts forward by one. Before handing off any patch, verify at minimum
+(substituting the actual next version):
 
 ```bash
-git apply --check v1.0.22-kysoql.patch
+git apply --check v1.0.27-kysoql.patch
 git diff --check
 ```
 
@@ -184,8 +187,9 @@ Do not force Valibot onto internal compiler/AST invariants whose failure means a
 programming bug rather than malformed external data. Unsupported operation-node
 branches and impossible internal states can remain ordinary invariant errors.
 
-The requested Valibot cleanup has not been applied yet. If it is the next patch,
-it consumes `v1.0.22`; the first new SOQL feature then moves to `v1.0.23`.
+Valibot validation is now applied to the appropriate codegen and core boundaries.
+The remaining package-level validation cleanup is the JSforce executor response /
+pagination boundary; keep that separate from SOQL feature work.
 
 ## Remaining SOQL roadmap
 
@@ -196,12 +200,13 @@ separate extensions rather than forcing them into the transport-neutral safe API
 Recommended order, with each item kept to its own incremental patch or tightly
 related patch series:
 
-1. **Validation cleanup (non-SOQL prerequisite).** Convert appropriate runtime
-   boundaries to Valibot as described above. This is the currently pending
-   maintenance task and should be `v1.0.22` if done next.
+1. **Finish validation cleanup (non-SOQL prerequisite).** Codegen and core now use
+   Valibot at suitable runtime boundaries. The remaining package-level slice is
+   JSforce response / pagination validation and should stay separate from feature
+   work.
 2. **`OFFSET`.** Add an immutable offset node, `.offset(number)`, compiler support,
    replacement semantics on repeated calls, and Salesforce's documented `0..2000`
-   bound. If the Valibot patch lands first, this becomes `v1.0.23`.
+   bound.
 3. **`ORDER BY ... NULLS FIRST|LAST`.** Extend the existing sortable-field ordering
    model with explicit null placement while preserving the current additive order
    list and lowercase builder conventions.
@@ -250,14 +255,41 @@ queries. Both materially change the AST and inferred output type, so the earlier
 boolean/operator/date work should land first to avoid redesigning those systems
 inside nested queries later.
 
+## Internal import convention
+
+Within a package, always import source modules through `#/...`; do not introduce
+new relative `./` or `../` TypeScript imports. Each package owns this Node subpath
+mapping in its `package.json`:
+
+```json
+{
+  "imports": {
+    "#/*": {
+      "development": "./src/*.ts",
+      "default": "./dist/*.js"
+    }
+  }
+}
+```
+
+Each package `tsconfig.json` maps `#/*` to `./src/*` so TypeScript resolves
+package-internal imports directly to source during builds/typechecking. Vitest's development resolver follows the `development` package-import condition
+for tests. Emitted JavaScript keeps the `#/...` specifier; plain Node execution does not enable `development`, so it resolves the
+same import to `dist/*.js`. This avoids publishing runtime imports that point back
+to non-shipped source files. The repository targets Node 26, which supports `#/`
+package-import specifiers.
+
+Cross-package imports must use the workspace package name (for example
+`@kysoql/core`), never relative paths into another package's `src` or `dist` tree.
+
 ## Next incremental milestone
 
-Keep the next patch small. The currently requested maintenance slice is the
-Valibot validation cleanup described above. If it is delivered next, it must be
-`v1.0.22` and should avoid adding new SOQL syntax at the same time.
+Keep the next patch small. The remaining Valibot maintenance slice is JSforce
+response/pagination validation. If done next, it must be `v1.0.27` and should not
+add SOQL syntax at the same time.
 
-After that, the first planned feature slice is typed `OFFSET` support (`v1.0.23`
-if Valibot consumes `v1.0.22`):
+After that, the first planned feature slice is typed `OFFSET` support (currently
+`v1.0.28` if JSforce Valibot consumes `v1.0.27`):
 
 - add an offset AST node and compiler support without touching execution;
 - expose `.offset(...)` on `SelectQueryBuilder` with a safe numeric surface;
