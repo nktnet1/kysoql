@@ -7,22 +7,8 @@ import type {
 } from "./schema.js";
 
 type FixtureObject = SalesforceObject<{
-  readonly Id: SalesforceField<
-    string,
-    "id",
-    false,
-    true,
-    true,
-    true
-  >;
-  readonly Amount__c: SalesforceField<
-    number,
-    "double",
-    true,
-    true,
-    true,
-    true
-  >;
+  readonly Id: SalesforceField<string, "id", false, true, true, true>;
+  readonly Amount__c: SalesforceField<number, "double", true, true, true, true>;
 }>;
 
 it("derives nullable row values from generated field metadata", () => {

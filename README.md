@@ -22,6 +22,16 @@ pnpm install
 
 ## Development
 
+Run the local validation gate with one command:
+
+```bash
+pnpm validate
+```
+
+It runs TypeScript typechecking, Vitest, and all package builds in fail-fast
+order. Biome is intentionally separate so formatting can be run manually when
+needed:
+
 ```bash
 pnpm check
 pnpm typecheck
@@ -52,6 +62,11 @@ to replace an existing org alias unless `--recreate` is explicitly supplied.
 
 See [docs/salesforce-test-org.md](docs/salesforce-test-org.md) for prerequisites,
 manual commands, script options, and cleanup instructions.
+
+For future ChatGPT sessions continuing from a project bundle, read
+[docs/chatgpt-handoff.md](docs/chatgpt-handoff.md) first. It records the package
+boundaries, validation workflow, patch discipline, implemented surface, and next
+incremental milestone.
 
 ## Design goals
 

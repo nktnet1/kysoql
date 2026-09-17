@@ -51,8 +51,8 @@ describe("parseCli", () => {
   });
 
   it("rejects invalid schema identifiers", () => {
-    expect(() =>
-      parseCli(["generate", "--schema-name", "not-valid"]),
-    ).toThrow("Invalid schema name: not-valid");
+    expect(() => parseCli(["generate", "--schema-name", "not-valid"])).toThrow(
+      "Invalid schema name: not-valid",
+    );
   });
 });

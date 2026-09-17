@@ -32,11 +32,11 @@ const main = async (): Promise<void> => {
   await generateSchema({
     client: {
       describeGlobal: async () =>
-        (await connection.describeGlobal()) as unknown as
-          SalesforceGlobalDescription,
+        (await connection.describeGlobal()) as unknown as SalesforceGlobalDescription,
       describe: async (objectName) =>
-        (await connection.describe(objectName)) as unknown as
-          SalesforceObjectDescription,
+        (await connection.describe(
+          objectName,
+        )) as unknown as SalesforceObjectDescription,
     },
     objects: command.options.objects,
     output: command.options.output,

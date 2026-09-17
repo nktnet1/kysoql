@@ -7,6 +7,7 @@ import type {
   SalesforceObjectDescription,
 } from "./types.js";
 
+export { renderSchema } from "./render.js";
 export type {
   SalesforceChildRelationshipDescription,
   SalesforceDescribeClient,
@@ -16,7 +17,6 @@ export type {
   SalesforceObjectDescription,
   SalesforcePicklistValue,
 } from "./types.js";
-export { renderSchema } from "./render.js";
 
 export interface GenerateSchemaOptions {
   readonly client: SalesforceDescribeClient;
@@ -37,7 +37,9 @@ const selectObjectNames = async (
   );
 
   if (!requestedObjects?.length) {
-    return [...queryableObjects].sort((left, right) => left.localeCompare(right));
+    return [...queryableObjects].sort((left, right) =>
+      left.localeCompare(right),
+    );
   }
 
   const uniqueRequestedObjects = [...new Set(requestedObjects)];
@@ -51,7 +53,9 @@ const selectObjectNames = async (
     );
   }
 
-  return uniqueRequestedObjects.sort((left, right) => left.localeCompare(right));
+  return uniqueRequestedObjects.sort((left, right) =>
+    left.localeCompare(right),
+  );
 };
 
 export const loadSchema = async (

@@ -1,3 +1,13 @@
+export { Kysoql } from "./kysoql.js";
+export type { ReferenceNode } from "./operation-node/reference-node.js";
+export type { SelectQueryNode } from "./operation-node/select-query-node.js";
+export type { SelectionNode } from "./operation-node/selection-node.js";
+export type { SObjectNode } from "./operation-node/sobject-node.js";
+export type {
+  SelectQueryBuilder,
+  SelectQueryBuilderProps,
+} from "./query-builder/select-query-builder.js";
+export { QueryCreator } from "./query-creator.js";
 export type {
   SalesforceChildRelationship,
   SalesforceField,

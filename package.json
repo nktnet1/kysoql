@@ -9,11 +9,12 @@
   },
   "scripts": {
     "build": "turbo run build",
-    "check": "turbo run check --",
+    "check": "turbo run check",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "typecheck": "turbo run typecheck",
+    "validate": "bash scripts/validate.sh",
     "clean": "turbo run clean && rm -rf node_modules",
     "salesforce:setup": "bash scripts/setup-salesforce-test-org.sh",
     "salesforce:schema": "bash scripts/generate-salesforce-schema.sh"

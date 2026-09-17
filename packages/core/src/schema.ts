@@ -89,30 +89,32 @@ export type SalesforceSchema = Record<
   >
 >;
 
-export type SalesforceFieldValue<Field> = Field extends SalesforceField<
-  infer Value,
-  string,
-  infer Nullable,
-  boolean,
-  boolean,
-  boolean,
-  string,
-  string,
-  string
->
-  ? Nullable extends true
-    ? Value | null
-    : Value
-  : never;
+export type SalesforceFieldValue<Field> =
+  Field extends SalesforceField<
+    infer Value,
+    string,
+    infer Nullable,
+    boolean,
+    boolean,
+    boolean,
+    string,
+    string,
+    string
+  >
+    ? Nullable extends true
+      ? Value | null
+      : Value
+    : never;
 
-export type SalesforceRow<ObjectType> = ObjectType extends SalesforceObject<
-  infer Fields,
-  Record<string, SalesforceParentRelationship<string, string, boolean>>,
-  Record<string, SalesforceChildRelationship<string, string>>
->
-  ? {
-      readonly [FieldName in keyof Fields]: SalesforceFieldValue<
-        Fields[FieldName]
-      >;
-    }
-  : never;
+export type SalesforceRow<ObjectType> =
+  ObjectType extends SalesforceObject<
+    infer Fields,
+    Record<string, SalesforceParentRelationship<string, string, boolean>>,
+    Record<string, SalesforceChildRelationship<string, string>>
+  >
+    ? {
+        readonly [FieldName in keyof Fields]: SalesforceFieldValue<
+          Fields[FieldName]
+        >;
+      }
+    : never;
