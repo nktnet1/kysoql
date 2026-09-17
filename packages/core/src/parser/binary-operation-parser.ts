@@ -8,7 +8,10 @@ import {
 } from "../operation-node/operator-node.js";
 import { ReferenceNode } from "../operation-node/reference-node.js";
 import { ValueNode } from "../operation-node/value-node.js";
-import type { SalesforceField, SalesforceFieldValue } from "../schema.js";
+import type {
+  SalesforceField,
+  SalesforceFieldFilterValue,
+} from "../schema.js";
 import type {
   FieldDefinition,
   FieldName,
@@ -99,7 +102,7 @@ type FieldValueExpression<
   DB,
   TB extends keyof DB,
   RE extends FilterableFieldName<DB, TB>,
-> = SalesforceFieldValue<
+> = SalesforceFieldFilterValue<
   FieldDefinition<DB, TB, Extract<RE, FieldName<DB, TB>>>
 >;
 

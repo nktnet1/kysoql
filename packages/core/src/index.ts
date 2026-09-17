@@ -24,9 +24,19 @@ export type { CompiledQuery } from "./query-compiler/compiled-query.js";
 export { DefaultQueryCompiler } from "./query-compiler/default-query-compiler.js";
 export type { QueryCompiler } from "./query-compiler/query-compiler.js";
 export type { QueryExecutor } from "./query-executor.js";
+export {
+  soqlDate,
+  soqlDateTime,
+  soqlTime,
+  type SoqlDateLiteral,
+  type SoqlDateTimeLiteral,
+  type SoqlTemporalLiteral,
+  type SoqlTimeLiteral,
+} from "./soql-temporal-literal.js";
 export type {
   SalesforceChildRelationship,
   SalesforceField,
+  SalesforceFieldFilterValue,
   SalesforceFieldValue,
   SalesforceObject,
   SalesforceParentRelationship,

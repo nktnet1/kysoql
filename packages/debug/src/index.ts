@@ -1,5 +1,8 @@
 import {
   Kysoql,
+  soqlDate,
+  soqlDateTime,
+  soqlTime,
   type CompiledQuery,
   type QueryExecutor,
   type SalesforceField,
@@ -13,6 +16,30 @@ interface DebugSchema {
     readonly AnnualRevenue: SalesforceField<
       number,
       "currency",
+      true,
+      true,
+      true,
+      true
+    >;
+    readonly Occurred_On__c: SalesforceField<
+      string,
+      "date",
+      true,
+      true,
+      true,
+      true
+    >;
+    readonly LastActivityAt__c: SalesforceField<
+      string,
+      "datetime",
+      true,
+      true,
+      true,
+      true
+    >;
+    readonly OpeningTime__c: SalesforceField<
+      string,
+      "time",
       true,
       true,
       true,
@@ -49,11 +76,15 @@ printQuery('select(["Id", "Name", "AnnualRevenue"])', selectedQuery);
 
 const filteredQuery = selectedQuery
   .where("Name", "like", "Acme%")
-  .where("AnnualRevenue", ">=", 100_000);
-printQuery(
-  '.where("Name", "like", "Acme%").where("AnnualRevenue", ">=", 100_000)',
-  filteredQuery,
-);
+  .where("AnnualRevenue", ">=", 100_000)
+  .where("Occurred_On__c", ">=", soqlDate("2026-01-01"))
+  .where(
+    "LastActivityAt__c",
+    "<",
+    soqlDateTime("2027-01-01T00:00:00Z"),
+  )
+  .where("OpeningTime__c", ">=", soqlTime("09:00:00.000Z"));
+printQuery("chained scalar + temporal where() calls", filteredQuery);
 
 console.log("\n==> compile()");
 console.log(filteredQuery.compile().soql);

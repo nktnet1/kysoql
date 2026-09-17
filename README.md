@@ -52,8 +52,8 @@ pnpm debug
 
 The debug package is written in TypeScript. It builds `@kysoql/core`, compiles the
 playground to an ignored `dist/` directory, then logs the immutable AST after
-`selectFrom()`, `select()`, chained `where()` calls, the compiled SOQL, and a
-mock executor call made by `.execute()`.
+`selectFrom()`, `select()`, scalar and temporal `where()` calls, the compiled
+SOQL, and a mock executor call made by `.execute()`.
 
 ## Current query surface
 
@@ -61,15 +61,23 @@ The core builder currently supports schema-checked selection and typed scalar
 filtering:
 
 ```ts
+import { Kysoql, soqlDateTime } from "@kysoql/core";
+
 const query = new Kysoql<SalesforceSchema>()
   .selectFrom("Account")
-  .select(["Id", "Name", "AnnualRevenue"])
+  .select(["Id", "Name", "AnnualRevenue", "LastModifiedDate"])
   .where("Name", "like", "Acme%")
-  .where("AnnualRevenue", ">=", 100_000);
+  .where("AnnualRevenue", ">=", 100_000)
+  .where(
+    "LastModifiedDate",
+    ">=",
+    soqlDateTime("2026-01-01T00:00:00Z"),
+  );
 
 const compiled = query.compile();
-// SELECT Id, Name, AnnualRevenue FROM Account
+// SELECT Id, Name, AnnualRevenue, LastModifiedDate FROM Account
 // WHERE Name LIKE 'Acme%' AND AnnualRevenue >= 100000
+// AND LastModifiedDate >= 2026-01-01T00:00:00Z
 ```
 
 Selected fields, filterable fields, filter values, and operators are checked from
@@ -77,6 +85,13 @@ the generated Salesforce schema. Equality (`=`, `!=`), ordered comparisons
 (`<`, `<=`, `>`, `>=`), and Kysely-style `like` are available where the field
 type supports them. `.compile()` emits SOQL for the currently implemented scalar
 selection/filter AST.
+
+Salesforce `date`, `datetime`, and `time` fields still infer as strings when
+selected because that is how the generated API schema represents returned values.
+Filters deliberately require `soqlDate(...)`, `soqlDateTime(...)`, or
+`soqlTime(...)` instead of accepting plain strings. The factories validate the
+Salesforce literal shape and the compiler emits those values unquoted, avoiding
+the ambiguity between an ordinary SOQL string and a temporal literal.
 
 Execution stays transport-neutral in core. Configure the JSforce adapter to run
 compiled SOQL through an existing JSforce connection:

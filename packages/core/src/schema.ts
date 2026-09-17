@@ -1,3 +1,9 @@
+import type {
+  SoqlDateLiteral,
+  SoqlDateTimeLiteral,
+  SoqlTimeLiteral,
+} from "./soql-temporal-literal.js";
+
 export interface SalesforceField<
   Value,
   SalesforceType extends string,
@@ -104,6 +110,34 @@ export type SalesforceFieldValue<Field> =
     ? Nullable extends true
       ? Value | null
       : Value
+    : never;
+
+type SalesforceFieldFilterScalar<
+  Value,
+  SalesforceType extends string,
+> = SalesforceType extends "date"
+  ? SoqlDateLiteral
+  : SalesforceType extends "datetime"
+    ? SoqlDateTimeLiteral
+    : SalesforceType extends "time"
+      ? SoqlTimeLiteral
+      : Value;
+
+export type SalesforceFieldFilterValue<Field> =
+  Field extends SalesforceField<
+    infer Value,
+    infer SalesforceType,
+    infer Nullable,
+    boolean,
+    boolean,
+    boolean,
+    string,
+    string,
+    string
+  >
+    ? Nullable extends true
+      ? SalesforceFieldFilterScalar<Value, SalesforceType> | null
+      : SalesforceFieldFilterScalar<Value, SalesforceType>
     : never;
 
 export type SalesforceRow<ObjectType> =

@@ -1,6 +1,7 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
 import { Kysoql } from "../kysoql.js";
+import { soqlDate, soqlDateTime, soqlTime } from "../soql-temporal-literal.js";
 import type { SalesforceField, SalesforceObject } from "../schema.js";
 import type { Simplify } from "../util/type-utils.js";
 import type { CompiledQuery } from "./compiled-query.js";
@@ -12,6 +13,30 @@ interface FixtureSchema {
     readonly AnnualRevenue: SalesforceField<
       number,
       "currency",
+      true,
+      true,
+      true,
+      true
+    >;
+    readonly CloseDate: SalesforceField<
+      string,
+      "date",
+      true,
+      true,
+      true,
+      true
+    >;
+    readonly LastActivityAt__c: SalesforceField<
+      string,
+      "datetime",
+      true,
+      true,
+      true,
+      true
+    >;
+    readonly OpeningTime__c: SalesforceField<
+      string,
+      "time",
       true,
       true,
       true,
@@ -81,6 +106,39 @@ describe("DefaultQueryCompiler", () => {
     expect(escapedLikeWildcard.soql).toBe(
       String.raw`SELECT Id FROM Account WHERE Name LIKE 'Acme\%'`,
     );
+  });
+
+  it("compiles explicit temporal literals without quotes", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .where("CloseDate", "=", soqlDate("2026-09-17"))
+      .where(
+        "LastActivityAt__c",
+        ">=",
+        soqlDateTime("2026-09-17T16:26:30.125+10:00"),
+      )
+      .where("OpeningTime__c", "<", soqlTime("17:30:00.000Z"))
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT Id FROM Account WHERE CloseDate = 2026-09-17 AND LastActivityAt__c >= 2026-09-17T16:26:30.125+10:00 AND OpeningTime__c < 17:30:00.000Z",
+    );
+  });
+
+  it("does not accept forged temporal wrappers as raw SOQL", () => {
+    const forgedDate = {
+      kind: "SoqlDateLiteral",
+      value: "2026-09-17 OR Name != null",
+    } as unknown as ReturnType<typeof soqlDate>;
+
+    expect(() =>
+      new Kysoql<FixtureSchema>()
+        .selectFrom("Account")
+        .select("Id")
+        .where("CloseDate", "=", forgedDate)
+        .compile(),
+    ).toThrow("Unsupported SOQL literal type: object");
   });
 
   it("compiles booleans using SOQL boolean literals", () => {

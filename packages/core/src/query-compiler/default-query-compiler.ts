@@ -7,6 +7,7 @@ import type { SelectQueryNode } from "../operation-node/select-query-node.js";
 import type { SelectionNode } from "../operation-node/selection-node.js";
 import type { ValueNode } from "../operation-node/value-node.js";
 import type { WhereNode } from "../operation-node/where-node.js";
+import { isSoqlTemporalLiteral } from "../soql-temporal-literal.js";
 import { freeze } from "../util/object-utils.js";
 import type { CompiledQuery } from "./compiled-query.js";
 import type { QueryCompiler } from "./query-compiler.js";
@@ -86,6 +87,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
     if (value === null) {
       return "null";
+    }
+
+    if (isSoqlTemporalLiteral(value)) {
+      return value.value;
     }
 
     switch (typeof value) {

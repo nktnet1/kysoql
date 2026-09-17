@@ -117,9 +117,36 @@ Useful findings:
 
 ### Date/time formats
 
-Source: https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-dateformats.html
+Sources:
 
-Useful finding: SOQL date, dateTime, and time values have dedicated unquoted literal formats. Generated schema values currently map these to TypeScript strings, so kysoql must introduce explicit typed representations before claiming safe compilation for these scalar types.
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-dateformats.html
+- https://developer.salesforce.com/docs/platform/change-data-capture/guide/cdc-filter-considerations.html
+- https://help.salesforce.com/s/articleView?id=platform.custom_field_time_overview.htm&language=en_US&type=5
+- https://help.salesforce.com/s/issue?id=a028c00000gAwC9AAK&language=en_US
+
+Re-checked on 2026-09-17 while implementing explicit temporal literals.
+
+Useful findings:
+
+- SOQL `date` values use unquoted `YYYY-MM-DD`. Salesforce documents the valid
+  date range as years 1700 through 4000.
+- SOQL `dateTime` values use an unquoted `YYYY-MM-DDThh:mm:ss` value followed by
+  `Z` or an explicit `+/-hh:mm` UTC offset. Salesforce-owned SOQL examples also
+  show three-digit milliseconds before the zone/offset.
+- Time fields require a trailing `Z`. Salesforce Help shows SOQL/API time values
+  such as `07:00:00.000Z`; CDC filter guidance also documents the seconds-only
+  `hh:mm:ssZ` form.
+- Returned temporal field values are strings in the generated TypeScript schema,
+  but passing those strings directly to a safe filter would make the compiler
+  indistinguishable from an ordinary quoted SOQL string.
+
+Implemented consequence in `v1.0.17`: core exposes branded `soqlDate(...)`,
+`soqlDateTime(...)`, and `soqlTime(...)` factories. They validate calendar/time
+components, timezone-offset bounds where relevant, and accepted literal shapes.
+The filter type maps generated Salesforce `date`, `datetime`, and `time` fields
+to the matching wrapper while leaving selected result values as strings. The
+compiler recognizes only those explicit wrappers and emits their values unquoted.
+Relative date literals such as `TODAY` are not part of this slice.
 
 ### Relationships
 
