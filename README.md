@@ -52,7 +52,7 @@ pnpm debug
 
 The debug package is written in TypeScript. It builds `@kysoql/core`, compiles the
 playground to an ignored `dist/` directory, then logs the immutable AST after
-`selectFrom()`, `select()`, and chained `where()` calls.
+`selectFrom()`, `select()`, chained `where()` calls, and the compiled SOQL.
 
 ## Current query surface
 
@@ -65,13 +65,18 @@ const query = new Kysoql<SalesforceSchema>()
   .select(["Id", "Name", "AnnualRevenue"])
   .where("Name", "like", "Acme%")
   .where("AnnualRevenue", ">=", 100_000);
+
+const compiled = query.compile();
+// SELECT Id, Name, AnnualRevenue FROM Account
+// WHERE Name LIKE 'Acme%' AND AnnualRevenue >= 100000
 ```
 
 Selected fields, filterable fields, filter values, and operators are checked from
 the generated Salesforce schema. Equality (`=`, `!=`), ordered comparisons
 (`<`, `<=`, `>`, `>=`), and Kysely-style `like` are available where the field
-type supports them. SOQL compilation and execution are intentionally being added
-in later increments.
+type supports them. `.compile()` emits SOQL for the currently implemented scalar
+selection/filter AST. Live query execution is intentionally being added in a later
+increment.
 
 ## Salesforce test org
 

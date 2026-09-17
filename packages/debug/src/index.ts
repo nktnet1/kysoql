@@ -42,3 +42,6 @@ printQuery(
   '.where("Name", "like", "Acme%").where("AnnualRevenue", ">=", 100_000)',
   filteredQuery,
 );
+
+console.log("\n==> compile()");
+console.log(filteredQuery.compile().soql);

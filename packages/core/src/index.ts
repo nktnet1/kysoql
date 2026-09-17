@@ -20,6 +20,9 @@ export type {
   SelectQueryBuilderProps,
 } from "./query-builder/select-query-builder.js";
 export { QueryCreator } from "./query-creator.js";
+export type { CompiledQuery } from "./query-compiler/compiled-query.js";
+export { DefaultQueryCompiler } from "./query-compiler/default-query-compiler.js";
+export type { QueryCompiler } from "./query-compiler/query-compiler.js";
 export type {
   SalesforceChildRelationship,
   SalesforceField,
@@ -29,15 +32,6 @@ export type {
   SalesforceRow,
   SalesforceSchema,
 } from "./schema.js";
-
-export interface CompiledSoql {
-  readonly soql: string;
-}
-
-export interface SoqlQuery<Result> {
-  compile(): CompiledSoql;
-  readonly __result?: Result;
-}
 
 export const kysoql = () => ({
   version: "0.0.0",

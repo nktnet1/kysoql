@@ -29,7 +29,7 @@ into the SOQL API.
 
 ## Current development state
 
-Through `v1.0.13`, the project has:
+Through `v1.0.14`, the project has:
 
 - a Node 26 / pnpm / Turborepo / Biome / Vitest workspace;
 - a reproducible Salesforce scratch-org fixture and deterministic seed data;
@@ -46,13 +46,14 @@ Through `v1.0.13`, the project has:
 - typed `.where(field, operator, value)` for equality, ordered comparisons (`<`, `<=`, `>`, `>=`), and Kysely-style `like`;
 - field-type-aware operator constraints: `LIKE` is limited to Salesforce string-like fields, ordered comparisons exclude unsupported field types, and only equality accepts nullable `null` values;
 - immutable `WhereNode`, `BinaryOperationNode`, `OperatorNode`, `ValueNode`, and `AndNode` filtering AST;
+- Kysely-style `CompiledQuery<O>` / `QueryCompiler` abstractions and `.compile()` for selected scalar fields, chained `AND` filters, scalar string/number/boolean/null literals, and the currently supported comparison operators;
+- SOQL-safe escaping for quoted strings, including preserved `\%` / `\_` LIKE wildcard escapes;
 - compile-time rejection of unknown/non-filterable fields, unsupported operators, and mismatched filter values;
 - `pnpm validate` as the type/test/build validation gate; Biome stays manual;
 - `pnpm debug` as a no-Salesforce TypeScript runtime playground that logs the AST produced
   by `selectFrom()`, `select()`, and chained `where()` calls; source files remain `.ts` and generated JavaScript lives only in ignored `dist/` output.
 
-There is intentionally no ordering, SOQL compiler, query execution, OR-expression
-builder, or broader SOQL operator surface in core yet.
+There is intentionally no ordering, query execution, OR-expression builder, or broader SOQL operator surface in core yet. Date/dateTime/time literals still need a dedicated representation before the compiler can claim complete literal coverage; generated field values currently represent those Salesforce types as strings.
 
 ## Validation
 
@@ -96,14 +97,14 @@ state. Never rewrite an older patch after it has been handed off.
 The sequence at this point is:
 
 ```text
-v1.0.0 -> v1.0.1 -> ... -> v1.0.13
+v1.0.0 -> v1.0.1 -> ... -> v1.0.14
 ```
 
-The next patch must therefore be `v1.0.14-kysoql.patch`, generated against the
-state after `v1.0.13` is applied. Before handing it off, verify at minimum:
+The next patch must therefore be `v1.0.15-kysoql.patch`, generated against the
+state after `v1.0.14` is applied. Before handing it off, verify at minimum:
 
 ```bash
-git apply --check v1.0.14-kysoql.patch
+git apply --check v1.0.15-kysoql.patch
 git diff --check
 ```
 
@@ -125,11 +126,15 @@ this document before continuing.
 
 ## Next incremental milestone
 
-Keep the next patch small. The expected `v1.0.14` slice is the first SOQL
-compiler increment for the AST that already exists: `SELECT`, `FROM`, selected
-scalar fields, chained `AND` filters, scalar literals, and the currently supported
-comparison operators. Add `.compile()` but keep live JSforce execution out of that
-patch.
+Keep the next patch small. The expected `v1.0.15` slice is the first execution
+increment: introduce the smallest Kysely-style executor abstraction needed for
+`SelectQueryBuilder.execute()` and connect `@kysoql/jsforce` to compiled SOQL.
+Use mock execution tests in core and JSforce adapter tests; do not add new SOQL
+syntax in the same patch.
+
+Before broadening execution to every generated Salesforce scalar type, address
+date/dateTime/time literal representation explicitly rather than guessing from
+plain JavaScript strings.
 
 In particular, preserve these design choices:
 
@@ -138,12 +143,10 @@ In particular, preserve these design choices:
   `AndNode` structure;
 - filtering must honor generated `filterable` metadata;
 - operator availability must remain Salesforce-field-type-aware;
-- the public API uses Kysely-style lowercase `like`; the compiler should emit
-  valid SOQL `LIKE`;
+- the public API uses Kysely-style lowercase `like`; the compiler emits SOQL
+  `LIKE`;
 - output type accumulation using Kysely's `O & Selection<...>` pattern;
-- result-facing type tests may use a Kysely-style `Simplify<T>` utility rather
-  than changing the builder's generic shape merely to satisfy strict type
-  identity tools;
+- `.compile()` must preserve the selected output type through the type-only `CompiledQuery<O>` carrier;
 - no raw SOQL escape hatch in the safe API;
 - no arbitrary SQL joins;
 - `@kysoql/core` must not import JSforce;

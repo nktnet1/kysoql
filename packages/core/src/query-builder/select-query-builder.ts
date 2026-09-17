@@ -1,4 +1,6 @@
 import { QueryNode } from "../operation-node/query-node.js";
+import type { CompiledQuery } from "../query-compiler/compiled-query.js";
+import type { QueryCompiler } from "../query-compiler/query-compiler.js";
 import { SelectQueryNode } from "../operation-node/select-query-node.js";
 import {
   parseValueBinaryOperation,
@@ -15,6 +17,8 @@ import {
 import { freeze } from "../util/object-utils.js";
 
 export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
+  compile(): CompiledQuery<O>;
+
   where<
     RE extends FilterableFieldName<DB, TB>,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
@@ -42,6 +46,10 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
 
   constructor(props: SelectQueryBuilderProps) {
     this.#props = freeze(props);
+  }
+
+  compile(): CompiledQuery<O> {
+    return this.#props.queryCompiler.compileQuery<O>(this.#props.queryNode);
   }
 
   where<
@@ -79,6 +87,7 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
 }
 
 export interface SelectQueryBuilderProps {
+  readonly queryCompiler: QueryCompiler;
   readonly queryNode: SelectQueryNode;
 }
 
