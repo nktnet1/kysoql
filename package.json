@@ -26,6 +26,7 @@
     "@salesforce/cli": "^2.150.6",
     "@types/node": "26.5.1",
     "@vitest/coverage-v8": "5.0.0",
+    "lefthook": "2.1.14",
     "tsdown": "0.23.0",
     "turbo": "2.10.13",
     "typescript": "7.0.2",
