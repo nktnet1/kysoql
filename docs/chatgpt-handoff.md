@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.54`, the next patch
-   is `v1.0.55`.
+   reuse or rewrite a version already handed off. After `v1.0.55`, the next patch
+   is `v1.0.56`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.54`
+## Current state after `v1.0.55`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -107,6 +107,7 @@ recent patch sequence:
 | `v1.0.52` | Add typed child-to-parent relationship paths for selection, filtering, expression callbacks, and ordering with nested output typing. |
 | `v1.0.53` | Add typed parent-to-child relationship subqueries with a dedicated immutable builder/AST, nested query-result typing, scalar child clauses, and API 58+ nested child traversal depth. |
 | `v1.0.54` | Fix parent-to-child subquery builder return generics so accumulated nested output types satisfy `compile()` under strict TypeScript checking. |
+| `v1.0.55` | Add typed SOQL semi-joins and anti-joins through `IN` / `NOT IN`, with a dedicated restricted subquery builder/AST and Salesforce nesting/compatibility limits. |
 
 ### Build/tooling state
 
@@ -168,6 +169,15 @@ Core currently has:
   relationships infer `SalesforceQueryResult<Row>` envelopes with `totalSize`,
   `done`, `records`, and optional `nextRecordsUrl`; subquery `OFFSET` is omitted
   because Salesforce still documents it as a conditional pilot feature;
+- typed semi-joins and anti-joins by passing a subquery callback to `IN` /
+  `NOT IN`; the outer operand is restricted to a direct filterable ID/reference
+  field, the inner query selects exactly one compatible direct ID/reference
+  field, generated `referenceTo` domains drive compatibility (including
+  polymorphic references), and the inner builder intentionally exposes only
+  scalar filtering plus its single selection; self semi-joins, unsupported
+  Salesforce objects/tag objects, relationship-subquery use, nested semi-joins,
+  `OR` / logical `NOT` nesting, and more than two semi/anti-join terms are
+  rejected;
 - field-aware `.where(field, operator, value)` plus expression callbacks;
 - equality, ordered comparisons, lowercase `like`, scalar-list `in` / `not in`,
   and multipicklist `includes` / `excludes`;
@@ -193,7 +203,8 @@ Core currently has:
 Important current filter typing rules:
 
 - operators remain constrained by Salesforce field type/capability metadata;
-- `IN` / `NOT IN` accept typed non-empty readonly value lists;
+- `IN` / `NOT IN` accept typed non-empty readonly value lists and, for direct
+  filterable ID/reference fields, typed semi/anti-join subquery callbacks;
 - `INCLUDES` / `EXCLUDES` are available only on generated `multipicklist` fields
   and their list members are constrained to the field's generated active
   picklist-value union;
@@ -202,22 +213,26 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.55` and should add typed semi-joins and
-anti-joins.** Keep this relationship-filter slice separate from aggregate-query
-output architecture.
+**The next patch should be `v1.0.56` and should start the aggregate-query
+foundation.** This is the next major output-type architecture change, so group
+the closely related aggregate selection functions in one coherent slice instead
+of making one patch per function.
 
 Recommended next unit:
 
-- extend `IN` / `NOT IN` with a typed subquery operand in addition to the existing
-  non-empty scalar-list operand;
-- use a dedicated safe subquery builder/AST rather than raw SOQL fragments;
-- enforce Salesforce's ID/reference-field and single-selected-field restrictions
-  for semi/anti-joins where the generated schema makes them knowable;
-- preserve existing scalar-list `IN` / `NOT IN` behavior and overload inference;
-- add focused compiler/type coverage for both semi-join and anti-join forms and
-  their important nesting restrictions;
-- do **not** add aggregate expressions, `HAVING`, arbitrary SQL joins, or `TYPEOF`
-  in the same patch.
+- add a dedicated typed selection expression/AST path for the closely related
+  aggregate functions `COUNT()`, `COUNT(field)`, `COUNT_DISTINCT(field)`,
+  `SUM(field)`, `AVG(field)`, `MIN(field)`, and `MAX(field)`;
+- model aliases in the safe API so aggregate output keys are intentional and
+  predictable rather than relying on Salesforce's generated `exprN` names;
+- enforce field capability/type restrictions from generated schema metadata
+  where Salesforce exposes them (for example aggregateability and numeric-only
+  functions);
+- make compiled-query/result output typing reflect aggregate result values;
+- add focused AST/compiler/type tests for the grouped function family;
+- keep `GROUP BY`, `HAVING`, `ROLLUP`, `CUBE`, `GROUPING()`, broader SELECT
+  functions, and `TYPEOF` out unless a minimal internal abstraction is required
+  to avoid a dead-end API.
 
 If the supplied bundle already contains `v1.0.55` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
@@ -227,9 +242,9 @@ advance from the actual state instead of reimplementing this section.
 Group closely related syntax when it shares the same type/AST/compiler path, but
 keep major architecture changes independently reviewable:
 
-1. **Aggregate queries.** `COUNT`, `COUNT(field)`, `COUNT_DISTINCT`, `SUM`, `AVG`,
-   `MIN`, `MAX`, aliases, `GROUP BY`, `HAVING`, `ROLLUP`, `CUBE`, and `GROUPING()`.
-   This is a major output-type architecture change.
+1. **Aggregate queries after the selection-function foundation.** `GROUP BY`,
+   `HAVING`, `ROLLUP`, `CUBE`, and `GROUPING()`, plus any aggregate-query output
+   refinements not covered by `v1.0.56`.
 2. **Broader SELECT expressions/functions.** `FIELDS(...)`, `toLabel()`,
    `FORMAT()`, `convertCurrency()`, calendar/date functions,
    `convertTimezone()`, and geolocation expressions where safely modelable.
@@ -241,9 +256,10 @@ keep major architecture changes independently reviewable:
    `FOR UPDATE`, `WITH USER_MODE`, binds, etc. separately from the
    transport-neutral REST/JSforce core.
 
-The largest remaining architecture change is aggregate-query output typing. Keep
-semi/anti-join work focused on relationship filters rather than using it as a
-pretext to redesign aggregate selections.
+The largest remaining architecture change is aggregate-query output typing.
+Keep its first slice focused on the shared aggregate-selection machinery rather
+than pulling grouping/HAVING semantics into the same review unless the design
+truly requires them.
 
 ## Validation and runtime-boundary conventions
 

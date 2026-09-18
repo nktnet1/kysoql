@@ -13,11 +13,14 @@ import { SelectQueryNode } from "#/operation-node/select-query-node";
 import { parseLimit } from "#/parser/limit-parser";
 import { parseOffset } from "#/parser/offset-parser";
 import {
-  parseValueBinaryOperation,
   type ComparisonOperatorExpression,
   type FilterableFieldName,
   type OperandValueExpression,
 } from "#/parser/binary-operation-parser";
+import {
+  parseFilterBinaryOperation,
+  validateSemiJoinWhere,
+} from "#/parser/filter-parser";
 import type { ComparisonOperator } from "#/operation-node/operator-node";
 import {
   parseSelectArg,
@@ -78,10 +81,11 @@ export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
   where<
     RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
+    RHS extends OperandValueExpression<DB, TB, RE, NoInfer<OP>>,
   >(
     lhs: RE & FilterableFieldName<DB, TB, RE>,
     op: OP,
-    rhs: OperandValueExpression<DB, TB, RE, NoInfer<OP>>,
+    rhs: RHS,
   ): SelectQueryBuilder<DB, TB, O>;
 
   select<SE extends string>(
@@ -184,12 +188,27 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
   ): SelectQueryBuilder<DB, TB, O> {
     const operation =
       typeof lhsOrExpression === "function"
-        ? lhsOrExpression(createExpressionBuilder<DB, TB>()).toOperationNode()
-        : parseValueBinaryOperation(lhsOrExpression, op as ComparisonOperator, rhs);
+        ? lhsOrExpression(
+            createExpressionBuilder<DB, TB>({
+              outerObject: this.#props.queryNode.from.name,
+            }),
+          ).toOperationNode()
+        : parseFilterBinaryOperation(
+            lhsOrExpression,
+            op as ComparisonOperator,
+            rhs,
+            { outerObject: this.#props.queryNode.from.name },
+          );
+    const queryNode = QueryNode.cloneWithWhere(
+      this.#props.queryNode,
+      operation,
+    );
+
+    validateSemiJoinWhere(queryNode.where?.where ?? operation);
 
     return new SelectQueryBuilderImpl<DB, TB, O>({
       ...this.#props,
-      queryNode: QueryNode.cloneWithWhere(this.#props.queryNode, operation),
+      queryNode,
     });
   }
 

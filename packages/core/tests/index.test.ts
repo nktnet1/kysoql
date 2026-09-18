@@ -47,6 +47,12 @@ import {
   type SelectQueryBuilder,
   type SelectQueryBuilderProps,
   type SelectQueryNode,
+  type SelectedSemiJoinSubqueryBuilder,
+  type SemiJoinQueryCreator,
+  type SemiJoinSubqueryBuilder,
+  type SemiJoinSubqueryExpression,
+  type SemiJoinSubqueryFactory,
+  type SemiJoinSubqueryNode,
   type SelectionNode,
   type SObjectNode,
   type SoqlDateLiteral,
@@ -123,6 +129,34 @@ type PublicTypeSurface = {
   >;
   selectQueryBuilderProps: SelectQueryBuilderProps;
   selectQueryNode: SelectQueryNode;
+  selectedSemiJoinSubqueryBuilder: SelectedSemiJoinSubqueryBuilder<
+    Record<string, never>,
+    never,
+    "Id",
+    never
+  >;
+  semiJoinQueryCreator: SemiJoinQueryCreator<
+    Record<string, never>,
+    never,
+    "Id"
+  >;
+  semiJoinSubqueryBuilder: SemiJoinSubqueryBuilder<
+    Record<string, never>,
+    never,
+    "Id",
+    never
+  >;
+  semiJoinSubqueryExpression: SemiJoinSubqueryExpression<
+    Record<string, never>,
+    never,
+    "Id"
+  >;
+  semiJoinSubqueryFactory: SemiJoinSubqueryFactory<
+    Record<string, never>,
+    never,
+    "Id"
+  >;
+  semiJoinSubqueryNode: SemiJoinSubqueryNode;
   selectionNode: SelectionNode;
   sobjectNode: SObjectNode;
   soqlDateLiteral: SoqlDateLiteral;

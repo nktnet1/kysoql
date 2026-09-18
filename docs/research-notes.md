@@ -316,8 +316,43 @@ field selection, scalar filters/expression callbacks, ordering, and limits; they
 can select child-to-parent paths and nest parent-to-child subqueries through four
 child traversals below the root. Selected child relationships infer
 `SalesforceQueryResult<Row>` with `totalSize`, `done`, `records`, and optional
-`nextRecordsUrl`. Subquery `OFFSET`, semi/anti-joins, aggregates, and raw SOQL
-fragments remain outside this slice.
+`nextRecordsUrl`. Subquery `OFFSET`, aggregates, and raw SOQL fragments remain
+outside this slice.
+
+### Semi-joins and anti-joins
+
+Source re-checked on 2026-09-18:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-comparisonoperators.html
+
+Useful findings:
+
+- `IN` and `NOT IN` can replace a scalar value list with a subquery to form a
+  semi-join or anti-join. The outer left operand must be one direct ID or
+  reference field; relationship traversal such as `Account.Id` is not allowed.
+- The subquery selects exactly one compatible ID/reference field. Its selected
+  field cannot use dot notation, and the subquery cannot query the same object as
+  the outer query. Reference fields can support parent-to-child, child-to-parent,
+  child-to-child, and polymorphic-reference cases when the referenced object type
+  is compatible.
+- At most two semi/anti-join subqueries can participate in one query. They cannot
+  be nested in another semi/anti-join, used inside a relationship-subquery `WHERE`,
+  combined through `OR`, or wrapped with logical `NOT`. Use `NOT IN` for the
+  anti-join form instead of negating an `IN` subquery.
+- Semi/anti-join subqueries do not support `COUNT`, `FOR UPDATE`, `ORDER BY`, or
+  `LIMIT`. Salesforce also excludes ActivityHistory, Attachments, Event, Note,
+  OpenActivity, tag objects, and Task from this subquery position.
+
+Implemented consequence in `v1.0.55`: scalar-list `IN` / `NOT IN` remain
+unchanged, while ID/reference operands can now take a typed subquery factory such
+as `where("Id", "in", q => q.selectFrom("Opportunity").select("AccountId"))`.
+A dedicated frozen `SemiJoinSubqueryNode` and builder expose exactly one compatible
+ID/reference selection plus scalar filtering. Generated `referenceTo` metadata is
+used to compare the object-ID domains of the outer and selected fields, including
+polymorphic references. The outer object and known unsupported subquery objects
+are excluded, relationship-subquery filters disable semi/anti-joins, expression
+wrappers track whether they contain a semi/anti-join so `OR` / `NOT` reject them,
+and the top-level builder enforces Salesforce's two-subquery limit.
 
 ### Remaining SOQL surface / roadmap references
 
@@ -338,8 +373,8 @@ Useful findings for future milestones:
   this as a separate modifier from `ASC` / `DESC`.
 - SOQL condition expressions include `IN` / `NOT IN` value lists and
   multi-select-picklist `INCLUDES` / `EXCLUDES`; kysoql now implements those
-  scalar-list forms. `IN` / `NOT IN` subquery operands remain future
-  semi-join/anti-join work with additional field and nesting restrictions.
+  scalar-list forms, and `v1.0.55` adds typed `IN` / `NOT IN` semi-join and
+  anti-join subquery operands with Salesforce's field/object/nesting limits.
 - Relationship queries use declared Salesforce relationships only: child-to-parent
   traversal uses dotted relationship paths and permits at most five relationship
   levels. Parent-to-child traversal uses nested subqueries; REST/SOAP/Apex query

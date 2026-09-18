@@ -78,16 +78,17 @@ export interface RelationshipSubqueryBuilder<
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth>;
 
   where(
-    expression: WhereExpressionFactory<DB, TB>,
+    expression: WhereExpressionFactory<DB, TB, false>,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth>;
 
   where<
     RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
+    RHS extends OperandValueExpression<DB, TB, RE, NoInfer<OP>, false>,
   >(
     lhs: RE & FilterableFieldName<DB, TB, RE>,
     op: OP,
-    rhs: OperandValueExpression<DB, TB, RE, NoInfer<OP>>,
+    rhs: RHS,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth>;
 
   select<SE extends string>(
@@ -166,13 +167,15 @@ class RelationshipSubqueryBuilderImpl<
   }
 
   where(
-    lhsOrExpression: string | WhereExpressionFactory<DB, TB>,
+    lhsOrExpression: string | WhereExpressionFactory<DB, TB, false>,
     op?: ComparisonOperator,
     rhs?: unknown,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth> {
     const operation =
       typeof lhsOrExpression === "function"
-        ? lhsOrExpression(createExpressionBuilder<DB, TB>()).toOperationNode()
+        ? lhsOrExpression(
+            createExpressionBuilder<DB, TB, false>({ allowSemiJoin: false }),
+          ).toOperationNode()
         : parseValueBinaryOperation(
             lhsOrExpression,
             op as ComparisonOperator,

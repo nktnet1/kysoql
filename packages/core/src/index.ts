@@ -29,6 +29,7 @@ export type { OrderByNode } from "#/operation-node/order-by-node";
 export type { ReferenceNode } from "#/operation-node/reference-node";
 export type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 export type { SelectQueryNode } from "#/operation-node/select-query-node";
+export type { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
 export type { SelectionNode } from "#/operation-node/selection-node";
 export type { SObjectNode } from "#/operation-node/sobject-node";
 export type { ValueListNode } from "#/operation-node/value-list-node";
@@ -37,6 +38,13 @@ export type { WhereNode } from "#/operation-node/where-node";
 export type {
   RelationshipSubqueryBuilder,
 } from "#/query-builder/relationship-subquery-builder";
+export type {
+  SelectedSemiJoinSubqueryBuilder,
+  SemiJoinQueryCreator,
+  SemiJoinSubqueryBuilder,
+  SemiJoinSubqueryExpression,
+  SemiJoinSubqueryFactory,
+} from "#/query-builder/semi-join-subquery-builder";
 export type {
   SelectQueryBuilder,
   SelectQueryBuilderProps,

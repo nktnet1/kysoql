@@ -88,8 +88,8 @@ const compiled = query.compile();
 Selected fields, filterable fields, filter values, and operators are checked from
 the generated Salesforce schema. Equality (`=`, `!=`), ordered comparisons
 (`<`, `<=`, `>`, `>=`), and Kysely-style `like` are available where the field
-type supports them. `.compile()` emits SOQL for the currently implemented scalar
-and relationship-query selection/filter/order/limit AST. `.orderBy(field,
+type supports them. `.compile()` emits SOQL for the currently implemented scalar,
+relationship-query, and semi/anti-join AST. `.orderBy(field,
 direction?)` only accepts fields
 whose generated Salesforce Describe metadata marks them `sortable: true`.
 Calls are additive, and directions use Kysely-style lowercase `asc` / `desc`
@@ -141,6 +141,31 @@ the relationship value contains `totalSize`, `done`, `records`, and an optional
 `nextRecordsUrl`. Subquery `OFFSET` is intentionally not exposed because Salesforce
 still documents it as a conditional pilot feature rather than a general
 production child-query clause.
+
+`IN` and `NOT IN` also accept typed semi-join/anti-join subqueries when the left
+operand is a direct ID/reference field. The subquery uses a dedicated builder so
+it can select exactly one compatible ID/reference field and apply scalar filters
+without exposing unsupported `ORDER BY`, `LIMIT`, nested semi-joins, or arbitrary
+SOQL fragments. Existing scalar-list `IN` / `NOT IN` behavior is unchanged.
+
+```ts
+const accountsWithOpenOpportunities = await db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where("Id", "in", (subquery) =>
+    subquery
+      .selectFrom("Opportunity")
+      .select("AccountId")
+      .where("StageName", "!=", "Closed Lost"),
+  )
+  .execute();
+```
+
+The generated reference metadata is used to ensure the selected subquery field
+identifies the same Salesforce object type as the outer ID/reference operand,
+including polymorphic reference targets. Semi/anti-join subqueries remain
+top-level `WHERE` terms, cannot be wrapped in `OR` / `NOT`, cannot query the same
+object as the outer query, and are limited to two per query.
 
 Salesforce `date`, `datetime`, and `time` fields still infer as strings when
 selected because that is how the generated API schema represents returned values.

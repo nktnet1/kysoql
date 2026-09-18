@@ -13,6 +13,7 @@ import type { OrderByNode } from "#/operation-node/order-by-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 import type { SelectQueryNode } from "#/operation-node/select-query-node";
+import type { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
 import type { SelectionNode } from "#/operation-node/selection-node";
 import type { ValueListNode } from "#/operation-node/value-list-node";
 import type { ValueNode } from "#/operation-node/value-node";
@@ -142,6 +143,8 @@ export class DefaultQueryCompiler implements QueryCompiler {
         return this.#compileOr(node as OrNode);
       case "ReferenceNode":
         return this.#compileReference(node as ReferenceNode);
+      case "SemiJoinSubqueryNode":
+        return `(${this.#compileSemiJoinSubquery(node as SemiJoinSubqueryNode)})`;
       case "OperatorNode":
         return this.#compileOperator(node as OperatorNode);
       case "ValueListNode":
@@ -178,6 +181,22 @@ export class DefaultQueryCompiler implements QueryCompiler {
         : this.#compileOperation(node.rightOperand);
 
     return `${left} ${this.#compileOperator(operator)} ${right}`;
+  }
+
+  #compileSemiJoinSubquery(query: SemiJoinSubqueryNode): string {
+    if (!query.selection) {
+      throw new Error(
+        "Cannot compile a semi-join or anti-join subquery without a selection.",
+      );
+    }
+
+    let soql = `SELECT ${this.#compileReference(query.selection)} FROM ${query.from.name}`;
+
+    if (query.where) {
+      soql += ` WHERE ${this.#compileWhere(query.where)}`;
+    }
+
+    return soql;
   }
 
   #compileReference(node: ReferenceNode): string {

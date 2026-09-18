@@ -18,6 +18,10 @@ import type {
   SalesforceFieldFilterValue,
 } from "#/schema";
 import type { FieldReferenceDefinition } from "#/parser/reference-parser";
+import type {
+  SemiJoinOperandFieldName,
+  SemiJoinSubqueryFactory,
+} from "#/query-builder/semi-join-subquery-builder";
 
 export type FilterableFieldName<
   DB,
@@ -140,12 +144,18 @@ export type OperandValueExpression<
   TB extends keyof DB,
   RE extends string,
   OP extends ComparisonOperatorExpression<DB, TB, RE>,
+  AllowSemiJoin extends boolean = true,
 > = OP extends LikeComparisonOperator
   ? Extract<NonNullable<FieldValueExpression<DB, TB, RE>>, string>
   : OP extends OrderedComparisonOperator
     ? NonNullable<FieldValueExpression<DB, TB, RE>>
     : OP extends SetComparisonOperator
       ? readonly FieldValueExpression<DB, TB, RE>[]
+        | (AllowSemiJoin extends true
+            ? RE extends SemiJoinOperandFieldName<DB, TB, RE>
+              ? SemiJoinSubqueryFactory<DB, TB, RE>
+              : never
+            : never)
       : OP extends MultiSelectComparisonOperator
         ? readonly ActivePicklistValueOfField<DB, TB, RE>[]
         : FieldValueExpression<DB, TB, RE>;

@@ -15,6 +15,7 @@ import { QueryNode } from "#/operation-node/query-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
 import { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
+import { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
 import { SelectionNode } from "#/operation-node/selection-node";
 import { SObjectNode } from "#/operation-node/sobject-node";
 import { ValueListNode } from "#/operation-node/value-list-node";
@@ -212,6 +213,44 @@ describe("operation nodes", () => {
       expectFrozen(reordered.orderBy as object);
     },
   );
+
+  it("creates and selects immutable semi-join subqueries", () => {
+    const base = SemiJoinSubqueryNode.createFrom(
+      SObjectNode.create("Opportunity"),
+    );
+    const selected = SemiJoinSubqueryNode.cloneWithSelection(
+      base,
+      ReferenceNode.create("AccountId"),
+    );
+    const filtered = QueryNode.cloneWithWhere(
+      selected,
+      BinaryOperationNode.create(
+        ReferenceNode.create("StageName"),
+        OperatorNode.create("="),
+        ValueNode.create("Closed Won"),
+      ),
+    );
+
+    expect(base).toEqual({
+      kind: "SemiJoinSubqueryNode",
+      from: { kind: "SObjectNode", name: "Opportunity" },
+    });
+    expect(selected.selection).toEqual({
+      kind: "ReferenceNode",
+      name: "AccountId",
+    });
+    expect(filtered.where?.where).toEqual({
+      kind: "BinaryOperationNode",
+      leftOperand: { kind: "ReferenceNode", name: "StageName" },
+      operator: { kind: "OperatorNode", operator: "=" },
+      rightOperand: { kind: "ValueNode", value: "Closed Won" },
+    });
+    expect(base.selection).toBeUndefined();
+    expect(base.where).toBeUndefined();
+    expectFrozen(base);
+    expectFrozen(selected);
+    expectFrozen(filtered);
+  });
 
   it("creates and extends immutable relationship subqueries", () => {
     const base = RelationshipSubqueryNode.create(
