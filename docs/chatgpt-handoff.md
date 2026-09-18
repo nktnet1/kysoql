@@ -70,7 +70,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.51`
+## Current state after `v1.0.52`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -102,6 +102,7 @@ recent patch sequence:
 | `v1.0.49` | Add parameterized `LAST_N_FISCAL_QUARTERS:n` and `NEXT_N_FISCAL_QUARTERS:n` relative-date literals. |
 | `v1.0.50` | Add parameterized `LAST_N_FISCAL_YEARS:n` and `NEXT_N_FISCAL_YEARS:n` relative-date literals. |
 | `v1.0.51` | Complete documented relative-date literal support by grouping the remaining fixed week/90-day literals and parameterized calendar/fiscal families. |
+| `v1.0.52` | Add typed child-to-parent relationship paths for selection, filtering, expression callbacks, and ordering with nested output typing. |
 
 ### Build/tooling state
 
@@ -151,6 +152,10 @@ Core currently has:
 - `Kysoql<DB> -> QueryCreator<DB> -> SelectQueryBuilder<DB, TB, O>`;
 - immutable builders and frozen operation nodes;
 - typed `selectFrom()` and additive `.select()` with selected-output accumulation;
+- typed child-to-parent dotted field paths derived lazily from generated parent
+  metadata, available in selection/filtering/ordering up to Salesforce's five-level
+  traversal limit; related selections infer nested output objects and lookup
+  nullability; traversed target objects must be present in the generated schema;
 - field-aware `.where(field, operator, value)` plus expression callbacks;
 - equality, ordered comparisons, lowercase `like`, scalar-list `in` / `not in`,
   and multipicklist `includes` / `excludes`;
@@ -185,22 +190,24 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.52` and should start relationship support with
-typed child-to-parent dotted field paths.** Keep the first relationship slice to
-path traversal; do not add parent-to-child subqueries or semi/anti-joins yet.
+**The next patch should be `v1.0.53` and should add typed parent-to-child
+relationship subqueries.** This is the second relationship-query architecture
+slice and should remain separate from semi/anti-joins and aggregates.
 
 Recommended next unit:
 
-- derive valid child-to-parent relationship paths from generated relationship
-  metadata rather than accepting arbitrary dotted strings;
-- support those paths consistently in selection, filtering, and ordering where
-  the referenced target field's metadata allows the operation;
-- preserve selected-output typing for relationship-path selections;
-- add focused type, AST/compiler, and query-builder coverage;
-- do **not** add parent-to-child subqueries, arbitrary SQL joins, aggregates, or
-  semi/anti-joins in the same patch.
+- derive selectable parent-to-child relationships from generated `children`
+  metadata rather than accepting arbitrary subquery `FROM` names;
+- introduce a dedicated immutable subquery AST/builder surface rather than raw
+  SOQL fragments;
+- preserve the nested query-result shape for selected child relationships;
+- support the useful child-query clauses that fit the existing scalar builder
+  model without redesigning aggregates;
+- add focused type, AST/compiler, query-builder, and output-shape coverage;
+- do **not** add arbitrary SQL joins, semi/anti-joins, aggregate expressions, or
+  `TYPEOF` in the same patch.
 
-If the supplied bundle already contains `v1.0.52` or later, inspect the code and
+If the supplied bundle already contains `v1.0.53` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
@@ -208,27 +215,25 @@ advance from the actual state instead of reimplementing this section.
 Group closely related syntax when it shares the same type/AST/compiler path, but
 keep major architecture changes independently reviewable:
 
-1. **Parent-to-child relationship queries.** Add typed relationship subqueries
-   using generated child-relationship metadata. No arbitrary SQL joins.
-2. **Semi-joins and anti-joins.** Extend `IN` / `NOT IN` to typed subquery operands
+1. **Semi-joins and anti-joins.** Extend `IN` / `NOT IN` to typed subquery operands
    and enforce Salesforce reference/ID and nesting restrictions where practical.
-3. **Aggregate queries.** `COUNT`, `COUNT(field)`, `COUNT_DISTINCT`, `SUM`, `AVG`,
+2. **Aggregate queries.** `COUNT`, `COUNT(field)`, `COUNT_DISTINCT`, `SUM`, `AVG`,
    `MIN`, `MAX`, aliases, `GROUP BY`, `HAVING`, `ROLLUP`, `CUBE`, and `GROUPING()`.
    This is a major output-type architecture change.
-4. **Broader SELECT expressions/functions.** `FIELDS(...)`, `toLabel()`,
+3. **Broader SELECT expressions/functions.** `FIELDS(...)`, `toLabel()`,
    `FORMAT()`, `convertCurrency()`, calendar/date functions,
    `convertTimezone()`, and geolocation expressions where safely modelable.
-5. **Polymorphic references / `TYPEOF`.** Dedicated AST and discriminated output
+4. **Polymorphic references / `TYPEOF`.** Dedicated AST and discriminated output
    typing.
-6. **Specialist top-level clauses.** `USING SCOPE`, `WITH DATA CATEGORY`, and
+5. **Specialist top-level clauses.** `USING SCOPE`, `WITH DATA CATEGORY`, and
    other REST/SOAP-relevant specialist clauses.
-7. **Execution-context-specific syntax.** Re-evaluate Apex-only semantics such as
+6. **Execution-context-specific syntax.** Re-evaluate Apex-only semantics such as
    `FOR UPDATE`, `WITH USER_MODE`, binds, etc. separately from the
    transport-neutral REST/JSforce core.
 
-The two largest future architecture changes remain relationship queries and
-aggregate queries. Avoid redesigning aggregates while implementing relationship
-paths/subqueries.
+The largest remaining architecture changes are parent-to-child relationship
+subqueries and aggregate queries. Avoid redesigning aggregates while implementing
+relationship subqueries.
 
 ## Validation and runtime-boundary conventions
 

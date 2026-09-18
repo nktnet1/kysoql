@@ -88,7 +88,7 @@ const compiled = query.compile();
 Selected fields, filterable fields, filter values, and operators are checked from
 the generated Salesforce schema. Equality (`=`, `!=`), ordered comparisons
 (`<`, `<=`, `>`, `>=`), and Kysely-style `like` are available where the field
-type supports them. `.compile()` emits SOQL for the currently implemented scalar
+type supports them. `.compile()` emits SOQL for the currently implemented scalar and relationship-path
 selection/filter/order/limit AST. `.orderBy(field, direction?)` only accepts fields
 whose generated Salesforce Describe metadata marks them `sortable: true`.
 Calls are additive, and directions use Kysely-style lowercase `asc` / `desc`
@@ -96,6 +96,23 @@ while the compiler emits SOQL `ASC` / `DESC`. Omitting the direction uses
 Salesforce's default ascending order. `.limit(n)` accepts non-negative safe
 integers, including `0`; repeated calls replace the previous limit instead of
 emitting multiple `LIMIT` clauses.
+
+Generated parent-relationship metadata also enables typed child-to-parent dotted
+paths in `.select()`, `.where()`, expression callbacks, and `.orderBy()`. The
+terminal related field keeps its generated value/operator/capability checks, and
+traversal is limited to Salesforce's five child-to-parent relationship levels.
+Selected relationship fields infer the nested object shape returned by Salesforce,
+including `null` when the generated lookup metadata is nullable. Every traversed
+parent object must be present in the generated schema so its fields can be checked.
+
+```ts
+const records = await db
+  .selectFrom("Kysoql_Record__c")
+  .select(["Id", "Name", "Account__r.Id", "Account__r.Name"])
+  .where("Account__r.Name", "like", "Kysoql Test %")
+  .orderBy("Account__r.Name")
+  .execute();
+```
 
 Salesforce `date`, `datetime`, and `time` fields still infer as strings when
 selected because that is how the generated API schema represents returned values.

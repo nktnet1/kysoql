@@ -278,13 +278,24 @@ Sources:
 
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-relationships.html
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-relationships-query-limits.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-relationships-query-results.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-relationships-lookup.html
 
 Useful findings:
 
 - SOQL uses declared Salesforce relationships rather than arbitrary SQL joins.
-- Child-to-parent traversal uses relationship paths; parent-to-child uses subqueries.
+- Child-to-parent traversal uses dotted relationship paths; each path can traverse
+  at most five child-to-parent relationship levels.
+- Parent-to-child traversal uses subqueries.
+- Relationship query results are nested objects. Nullable lookup relationships can
+  produce a null parent while the driving record is still returned.
 
-Kysoql consequence: do not add SQL-style arbitrary joins to the safe API.
+Implemented consequence in `v1.0.52`: child-to-parent references are validated
+lazily from generated parent metadata instead of eagerly expanding every possible
+path. Related selections infer nested result objects with relationship nullability,
+and related filters/orderings reuse the terminal field's generated metadata. A
+traversed parent object must be present in the generated schema so its fields can
+be checked. No arbitrary SQL joins are exposed.
 
 ### Remaining SOQL surface / roadmap references
 
@@ -308,9 +319,10 @@ Useful findings for future milestones:
   scalar-list forms. `IN` / `NOT IN` subquery operands remain future
   semi-join/anti-join work with additional field and nesting restrictions.
 - Relationship queries use declared Salesforce relationships only: child-to-parent
-  traversal uses dotted relationship paths and parent-to-child traversal uses
-  nested subqueries. REST/SOAP/Apex query calls support up to five levels of
-  parent-to-child relationships in API version 58.0 and later.
+  traversal uses dotted relationship paths and permits at most five relationship
+  levels. Parent-to-child traversal uses nested subqueries; REST/SOAP/Apex query
+  calls support up to five levels of parent-to-child relationships in API version
+  58.0 and later.
 - Aggregate queries introduce their own result shape. `HAVING` filters aggregate
   results and can combine conditions with `AND`, `OR`, and `NOT`; semi/anti-join
   subqueries are not allowed inside `HAVING`.

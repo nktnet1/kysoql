@@ -41,8 +41,8 @@ export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
 
   offset(offset: number): SelectQueryBuilder<DB, TB, O>;
 
-  orderBy<OE extends SortableFieldName<DB, TB>>(
-    field: OE,
+  orderBy<OE extends string>(
+    field: OE & SortableFieldName<DB, TB, OE>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
   ): SelectQueryBuilder<DB, TB, O>;
@@ -52,20 +52,20 @@ export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
   ): SelectQueryBuilder<DB, TB, O>;
 
   where<
-    RE extends FilterableFieldName<DB, TB>,
+    RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
   >(
-    lhs: RE,
+    lhs: RE & FilterableFieldName<DB, TB, RE>,
     op: OP,
     rhs: OperandValueExpression<DB, TB, RE, NoInfer<OP>>,
   ): SelectQueryBuilder<DB, TB, O>;
 
-  select<SE extends SelectExpression<DB, TB>>(
-    selections: ReadonlyArray<SE>,
+  select<SE extends string>(
+    selections: ReadonlyArray<SE & SelectExpression<DB, TB, SE>>,
   ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>>;
 
-  select<SE extends SelectExpression<DB, TB>>(
-    selection: SE,
+  select<SE extends string>(
+    selection: SE & SelectExpression<DB, TB, SE>,
   ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>>;
 
   toOperationNode(): SelectQueryNode;
@@ -114,8 +114,8 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     });
   }
 
-  orderBy<OE extends SortableFieldName<DB, TB>>(
-    field: OE,
+  orderBy<OE extends string>(
+    field: OE & SortableFieldName<DB, TB, OE>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
   ): SelectQueryBuilder<DB, TB, O> {
@@ -128,7 +128,7 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
   }
 
   where(
-    lhsOrExpression: FilterableFieldName<DB, TB> | WhereExpressionFactory<DB, TB>,
+    lhsOrExpression: string | WhereExpressionFactory<DB, TB>,
     op?: ComparisonOperator,
     rhs?: unknown,
   ): SelectQueryBuilder<DB, TB, O> {
@@ -143,7 +143,7 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     });
   }
 
-  select<SE extends SelectExpression<DB, TB>>(
+  select<SE extends string>(
     selection: SelectArg<DB, TB, SE>,
   ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>> {
     return new SelectQueryBuilderImpl<DB, TB, O & Selection<DB, TB, SE>>({

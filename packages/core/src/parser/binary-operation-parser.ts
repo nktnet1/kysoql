@@ -17,29 +17,27 @@ import type {
   SalesforceField,
   SalesforceFieldFilterValue,
 } from "#/schema";
-import type {
-  FieldDefinition,
-  FieldName,
-  FieldsOf,
-} from "#/parser/reference-parser";
+import type { FieldReferenceDefinition } from "#/parser/reference-parser";
 
-export type FilterableFieldName<DB, TB extends keyof DB> = {
-  [Field in FieldName<DB, TB>]: FieldsOf<DB, TB>[Field] extends {
-    readonly filterable: true;
-  }
-    ? Field
-    : never;
-}[FieldName<DB, TB>];
+export type FilterableFieldName<
+  DB,
+  TB extends keyof DB,
+  Reference extends string,
+> = Reference extends unknown
+  ? [FieldReferenceDefinition<DB, TB, Reference>] extends [never]
+    ? never
+    : FieldReferenceDefinition<DB, TB, Reference> extends {
+          readonly filterable: true;
+        }
+      ? Reference
+      : never
+  : never;
 
 type SalesforceTypeOfField<
   DB,
   TB extends keyof DB,
-  RE extends FilterableFieldName<DB, TB>,
-> = FieldDefinition<
-  DB,
-  TB,
-  Extract<RE, FieldName<DB, TB>>
-> extends SalesforceField<
+  RE extends string,
+> = FieldReferenceDefinition<DB, TB, RE> extends SalesforceField<
   unknown,
   infer SalesforceType,
   boolean,
@@ -56,12 +54,8 @@ type SalesforceTypeOfField<
 type ActivePicklistValueOfField<
   DB,
   TB extends keyof DB,
-  RE extends FilterableFieldName<DB, TB>,
-> = FieldDefinition<
-  DB,
-  TB,
-  Extract<RE, FieldName<DB, TB>>
-> extends SalesforceField<
+  RE extends string,
+> = FieldReferenceDefinition<DB, TB, RE> extends SalesforceField<
   unknown,
   string,
   boolean,
@@ -103,7 +97,7 @@ type LikeSalesforceType =
 type OrderedOperatorForField<
   DB,
   TB extends keyof DB,
-  RE extends FilterableFieldName<DB, TB>,
+  RE extends string,
 > = SalesforceTypeOfField<DB, TB, RE> extends OrderedSalesforceType
   ? OrderedComparisonOperator
   : never;
@@ -111,7 +105,7 @@ type OrderedOperatorForField<
 type LikeOperatorForField<
   DB,
   TB extends keyof DB,
-  RE extends FilterableFieldName<DB, TB>,
+  RE extends string,
 > = SalesforceTypeOfField<DB, TB, RE> extends LikeSalesforceType
   ? LikeComparisonOperator
   : never;
@@ -119,7 +113,7 @@ type LikeOperatorForField<
 type MultiSelectOperatorForField<
   DB,
   TB extends keyof DB,
-  RE extends FilterableFieldName<DB, TB>,
+  RE extends string,
 > = SalesforceTypeOfField<DB, TB, RE> extends "multipicklist"
   ? MultiSelectComparisonOperator
   : never;
@@ -127,7 +121,7 @@ type MultiSelectOperatorForField<
 export type ComparisonOperatorExpression<
   DB,
   TB extends keyof DB,
-  RE extends FilterableFieldName<DB, TB>,
+  RE extends string,
 > =
   | EqualityComparisonOperator
   | OrderedOperatorForField<DB, TB, RE>
@@ -138,15 +132,13 @@ export type ComparisonOperatorExpression<
 type FieldValueExpression<
   DB,
   TB extends keyof DB,
-  RE extends FilterableFieldName<DB, TB>,
-> = SalesforceFieldFilterValue<
-  FieldDefinition<DB, TB, Extract<RE, FieldName<DB, TB>>>
->;
+  RE extends string,
+> = SalesforceFieldFilterValue<FieldReferenceDefinition<DB, TB, RE>>;
 
 export type OperandValueExpression<
   DB,
   TB extends keyof DB,
-  RE extends FilterableFieldName<DB, TB>,
+  RE extends string,
   OP extends ComparisonOperatorExpression<DB, TB, RE>,
 > = OP extends LikeComparisonOperator
   ? Extract<NonNullable<FieldValueExpression<DB, TB, RE>>, string>

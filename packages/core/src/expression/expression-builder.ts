@@ -22,10 +22,10 @@ export interface ExpressionWrapper<DB, TB extends keyof DB> {
 
 export interface ExpressionBuilder<DB, TB extends keyof DB> {
   <
-    RE extends FilterableFieldName<DB, TB>,
+    RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
   >(
-    lhs: RE,
+    lhs: RE & FilterableFieldName<DB, TB, RE>,
     op: OP,
     rhs: OperandValueExpression<DB, TB, RE, NoInfer<OP>>,
   ): ExpressionWrapper<DB, TB>;
@@ -77,10 +77,10 @@ export function createExpressionBuilder<DB, TB extends keyof DB>(): ExpressionBu
   TB
 > {
   const expression = <
-    RE extends FilterableFieldName<DB, TB>,
+    RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
   >(
-    lhs: RE,
+    lhs: RE & FilterableFieldName<DB, TB, RE>,
     op: OP,
     rhs: OperandValueExpression<DB, TB, RE, NoInfer<OP>>,
   ): ExpressionWrapper<DB, TB> =>
