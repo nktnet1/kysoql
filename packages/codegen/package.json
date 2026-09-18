@@ -11,25 +11,32 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
+      "development": "./src/index.ts",
+      "default": "./dist/index.mjs"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsdown",
     "check": "biome check",
     "test": "vitest run --dir tests --passWithNoTests",
     "typecheck": "tsc -p tsconfig.test.json",
     "clean": "rm -rf dist coverage"
   },
   "bin": {
-    "kysoql": "./dist/cli.js"
+    "kysoql": "./dist/cli.mjs"
   },
   "dependencies": {
     "jsforce": "3.10.25",
     "valibot": "1.4.2"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": "./dist/index.mjs",
+      "./package.json": "./package.json"
+    }
   }
 }

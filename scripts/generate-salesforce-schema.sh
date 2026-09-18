@@ -54,4 +54,4 @@ if [[ "$has_access_token" == false ]]; then
   export SF_INSTANCE_URL SF_ACCESS_TOKEN
 fi
 
-node packages/codegen/dist/cli.js generate "$@"
+node packages/codegen/dist/cli.mjs generate "$@"
