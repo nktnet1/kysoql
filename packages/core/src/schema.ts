@@ -1,3 +1,4 @@
+import type { SoqlRelativeDateLiteral } from "#/soql-relative-date-literal";
 import type {
   SoqlDateLiteral,
   SoqlDateTimeLiteral,
@@ -116,9 +117,9 @@ type SalesforceFieldFilterScalar<
   Value,
   SalesforceType extends string,
 > = SalesforceType extends "date"
-  ? SoqlDateLiteral
+  ? SoqlDateLiteral | SoqlRelativeDateLiteral
   : SalesforceType extends "datetime"
-    ? SoqlDateTimeLiteral
+    ? SoqlDateTimeLiteral | SoqlRelativeDateLiteral
     : SalesforceType extends "time"
       ? SoqlTimeLiteral
       : Value;

@@ -1,6 +1,7 @@
 import { it } from "vitest";
 
 import { Kysoql } from "#/kysoql";
+import { soqlRelativeDate } from "#/soql-relative-date-literal";
 import type { SalesforceField, SalesforceObject } from "#/schema";
 import {
   soqlDate,
@@ -59,7 +60,9 @@ it(
     query.where("Combobox__c", "=", "Option");
     query.where("Currency__c", "=", 12.5);
     query.where("Date__c", "=", soqlDate("2026-09-17"));
+    query.where("Date__c", "=", soqlRelativeDate("TODAY"));
     query.where("DateTime__c", "=", soqlDateTime("2026-09-17T12:00:00Z"));
+    query.where("DateTime__c", "=", soqlRelativeDate("YESTERDAY"));
     query.where("Double__c", "=", 12.5);
     query.where("Email__c", "=", "user@example.com");
     query.where("Encrypted__c", "=", "secret");
@@ -92,7 +95,9 @@ it(
 
     query.where("Currency__c", ">", 1);
     query.where("Date__c", ">=", soqlDate("2026-01-01"));
+    query.where("Date__c", "<", soqlRelativeDate("TOMORROW"));
     query.where("DateTime__c", "<", soqlDateTime("2027-01-01T00:00:00Z"));
+    query.where("DateTime__c", ">=", soqlRelativeDate("TODAY"));
     query.where("Double__c", "<=", 1.5);
     query.where("Email__c", ">", "a@example.com");
     query.where("Id", ">=", "001000000000001");
@@ -119,6 +124,8 @@ it(
     query.where("MultiPicklist__c", ">", "A;B");
     // @ts-expect-error Picklists aren't in the ordered Salesforce type set.
     query.where("Picklist__c", ">", "Option");
+    // @ts-expect-error Relative date literals are not valid time operands.
+    query.where("Time__c", ">", soqlRelativeDate("TODAY"));
   },
 );
 

@@ -43,6 +43,11 @@ export { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
 export type { QueryCompiler } from "#/query-compiler/query-compiler";
 export type { QueryExecutor } from "#/query-executor";
 export {
+  soqlRelativeDate,
+  type SoqlRelativeDateLiteral,
+  type SoqlRelativeDateValue,
+} from "#/soql-relative-date-literal";
+export {
   soqlDate,
   soqlDateTime,
   soqlTime,

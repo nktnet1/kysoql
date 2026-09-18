@@ -163,7 +163,11 @@ components, timezone-offset bounds where relevant, and accepted literal shapes.
 The filter type maps generated Salesforce `date`, `datetime`, and `time` fields
 to the matching wrapper while leaving selected result values as strings. The
 compiler recognizes only those explicit wrappers and emits their values unquoted.
-Relative date literals such as `TODAY` are not part of this slice.
+Implemented consequence in `v1.0.41`: core adds a separate branded
+`soqlRelativeDate(...)` wrapper for the fixed `TODAY`, `YESTERDAY`, and
+`TOMORROW` literals. Those values are accepted only for Salesforce `date` /
+`datetime` filters and compile unquoted. Parameterized relative-date families
+remain separate follow-up work.
 
 ### ORDER BY
 

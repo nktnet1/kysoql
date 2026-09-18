@@ -1,6 +1,7 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
 import { Kysoql } from "#/kysoql";
+import { soqlRelativeDate } from "#/soql-relative-date-literal";
 import { soqlDate, soqlDateTime, soqlTime } from "#/soql-temporal-literal";
 import type { SalesforceField, SalesforceObject } from "#/schema";
 import type { Simplify } from "#/util/type-utils";
@@ -264,6 +265,19 @@ describe("DefaultQueryCompiler", () => {
 
     expect(compiled.soql).toBe(
       "SELECT Id FROM Account WHERE CloseDate = 2026-09-17 AND LastActivityAt__c >= 2026-09-17T16:26:30.125+10:00 AND OpeningTime__c < 17:30:00.000Z",
+    );
+  });
+
+  it("compiles fixed relative date literals without quotes", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .where("CloseDate", "=", soqlRelativeDate("TODAY"))
+      .where("LastActivityAt__c", ">=", soqlRelativeDate("YESTERDAY"))
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT Id FROM Account WHERE CloseDate = TODAY AND LastActivityAt__c >= YESTERDAY",
     );
   });
 

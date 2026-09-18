@@ -7,6 +7,7 @@ import {
   kysoql,
   soqlDate,
   soqlDateTime,
+  soqlRelativeDate,
   soqlTime,
   type AndNode,
   type BinaryOperationNode,
@@ -47,6 +48,8 @@ import {
   type SObjectNode,
   type SoqlDateLiteral,
   type SoqlDateTimeLiteral,
+  type SoqlRelativeDateLiteral,
+  type SoqlRelativeDateValue,
   type SoqlTemporalLiteral,
   type SoqlTimeLiteral,
   type ValueListNode,
@@ -113,6 +116,8 @@ type PublicTypeSurface = {
   sobjectNode: SObjectNode;
   soqlDateLiteral: SoqlDateLiteral;
   soqlDateTimeLiteral: SoqlDateTimeLiteral;
+  soqlRelativeDateLiteral: SoqlRelativeDateLiteral;
+  soqlRelativeDateValue: SoqlRelativeDateValue;
   soqlTemporalLiteral: SoqlTemporalLiteral;
   soqlTimeLiteral: SoqlTimeLiteral;
   valueListNode: ValueListNode;
@@ -132,6 +137,7 @@ describe("@kysoql/core public API", () => {
     expect(DefaultQueryCompiler).toBeTypeOf("function");
     expect(soqlDate).toBeTypeOf("function");
     expect(soqlDateTime).toBeTypeOf("function");
+    expect(soqlRelativeDate).toBeTypeOf("function");
     expect(soqlTime).toBeTypeOf("function");
   });
 

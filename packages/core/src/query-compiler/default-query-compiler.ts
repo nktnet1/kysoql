@@ -16,6 +16,7 @@ import type { SelectionNode } from "#/operation-node/selection-node";
 import type { ValueListNode } from "#/operation-node/value-list-node";
 import type { ValueNode } from "#/operation-node/value-node";
 import type { WhereNode } from "#/operation-node/where-node";
+import { isSoqlRelativeDateLiteral } from "#/soql-relative-date-literal";
 import { isSoqlTemporalLiteral } from "#/soql-temporal-literal";
 import { freeze } from "#/util/object-utils";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
@@ -179,7 +180,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
       return "null";
     }
 
-    if (isSoqlTemporalLiteral(value)) {
+    if (isSoqlTemporalLiteral(value) || isSoqlRelativeDateLiteral(value)) {
       return value.value;
     }
 

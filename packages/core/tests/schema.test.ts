@@ -9,6 +9,7 @@ import type {
   SalesforceParentRelationship,
   SalesforceRow,
 } from "#/schema";
+import type { SoqlRelativeDateLiteral } from "#/soql-relative-date-literal";
 import type {
   SoqlDateLiteral,
   SoqlDateTimeLiteral,
@@ -61,12 +62,14 @@ it(
       SalesforceFieldFilterValue<
         SalesforceField<string, "date", false, true, true, true>
       >
-    >().toEqualTypeOf<SoqlDateLiteral>();
+    >().toEqualTypeOf<SoqlDateLiteral | SoqlRelativeDateLiteral>();
     expectTypeOf<
       SalesforceFieldFilterValue<
         SalesforceField<string, "datetime", true, true, true, true>
       >
-    >().toEqualTypeOf<SoqlDateTimeLiteral | null>();
+    >().toEqualTypeOf<
+      SoqlDateTimeLiteral | SoqlRelativeDateLiteral | null
+    >();
     expectTypeOf<
       SalesforceFieldFilterValue<
         SalesforceField<string, "time", false, true, true, true>
