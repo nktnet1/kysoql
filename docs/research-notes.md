@@ -175,6 +175,11 @@ safe integer and the resulting `LAST_N_DAYS:n` / `NEXT_N_DAYS:n` literal remains
 inside the branded relative-date representation. Callers cannot pass the
 colon-delimited form directly as an ordinary string.
 
+Implemented consequence in `v1.0.43`: the same parameterized factory path also
+supports `soqlRelativeDate("LAST_N_MONTHS", n)` and
+`soqlRelativeDate("NEXT_N_MONTHS", n)`, reusing the same non-negative
+safe-integer count validation and branded unquoted literal representation.
+
 ### ORDER BY
 
 Sources:

@@ -5,7 +5,12 @@ import { freeze } from "#/util/object-utils";
 declare const soqlRelativeDateLiteralBrand: unique symbol;
 
 const fixedRelativeDateValues = ["TODAY", "YESTERDAY", "TOMORROW"] as const;
-const relativeDateFamilies = ["LAST_N_DAYS", "NEXT_N_DAYS"] as const;
+const relativeDateFamilies = [
+  "LAST_N_DAYS",
+  "NEXT_N_DAYS",
+  "LAST_N_MONTHS",
+  "NEXT_N_MONTHS",
+] as const;
 
 export type SoqlRelativeDateFamily = (typeof relativeDateFamilies)[number];
 
@@ -26,7 +31,7 @@ export interface SoqlRelativeDateLiteral {
 const INVALID_FIXED_RELATIVE_DATE =
   "SOQL fixed relative date literals must be TODAY, YESTERDAY, or TOMORROW.";
 const INVALID_RELATIVE_DATE_FAMILY =
-  "SOQL relative date family must be LAST_N_DAYS or NEXT_N_DAYS.";
+  "SOQL relative date family must be LAST_N_DAYS, NEXT_N_DAYS, LAST_N_MONTHS, or NEXT_N_MONTHS.";
 const INVALID_RELATIVE_DATE_COUNT =
   "SOQL relative date count must be a non-negative safe integer.";
 const INVALID_RELATIVE_DATE = "Invalid SOQL relative date literal.";
@@ -108,7 +113,10 @@ function isValidRelativeDateValue(value: string): boolean {
     return true;
   }
 
-  const match = /^(?:LAST_N_DAYS|NEXT_N_DAYS):(0|[1-9]\d*)$/u.exec(value);
+  const match =
+    /^(?:LAST_N_DAYS|NEXT_N_DAYS|LAST_N_MONTHS|NEXT_N_MONTHS):(0|[1-9]\d*)$/u.exec(
+      value,
+    );
 
   return match !== null && Number.isSafeInteger(Number(match[1]));
 }

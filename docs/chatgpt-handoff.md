@@ -24,8 +24,8 @@ Kysely findings that support the architecture below.
    coherent unit of work with focused tests. Do not bundle the next roadmap item,
    cleanup, or unrelated refactors into it.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.42`, the next patch
-   is `v1.0.43`.
+   reuse or rewrite a version already handed off. After `v1.0.43`, the next patch
+   is `v1.0.44`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -65,7 +65,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.42`
+## Current state after `v1.0.43`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -88,6 +88,7 @@ recent patch sequence:
 | `v1.0.40` | Add multi-select-picklist-specific `INCLUDES` / `EXCLUDES` using generated active picklist values; refresh this handoff. |
 | `v1.0.41` | Add branded fixed relative date literals (`TODAY`, `YESTERDAY`, `TOMORROW`) for date/datetime filters. |
 | `v1.0.42` | Extend `soqlRelativeDate(...)` with validated `LAST_N_DAYS:n` / `NEXT_N_DAYS:n` factory forms. |
+| `v1.0.43` | Extend `soqlRelativeDate(...)` with validated `LAST_N_MONTHS:n` / `NEXT_N_MONTHS:n` factory forms. |
 
 ### Build/tooling state
 
@@ -143,8 +144,9 @@ Core currently has:
 - explicit `soqlDate(...)`, `soqlDateTime(...)`, and `soqlTime(...)` absolute
   temporal filter literals;
 - branded `soqlRelativeDate(...)` support for fixed `TODAY`, `YESTERDAY`, and
-  `TOMORROW` plus validated `LAST_N_DAYS:n` / `NEXT_N_DAYS:n` forms on `date` /
-  `datetime` filters;
+  `TOMORROW` plus validated `LAST_N_DAYS:n`, `NEXT_N_DAYS:n`,
+  `LAST_N_MONTHS:n`, and `NEXT_N_MONTHS:n` forms on `date` / `datetime`
+  filters;
 - grouped `eb.or([...])`, grouped/nested `eb.and([...])`, and `eb.not(expr)`;
 - typed `.orderBy(field, direction?, nulls?)`, additive in call order;
 - `.limit(number)` with non-negative safe-integer validation and replacement on
@@ -168,31 +170,30 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.43` and should add only the parameterized month
-relative-date family.** Keep the API consistent with the day family.
+**The next patch should be `v1.0.44` and should add only the fixed month
+relative-date literals.** Keep them in the existing branded representation.
 
 Recommended next unit:
 
-- add `LAST_N_MONTHS:n` and `NEXT_N_MONTHS:n` through
-  `soqlRelativeDate("LAST_N_MONTHS", n)` / `soqlRelativeDate("NEXT_N_MONTHS", n)`;
-- reuse the non-negative-safe-integer count validation;
-- keep the result in the same branded relative-date representation and compile
-  it unquoted;
+- add `LAST_MONTH`, `THIS_MONTH`, and `NEXT_MONTH` through the one-argument
+  `soqlRelativeDate(...)` factory;
+- validate them through the existing fixed-literal path and compile them
+  unquoted;
 - add focused factory/type/compiler tests;
-- do **not** add fixed month literals, quarter/year/fiscal variants,
-  relationship traversal, or subqueries in the same patch.
+- do **not** add quarter/year/fiscal variants, relationship traversal, or
+  subqueries in the same patch.
 
-If the supplied bundle already contains `v1.0.43` or later, inspect the code and
+If the supplied bundle already contains `v1.0.44` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
 
 Keep these as separate incremental patches or short patch series:
 
-1. **Finish relative date literals after the parameterized month family.** Add
-   the remaining fixed month, quarter, year, and fiscal variants in separate
-   small slices with explicit validation. They must not be ordinary strings or
-   be smuggled through `soqlDate(...)`.
+1. **Finish relative date literals after the fixed month slice.** Add the
+   remaining quarter, year, and fiscal variants in separate small slices with
+   explicit validation. They must not be ordinary strings or be smuggled through
+   `soqlDate(...)`.
 2. **Relationship paths and relationship queries.** First child-to-parent dotted
    field paths in selection/filter/order, then parent-to-child subqueries. Use
    generated relationship metadata; no arbitrary SQL joins.

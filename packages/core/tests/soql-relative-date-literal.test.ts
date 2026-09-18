@@ -25,6 +25,8 @@ describe("SOQL relative date literals", () => {
   it.each([
     ["LAST_N_DAYS", 5, "LAST_N_DAYS:5"],
     ["NEXT_N_DAYS", 0, "NEXT_N_DAYS:0"],
+    ["LAST_N_MONTHS", 12, "LAST_N_MONTHS:12"],
+    ["NEXT_N_MONTHS", 1, "NEXT_N_MONTHS:1"],
   ] as const)("creates a frozen %s:%d literal", (family, count, value) => {
     const literal = soqlRelativeDate(family, count);
 
@@ -37,9 +39,12 @@ describe("SOQL relative date literals", () => {
   });
 
   it.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, 2 ** 53])(
-    "rejects invalid parameterized day counts: %s",
+    "rejects invalid parameterized counts: %s",
     (count) => {
       expect(() => soqlRelativeDate("LAST_N_DAYS", count)).toThrow(
+        "SOQL relative date count must be a non-negative safe integer.",
+      );
+      expect(() => soqlRelativeDate("LAST_N_MONTHS", count)).toThrow(
         "SOQL relative date count must be a non-negative safe integer.",
       );
     },
@@ -52,9 +57,9 @@ describe("SOQL relative date literals", () => {
       "SOQL fixed relative date literals must be TODAY, YESTERDAY, or TOMORROW.",
     );
     expect(() =>
-      soqlRelativeDate("LAST_N_MONTHS" as SoqlRelativeDateFamily, 5),
+      soqlRelativeDate("LAST_N_YEARS" as SoqlRelativeDateFamily, 5),
     ).toThrow(
-      "SOQL relative date family must be LAST_N_DAYS or NEXT_N_DAYS.",
+      "SOQL relative date family must be LAST_N_DAYS, NEXT_N_DAYS, LAST_N_MONTHS, or NEXT_N_MONTHS.",
     );
   });
 
@@ -82,12 +87,27 @@ describe("SOQL relative date literals", () => {
         kind: "SoqlRelativeDateLiteral",
         value: "LAST_N_MONTHS:5",
       }),
+    ).toBe(true);
+    expect(
+      isSoqlRelativeDateLiteral({
+        kind: "SoqlRelativeDateLiteral",
+        value: "NEXT_N_MONTHS:0",
+      }),
+    ).toBe(true);
+    expect(
+      isSoqlRelativeDateLiteral({
+        kind: "SoqlRelativeDateLiteral",
+        value: "LAST_N_YEARS:5",
+      }),
     ).toBe(false);
   });
 
-  it("exposes fixed values plus the parameterized day family", () => {
+  it("exposes fixed values plus parameterized day and month families", () => {
     expectTypeOf<SoqlRelativeDateFamily>().toEqualTypeOf<
-      "LAST_N_DAYS" | "NEXT_N_DAYS"
+      | "LAST_N_DAYS"
+      | "NEXT_N_DAYS"
+      | "LAST_N_MONTHS"
+      | "NEXT_N_MONTHS"
     >();
     expectTypeOf<SoqlRelativeDateValue>().toEqualTypeOf<
       | "TODAY"
@@ -95,10 +115,14 @@ describe("SOQL relative date literals", () => {
       | "TOMORROW"
       | `LAST_N_DAYS:${number}`
       | `NEXT_N_DAYS:${number}`
+      | `LAST_N_MONTHS:${number}`
+      | `NEXT_N_MONTHS:${number}`
     >();
 
     soqlRelativeDate("LAST_N_DAYS", 30);
     soqlRelativeDate("NEXT_N_DAYS", 30);
+    soqlRelativeDate("LAST_N_MONTHS", 12);
+    soqlRelativeDate("NEXT_N_MONTHS", 12);
 
     function typecheckOnly(): void {
       // @ts-expect-error Parameterized relative dates require the family/count API.
@@ -106,7 +130,7 @@ describe("SOQL relative date literals", () => {
       // @ts-expect-error Parameterized relative date families require a count.
       soqlRelativeDate("LAST_N_DAYS");
       // @ts-expect-error Unsupported families are not accepted.
-      soqlRelativeDate("LAST_N_MONTHS", 5);
+      soqlRelativeDate("LAST_N_YEARS", 5);
       // @ts-expect-error Fixed literals do not take a count.
       soqlRelativeDate("TODAY", 5);
     }
