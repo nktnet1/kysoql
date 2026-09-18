@@ -211,6 +211,18 @@ Implemented consequence in `v1.0.50`: the parameterized factory path also suppor
 `soqlRelativeDate("NEXT_N_FISCAL_YEARS", n)`, reusing the same non-negative
 safe-integer count validation and branded unquoted literal representation.
 
+Implemented consequence in `v1.0.51`: relative-date support is completed as one
+grouped slice. The fixed path adds `LAST_WEEK`, `THIS_WEEK`, `NEXT_WEEK`,
+`LAST_90_DAYS`, and `NEXT_90_DAYS`. The parameterized path adds
+`N_DAYS_AGO:n`; `LAST_N_WEEKS:n`, `NEXT_N_WEEKS:n`, `N_WEEKS_AGO:n`;
+`N_MONTHS_AGO:n`; `LAST_N_QUARTERS:n`, `NEXT_N_QUARTERS:n`,
+`N_QUARTERS_AGO:n`; `LAST_N_YEARS:n`, `NEXT_N_YEARS:n`, `N_YEARS_AGO:n`;
+and the fiscal `N_FISCAL_QUARTERS_AGO:n` / `N_FISCAL_YEARS_AGO:n` forms. All
+parameterized forms reuse the same non-negative safe-integer validation and all
+relative-date values remain branded and compile unquoted. Wrapper revalidation
+now checks the family against the canonical family list rather than duplicating
+the list in a second regular expression.
+
 ### ORDER BY
 
 Sources:

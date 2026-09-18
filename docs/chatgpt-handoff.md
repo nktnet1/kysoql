@@ -20,12 +20,13 @@ Kysely findings that support the architecture below.
 4. If dependencies are available, run `pnpm validate` before and after the
    change. The user commonly runs validation locally and supplies any failure
    log; if so, fix **that failure only** before moving on.
-5. Work in **small incremental slices**. One delivered patch should represent one
-   coherent unit of work with focused tests. Do not bundle the next roadmap item,
-   cleanup, or unrelated refactors into it.
+5. Work in **coherent incremental slices**. Group repetitive syntax families when
+   they share the same validation/type/AST/compiler path instead of producing tiny
+   near-identical patches. Do not bundle the next major roadmap item, cleanup, or
+   unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.50`, the next patch
-   is `v1.0.51`.
+   reuse or rewrite a version already handed off. After `v1.0.51`, the next patch
+   is `v1.0.52`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -38,8 +39,8 @@ Kysely findings that support the architecture below.
    they already know. Report substantive checks such as tests/typechecks when useful,
    but keep routine patch-integrity checks internal unless the user asks. Let the
    user run `pnpm validate` locally.
-8. The user prefers the current workflow: implement a small slice, provide the
-   patch, wait for their `validate` result, then continue. Do not spend a long
+8. The user prefers the current workflow: implement one coherent slice, provide
+   the patch, wait for their `validate` result, then continue. Do not spend a long
    time exploring future features. When handing off a patch, link it and summarize
    its contents. Do not explain how to apply patches, or report `git diff --check` /
    `git apply --check`, unless the user asks.
@@ -69,7 +70,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.50`
+## Current state after `v1.0.51`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -100,6 +101,7 @@ recent patch sequence:
 | `v1.0.48` | Add fixed `LAST_FISCAL_QUARTER`, `THIS_FISCAL_QUARTER`, and `NEXT_FISCAL_QUARTER` relative-date literals. |
 | `v1.0.49` | Add parameterized `LAST_N_FISCAL_QUARTERS:n` and `NEXT_N_FISCAL_QUARTERS:n` relative-date literals. |
 | `v1.0.50` | Add parameterized `LAST_N_FISCAL_YEARS:n` and `NEXT_N_FISCAL_YEARS:n` relative-date literals. |
+| `v1.0.51` | Complete documented relative-date literal support by grouping the remaining fixed week/90-day literals and parameterized calendar/fiscal families. |
 
 ### Build/tooling state
 
@@ -154,15 +156,12 @@ Core currently has:
   and multipicklist `includes` / `excludes`;
 - explicit `soqlDate(...)`, `soqlDateTime(...)`, and `soqlTime(...)` absolute
   temporal filter literals;
-- branded `soqlRelativeDate(...)` support for fixed `TODAY`, `YESTERDAY`, and
-  `TOMORROW`, `LAST_MONTH`, `THIS_MONTH`, `NEXT_MONTH`, `LAST_QUARTER`,
-  `THIS_QUARTER`, `NEXT_QUARTER`, `LAST_YEAR`, `THIS_YEAR`, `NEXT_YEAR`,
-  `LAST_FISCAL_YEAR`, `THIS_FISCAL_YEAR`, `NEXT_FISCAL_YEAR`,
-  `LAST_FISCAL_QUARTER`, `THIS_FISCAL_QUARTER`, and `NEXT_FISCAL_QUARTER` plus
-  validated `LAST_N_DAYS:n`, `NEXT_N_DAYS:n`, `LAST_N_MONTHS:n`,
-  `NEXT_N_MONTHS:n`, `LAST_N_FISCAL_QUARTERS:n`,
-  `NEXT_N_FISCAL_QUARTERS:n`, `LAST_N_FISCAL_YEARS:n`, and
-  `NEXT_N_FISCAL_YEARS:n` forms on `date` / `datetime` filters;
+- branded `soqlRelativeDate(...)` support for all documented Salesforce
+  relative-date literals on `date` / `datetime` filters, including fixed
+  day/week/month/quarter/year/fiscal ranges, `LAST_90_DAYS` / `NEXT_90_DAYS`,
+  `LAST_N_*` / `NEXT_N_*`,
+  and `N_*_AGO` calendar/fiscal families; parameter counts are validated as
+  non-negative safe integers and all literals compile unquoted;
 - grouped `eb.or([...])`, grouped/nested `eb.and([...])`, and `eb.not(expr)`;
 - typed `.orderBy(field, direction?, nulls?)`, additive in call order;
 - `.limit(number)` with non-negative safe-integer validation and replacement on
@@ -186,52 +185,50 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.51` and should add only the fixed week
-relative-date literals.** Keep them in the existing branded representation.
+**The next patch should be `v1.0.52` and should start relationship support with
+typed child-to-parent dotted field paths.** Keep the first relationship slice to
+path traversal; do not add parent-to-child subqueries or semi/anti-joins yet.
 
 Recommended next unit:
 
-- add `LAST_WEEK`, `THIS_WEEK`, and `NEXT_WEEK` through the existing one-argument
-  `soqlRelativeDate(value)` factory;
-- compile them unquoted through the existing relative-date literal path;
-- add focused factory/type/compiler tests;
-- do **not** add `LAST_N_WEEKS:n`, `NEXT_N_WEEKS:n`, `N_WEEKS_AGO:n`, other
-  relative-date literals, relationship traversal, or subqueries in the same
-  patch.
+- derive valid child-to-parent relationship paths from generated relationship
+  metadata rather than accepting arbitrary dotted strings;
+- support those paths consistently in selection, filtering, and ordering where
+  the referenced target field's metadata allows the operation;
+- preserve selected-output typing for relationship-path selections;
+- add focused type, AST/compiler, and query-builder coverage;
+- do **not** add parent-to-child subqueries, arbitrary SQL joins, aggregates, or
+  semi/anti-joins in the same patch.
 
-If the supplied bundle already contains `v1.0.51` or later, inspect the code and
+If the supplied bundle already contains `v1.0.52` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
 
-Keep these as separate incremental patches or short patch series:
+Group closely related syntax when it shares the same type/AST/compiler path, but
+keep major architecture changes independently reviewable:
 
-1. **Finish relative date literals after the fixed-week slice.** Add the
-   remaining documented fixed and parameterized relative-date literals in
-   separate small slices with explicit validation. They must not be ordinary
-   strings or be smuggled through `soqlDate(...)`.
-2. **Relationship paths and relationship queries.** First child-to-parent dotted
-   field paths in selection/filter/order, then parent-to-child subqueries. Use
-   generated relationship metadata; no arbitrary SQL joins.
-3. **Semi-joins and anti-joins.** Extend `IN` / `NOT IN` to typed subquery operands
+1. **Parent-to-child relationship queries.** Add typed relationship subqueries
+   using generated child-relationship metadata. No arbitrary SQL joins.
+2. **Semi-joins and anti-joins.** Extend `IN` / `NOT IN` to typed subquery operands
    and enforce Salesforce reference/ID and nesting restrictions where practical.
-4. **Aggregate queries.** `COUNT`, `COUNT(field)`, `COUNT_DISTINCT`, `SUM`, `AVG`,
+3. **Aggregate queries.** `COUNT`, `COUNT(field)`, `COUNT_DISTINCT`, `SUM`, `AVG`,
    `MIN`, `MAX`, aliases, `GROUP BY`, `HAVING`, `ROLLUP`, `CUBE`, and `GROUPING()`.
    This is a major output-type architecture change.
-5. **Broader SELECT expressions/functions.** `FIELDS(...)`, `toLabel()`,
+4. **Broader SELECT expressions/functions.** `FIELDS(...)`, `toLabel()`,
    `FORMAT()`, `convertCurrency()`, calendar/date functions,
    `convertTimezone()`, and geolocation expressions where safely modelable.
-6. **Polymorphic references / `TYPEOF`.** Dedicated AST and discriminated output
+5. **Polymorphic references / `TYPEOF`.** Dedicated AST and discriminated output
    typing.
-7. **Specialist top-level clauses.** `USING SCOPE`, `WITH DATA CATEGORY`, and
+6. **Specialist top-level clauses.** `USING SCOPE`, `WITH DATA CATEGORY`, and
    other REST/SOAP-relevant specialist clauses.
-8. **Execution-context-specific syntax.** Re-evaluate Apex-only semantics such as
+7. **Execution-context-specific syntax.** Re-evaluate Apex-only semantics such as
    `FOR UPDATE`, `WITH USER_MODE`, binds, etc. separately from the
    transport-neutral REST/JSforce core.
 
 The two largest future architecture changes remain relationship queries and
-aggregate queries. Avoid redesigning them while implementing small operators or
-literal families.
+aggregate queries. Avoid redesigning aggregates while implementing relationship
+paths/subqueries.
 
 ## Validation and runtime-boundary conventions
 

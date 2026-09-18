@@ -427,6 +427,56 @@ describe("DefaultQueryCompiler", () => {
     );
   });
 
+  it.each([
+    "LAST_WEEK",
+    "THIS_WEEK",
+    "NEXT_WEEK",
+    "LAST_90_DAYS",
+    "NEXT_90_DAYS",
+  ] as const)(
+    "compiles remaining fixed relative date literal %s without quotes",
+    (value) => {
+      const compiled = new Kysoql<FixtureSchema>()
+        .selectFrom("Account")
+        .select("Id")
+        .where("CloseDate", "=", soqlRelativeDate(value))
+        .compile();
+
+      expect(compiled.soql).toBe(
+        `SELECT Id FROM Account WHERE CloseDate = ${value}`,
+      );
+    },
+  );
+
+  it.each([
+    ["N_DAYS_AGO", 25],
+    ["LAST_N_WEEKS", 52],
+    ["NEXT_N_WEEKS", 4],
+    ["N_WEEKS_AGO", 3],
+    ["N_MONTHS_AGO", 6],
+    ["LAST_N_QUARTERS", 2],
+    ["NEXT_N_QUARTERS", 2],
+    ["N_QUARTERS_AGO", 3],
+    ["LAST_N_YEARS", 5],
+    ["NEXT_N_YEARS", 5],
+    ["N_YEARS_AGO", 2],
+    ["N_FISCAL_QUARTERS_AGO", 6],
+    ["N_FISCAL_YEARS_AGO", 3],
+  ] as const)(
+    "compiles remaining parameterized relative date literal %s:%d without quotes",
+    (family, count) => {
+      const compiled = new Kysoql<FixtureSchema>()
+        .selectFrom("Account")
+        .select("Id")
+        .where("CloseDate", "=", soqlRelativeDate(family, count))
+        .compile();
+
+      expect(compiled.soql).toBe(
+        `SELECT Id FROM Account WHERE CloseDate = ${family}:${count}`,
+      );
+    },
+  );
+
   it("does not accept forged temporal wrappers as raw SOQL", () => {
     const forgedDate = {
       kind: "SoqlDateLiteral",
