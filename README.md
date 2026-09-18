@@ -98,6 +98,22 @@ Salesforce's default ascending order. `.limit(n)` accepts non-negative safe
 integers, including `0`; repeated calls replace the previous limit instead of
 emitting multiple `LIMIT` clauses.
 
+Translated picklist labels can be selected through an aliased `toLabel()`
+callback. Inputs are restricted to generated `picklist` and `multipicklist`
+fields, including child-to-parent paths, and translated outputs are inferred as
+strings with source/relationship nullability preserved. Kysoql requires an alias
+for every SELECT function result so the returned object key is deterministic.
+Salesforce does not support ordering by `toLabel()` expressions, so they are not
+accepted by `.orderBy()`.
+
+```ts
+const opportunities = await db
+  .selectFrom("Opportunity")
+  .select(["Id", "StageName"])
+  .select(({ fn }) => fn.toLabel("StageName").as("stageLabel"))
+  .execute();
+```
+
 Generated parent-relationship metadata also enables typed child-to-parent dotted
 paths in `.select()`, `.where()`, expression callbacks, and `.orderBy()`. The
 terminal related field keeps its generated value/operator/capability checks, and

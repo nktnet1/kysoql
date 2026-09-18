@@ -5,6 +5,7 @@ export type {
   AggregateFunctionModule,
   AliasedAggregateFunctionBuilder,
   AliasedDateFunctionBuilder,
+  AliasedSelectFunctionBuilder,
   CountAllFunctionBuilder,
   DateFunctionBuilder,
   DateFunctionExpression,
@@ -13,6 +14,9 @@ export type {
   GroupingFunctionBuilder,
   NumericAggregatableFieldReference,
   SelectExpressionBuilder,
+  SelectFunctionModule,
+  ToLabelFunctionBuilder,
+  TranslatableFieldReference,
 } from "#/expression/aggregate-function-builder";
 export type {
   ExpressionBuilder,
@@ -68,6 +72,7 @@ export type { SelectQueryNode } from "#/operation-node/select-query-node";
 export type { SelectionNode } from "#/operation-node/selection-node";
 export type { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
 export type { SObjectNode } from "#/operation-node/sobject-node";
+export type { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
 export type { ValueListNode } from "#/operation-node/value-list-node";
 export type { ValueNode } from "#/operation-node/value-node";
 export type { WhereNode } from "#/operation-node/where-node";

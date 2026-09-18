@@ -33,6 +33,17 @@ interface RelationshipSubquerySchema {
         true,
         true
       >;
+      readonly Salutation: SalesforceField<
+        string,
+        "picklist",
+        true,
+        true,
+        true,
+        true,
+        never,
+        never,
+        "Mr." | "Ms."
+      >;
       readonly AccountId: SalesforceField<
         string,
         "reference",
@@ -204,6 +215,7 @@ describe("parent-to-child relationship subqueries", () => {
       .selectSubquery("Contacts", (contacts) =>
         contacts
           .select(["Id", "LastName", "CreatedBy.Alias"])
+          .select(({ fn }) => fn.toLabel("Salutation").as("salutationLabel"))
           .where("LastName", "like", "A%")
           .where((eb) => eb("CreatedBy.Alias", "=", "x"))
           .orderBy("LastName", "asc", "last")
@@ -228,6 +240,20 @@ describe("parent-to-child relationship subqueries", () => {
           {
             kind: "SelectionNode",
             selection: { kind: "ReferenceNode", name: "CreatedBy.Alias" },
+          },
+          {
+            kind: "SelectionNode",
+            selection: {
+              kind: "AliasNode",
+              alias: "salutationLabel",
+              node: {
+                kind: "ToLabelFunctionNode",
+                reference: {
+                  kind: "ReferenceNode",
+                  name: "Salutation",
+                },
+              },
+            },
           },
         ],
         where: {
@@ -271,7 +297,7 @@ describe("parent-to-child relationship subqueries", () => {
       Object.isFrozen(query.toOperationNode().selections?.[2]?.selection),
     ).toBe(true);
     expect(query.compile().soql).toBe(
-      "SELECT Id, Name, (SELECT Id, LastName, CreatedBy.Alias FROM Contacts WHERE LastName LIKE 'A%' AND CreatedBy.Alias = 'x' ORDER BY LastName ASC NULLS LAST LIMIT 5) FROM Account",
+      "SELECT Id, Name, (SELECT Id, LastName, CreatedBy.Alias, toLabel(Salutation) salutationLabel FROM Contacts WHERE LastName LIKE 'A%' AND CreatedBy.Alias = 'x' ORDER BY LastName ASC NULLS LAST LIMIT 5) FROM Account",
     );
   });
 
@@ -280,7 +306,9 @@ describe("parent-to-child relationship subqueries", () => {
       .selectFrom("Account")
       .select("Id")
       .selectSubquery("Contacts", (contacts) =>
-        contacts.select(["Id", "LastName", "CreatedBy.Alias"]),
+        contacts
+          .select(["Id", "LastName", "CreatedBy.Alias"])
+          .select(({ fn }) => fn.toLabel("Salutation").as("salutationLabel")),
       );
 
     expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
@@ -291,6 +319,7 @@ describe("parent-to-child relationship subqueries", () => {
         readonly CreatedBy: {
           readonly Alias: string | null;
         };
+        readonly salutationLabel: string | null;
       }>;
     }>();
   });
@@ -362,6 +391,9 @@ describe("parent-to-child relationship subqueries", () => {
 
         // @ts-expect-error Subquery OFFSET is intentionally not exposed because Salesforce documents it as a conditional pilot feature.
         contacts.offset(1);
+
+        // @ts-expect-error Child SELECT functions retain generated field-type metadata.
+        contacts.select(({ fn }) => fn.toLabel("LastName").as("lastNameLabel"));
 
         return contacts.select("Id");
       });

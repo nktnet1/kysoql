@@ -11,6 +11,7 @@ import type {
   SetComparisonOperator,
 } from "#/operation-node/operator-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
+import { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
 import type { ComparisonOperatorExpression } from "#/parser/binary-operation-parser";
 import type { GroupableFieldName } from "#/parser/group-by-parser";
 import { validateGroupingField } from "#/parser/grouping-expression-parser";
@@ -94,6 +95,7 @@ type NumericAggregateOperator =
   | SetComparisonOperator;
 
 type TemporalSalesforceType = "date" | "datetime";
+type TranslatableSalesforceType = "multipicklist" | "picklist";
 
 export type DateGroupableFieldReference<
   DB,
@@ -128,6 +130,7 @@ type DateFunctionComparisonValue<
 declare const groupingFunctionType: unique symbol;
 declare const dateFunctionIdentityType: unique symbol;
 declare const aggregateFunctionSelectionType: unique symbol;
+declare const selectFunctionSelectionType: unique symbol;
 
 export type DateFunctionIdentity<
   Function extends DateFunction,
@@ -211,6 +214,43 @@ export interface AliasedAggregateFunctionBuilder<Output, Alias extends string> {
   readonly expressionType: Output | undefined;
   readonly alias: Alias | undefined;
   readonly [aggregateFunctionSelectionType]: true;
+
+  toOperationNode(): AliasNode;
+}
+
+export type TranslatableFieldReference<
+  DB,
+  TB extends keyof DB,
+  Reference extends string,
+> = Reference extends unknown
+  ? [FieldReferenceDefinition<DB, TB, Reference>] extends [never]
+    ? never
+    : FieldReferenceDefinition<DB, TB, Reference> extends {
+          readonly salesforceType: TranslatableSalesforceType;
+        }
+      ? Reference
+      : never
+  : never;
+
+type ToLabelOutput<DB, TB extends keyof DB, Reference extends string> =
+  true extends FieldReferenceNullable<DB, TB, Reference>
+    ? string | null
+    : string;
+
+export interface ToLabelFunctionBuilder<Output> {
+  readonly expressionType: Output | undefined;
+
+  as<Alias extends string>(
+    alias: Alias,
+  ): AliasedSelectFunctionBuilder<Output, Alias>;
+
+  toOperationNode(): ToLabelFunctionNode;
+}
+
+export interface AliasedSelectFunctionBuilder<Output, Alias extends string> {
+  readonly expressionType: Output | undefined;
+  readonly alias: Alias | undefined;
+  readonly [selectFunctionSelectionType]: true;
 
   toOperationNode(): AliasNode;
 }
@@ -335,6 +375,59 @@ class AliasedAggregateFunctionBuilderImpl<Output, Alias extends string>
   readonly #alias: Alias;
 
   constructor(node: AggregateFunctionNode, alias: Alias) {
+    this.#node = AliasNode.create(node, alias);
+    this.#alias = alias;
+  }
+
+  get expressionType(): Output | undefined {
+    return undefined;
+  }
+
+  get alias(): Alias | undefined {
+    return this.#alias;
+  }
+
+  toOperationNode(): AliasNode {
+    return this.#node;
+  }
+}
+
+class ToLabelFunctionBuilderImpl<Output>
+  implements ToLabelFunctionBuilder<Output>
+{
+  readonly #node: ToLabelFunctionNode;
+
+  constructor(node: ToLabelFunctionNode) {
+    this.#node = node;
+  }
+
+  get expressionType(): Output | undefined {
+    return undefined;
+  }
+
+  as<Alias extends string>(
+    alias: Alias,
+  ): AliasedSelectFunctionBuilder<Output, Alias> {
+    return new AliasedSelectFunctionBuilderImpl<Output, Alias>(
+      this.#node,
+      parseSelectionAlias(alias) as Alias,
+    );
+  }
+
+  toOperationNode(): ToLabelFunctionNode {
+    return this.#node;
+  }
+}
+
+class AliasedSelectFunctionBuilderImpl<Output, Alias extends string>
+  implements AliasedSelectFunctionBuilder<Output, Alias>
+{
+  declare readonly [selectFunctionSelectionType]: true;
+
+  readonly #node: AliasNode;
+  readonly #alias: Alias;
+
+  constructor(node: ToLabelFunctionNode, alias: Alias) {
     this.#node = AliasNode.create(node, alias);
     this.#alias = alias;
   }
@@ -491,6 +584,16 @@ export interface AggregateFunctionModule<
   >;
 }
 
+export interface SelectFunctionModule<
+  DB,
+  TB extends keyof DB,
+  GroupingFields extends string = never,
+> extends AggregateFunctionModule<DB, TB, GroupingFields> {
+  toLabel<Reference extends string>(
+    field: Reference & TranslatableFieldReference<DB, TB, Reference>,
+  ): ToLabelFunctionBuilder<ToLabelOutput<DB, TB, Reference>>;
+}
+
 class AggregateFunctionModuleImpl<
   DB,
   TB extends keyof DB,
@@ -605,6 +708,14 @@ class AggregateFunctionModuleImpl<
     return this.#numericDateFunction("weekInYear", field as Reference);
   }
 
+  toLabel<Reference extends string>(
+    field: Reference & TranslatableFieldReference<DB, TB, Reference>,
+  ): ToLabelFunctionBuilder<ToLabelOutput<DB, TB, Reference>> {
+    return new ToLabelFunctionBuilderImpl<ToLabelOutput<DB, TB, Reference>>(
+      ToLabelFunctionNode.create(ReferenceNode.create(field)),
+    );
+  }
+
   grouping<Reference extends string>(
     field: Reference &
       GroupingFieldReference<DB, TB, GroupingFields, Reference>,
@@ -711,7 +822,7 @@ export interface SelectExpressionBuilder<
   TB extends keyof DB,
   GroupingFields extends string = never,
 > {
-  readonly fn: AggregateFunctionModule<DB, TB, GroupingFields>;
+  readonly fn: SelectFunctionModule<DB, TB, GroupingFields>;
 }
 
 export interface SelectExpressionBuilderOptions {
@@ -728,6 +839,6 @@ export function createSelectExpressionBuilder<
   return freeze({
     fn: new AggregateFunctionModuleImpl<DB, TB, GroupingFields>(
       options.groupingFields,
-    ) as unknown as AggregateFunctionModule<DB, TB, GroupingFields>,
+    ) as unknown as SelectFunctionModule<DB, TB, GroupingFields>,
   });
 }

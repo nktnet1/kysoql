@@ -21,6 +21,7 @@ import { SelectQueryNode } from "#/operation-node/select-query-node";
 import { SelectionNode } from "#/operation-node/selection-node";
 import { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
 import { SObjectNode } from "#/operation-node/sobject-node";
+import { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
 import { ValueListNode } from "#/operation-node/value-list-node";
 import { ValueNode } from "#/operation-node/value-node";
 import { WhereNode } from "#/operation-node/where-node";
@@ -79,6 +80,17 @@ describe("operation nodes", () => {
       reference,
     });
     expectFrozen(dateFunction);
+  });
+
+  it("creates frozen toLabel function nodes", () => {
+    const reference = ReferenceNode.create("Industry");
+    const toLabel = ToLabelFunctionNode.create(reference);
+
+    expect(toLabel).toEqual({
+      kind: "ToLabelFunctionNode",
+      reference,
+    });
+    expectFrozen(toLabel);
   });
 
   it("creates frozen value-list nodes and members", () => {

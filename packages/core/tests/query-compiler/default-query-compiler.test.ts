@@ -36,6 +36,17 @@ interface FixtureSchema {
       true,
       true
     >;
+    readonly Industry: SalesforceField<
+      string,
+      "picklist",
+      true,
+      true,
+      true,
+      true,
+      never,
+      never,
+      "Technology" | "Energy"
+    >;
   }>;
   readonly Kysoql_Record__c: SalesforceObject<{
     readonly Id: SalesforceField<string, "id", false, true, true, true>;
@@ -64,6 +75,19 @@ describe("DefaultQueryCompiler", () => {
     expect(compiled.soql).toBe("SELECT Name, Id, AnnualRevenue FROM Account");
     expect(compiled.query).toBe(query.toOperationNode());
     expect(Object.isFrozen(compiled)).toBe(true);
+  });
+
+  it("compiles aliased toLabel selections in builder order", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Industry")
+      .select(({ fn }) => fn.toLabel("Industry").as("industryLabel"))
+      .select("Id")
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT Industry, toLabel(Industry) industryLabel, Id FROM Account",
+    );
   });
 
   it("compiles chained filters and SOQL operator casing", () => {

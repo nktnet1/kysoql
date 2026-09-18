@@ -43,6 +43,13 @@ import type {
   ChildRelationshipReference,
 } from "#/parser/reference-parser";
 import {
+  isSelectFunctionSelectionArg,
+  parseSelectFunctionSelectArg,
+  type SelectFunctionSelection,
+  type SelectFunctionSelectionArg,
+  validateUniqueSelectFunctionAliases,
+} from "#/parser/select-function-parser";
+import {
   parseSelectArg,
   type SelectArg,
   type SelectExpression,
@@ -89,6 +96,12 @@ type AggregateSelectionFactory<
   Aggregate extends AggregateSelectionArg,
 > = (eb: SelectExpressionBuilder<DB, TB>) => Aggregate;
 
+type SelectFunctionSelectionFactory<
+  DB,
+  TB extends keyof DB,
+  FunctionSelection extends SelectFunctionSelectionArg,
+> = (eb: SelectExpressionBuilder<DB, TB>) => FunctionSelection;
+
 export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
   compile(): CompiledQuery<O>;
 
@@ -121,6 +134,10 @@ export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
   select(
     selection: UnselectedOnly<O, CountSelectionFactory<DB, TB>>,
   ): CountQueryBuilder<DB, TB>;
+
+  select<FunctionSelection extends SelectFunctionSelectionArg>(
+    selection: SelectFunctionSelectionFactory<DB, TB, FunctionSelection>,
+  ): SelectQueryBuilder<DB, TB, O & SelectFunctionSelection<FunctionSelection>>;
 
   select<Aggregate extends AggregateSelectionArg>(
     selection: UnselectedOnly<O, AggregateSelectionFactory<DB, TB, Aggregate>>,
@@ -265,6 +282,9 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
   select(
     selection: UnselectedOnly<O, CountSelectionFactory<DB, TB>>,
   ): CountQueryBuilder<DB, TB>;
+  select<FunctionSelection extends SelectFunctionSelectionArg>(
+    selection: SelectFunctionSelectionFactory<DB, TB, FunctionSelection>,
+  ): SelectQueryBuilder<DB, TB, O & SelectFunctionSelection<FunctionSelection>>;
   select<Aggregate extends AggregateSelectionArg>(
     selection: UnselectedOnly<O, AggregateSelectionFactory<DB, TB, Aggregate>>,
   ): AggregateSelectQueryBuilder<DB, TB, AggregateSelection<Aggregate>>;
@@ -290,17 +310,36 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
       });
     }
 
+    const expression = selection(createSelectExpressionBuilder<DB, TB>());
+
+    if (isSelectFunctionSelectionArg(expression)) {
+      const selections = parseSelectFunctionSelectArg(
+        expression as SelectFunctionSelectionArg,
+      );
+
+      validateUniqueSelectFunctionAliases(
+        this.#props.queryNode.selections ?? [],
+        selections,
+      );
+
+      return new SelectQueryBuilderImpl<DB, TB, unknown>({
+        ...this.#props,
+        queryNode: SelectQueryNode.cloneWithSelections(
+          this.#props.queryNode,
+          selections,
+        ),
+      });
+    }
+
     assertNoExistingSelections(this.#props.queryNode);
 
-    const aggregate = selection(createSelectExpressionBuilder<DB, TB>());
-
-    if (isCountAllFunctionBuilder(aggregate)) {
+    if (isCountAllFunctionBuilder(expression)) {
       assertCountClauses(this.#props.queryNode);
 
       return createCountQueryBuilder<DB, TB>({
         ...this.#props,
         queryNode: SelectQueryNode.cloneWithSelections(this.#props.queryNode, [
-          parseCountSelectArg(aggregate),
+          parseCountSelectArg(expression),
         ]),
       });
     }
@@ -308,7 +347,7 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     assertAggregateClauses(this.#props.queryNode);
 
     const selections = parseAggregateSelectArg(
-      aggregate as AggregateSelectionArg,
+      expression as AggregateSelectionArg,
     );
 
     validateGroupingSelections(selections, []);

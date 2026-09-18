@@ -11,6 +11,7 @@ import {
   type AggregateSelectQueryBuilder,
   type AliasedAggregateFunctionBuilder,
   type AliasedDateFunctionBuilder,
+  type AliasedSelectFunctionBuilder,
   type AliasNode,
   type AndNode,
   type BinaryOperationNode,
@@ -68,6 +69,7 @@ import {
   type SalesforceSchema,
   type SelectExpressionBuilder,
   type SelectedSemiJoinSubqueryBuilder,
+  type SelectFunctionModule,
   type SelectionNode,
   type SelectQueryBuilder,
   type SelectQueryBuilderProps,
@@ -90,6 +92,9 @@ import {
   soqlDateTime,
   soqlRelativeDate,
   soqlTime,
+  type ToLabelFunctionBuilder,
+  type ToLabelFunctionNode,
+  type TranslatableFieldReference,
   type ValueListNode,
   type ValueNode,
   type WhereExpressionFactory,
@@ -125,6 +130,7 @@ type PublicTypeSurface = {
     "year",
     "calendarYear(CreatedDate)"
   >;
+  aliasedSelectFunctionBuilder: AliasedSelectFunctionBuilder<string, "label">;
   aliasNode: AliasNode;
   andNode: AndNode;
   binaryOperationNode: BinaryOperationNode;
@@ -269,6 +275,7 @@ type PublicTypeSurface = {
     Record<string, never>,
     never
   >;
+  selectFunctionModule: SelectFunctionModule<Record<string, never>, never>;
   selectionNode: SelectionNode;
   sobjectNode: SObjectNode;
   soqlDateLiteral: SoqlDateLiteral;
@@ -278,6 +285,13 @@ type PublicTypeSurface = {
   soqlRelativeDateValue: SoqlRelativeDateValue;
   soqlTemporalLiteral: SoqlTemporalLiteral;
   soqlTimeLiteral: SoqlTimeLiteral;
+  toLabelFunctionBuilder: ToLabelFunctionBuilder<string>;
+  toLabelFunctionNode: ToLabelFunctionNode;
+  translatableFieldReference: TranslatableFieldReference<
+    Record<string, never>,
+    never,
+    "Status"
+  >;
   valueListNode: ValueListNode;
   valueNode: ValueNode;
   whereExpressionFactory: WhereExpressionFactory<Record<string, never>, never>;

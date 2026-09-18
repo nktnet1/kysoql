@@ -2,59 +2,96 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 
 import { Kysoql } from "#/kysoql";
 import type { SelectQueryBuilder } from "#/query-builder/select-query-builder";
-import type { SalesforceField, SalesforceObject } from "#/schema";
+import type {
+  SalesforceField,
+  SalesforceObject,
+  SalesforceParentRelationship,
+} from "#/schema";
 import { soqlDate, soqlDateTime, soqlTime } from "#/soql-temporal-literal";
 import type { Simplify } from "#/util/type-utils";
 
 interface FixtureSchema {
-  readonly Account: SalesforceObject<{
-    readonly Id: SalesforceField<string, "id", false, true, true, true>;
-    readonly Name: SalesforceField<string, "string", true, true, true, true>;
-    readonly AnnualRevenue: SalesforceField<
-      number,
-      "currency",
-      true,
-      true,
-      true,
-      true
-    >;
-    readonly CloseDate: SalesforceField<string, "date", true, true, true, true>;
-    readonly LastActivityAt__c: SalesforceField<
-      string,
-      "datetime",
-      true,
-      true,
-      true,
-      true
-    >;
-    readonly OpeningTime__c: SalesforceField<
-      string,
-      "time",
-      true,
-      true,
-      true,
-      true
-    >;
-    readonly Industry: SalesforceField<
-      string,
-      "picklist",
-      true,
-      true,
-      true,
-      true,
-      never,
-      never,
-      "Technology" | "Energy"
-    >;
-    readonly Internal_Note__c: SalesforceField<
-      string,
-      "string",
-      true,
-      false,
-      false,
-      false
-    >;
-  }>;
+  readonly Account: SalesforceObject<
+    {
+      readonly Id: SalesforceField<string, "id", false, true, true, true>;
+      readonly Name: SalesforceField<string, "string", true, true, true, true>;
+      readonly AnnualRevenue: SalesforceField<
+        number,
+        "currency",
+        true,
+        true,
+        true,
+        true
+      >;
+      readonly CloseDate: SalesforceField<
+        string,
+        "date",
+        true,
+        true,
+        true,
+        true
+      >;
+      readonly LastActivityAt__c: SalesforceField<
+        string,
+        "datetime",
+        true,
+        true,
+        true,
+        true
+      >;
+      readonly OpeningTime__c: SalesforceField<
+        string,
+        "time",
+        true,
+        true,
+        true,
+        true
+      >;
+      readonly Industry: SalesforceField<
+        string,
+        "picklist",
+        true,
+        true,
+        true,
+        true,
+        never,
+        never,
+        "Technology" | "Energy"
+      >;
+      readonly OwnerId: SalesforceField<
+        string,
+        "reference",
+        false,
+        true,
+        true,
+        true,
+        "User",
+        "Owner"
+      >;
+      readonly Tags__c: SalesforceField<
+        string,
+        "multipicklist",
+        false,
+        true,
+        true,
+        true,
+        never,
+        never,
+        "Priority" | "Strategic"
+      >;
+      readonly Internal_Note__c: SalesforceField<
+        string,
+        "string",
+        true,
+        false,
+        false,
+        false
+      >;
+    },
+    {
+      readonly Owner: SalesforceParentRelationship<"User", "OwnerId", true>;
+    }
+  >;
   readonly Kysoql_Record__c: SalesforceObject<{
     readonly Id: SalesforceField<string, "id", false, true, true, true>;
     readonly Active__c: SalesforceField<
@@ -64,6 +101,19 @@ interface FixtureSchema {
       true,
       true,
       true
+    >;
+  }>;
+  readonly User: SalesforceObject<{
+    readonly Region__c: SalesforceField<
+      string,
+      "picklist",
+      false,
+      true,
+      true,
+      true,
+      never,
+      never,
+      "ANZ" | "APAC"
     >;
   }>;
 }
@@ -144,6 +194,88 @@ describe("SelectQueryBuilder", () => {
       readonly LastActivityAt__c: string | null;
       readonly OpeningTime__c: string | null;
     }>();
+  });
+
+  it("selects aliased translated picklist labels with inferred output", () => {
+    const baseQuery = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id");
+    const query = baseQuery.select(({ fn }) => [
+      fn.toLabel("Industry").as("industryLabel"),
+      fn.toLabel("Owner.Region__c").as("ownerRegionLabel"),
+      fn.toLabel("Tags__c").as("tagLabels"),
+    ]);
+
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly Id: string;
+      readonly industryLabel: string | null;
+      readonly ownerRegionLabel: string | null;
+      readonly tagLabels: string;
+    }>();
+    expect(baseQuery.toOperationNode().selections).toHaveLength(1);
+    expect(query.toOperationNode().selections?.slice(1)).toEqual([
+      {
+        kind: "SelectionNode",
+        selection: {
+          kind: "AliasNode",
+          alias: "industryLabel",
+          node: {
+            kind: "ToLabelFunctionNode",
+            reference: { kind: "ReferenceNode", name: "Industry" },
+          },
+        },
+      },
+      {
+        kind: "SelectionNode",
+        selection: {
+          kind: "AliasNode",
+          alias: "ownerRegionLabel",
+          node: {
+            kind: "ToLabelFunctionNode",
+            reference: {
+              kind: "ReferenceNode",
+              name: "Owner.Region__c",
+            },
+          },
+        },
+      },
+      {
+        kind: "SelectionNode",
+        selection: {
+          kind: "AliasNode",
+          alias: "tagLabels",
+          node: {
+            kind: "ToLabelFunctionNode",
+            reference: { kind: "ReferenceNode", name: "Tags__c" },
+          },
+        },
+      },
+    ]);
+    expect(Object.isFrozen(query.toOperationNode().selections?.[1])).toBe(true);
+    expect(
+      Object.isFrozen(query.toOperationNode().selections?.[1]?.selection),
+    ).toBe(true);
+  });
+
+  it("rejects invalid translated-label selections at runtime", () => {
+    const baseQuery = new Kysoql<FixtureSchema>().selectFrom("Account");
+
+    expect(() =>
+      baseQuery.select(({ fn }) => fn.toLabel("Industry") as never),
+    ).toThrow("SOQL SELECT function expressions must be aliased.");
+    expect(() =>
+      baseQuery.select(({ fn }) => [
+        fn.toLabel("Industry").as("label"),
+        fn.toLabel("Industry").as("label"),
+      ]),
+    ).toThrow("Duplicate SOQL selection alias: label.");
+
+    const selected = baseQuery.select(({ fn }) =>
+      fn.toLabel("Industry").as("label"),
+    );
+    expect(() =>
+      selected.select(({ fn }) => fn.toLabel("Industry").as("label")),
+    ).toThrow("Duplicate SOQL selection alias: label.");
   });
 
   it("adds sortable ORDER BY items without mutating earlier builders", () => {
@@ -690,5 +822,29 @@ describe("SelectQueryBuilder", () => {
 
     // @ts-expect-error Every selected Salesforce field must exist on Account.
     query.select(["Id", "Does_Not_Exist__c"]);
+
+    query.select(({ fn }) => fn.toLabel("Industry").as("industryLabel"));
+    query.select(({ fn }) =>
+      fn.toLabel("Owner.Region__c").as("ownerRegionLabel"),
+    );
+
+    const invalidToLabelSelections = () => {
+      // @ts-expect-error toLabel requires a generated picklist or multipicklist field.
+      query.select(({ fn }) => fn.toLabel("Name").as("nameLabel"));
+      query.select(({ fn }) => {
+        // @ts-expect-error toLabel does not accept numeric fields.
+        return fn.toLabel("AnnualRevenue").as("revenueLabel");
+      });
+      query.select(({ fn }) => {
+        // @ts-expect-error toLabel fields must exist in the generated schema.
+        return fn.toLabel("Does_Not_Exist__c").as("missingLabel");
+      });
+      // @ts-expect-error SELECT function expressions require deterministic aliases.
+      query.select(({ fn }) => fn.toLabel("Industry"));
+      // @ts-expect-error Salesforce does not support ordering by toLabel expressions.
+      query.orderBy(({ fn }) => fn.toLabel("Industry"));
+    };
+
+    expect(invalidToLabelSelections).toBeTypeOf("function");
   });
 });

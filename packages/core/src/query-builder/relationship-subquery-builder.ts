@@ -1,4 +1,8 @@
 import {
+  createSelectExpressionBuilder,
+  type SelectExpressionBuilder,
+} from "#/expression/aggregate-function-builder";
+import {
   createExpressionBuilder,
   type WhereExpressionFactory,
 } from "#/expression/expression-builder";
@@ -24,6 +28,12 @@ import type {
   ChildRelationshipName,
   ChildRelationshipReference,
 } from "#/parser/reference-parser";
+import {
+  parseSelectFunctionSelectArg,
+  type SelectFunctionSelection,
+  type SelectFunctionSelectionArg,
+  validateUniqueSelectFunctionAliases,
+} from "#/parser/select-function-parser";
 import {
   parseSelectArg,
   type SelectArg,
@@ -91,6 +101,15 @@ export interface RelationshipSubqueryBuilder<
   select<SE extends string>(
     selections: ReadonlyArray<SE & SelectExpression<DB, TB, SE>>,
   ): RelationshipSubqueryBuilder<DB, TB, O & Selection<DB, TB, SE>, Depth>;
+
+  select<FunctionSelection extends SelectFunctionSelectionArg>(
+    selection: (eb: SelectExpressionBuilder<DB, TB>) => FunctionSelection,
+  ): RelationshipSubqueryBuilder<
+    DB,
+    TB,
+    O & SelectFunctionSelection<FunctionSelection>,
+    Depth
+  >;
 
   select<SE extends string>(
     selection: SE & SelectExpression<DB, TB, SE>,
@@ -185,19 +204,40 @@ class RelationshipSubqueryBuilderImpl<
     });
   }
 
+  select<FunctionSelection extends SelectFunctionSelectionArg>(
+    selection: (eb: SelectExpressionBuilder<DB, TB>) => FunctionSelection,
+  ): RelationshipSubqueryBuilder<
+    DB,
+    TB,
+    O & SelectFunctionSelection<FunctionSelection>,
+    Depth
+  >;
   select<SE extends string>(
     selection: SelectArg<DB, TB, SE>,
-  ): RelationshipSubqueryBuilder<DB, TB, O & Selection<DB, TB, SE>, Depth> {
-    return new RelationshipSubqueryBuilderImpl<
-      DB,
-      TB,
-      O & Selection<DB, TB, SE>,
-      Depth
-    >({
+  ): RelationshipSubqueryBuilder<DB, TB, O & Selection<DB, TB, SE>, Depth>;
+  select(
+    selection:
+      | string
+      | readonly string[]
+      | ((eb: SelectExpressionBuilder<DB, TB>) => SelectFunctionSelectionArg),
+  ): RelationshipSubqueryBuilder<DB, TB, unknown, Depth> {
+    const selections =
+      typeof selection === "function"
+        ? parseSelectFunctionSelectArg(
+            selection(createSelectExpressionBuilder<DB, TB>()),
+          )
+        : parseSelectArg(selection);
+
+    validateUniqueSelectFunctionAliases(
+      this.#props.queryNode.selections ?? [],
+      selections,
+    );
+
+    return new RelationshipSubqueryBuilderImpl<DB, TB, unknown, Depth>({
       ...this.#props,
       queryNode: RelationshipSubqueryNode.cloneWithSelections(
         this.#props.queryNode,
-        parseSelectArg(selection),
+        selections,
       ),
     });
   }

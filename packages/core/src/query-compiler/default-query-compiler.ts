@@ -20,6 +20,7 @@ import type { RelationshipSubqueryNode } from "#/operation-node/relationship-sub
 import type { SelectQueryNode } from "#/operation-node/select-query-node";
 import type { SelectionNode } from "#/operation-node/selection-node";
 import type { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
+import type { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
 import type { ValueListNode } from "#/operation-node/value-list-node";
 import type { ValueNode } from "#/operation-node/value-node";
 import type { WhereNode } from "#/operation-node/where-node";
@@ -190,6 +191,8 @@ export class DefaultQueryCompiler implements QueryCompiler {
         return this.#compileReference(node as ReferenceNode);
       case "SemiJoinSubqueryNode":
         return `(${this.#compileSemiJoinSubquery(node as SemiJoinSubqueryNode)})`;
+      case "ToLabelFunctionNode":
+        return this.#compileToLabelFunction(node as ToLabelFunctionNode);
       case "OperatorNode":
         return this.#compileOperator(node as OperatorNode);
       case "ValueListNode":
@@ -236,6 +239,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
     }[node.function];
 
     return `${name}(${this.#compileReference(node.reference)})`;
+  }
+
+  #compileToLabelFunction(node: ToLabelFunctionNode): string {
+    return `toLabel(${this.#compileReference(node.reference)})`;
   }
 
   #compileAlias(node: AliasNode): string {

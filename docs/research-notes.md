@@ -580,6 +580,41 @@ expressions and scalar `COUNT()`; runtime validation mirrors both restrictions.
 Grouped field, exact date-function, and advanced `GROUPING(field)` ordering keep
 their focused validation paths.
 
+### Translated SELECT values with toLabel()
+
+Sources re-checked on 2026-09-18:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-tolabel.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-functions.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select.html
+
+Useful findings:
+
+- `toLabel(field)` returns a value translated into the querying user's language,
+  falling back to the master value when no translation is available.
+- Salesforce documents regular, multiselect, division, and currency-code
+  picklists, plus special data-category, record-type-name, and History cases.
+  Generated Describe field types safely identify ordinary `picklist` and
+  `multipicklist` inputs; the other special cases are not uniformly
+  distinguishable from arbitrary string fields in the current schema model.
+- The function supports aliases, and Salesforce requires an alias when the same
+  field appears more than once in a SELECT list. Requiring aliases for every
+  function selection gives kysoql a deterministic result key and avoids implied
+  transport-specific names.
+- Salesforce does not permit `toLabel()` in `ORDER BY`; picklist ordering always
+  follows the picklist's defined order. Translated-value filtering is documented
+  separately and is not part of this SELECT-only slice.
+
+Implemented consequence in `v1.0.65`: record and parent-to-child relationship
+subquery builders accept aliased `fn.toLabel(...)` selections for generated
+picklist and multipicklist references. A dedicated frozen function node compiles
+as `toLabel(field) alias`; output values infer as `string` with field and
+child-to-parent relationship nullability propagated. Callback selections are
+additive alongside ordinary fields, duplicate aliases are rejected, invalid
+unaliased nodes are rejected at runtime, and `ORDER BY` has no function overload.
+The conservative field gate intentionally excludes special Salesforce cases
+that current generated metadata cannot prove safely.
+
 ### Remaining SOQL surface / roadmap references
 
 Sources re-checked on 2026-09-18:
