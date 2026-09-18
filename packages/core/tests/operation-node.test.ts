@@ -125,6 +125,8 @@ describe("operation nodes", () => {
     const reference = ReferenceNode.create("Name");
     const implicit = OrderByItemNode.create(reference);
     const explicit = OrderByItemNode.create(reference, "desc", "last");
+    const grouping = AggregateFunctionNode.create("grouping", reference);
+    const expression = OrderByItemNode.create(grouping, "asc");
 
     expect(implicit).toEqual({ kind: "OrderByItemNode", orderBy: reference });
     expect(explicit).toEqual({
@@ -135,8 +137,14 @@ describe("operation nodes", () => {
     });
     expect("direction" in implicit).toBe(false);
     expect("nulls" in implicit).toBe(false);
+    expect(expression).toEqual({
+      kind: "OrderByItemNode",
+      orderBy: grouping,
+      direction: "asc",
+    });
     expectFrozen(implicit);
     expectFrozen(explicit);
+    expectFrozen(expression);
   });
 
   it("creates and extends immutable GROUP BY lists", () => {

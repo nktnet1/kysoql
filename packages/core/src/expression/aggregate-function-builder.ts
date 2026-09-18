@@ -10,6 +10,8 @@ import type {
 import type {
   ComparisonOperatorExpression,
 } from "#/parser/binary-operation-parser";
+import type { GroupableFieldName } from "#/parser/group-by-parser";
+import { validateGroupingField } from "#/parser/grouping-expression-parser";
 import type { FieldReferenceDefinition } from "#/parser/reference-parser";
 import { parseSelectionAlias } from "#/parser/selection-alias-parser";
 import type {
@@ -83,6 +85,8 @@ type NumericAggregateOperator =
   | OrderedComparisonOperator
   | SetComparisonOperator;
 
+declare const groupingFunctionType: unique symbol;
+
 export interface AggregateFunctionExpression<
   Output,
   ComparisonValue = unknown,
@@ -112,6 +116,15 @@ export interface AggregateFunctionBuilder<
   as<Alias extends string>(
     alias: Alias,
   ): AliasedAggregateFunctionBuilder<Output, Alias>;
+}
+
+export interface GroupingFunctionBuilder
+  extends AggregateFunctionBuilder<
+    0 | 1,
+    0 | 1,
+    NumericAggregateOperator
+  > {
+  readonly [groupingFunctionType]: true;
 }
 
 export interface AliasedAggregateFunctionBuilder<
@@ -166,6 +179,17 @@ class AggregateFunctionBuilderImpl<
   }
 }
 
+class GroupingFunctionBuilderImpl
+  extends AggregateFunctionBuilderImpl<
+    0 | 1,
+    0 | 1,
+    NumericAggregateOperator
+  >
+  implements GroupingFunctionBuilder
+{
+  declare readonly [groupingFunctionType]: true;
+}
+
 class AliasedAggregateFunctionBuilderImpl<
   Output,
   Alias extends string,
@@ -192,7 +216,25 @@ class AliasedAggregateFunctionBuilderImpl<
   }
 }
 
-export interface AggregateFunctionModule<DB, TB extends keyof DB> {
+export type GroupingFieldReference<
+  DB,
+  TB extends keyof DB,
+  GroupingFields extends string,
+  Reference extends string,
+> = Reference extends GroupingFields
+  ? GroupableFieldName<DB, TB, Reference>
+  : never;
+
+export interface AggregateFunctionModule<
+  DB,
+  TB extends keyof DB,
+  GroupingFields extends string = never,
+> {
+  grouping<Reference extends string>(
+    field: Reference &
+      GroupingFieldReference<DB, TB, GroupingFields, Reference>,
+  ): GroupingFunctionBuilder;
+
   count(): CountAllFunctionBuilder;
 
   count<Reference extends string>(
@@ -236,9 +278,29 @@ export interface AggregateFunctionModule<DB, TB extends keyof DB> {
   >;
 }
 
-class AggregateFunctionModuleImpl<DB, TB extends keyof DB>
-  implements AggregateFunctionModule<DB, TB>
+class AggregateFunctionModuleImpl<
+  DB,
+  TB extends keyof DB,
+  GroupingFields extends string,
+> implements AggregateFunctionModule<DB, TB, GroupingFields>
 {
+  readonly #groupingFields: readonly string[];
+
+  constructor(groupingFields: readonly string[]) {
+    this.#groupingFields = freeze([...groupingFields]);
+  }
+
+  grouping<Reference extends string>(
+    field: Reference &
+      GroupingFieldReference<DB, TB, GroupingFields, Reference>,
+  ): GroupingFunctionBuilder {
+    validateGroupingField(field, this.#groupingFields);
+
+    return new GroupingFunctionBuilderImpl(
+      AggregateFunctionNode.create("grouping", ReferenceNode.create(field)),
+    );
+  }
+
   count(): CountAllFunctionBuilder;
   count<Reference extends string>(
     field: Reference & AggregatableFieldReference<DB, TB, Reference>,
@@ -335,15 +397,28 @@ class AggregateFunctionModuleImpl<DB, TB extends keyof DB>
   }
 }
 
-export interface SelectExpressionBuilder<DB, TB extends keyof DB> {
-  readonly fn: AggregateFunctionModule<DB, TB>;
+export interface SelectExpressionBuilder<
+  DB,
+  TB extends keyof DB,
+  GroupingFields extends string = never,
+> {
+  readonly fn: AggregateFunctionModule<DB, TB, GroupingFields>;
+}
+
+export interface SelectExpressionBuilderOptions {
+  readonly groupingFields: readonly string[];
 }
 
 export function createSelectExpressionBuilder<
   DB,
   TB extends keyof DB,
->(): SelectExpressionBuilder<DB, TB> {
+  GroupingFields extends string = never,
+>(
+  options: SelectExpressionBuilderOptions = { groupingFields: [] },
+): SelectExpressionBuilder<DB, TB, GroupingFields> {
   return freeze({
-    fn: new AggregateFunctionModuleImpl<DB, TB>(),
+    fn: new AggregateFunctionModuleImpl<DB, TB, GroupingFields>(
+      options.groupingFields,
+    ),
   });
 }

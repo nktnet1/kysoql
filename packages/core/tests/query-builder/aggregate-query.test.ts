@@ -215,6 +215,75 @@ describe("aggregate queries", () => {
     expect(query.toOperationNode().groupBy?.mode).toBe("cube");
   });
 
+  it("scopes GROUPING() to advanced fields and infers 0 | 1 output", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupByCube(["Name", "Active__c"])
+      .select(({ fn }) => [
+        fn.grouping("Name").as("nameGrouping"),
+        fn.grouping("Active__c").as("activeGrouping"),
+      ])
+      .having((eb) => eb(eb.fn.grouping("Name"), "=", 0))
+      .orderBy(({ fn }) => fn.grouping("Name"), "asc");
+
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly rowCount: number;
+      readonly nameGrouping: 0 | 1;
+      readonly activeGrouping: 0 | 1;
+    }>();
+
+    expect(query.toOperationNode().selections?.[1]).toEqual({
+      kind: "SelectionNode",
+      selection: {
+        kind: "AliasNode",
+        alias: "nameGrouping",
+        node: {
+          kind: "AggregateFunctionNode",
+          function: "grouping",
+          reference: { kind: "ReferenceNode", name: "Name" },
+        },
+      },
+    });
+    expect(query.toOperationNode().orderBy?.items[0]?.orderBy).toEqual({
+      kind: "AggregateFunctionNode",
+      function: "grouping",
+      reference: { kind: "ReferenceNode", name: "Name" },
+    });
+  });
+
+  it("rejects GROUPING() outside the matching advanced grouping set at runtime", () => {
+    const aggregate = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"));
+
+    expect(() =>
+      aggregate
+        .groupBy("Name")
+        .select(({ fn }) =>
+          fn.grouping("Name" as never).as("nameGrouping"),
+        ),
+    ).toThrow(
+      "SOQL GROUPING() is available only for fields in GROUP BY ROLLUP or GROUP BY CUBE.",
+    );
+    expect(() =>
+      aggregate
+        .groupByRollup("Name")
+        .select(({ fn }) =>
+          fn.grouping("Active__c" as never).as("activeGrouping"),
+        ),
+    ).toThrow(
+      "SOQL GROUPING() is available only for fields in GROUP BY ROLLUP or GROUP BY CUBE.",
+    );
+    expect(() =>
+      aggregate
+        .groupBy("Name")
+        .having((eb) => eb(eb.fn.grouping("Name" as never), "=", 1)),
+    ).toThrow(
+      "SOQL GROUPING() is available only for fields in GROUP BY ROLLUP or GROUP BY CUBE.",
+    );
+  });
+
   it(
     "rejects mixed advanced grouping forms and more than three advanced fields at runtime",
     () => {
@@ -482,6 +551,11 @@ describe("aggregate queries", () => {
         return fn.count("Internal_Note__c").as("invalidCount");
       });
 
+      db.selectFrom("Account").select(({ fn }) => {
+        // @ts-expect-error GROUPING is available only after ROLLUP or CUBE.
+        return fn.grouping("Name").as("invalidGrouping");
+      });
+
       // @ts-expect-error Row-producing aggregate selections require aliases.
       db.selectFrom("Account").select(({ fn }) => fn.sum("AnnualRevenue"));
 
@@ -524,6 +598,12 @@ describe("aggregate queries", () => {
         // @ts-expect-error MAX(date) does not support LIKE comparisons.
         return eb(eb.fn.max("CloseDate"), "like", "2026%");
       });
+      groupedQuery.select(({ fn }) => {
+        // @ts-expect-error Ordinary GROUP BY does not expose GROUPING.
+        return fn.grouping("Name").as("invalidGrouping");
+      });
+      // @ts-expect-error Ordinary GROUP BY cannot order by GROUPING.
+      groupedQuery.orderBy(({ fn }) => fn.grouping("Name"));
 
       const ownerGroupedQuery = aggregateQuery.groupBy("OwnerId");
       // @ts-expect-error HAVING IN operands cannot be semi-join callbacks.
@@ -534,8 +614,23 @@ describe("aggregate queries", () => {
         .groupByRollup("Owner.Name");
       rollupQuery.select(["Name", "Active__c", "Owner.Name"]);
       rollupQuery.having((eb) => eb(eb.fn.count("Id"), ">", 1));
+      rollupQuery.having((eb) => eb(eb.fn.grouping("Name"), "=", 1));
+      rollupQuery.select(({ fn }) =>
+        fn.grouping("Name").as("nameGrouping"),
+      );
+      rollupQuery.orderBy(({ fn }) => fn.grouping("Name"));
       rollupQuery.orderBy("Name");
       rollupQuery.limit(10);
+      rollupQuery.select(({ fn }) => {
+        // @ts-expect-error GROUPING must reference an accumulated ROLLUP field.
+        return fn.grouping("AnnualRevenue").as("invalidGrouping");
+      });
+      rollupQuery.having((eb) => {
+        // @ts-expect-error GROUPING comparisons accept only the 0 | 1 indicators.
+        return eb(eb.fn.grouping("Name"), "=", 2);
+      });
+      // @ts-expect-error This slice orders only by GROUPING expressions.
+      rollupQuery.orderBy(({ fn }) => fn.count("Id"));
       // @ts-expect-error ROLLUP supports at most three grouping fields.
       rollupQuery.groupByRollup("Id");
       // @ts-expect-error Ordinary GROUP BY cannot be mixed with ROLLUP.

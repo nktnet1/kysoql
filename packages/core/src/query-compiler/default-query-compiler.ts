@@ -148,7 +148,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
   }
 
   #compileOrderByItem(item: OrderByItemNode): string {
-    let orderBy = this.#compileReference(item.orderBy);
+    let orderBy = this.#compileOperation(item.orderBy);
 
     if (item.direction) {
       orderBy += ` ${item.direction === "asc" ? "ASC" : "DESC"}`;
@@ -198,6 +198,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
       max: "MAX",
       min: "MIN",
       sum: "SUM",
+      grouping: "GROUPING",
     }[node.function];
     const argument = node.reference
       ? this.#compileReference(node.reference)

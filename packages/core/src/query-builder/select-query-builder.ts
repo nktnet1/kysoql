@@ -32,6 +32,7 @@ import {
   parseFilterBinaryOperation,
   validateSemiJoinWhere,
 } from "#/parser/filter-parser";
+import { validateGroupingSelections } from "#/parser/grouping-expression-parser";
 import { parseLimit } from "#/parser/limit-parser";
 import { parseOffset } from "#/parser/offset-parser";
 import {
@@ -314,11 +315,17 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
 
     assertAggregateClauses(this.#props.queryNode);
 
+    const selections = parseAggregateSelectArg(
+      aggregate as AggregateSelectionArg,
+    );
+
+    validateGroupingSelections(selections, []);
+
     return createAggregateSelectQueryBuilder<DB, TB, unknown>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithSelections(
         this.#props.queryNode,
-        parseAggregateSelectArg(aggregate as AggregateSelectionArg),
+        selections,
       ),
     });
   }

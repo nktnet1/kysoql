@@ -21,6 +21,7 @@ import {
 } from "#/parser/binary-operation-parser";
 import { parseFilterBinaryOperation } from "#/parser/filter-parser";
 import type { GroupableFieldName } from "#/parser/group-by-parser";
+import { validateGroupingFunctionNode } from "#/parser/grouping-expression-parser";
 
 const HAVING_FIELD_GROUP_ERROR =
   "SOQL HAVING field references must also appear in GROUP BY.";
@@ -67,6 +68,7 @@ export interface HavingExpressionBuilder<
   DB,
   TB extends keyof DB,
   GroupedBy extends string,
+  GroupingFields extends string = never,
 > {
   <
     Reference extends string,
@@ -96,7 +98,7 @@ export interface HavingExpressionBuilder<
     rhs: Right,
   ): HavingExpressionWrapper<DB, TB, GroupedBy>;
 
-  readonly fn: AggregateFunctionModule<DB, TB>;
+  readonly fn: AggregateFunctionModule<DB, TB, GroupingFields>;
 
   and(
     expressions: readonly [
@@ -123,8 +125,9 @@ export type HavingExpressionFactory<
   DB,
   TB extends keyof DB,
   GroupedBy extends string,
+  GroupingFields extends string = never,
 > = (
-  eb: HavingExpressionBuilder<DB, TB, GroupedBy>,
+  eb: HavingExpressionBuilder<DB, TB, GroupedBy, GroupingFields>,
 ) => HavingExpressionWrapper<DB, TB, GroupedBy>;
 
 class HavingExpressionWrapperImpl<
@@ -152,15 +155,17 @@ class HavingExpressionWrapperImpl<
 
 export interface HavingExpressionBuilderOptions {
   readonly groupedBy: readonly string[];
+  readonly groupingFields: readonly string[];
 }
 
 export function createHavingExpressionBuilder<
   DB,
   TB extends keyof DB,
   GroupedBy extends string,
+  GroupingFields extends string = never,
 >(
   options: HavingExpressionBuilderOptions,
-): HavingExpressionBuilder<DB, TB, GroupedBy> {
+): HavingExpressionBuilder<DB, TB, GroupedBy, GroupingFields> {
   const expression = (
     lhs: string | AggregateFunctionExpression<unknown, unknown>,
     op: ComparisonOperator,
@@ -169,7 +174,12 @@ export function createHavingExpressionBuilder<
     new HavingExpressionWrapperImpl<DB, TB, GroupedBy>(
       typeof lhs === "string"
         ? parseGroupedFieldBinaryOperation(lhs, op, rhs, options.groupedBy)
-        : parseAggregateBinaryOperation(lhs, op, rhs),
+        : parseAggregateBinaryOperation(
+            lhs,
+            op,
+            rhs,
+            options.groupingFields,
+          ),
     );
 
   const and = (
@@ -221,10 +231,12 @@ export function createHavingExpressionBuilder<
 
   return Object.assign(expression, {
     and,
-    fn: createSelectExpressionBuilder<DB, TB>().fn,
+    fn: createSelectExpressionBuilder<DB, TB, GroupingFields>({
+      groupingFields: options.groupingFields,
+    }).fn,
     not,
     or,
-  }) as HavingExpressionBuilder<DB, TB, GroupedBy>;
+  }) as HavingExpressionBuilder<DB, TB, GroupedBy, GroupingFields>;
 }
 
 function parseGroupedFieldBinaryOperation(
@@ -246,11 +258,16 @@ function parseAggregateBinaryOperation(
   expression: AggregateFunctionExpression<unknown, unknown>,
   operator: ComparisonOperator,
   value: unknown,
+  groupingFields: readonly string[],
 ): OperationNode {
   const node = expression.toOperationNode();
 
   if (node.kind !== "AggregateFunctionNode") {
     throw new TypeError(HAVING_AGGREGATE_EXPRESSION_ERROR);
+  }
+
+  if (node.function === "grouping") {
+    validateGroupingFunctionNode(node, groupingFields);
   }
 
   return parseOperationValueBinaryOperation(node, operator, value);

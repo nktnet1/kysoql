@@ -149,6 +149,25 @@ describe("aggregate query compilation", () => {
     );
   });
 
+  it("compiles GROUPING() in SELECT, HAVING, and ORDER BY", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupByCube(["Name", "Owner.Name"])
+      .select(({ fn }) => [
+        fn.grouping("Name").as("isNameSubtotal"),
+        fn.grouping("Owner.Name").as("isOwnerSubtotal"),
+      ])
+      .having((eb) => eb(eb.fn.grouping("Name"), "=", 0))
+      .orderBy(({ fn }) => fn.grouping("Name"))
+      .orderBy(({ fn }) => fn.grouping("Owner.Name"), "desc")
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT COUNT(Id) rowCount, GROUPING(Name) isNameSubtotal, GROUPING(Owner.Name) isOwnerSubtotal FROM Account GROUP BY CUBE(Name, Owner.Name) HAVING GROUPING(Name) = 0 ORDER BY GROUPING(Name), GROUPING(Owner.Name) DESC",
+    );
+  });
+
   it("compiles bare COUNT() without a generated result alias", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")

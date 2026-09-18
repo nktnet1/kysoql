@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.60`, the next patch
-   is `v1.0.61`.
+   reuse or rewrite a version already handed off. After `v1.0.61`, the next patch
+   is `v1.0.62`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.60`
+## Current state after `v1.0.61`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -113,6 +113,7 @@ recent patch sequence:
 | `v1.0.58` | Add typed ordinary `GROUP BY`: immutable AST/compiler support, generated `groupable` gating, grouped-field selection/output typing, grouped ordering, and grouped `LIMIT`. |
 | `v1.0.59` | Add typed grouped `HAVING`: immutable AST/compiler support, aggregate/grouped-field operands, logical composition, and semi/anti-join exclusion. |
 | `v1.0.60` | Add typed `GROUP BY ROLLUP` / `CUBE`: advanced grouping modes, three-field limits, mode-mixing rejection, and nullable subtotal result fields. |
+| `v1.0.61` | Complete typed `GROUPING(field)` for accumulated ROLLUP/CUBE fields in SELECT, HAVING, and ORDER BY, with exact `0 | 1` indicator output. |
 
 ### Build/tooling state
 
@@ -207,6 +208,11 @@ Core currently has:
   typed `and` / `or` / `not` composition, aggregate comparison values preserve
   field-aware semantics where needed, semi/anti-join operands are excluded, and
   repeated `.having(...)` calls combine with `AND`;
+- typed `GROUPING(field)` for exactly the accumulated `ROLLUP` / `CUBE` field set;
+  the function is unavailable before advanced grouping and on ordinary `GROUP BY`,
+  aliased SELECT output and HAVING values use the exact `0 | 1` indicator type,
+  and focused expression callbacks support documented GROUPING ordering without
+  exposing broader aggregate-expression ordering;
 - bare `COUNT()` as a dedicated scalar `CountQueryBuilder` with scalar `WHERE`
   and `LIMIT`; it compiles independently from row-producing aggregates and uses
   the executor's optional `executeCountQuery` capability, implemented by the
@@ -247,26 +253,26 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.61` and should add typed `GROUPING(field)` for
-ROLLUP/CUBE subtotal identification.** Keep it focused on the advanced-grouping
-expression path; leave calendar/date grouping functions and the broader SELECT
-function family for later slices.
+**The next patch should be `v1.0.62` and should add the first coherent typed
+calendar/date grouping-function family.** Keep it focused on expressions that
+participate in aggregate grouping; leave the broader SELECT function family and
+`TYPEOF` for later slices.
 
 Recommended next unit:
 
-- add a dedicated immutable `GROUPING(field)` expression node/compiler path or a
-  carefully bounded extension of the aggregate-expression model;
-- expose it only where an accumulated `GROUP BY ROLLUP` / `GROUP BY CUBE` field
-  can be referenced, preserving the exact grouped-field set at the type boundary;
-- support stable aliased selection output with the documented `0 | 1` subtotal
-  indicator semantics, plus whichever HAVING / ordering positions Salesforce
-  documentation confirms for this expression;
-- keep ordinary aggregate functions, subtotal-nullable field outputs, and the
-  existing grouped clauses coherent; add focused compiler/type tests;
-- keep date/calendar grouping functions, broader SELECT functions, and `TYPEOF`
-  out of this patch.
+- confirm the Salesforce date/datetime input and output semantics for the
+  documented calendar/fiscal grouping functions and implement them as one shared
+  immutable expression/compiler path;
+- restrict each function to compatible generated temporal fields, including
+  supported child-to-parent references, and preserve field membership across
+  GROUP BY, selection, HAVING, and any documented ordering positions;
+- keep the existing direct-field GROUP BY, ROLLUP/CUBE, GROUPING, and aggregate
+  function APIs coherent; add focused output, compiler, runtime, and negative type
+  tests;
+- keep `FIELDS(...)`, translation/format/currency functions, geolocation,
+  `TYPEOF`, and unrelated refactors out of this patch.
 
-If the supplied bundle already contains `v1.0.60` or later, inspect the code and
+If the supplied bundle already contains `v1.0.61` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
@@ -276,7 +282,7 @@ keep major architecture changes independently reviewable:
 
 1. **Additional aggregate grouping expressions.** Add calendar/date grouping
    functions, broader aggregate-expression ordering, and any output refinements
-   that depend on those expressions after the focused `GROUPING()` slice.
+   that depend on those expressions after the completed `GROUPING()` slice.
 2. **Broader SELECT expressions/functions.** `FIELDS(...)`, `toLabel()`,
    `FORMAT()`, `convertCurrency()`, calendar/date functions,
    `convertTimezone()`, and geolocation expressions where safely modelable.
@@ -288,10 +294,10 @@ keep major architecture changes independently reviewable:
    `FOR UPDATE`, `WITH USER_MODE`, binds, etc. separately from the
    transport-neutral REST/JSforce core.
 
-The aggregate-selection, ordinary grouping, typed `HAVING`, and advanced
-ROLLUP/CUBE foundations are now in place. Keep grouping expressions incremental
-so subtotal semantics and new function output types preserve capability checks
-without reopening the transport-neutral execution boundary.
+The aggregate-selection, ordinary grouping, typed `HAVING`, advanced ROLLUP/CUBE,
+and subtotal-identification foundations are now in place. Keep grouping
+expressions incremental so new function input/output types preserve capability
+checks without reopening the transport-neutral execution boundary.
 
 ## Validation and runtime-boundary conventions
 

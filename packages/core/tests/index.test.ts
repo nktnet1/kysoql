@@ -30,6 +30,7 @@ import {
   type ExpressionWrapper,
   type GroupByNode,
   type GroupedHavingFieldName,
+  type GroupingFunctionBuilder,
   type HavingExpressionBuilder,
   type HavingExpressionFactory,
   type HavingExpressionWrapper,
@@ -126,6 +127,7 @@ type PublicTypeSurface = {
     "Name",
     "Name"
   >;
+  groupingFunctionBuilder: GroupingFunctionBuilder;
   havingExpressionBuilder: HavingExpressionBuilder<
     Record<string, never>,
     never,

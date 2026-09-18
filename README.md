@@ -218,8 +218,20 @@ const pipeline = await db
   .select(({ fn }) => fn.sum("Amount").as("totalAmount"))
   .groupByRollup(["StageName", "Type"])
   .select(["StageName", "Type"])
+  .select(({ fn }) => [
+    fn.grouping("StageName").as("stageSubtotal"),
+    fn.grouping("Type").as("typeSubtotal"),
+  ])
+  .having((eb) => eb(eb.fn.grouping("StageName"), "=", 0))
+  .orderBy(({ fn }) => fn.grouping("Type"))
   .execute();
 ```
+
+After `ROLLUP` or `CUBE` fields have been accumulated, `GROUPING(field)` is
+available in `SELECT`, `HAVING`, and `ORDER BY` callbacks for exactly those
+fields. Aliased selection results infer as `0 | 1`: `1` identifies a subtotal
+for the field, while `0` identifies an ordinary grouped row. The function is not
+exposed for ordinary `GROUP BY` queries.
 
 Grouped aggregate queries also expose typed `HAVING`. Direct field operands must
 already be grouped; aggregate operands use the same `fn` module without aliases.

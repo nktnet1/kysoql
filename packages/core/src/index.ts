@@ -29,6 +29,7 @@ export type {
   AggregatableFieldReference,
   AliasedAggregateFunctionBuilder,
   CountAllFunctionBuilder,
+  GroupingFunctionBuilder,
   NumericAggregatableFieldReference,
   SelectExpressionBuilder,
 } from "#/expression/aggregate-function-builder";

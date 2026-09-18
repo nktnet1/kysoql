@@ -476,7 +476,36 @@ existing immutable `GroupByNode` with an explicit advanced mode. Grouped field
 selection, `HAVING`, grouped ordering, and `LIMIT` continue to use the accumulated
 grouping set. Selected ROLLUP/CUBE fields are recursively nullable at the selected
 leaf so subtotal/grand-total rows are represented without weakening ordinary
-`GROUP BY` output types. `GROUPING()` remains the next separate slice.
+`GROUP BY` output types. `GROUPING()` was intentionally kept for the following
+separate slice.
+
+### GROUPING
+
+Sources re-checked on 2026-09-18:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-grouping.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-groupby-grouping.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-groupby-cube.html
+
+Useful findings:
+
+- `GROUPING(fieldName)` identifies whether a `ROLLUP` / `CUBE` result row is a
+  subtotal for one of the advanced grouping fields. It returns `1` for a subtotal
+  and `0` otherwise.
+- Salesforce documents `GROUPING(fieldName)` in `SELECT`, `HAVING`, and `ORDER BY`.
+  Ordering by the indicators is useful for placing subtotal and grand-total rows
+  after ordinary aggregate rows.
+- The argument must remain tied to the accumulated advanced grouping set. Ordinary
+  `GROUP BY` does not create the subtotal rows that `GROUPING()` identifies.
+
+Implemented consequence in `v1.0.61`: the aggregate function module scopes typed
+`GROUPING(field)` to the exact fields already accumulated by `groupByRollup(...)`
+or `groupByCube(...)`. It is available through aliased aggregate selection,
+unaliased `HAVING` operands, and a focused expression-callback `ORDER BY` overload.
+Selection output and HAVING comparison values use the exact `0 | 1` indicator
+type. Runtime validation mirrors the type boundary, and `OrderByItemNode` now
+accepts the bounded aggregate-expression form without opening broader aggregate
+ordering yet.
 
 ### Remaining SOQL surface / roadmap references
 

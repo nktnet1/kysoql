@@ -7,7 +7,8 @@ export type AggregateFunction =
   | "countDistinct"
   | "max"
   | "min"
-  | "sum";
+  | "sum"
+  | "grouping";
 
 export interface AggregateFunctionNode {
   readonly kind: "AggregateFunctionNode";
