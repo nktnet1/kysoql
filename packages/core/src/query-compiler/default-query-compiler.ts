@@ -151,8 +151,12 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileOperator(node: OperatorNode): string {
     switch (node.operator) {
+      case "excludes":
+        return "EXCLUDES";
       case "in":
         return "IN";
+      case "includes":
+        return "INCLUDES";
       case "like":
         return "LIKE";
       case "not in":

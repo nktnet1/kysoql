@@ -4,6 +4,7 @@ export type {
   ComparisonOperator,
   EqualityComparisonOperator,
   LikeComparisonOperator,
+  MultiSelectComparisonOperator,
   OperatorNode,
   OrderedComparisonOperator,
   SetComparisonOperator,

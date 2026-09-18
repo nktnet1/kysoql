@@ -47,9 +47,10 @@ Useful findings:
 - Repeated `orderBy()` calls are additive and preserve call order.
 - Omitting a direction leaves the database's default ascending ordering in effect.
 
-Implemented consequence in `v1.0.18`: kysoql adopts the narrow field-only form
-`orderBy(field, direction?)`. It deliberately does not expose raw expressions,
-callbacks, aliases, or null-order modifiers yet.
+Implemented consequence: `v1.0.18` introduced the narrow field-only
+`orderBy(field, direction?)` form, and `v1.0.34` added explicit lowercase
+`first` / `last` null placement that compiles to `NULLS FIRST` / `NULLS LAST`.
+Raw expressions, callbacks, and aliases are still intentionally absent.
 
 ### General project architecture
 
@@ -180,14 +181,13 @@ Useful findings:
   when no direction is supplied.
 - Salesforce excludes some field types from sorting, while generated Describe
   metadata already exposes each field's `sortable` capability.
-- `NULLS FIRST` / `NULLS LAST` are separate modifiers and do not need to be part
-  of the first ordering slice.
+- `NULLS FIRST` / `NULLS LAST` are separate modifiers from the direction.
 
-Implemented consequence in `v1.0.18`: only fields whose generated schema metadata
-has `sortable: true` are accepted by `orderBy()`. The AST accumulates order items
-immutably, and the compiler emits them after `WHERE` as a comma-separated SOQL
-`ORDER BY` clause. Explicit lowercase builder directions compile to uppercase
-SOQL `ASC` / `DESC`.
+Implemented consequence: only fields whose generated schema metadata has
+`sortable: true` are accepted by `orderBy()`. The AST accumulates order items
+immutably, explicit lowercase builder directions compile to uppercase SOQL
+`ASC` / `DESC`, and `v1.0.34` added optional null placement that compiles to
+`NULLS FIRST` / `NULLS LAST`.
 
 ### LIMIT
 
@@ -243,11 +243,12 @@ Sources re-checked on 2026-09-18:
 
 Useful findings for future milestones:
 
-- `ORDER BY` supports explicit `NULLS FIRST` / `NULLS LAST`; null placement is a
-  separate modifier from `ASC` / `DESC` and belongs in a later ordering slice.
-- SOQL condition expressions extend beyond the currently implemented scalar
-  comparisons. `IN` / `NOT IN` can use literal lists or subqueries, while
-  semi-joins/anti-joins carry additional field and nesting restrictions.
+- `ORDER BY` supports explicit `NULLS FIRST` / `NULLS LAST`; kysoql implements
+  this as a separate modifier from `ASC` / `DESC`.
+- SOQL condition expressions include `IN` / `NOT IN` value lists and
+  multi-select-picklist `INCLUDES` / `EXCLUDES`; kysoql now implements those
+  scalar-list forms. `IN` / `NOT IN` subquery operands remain future
+  semi-join/anti-join work with additional field and nesting restrictions.
 - Relationship queries use declared Salesforce relationships only: child-to-parent
   traversal uses dotted relationship paths and parent-to-child traversal uses
   nested subqueries. REST/SOAP/Apex query calls support up to five levels of

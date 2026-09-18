@@ -6,6 +6,7 @@ import {
   type ComparisonOperator,
   type EqualityComparisonOperator,
   type LikeComparisonOperator,
+  type MultiSelectComparisonOperator,
   type OrderedComparisonOperator,
   type SetComparisonOperator,
 } from "#/operation-node/operator-node";
@@ -52,6 +53,28 @@ type SalesforceTypeOfField<
   ? SalesforceType
   : never;
 
+type ActivePicklistValueOfField<
+  DB,
+  TB extends keyof DB,
+  RE extends FilterableFieldName<DB, TB>,
+> = FieldDefinition<
+  DB,
+  TB,
+  Extract<RE, FieldName<DB, TB>>
+> extends SalesforceField<
+  unknown,
+  string,
+  boolean,
+  boolean,
+  boolean,
+  boolean,
+  string,
+  string,
+  infer ActivePicklistValue
+>
+  ? ActivePicklistValue
+  : never;
+
 type OrderedSalesforceType =
   | "currency"
   | "date"
@@ -93,6 +116,14 @@ type LikeOperatorForField<
   ? LikeComparisonOperator
   : never;
 
+type MultiSelectOperatorForField<
+  DB,
+  TB extends keyof DB,
+  RE extends FilterableFieldName<DB, TB>,
+> = SalesforceTypeOfField<DB, TB, RE> extends "multipicklist"
+  ? MultiSelectComparisonOperator
+  : never;
+
 export type ComparisonOperatorExpression<
   DB,
   TB extends keyof DB,
@@ -101,7 +132,8 @@ export type ComparisonOperatorExpression<
   | EqualityComparisonOperator
   | OrderedOperatorForField<DB, TB, RE>
   | LikeOperatorForField<DB, TB, RE>
-  | SetComparisonOperator;
+  | SetComparisonOperator
+  | MultiSelectOperatorForField<DB, TB, RE>;
 
 type FieldValueExpression<
   DB,
@@ -122,14 +154,14 @@ export type OperandValueExpression<
     ? NonNullable<FieldValueExpression<DB, TB, RE>>
     : OP extends SetComparisonOperator
       ? readonly FieldValueExpression<DB, TB, RE>[]
-      : FieldValueExpression<DB, TB, RE>;
+      : OP extends MultiSelectComparisonOperator
+        ? readonly ActivePicklistValueOfField<DB, TB, RE>[]
+        : FieldValueExpression<DB, TB, RE>;
 
-const VALUE_LIST_ERROR =
+const SET_VALUE_LIST_ERROR =
   "SOQL IN/NOT IN value lists must contain at least one value.";
-const valueListSchema = v.pipe(
-  v.array(v.unknown()),
-  v.minLength(1, VALUE_LIST_ERROR),
-);
+const MULTISELECT_VALUE_LIST_ERROR =
+  "SOQL INCLUDES/EXCLUDES value lists must contain at least one value.";
 
 export function parseValueBinaryOperation(
   left: string,
@@ -137,8 +169,11 @@ export function parseValueBinaryOperation(
   right: unknown,
 ): BinaryOperationNode {
   const rightOperand =
-    operator === "in" || operator === "not in"
-      ? parseValueList(right)
+    operator === "in" ||
+    operator === "not in" ||
+    operator === "includes" ||
+    operator === "excludes"
+      ? parseValueList(right, operator)
       : ValueNode.create(right);
 
   return BinaryOperationNode.create(
@@ -148,11 +183,21 @@ export function parseValueBinaryOperation(
   );
 }
 
-function parseValueList(value: unknown): ValueListNode {
-  const result = v.safeParse(valueListSchema, value);
+function parseValueList(
+  value: unknown,
+  operator: SetComparisonOperator | MultiSelectComparisonOperator,
+): ValueListNode {
+  const error =
+    operator === "includes" || operator === "excludes"
+      ? MULTISELECT_VALUE_LIST_ERROR
+      : SET_VALUE_LIST_ERROR;
+  const result = v.safeParse(
+    v.pipe(v.array(v.unknown()), v.minLength(1, error)),
+    value,
+  );
 
   if (!result.success) {
-    throw new TypeError(VALUE_LIST_ERROR);
+    throw new TypeError(error);
   }
 
   return ValueListNode.create(result.output);
