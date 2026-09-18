@@ -44,6 +44,7 @@ export type { QueryCompiler } from "#/query-compiler/query-compiler";
 export type { QueryExecutor } from "#/query-executor";
 export {
   soqlRelativeDate,
+  type SoqlRelativeDateFamily,
   type SoqlRelativeDateLiteral,
   type SoqlRelativeDateValue,
 } from "#/soql-relative-date-literal";

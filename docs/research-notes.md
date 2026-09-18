@@ -166,8 +166,14 @@ compiler recognizes only those explicit wrappers and emits their values unquoted
 Implemented consequence in `v1.0.41`: core adds a separate branded
 `soqlRelativeDate(...)` wrapper for the fixed `TODAY`, `YESTERDAY`, and
 `TOMORROW` literals. Those values are accepted only for Salesforce `date` /
-`datetime` filters and compile unquoted. Parameterized relative-date families
-remain separate follow-up work.
+`datetime` filters and compile unquoted.
+
+Implemented consequence in `v1.0.42`: the same factory supports the first
+parameterized family via `soqlRelativeDate("LAST_N_DAYS", n)` and
+`soqlRelativeDate("NEXT_N_DAYS", n)`. The count is validated as a non-negative
+safe integer and the resulting `LAST_N_DAYS:n` / `NEXT_N_DAYS:n` literal remains
+inside the branded relative-date representation. Callers cannot pass the
+colon-delimited form directly as an ordinary string.
 
 ### ORDER BY
 

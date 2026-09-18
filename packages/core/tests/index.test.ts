@@ -48,6 +48,7 @@ import {
   type SObjectNode,
   type SoqlDateLiteral,
   type SoqlDateTimeLiteral,
+  type SoqlRelativeDateFamily,
   type SoqlRelativeDateLiteral,
   type SoqlRelativeDateValue,
   type SoqlTemporalLiteral,
@@ -116,6 +117,7 @@ type PublicTypeSurface = {
   sobjectNode: SObjectNode;
   soqlDateLiteral: SoqlDateLiteral;
   soqlDateTimeLiteral: SoqlDateTimeLiteral;
+  soqlRelativeDateFamily: SoqlRelativeDateFamily;
   soqlRelativeDateLiteral: SoqlRelativeDateLiteral;
   soqlRelativeDateValue: SoqlRelativeDateValue;
   soqlTemporalLiteral: SoqlTemporalLiteral;
