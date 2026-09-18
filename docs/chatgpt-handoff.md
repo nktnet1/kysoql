@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.55`
+## Current state after `v1.0.56`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -108,6 +108,7 @@ recent patch sequence:
 | `v1.0.53` | Add typed parent-to-child relationship subqueries with a dedicated immutable builder/AST, nested query-result typing, scalar child clauses, and API 58+ nested child traversal depth. |
 | `v1.0.54` | Fix parent-to-child subquery builder return generics so accumulated nested output types satisfy `compile()` under strict TypeScript checking. |
 | `v1.0.55` | Add typed SOQL semi-joins and anti-joins through `IN` / `NOT IN`, with a dedicated restricted subquery builder/AST and Salesforce nesting/compatibility limits. |
+| `v1.0.56` | Fix the fifth-level relationship-subquery negative type assertion so it tests the rejected relationship without cascading through a `never` child builder. |
 
 ### Build/tooling state
 
@@ -213,7 +214,7 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.56` and should start the aggregate-query
+**The next patch should be `v1.0.57` and should start the aggregate-query
 foundation.** This is the next major output-type architecture change, so group
 the closely related aggregate selection functions in one coherent slice instead
 of making one patch per function.
@@ -244,7 +245,7 @@ keep major architecture changes independently reviewable:
 
 1. **Aggregate queries after the selection-function foundation.** `GROUP BY`,
    `HAVING`, `ROLLUP`, `CUBE`, and `GROUPING()`, plus any aggregate-query output
-   refinements not covered by `v1.0.56`.
+   refinements not covered by `v1.0.57`.
 2. **Broader SELECT expressions/functions.** `FIELDS(...)`, `toLabel()`,
    `FORMAT()`, `convertCurrency()`, calendar/date functions,
    `convertTimezone()`, and geolocation expressions where safely modelable.

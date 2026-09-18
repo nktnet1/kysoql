@@ -383,7 +383,7 @@ describe("parent-to-child relationship subqueries", () => {
                 const selected = attachments.select("Id");
 
                 // @ts-expect-error API 58+ REST/SOAP relationship queries allow four child traversals below the root (five total levels).
-                return selected.selectSubquery("Tags", (tags) => tags.select("Id"));
+                return selected.selectSubquery("Tags", (tags) => tags);
               }),
           ),
         ),
