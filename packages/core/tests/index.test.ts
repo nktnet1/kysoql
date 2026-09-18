@@ -17,8 +17,11 @@ import {
   type BinaryOperationNode,
   type ComparisonOperator,
   type CompiledQuery,
+  type ConvertCurrencyFunctionBuilder,
+  type ConvertCurrencyFunctionNode,
   type CountAllFunctionBuilder,
   type CountQueryBuilder,
+  type CurrencyFieldReference,
   type DateFunction,
   type DateFunctionBuilder,
   type DateFunctionExpression,
@@ -136,7 +139,14 @@ type PublicTypeSurface = {
   binaryOperationNode: BinaryOperationNode;
   comparisonOperator: ComparisonOperator;
   compiledQuery: CompiledQuery;
+  convertCurrencyFunctionBuilder: ConvertCurrencyFunctionBuilder<number>;
+  convertCurrencyFunctionNode: ConvertCurrencyFunctionNode;
   countAllFunctionBuilder: CountAllFunctionBuilder;
+  currencyFieldReference: CurrencyFieldReference<
+    Record<string, never>,
+    never,
+    "Amount"
+  >;
   countQueryBuilder: CountQueryBuilder<Record<string, never>, never>;
   dateFunction: DateFunction;
   dateFunctionBuilder: DateFunctionBuilder<

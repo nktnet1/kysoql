@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.65`, the next patch
-   is `v1.0.66`.
+   reuse or rewrite a version already handed off. After `v1.0.66`, the next patch
+   is `v1.0.67`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.65`
+## Current state after `v1.0.66`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -118,6 +118,7 @@ recent patch sequence:
 | `v1.0.63` | Restore the date-function node and parser source files that were omitted from the `v1.0.62` patch artifact. |
 | `v1.0.64` | Add typed ordering by row-producing aggregate-function expressions on grouped queries, preserving field capabilities and excluding scalar `COUNT()`. |
 | `v1.0.65` | Add typed aliased `toLabel()` selection for generated picklist/multipicklist fields in root and relationship-subquery SELECT lists. |
+| `v1.0.66` | Add typed aliased `convertCurrency()` selection for generated currency fields in root and relationship-subquery SELECT lists. |
 
 ### Build/tooling state
 
@@ -234,6 +235,13 @@ Core currently has:
   child-to-parent references; translated outputs are strings with propagated
   field/relationship nullability, while unsupported ordering and non-picklist
   inputs remain outside the public type surface;
+- typed aliased `convertCurrency()` selection on record and
+  relationship-subquery builders for generated currency fields, including
+  child-to-parent references; converted outputs remain numeric with propagated
+  field/relationship nullability, the multiple-currencies org prerequisite is
+  documented rather than falsely inferred from field metadata, and unsupported
+  aggregate inputs, filtering, and expression ordering remain outside the public
+  type surface;
 - bare `COUNT()` as a dedicated scalar `CountQueryBuilder` with scalar `WHERE`
   and `LIMIT`; it compiles independently from row-producing aggregates and uses
   the executor's optional `executeCountQuery` capability, implemented by the
@@ -276,24 +284,26 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.66` and should add typed
-`convertCurrency(field)` SELECT expressions.** Reuse the scalar-function
-selection path established by `toLabel()`; leave localized formatting,
-polymorphic `TYPEOF`, and specialist clauses for later slices.
+**The next patch should be `v1.0.67` and should add typed `FORMAT(...)` SELECT
+expressions.** Reuse the scalar-function selection path established by
+`toLabel()` and `convertCurrency()`; leave polymorphic `TYPEOF`, `FIELDS(...)`,
+and specialist clauses for later slices.
 
 Recommended next unit:
 
-- accept only generated `currency` fields, including child-to-parent paths, and
-  preserve numeric output plus field/relationship nullability;
-- document that the function requires Salesforce multiple currencies, which is
-  an org-level setting unavailable in generated field metadata and therefore
-  cannot be proven statically;
-- support aliased root and relationship-subquery selections through a dedicated
-  immutable node, with compiler, runtime, public-export, and negative type tests;
-- keep `FORMAT()` nesting, aggregate currency conversion, expression ordering,
+- verify the complete Salesforce Describe type set accepted by `FORMAT()` and
+  gate direct inputs to generated number/date/time/currency-compatible fields,
+  including child-to-parent paths;
+- return localized `string` output with source/relationship nullability
+  preserved, and support aliased root and relationship-subquery selections;
+- support Salesforce's documented `FORMAT(convertCurrency(field))` nesting by
+  composing the existing currency builder/node rather than introducing a raw
+  expression escape hatch;
+- add a dedicated immutable format node with compiler, runtime, public-export,
+  and negative type tests; keep aggregate-function nesting, filtering, ordering,
   `FIELDS(...)`, `TYPEOF`, and unrelated refactors out of the patch.
 
-If the supplied bundle already contains `v1.0.65` or later, inspect the code and
+If the supplied bundle already contains `v1.0.66` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
@@ -301,9 +311,9 @@ advance from the actual state instead of reimplementing this section.
 Group closely related syntax when it shares the same type/AST/compiler path, but
 keep major architecture changes independently reviewable:
 
-1. **Broader SELECT expressions/functions.** `FIELDS(...)`, `FORMAT()`,
-   `convertCurrency()`, calendar/date functions,
-   `convertTimezone()`, and geolocation expressions where safely modelable.
+1. **Broader SELECT expressions/functions.** `FIELDS(...)`, remaining
+   calendar/date functions, `convertTimezone()`, and geolocation expressions
+   where safely modelable.
 2. **Polymorphic references / `TYPEOF`.** Dedicated AST and discriminated output
    typing.
 3. **Specialist top-level clauses.** `USING SCOPE`, `WITH DATA CATEGORY`, and

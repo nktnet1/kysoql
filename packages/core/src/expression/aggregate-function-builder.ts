@@ -1,5 +1,6 @@
 import { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
 import { AliasNode } from "#/operation-node/alias-node";
+import { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
 import {
   type DateFunction,
   DateFunctionNode,
@@ -232,6 +233,25 @@ export type TranslatableFieldReference<
       : never
   : never;
 
+export type CurrencyFieldReference<
+  DB,
+  TB extends keyof DB,
+  Reference extends string,
+> = Reference extends unknown
+  ? [FieldReferenceDefinition<DB, TB, Reference>] extends [never]
+    ? never
+    : FieldReferenceDefinition<DB, TB, Reference> extends {
+          readonly salesforceType: "currency";
+        }
+      ? Reference
+      : never
+  : never;
+
+type ConvertCurrencyOutput<DB, TB extends keyof DB, Reference extends string> =
+  true extends FieldReferenceNullable<DB, TB, Reference>
+    ? number | null
+    : number;
+
 type ToLabelOutput<DB, TB extends keyof DB, Reference extends string> =
   true extends FieldReferenceNullable<DB, TB, Reference>
     ? string | null
@@ -245,6 +265,16 @@ export interface ToLabelFunctionBuilder<Output> {
   ): AliasedSelectFunctionBuilder<Output, Alias>;
 
   toOperationNode(): ToLabelFunctionNode;
+}
+
+export interface ConvertCurrencyFunctionBuilder<Output> {
+  readonly expressionType: Output | undefined;
+
+  as<Alias extends string>(
+    alias: Alias,
+  ): AliasedSelectFunctionBuilder<Output, Alias>;
+
+  toOperationNode(): ConvertCurrencyFunctionNode;
 }
 
 export interface AliasedSelectFunctionBuilder<Output, Alias extends string> {
@@ -419,6 +449,35 @@ class ToLabelFunctionBuilderImpl<Output>
   }
 }
 
+class ConvertCurrencyFunctionBuilderImpl<Output>
+  implements ConvertCurrencyFunctionBuilder<Output>
+{
+  readonly #node: ConvertCurrencyFunctionNode;
+
+  constructor(node: ConvertCurrencyFunctionNode) {
+    this.#node = node;
+  }
+
+  get expressionType(): Output | undefined {
+    return undefined;
+  }
+
+  as<Alias extends string>(
+    alias: Alias,
+  ): AliasedSelectFunctionBuilder<Output, Alias> {
+    return new AliasedSelectFunctionBuilderImpl<Output, Alias>(
+      this.#node,
+      parseSelectionAlias(alias) as Alias,
+    );
+  }
+
+  toOperationNode(): ConvertCurrencyFunctionNode {
+    return this.#node;
+  }
+}
+
+type SelectFunctionNode = ConvertCurrencyFunctionNode | ToLabelFunctionNode;
+
 class AliasedSelectFunctionBuilderImpl<Output, Alias extends string>
   implements AliasedSelectFunctionBuilder<Output, Alias>
 {
@@ -427,7 +486,7 @@ class AliasedSelectFunctionBuilderImpl<Output, Alias extends string>
   readonly #node: AliasNode;
   readonly #alias: Alias;
 
-  constructor(node: ToLabelFunctionNode, alias: Alias) {
+  constructor(node: SelectFunctionNode, alias: Alias) {
     this.#node = AliasNode.create(node, alias);
     this.#alias = alias;
   }
@@ -589,6 +648,10 @@ export interface SelectFunctionModule<
   TB extends keyof DB,
   GroupingFields extends string = never,
 > extends AggregateFunctionModule<DB, TB, GroupingFields> {
+  convertCurrency<Reference extends string>(
+    field: Reference & CurrencyFieldReference<DB, TB, Reference>,
+  ): ConvertCurrencyFunctionBuilder<ConvertCurrencyOutput<DB, TB, Reference>>;
+
   toLabel<Reference extends string>(
     field: Reference & TranslatableFieldReference<DB, TB, Reference>,
   ): ToLabelFunctionBuilder<ToLabelOutput<DB, TB, Reference>>;
@@ -706,6 +769,14 @@ class AggregateFunctionModuleImpl<
     field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
   ): NumericDateFunctionBuilder<DB, TB, "weekInYear", Reference> {
     return this.#numericDateFunction("weekInYear", field as Reference);
+  }
+
+  convertCurrency<Reference extends string>(
+    field: Reference & CurrencyFieldReference<DB, TB, Reference>,
+  ): ConvertCurrencyFunctionBuilder<ConvertCurrencyOutput<DB, TB, Reference>> {
+    return new ConvertCurrencyFunctionBuilderImpl<
+      ConvertCurrencyOutput<DB, TB, Reference>
+    >(ConvertCurrencyFunctionNode.create(ReferenceNode.create(field)));
   }
 
   toLabel<Reference extends string>(

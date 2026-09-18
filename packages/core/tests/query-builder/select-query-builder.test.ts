@@ -23,6 +23,14 @@ interface FixtureSchema {
         true,
         true
       >;
+      readonly CommittedRevenue__c: SalesforceField<
+        number,
+        "currency",
+        false,
+        true,
+        true,
+        true
+      >;
       readonly CloseDate: SalesforceField<
         string,
         "date",
@@ -104,6 +112,14 @@ interface FixtureSchema {
     >;
   }>;
   readonly User: SalesforceObject<{
+    readonly Quota__c: SalesforceField<
+      number,
+      "currency",
+      false,
+      true,
+      true,
+      true
+    >;
     readonly Region__c: SalesforceField<
       string,
       "picklist",
@@ -257,7 +273,68 @@ describe("SelectQueryBuilder", () => {
     ).toBe(true);
   });
 
-  it("rejects invalid translated-label selections at runtime", () => {
+  it("selects aliased converted currencies with inferred output", () => {
+    const baseQuery = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id");
+    const query = baseQuery.select(({ fn }) => [
+      fn.convertCurrency("AnnualRevenue").as("convertedRevenue"),
+      fn.convertCurrency("CommittedRevenue__c").as("convertedCommittedRevenue"),
+      fn.convertCurrency("Owner.Quota__c").as("convertedOwnerQuota"),
+    ]);
+
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly Id: string;
+      readonly convertedRevenue: number | null;
+      readonly convertedCommittedRevenue: number;
+      readonly convertedOwnerQuota: number | null;
+    }>();
+    expect(baseQuery.toOperationNode().selections).toHaveLength(1);
+    expect(query.toOperationNode().selections?.slice(1)).toEqual([
+      {
+        kind: "SelectionNode",
+        selection: {
+          kind: "AliasNode",
+          alias: "convertedRevenue",
+          node: {
+            kind: "ConvertCurrencyFunctionNode",
+            reference: { kind: "ReferenceNode", name: "AnnualRevenue" },
+          },
+        },
+      },
+      {
+        kind: "SelectionNode",
+        selection: {
+          kind: "AliasNode",
+          alias: "convertedCommittedRevenue",
+          node: {
+            kind: "ConvertCurrencyFunctionNode",
+            reference: {
+              kind: "ReferenceNode",
+              name: "CommittedRevenue__c",
+            },
+          },
+        },
+      },
+      {
+        kind: "SelectionNode",
+        selection: {
+          kind: "AliasNode",
+          alias: "convertedOwnerQuota",
+          node: {
+            kind: "ConvertCurrencyFunctionNode",
+            reference: { kind: "ReferenceNode", name: "Owner.Quota__c" },
+          },
+        },
+      },
+    ]);
+    expect(Object.isFrozen(query.toOperationNode().selections?.[1])).toBe(true);
+    expect(
+      Object.isFrozen(query.toOperationNode().selections?.[1]?.selection),
+    ).toBe(true);
+  });
+
+  it("rejects invalid SELECT-function selections at runtime", () => {
     const baseQuery = new Kysoql<FixtureSchema>().selectFrom("Account");
 
     expect(() =>
@@ -266,9 +343,14 @@ describe("SelectQueryBuilder", () => {
     expect(() =>
       baseQuery.select(({ fn }) => [
         fn.toLabel("Industry").as("label"),
-        fn.toLabel("Industry").as("label"),
+        fn.convertCurrency("AnnualRevenue").as("label"),
       ]),
     ).toThrow("Duplicate SOQL selection alias: label.");
+    expect(() =>
+      baseQuery.select(
+        ({ fn }) => fn.convertCurrency("AnnualRevenue") as never,
+      ),
+    ).toThrow("SOQL SELECT function expressions must be aliased.");
 
     const selected = baseQuery.select(({ fn }) =>
       fn.toLabel("Industry").as("label"),
@@ -827,6 +909,12 @@ describe("SelectQueryBuilder", () => {
     query.select(({ fn }) =>
       fn.toLabel("Owner.Region__c").as("ownerRegionLabel"),
     );
+    query.select(({ fn }) =>
+      fn.convertCurrency("AnnualRevenue").as("convertedRevenue"),
+    );
+    query.select(({ fn }) =>
+      fn.convertCurrency("Owner.Quota__c").as("convertedOwnerQuota"),
+    );
 
     const invalidToLabelSelections = () => {
       // @ts-expect-error toLabel requires a generated picklist or multipicklist field.
@@ -846,5 +934,26 @@ describe("SelectQueryBuilder", () => {
     };
 
     expect(invalidToLabelSelections).toBeTypeOf("function");
+
+    const invalidConvertCurrencySelections = () => {
+      query.select(({ fn }) => {
+        // @ts-expect-error convertCurrency requires a generated currency field.
+        return fn.convertCurrency("Name").as("convertedName");
+      });
+      query.select(({ fn }) => {
+        // @ts-expect-error convertCurrency does not accept picklist fields.
+        return fn.convertCurrency("Industry").as("convertedIndustry");
+      });
+      query.select(({ fn }) => {
+        // @ts-expect-error convertCurrency fields must exist in the generated schema.
+        return fn.convertCurrency("Does_Not_Exist__c").as("convertedMissing");
+      });
+      // @ts-expect-error SELECT function expressions require deterministic aliases.
+      query.select(({ fn }) => fn.convertCurrency("AnnualRevenue"));
+      // @ts-expect-error Salesforce does not support ordering by convertCurrency expressions.
+      query.orderBy(({ fn }) => fn.convertCurrency("AnnualRevenue"));
+    };
+
+    expect(invalidConvertCurrencySelections).toBeTypeOf("function");
   });
 });

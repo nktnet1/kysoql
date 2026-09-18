@@ -114,6 +114,26 @@ const opportunities = await db
   .execute();
 ```
 
+Currency fields can be converted to the querying user's currency with an
+aliased `convertCurrency()` selection. Inputs are restricted to generated
+`currency` fields, including child-to-parent paths, and outputs remain numeric
+with source/relationship nullability preserved. Salesforce requires multiple
+currencies to be enabled for this function; that org-level setting is not part
+of field Describe metadata, so kysoql cannot verify it statically. Salesforce
+also disallows the function itself in `ORDER BY` (ordering by the currency field
+uses its converted value).
+
+```ts
+const opportunities = await db
+  .selectFrom("Opportunity")
+  .select(["Id", "Amount"])
+  .select(({ fn }) =>
+    fn.convertCurrency("Amount").as("convertedAmount"),
+  )
+  .orderBy("Amount", "desc")
+  .execute();
+```
+
 Generated parent-relationship metadata also enables typed child-to-parent dotted
 paths in `.select()`, `.where()`, expression callbacks, and `.orderBy()`. The
 terminal related field keeps its generated value/operator/capability checks, and

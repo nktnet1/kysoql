@@ -90,6 +90,21 @@ describe("DefaultQueryCompiler", () => {
     );
   });
 
+  it("compiles aliased convertCurrency selections in builder order", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("AnnualRevenue")
+      .select(({ fn }) =>
+        fn.convertCurrency("AnnualRevenue").as("convertedRevenue"),
+      )
+      .select("Id")
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT AnnualRevenue, convertCurrency(AnnualRevenue) convertedRevenue, Id FROM Account",
+    );
+  });
+
   it("compiles chained filters and SOQL operator casing", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")

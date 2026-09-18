@@ -33,6 +33,14 @@ interface RelationshipSubquerySchema {
         true,
         true
       >;
+      readonly LifetimeValue__c: SalesforceField<
+        number,
+        "currency",
+        true,
+        true,
+        true,
+        true
+      >;
       readonly Salutation: SalesforceField<
         string,
         "picklist",
@@ -92,6 +100,14 @@ interface RelationshipSubquerySchema {
   readonly User: SalesforceObject<{
     readonly Id: SalesforceField<string, "id", false, true, true, true>;
     readonly Alias: SalesforceField<string, "string", true, true, true, true>;
+    readonly Quota__c: SalesforceField<
+      number,
+      "currency",
+      false,
+      true,
+      true,
+      true
+    >;
   }>;
   readonly Case: SalesforceObject<
     {
@@ -324,6 +340,29 @@ describe("parent-to-child relationship subqueries", () => {
     }>();
   });
 
+  it("selects converted currencies in relationship subqueries", () => {
+    const query = new Kysoql<RelationshipSubquerySchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .selectSubquery("Contacts", (contacts) =>
+        contacts.select(({ fn }) => [
+          fn.convertCurrency("LifetimeValue__c").as("convertedLifetimeValue"),
+          fn.convertCurrency("CreatedBy.Quota__c").as("convertedCreatorQuota"),
+        ]),
+      );
+
+    expect(query.compile().soql).toBe(
+      "SELECT Id, (SELECT convertCurrency(LifetimeValue__c) convertedLifetimeValue, convertCurrency(CreatedBy.Quota__c) convertedCreatorQuota FROM Contacts) FROM Account",
+    );
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly Id: string;
+      readonly Contacts: SalesforceQueryResult<{
+        readonly convertedLifetimeValue: number | null;
+        readonly convertedCreatorQuota: number;
+      }>;
+    }>();
+  });
+
   it("supports nested parent-to-child subqueries through four child levels", () => {
     const query = new Kysoql<RelationshipSubquerySchema>()
       .selectFrom("Account")
@@ -394,6 +433,11 @@ describe("parent-to-child relationship subqueries", () => {
 
         // @ts-expect-error Child SELECT functions retain generated field-type metadata.
         contacts.select(({ fn }) => fn.toLabel("LastName").as("lastNameLabel"));
+
+        contacts.select(({ fn }) => {
+          // @ts-expect-error Child currency conversion retains generated field-type metadata.
+          return fn.convertCurrency("LastName").as("convertedLastName");
+        });
 
         return contacts.select("Id");
       });

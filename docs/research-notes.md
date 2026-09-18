@@ -615,6 +615,45 @@ unaliased nodes are rejected at runtime, and `ORDER BY` has no function overload
 The conservative field gate intentionally excludes special Salesforce cases
 that current generated metadata cannot prove safely.
 
+### Currency conversion with convertCurrency()
+
+Sources re-checked on 2026-09-18:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-querying-currency-fields.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-format.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-functions.html
+
+Useful findings:
+
+- `convertCurrency(field)` is a SELECT function that converts a currency field
+  into the querying user's currency and requires the org's multiple-currencies
+  feature to be enabled. Describe field metadata identifies currency fields but
+  does not expose that org-level prerequisite.
+- The function supports an alias and returns a numeric currency value. Localized
+  symbols and display formatting are a separate `FORMAT(...)` concern.
+- Salesforce forbids `convertCurrency()` in `WHERE`, forbids converting an
+  aggregate-function result, and returns grouped aggregate currency results in
+  the org default currency.
+- Salesforce forbids a `convertCurrency()` expression in `ORDER BY`; ordering a
+  currency field is already based on its converted value. This does not require
+  a new expression-ordering overload.
+- When advanced currency management is enabled, applicable opportunity records
+  use dated exchange rates; otherwise conversion uses the most recent rate. Both
+  behaviours are server-side runtime concerns.
+- `FORMAT()` can wrap `convertCurrency()`, but that changes the output to a
+  localized string and is best modeled as explicit node composition in the next
+  slice.
+
+Implemented consequence in `v1.0.66`: record and parent-to-child relationship
+subquery builders accept aliased `fn.convertCurrency(...)` selections for
+generated currency references, including child-to-parent paths. A dedicated
+frozen function node compiles as `convertCurrency(field) alias`; output values
+remain `number` with field and relationship nullability propagated. The shared
+SELECT-function parser handles mixed `toLabel()`/`convertCurrency()` lists and
+duplicate aliases consistently. The type surface intentionally exposes no
+currency conversion in filtering, aggregate arguments, or expression ordering,
+and documents rather than guesses whether multiple currencies are enabled.
+
 ### Remaining SOQL surface / roadmap references
 
 Sources re-checked on 2026-09-18:

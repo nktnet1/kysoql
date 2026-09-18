@@ -51,6 +51,13 @@ function operationNodeOf(expression: unknown): OperationNode | undefined {
   return expression.toOperationNode() as OperationNode;
 }
 
+function isSelectFunctionNode(node: OperationNode | undefined): boolean {
+  return (
+    node?.kind === "ConvertCurrencyFunctionNode" ||
+    node?.kind === "ToLabelFunctionNode"
+  );
+}
+
 export function isSelectFunctionSelectionArg(selection: unknown): boolean {
   const expressions = Array.isArray(selection) ? selection : [selection];
 
@@ -58,9 +65,9 @@ export function isSelectFunctionSelectionArg(selection: unknown): boolean {
     const node = operationNodeOf(expression);
 
     return (
-      node?.kind === "ToLabelFunctionNode" ||
+      isSelectFunctionNode(node) ||
       (node?.kind === "AliasNode" &&
-        (node as AliasNode).node.kind === "ToLabelFunctionNode")
+        isSelectFunctionNode((node as AliasNode).node))
     );
   });
 }
@@ -70,7 +77,7 @@ function parseAliasedSelectFunctionNode(expression: unknown): AliasNode {
 
   if (
     node?.kind !== "AliasNode" ||
-    (node as AliasNode).node.kind !== "ToLabelFunctionNode"
+    !isSelectFunctionNode((node as AliasNode).node)
   ) {
     throw new TypeError(SELECT_FUNCTION_SELECTION_ERROR);
   }

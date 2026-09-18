@@ -6,7 +6,9 @@ export type {
   AliasedAggregateFunctionBuilder,
   AliasedDateFunctionBuilder,
   AliasedSelectFunctionBuilder,
+  ConvertCurrencyFunctionBuilder,
   CountAllFunctionBuilder,
+  CurrencyFieldReference,
   DateFunctionBuilder,
   DateFunctionExpression,
   DateFunctionIdentity,
@@ -37,6 +39,7 @@ export type {
 export type { AliasNode } from "#/operation-node/alias-node";
 export type { AndNode } from "#/operation-node/and-node";
 export type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
+export type { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
 export type {
   DateFunction,
   DateFunctionNode,

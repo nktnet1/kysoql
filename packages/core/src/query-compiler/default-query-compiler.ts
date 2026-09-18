@@ -4,6 +4,7 @@ import type { AggregateFunctionNode } from "#/operation-node/aggregate-function-
 import type { AliasNode } from "#/operation-node/alias-node";
 import type { AndNode } from "#/operation-node/and-node";
 import type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
+import type { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
 import type { DateFunctionNode } from "#/operation-node/date-function-node";
 import type { GroupByNode } from "#/operation-node/group-by-node";
 import type { HavingNode } from "#/operation-node/having-node";
@@ -181,6 +182,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
         return this.#compileAnd(node as AndNode);
       case "BinaryOperationNode":
         return this.#compileBinaryOperation(node as BinaryOperationNode);
+      case "ConvertCurrencyFunctionNode":
+        return this.#compileConvertCurrencyFunction(
+          node as ConvertCurrencyFunctionNode,
+        );
       case "DateFunctionNode":
         return this.#compileDateFunction(node as DateFunctionNode);
       case "NotNode":
@@ -239,6 +244,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
     }[node.function];
 
     return `${name}(${this.#compileReference(node.reference)})`;
+  }
+
+  #compileConvertCurrencyFunction(node: ConvertCurrencyFunctionNode): string {
+    return `convertCurrency(${this.#compileReference(node.reference)})`;
   }
 
   #compileToLabelFunction(node: ToLabelFunctionNode): string {

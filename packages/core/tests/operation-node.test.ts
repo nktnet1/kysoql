@@ -4,6 +4,7 @@ import { AggregateFunctionNode } from "#/operation-node/aggregate-function-node"
 import { AliasNode } from "#/operation-node/alias-node";
 import { AndNode } from "#/operation-node/and-node";
 import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
+import { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
 import { DateFunctionNode } from "#/operation-node/date-function-node";
 import { GroupByNode } from "#/operation-node/group-by-node";
 import { HavingNode } from "#/operation-node/having-node";
@@ -91,6 +92,17 @@ describe("operation nodes", () => {
       reference,
     });
     expectFrozen(toLabel);
+  });
+
+  it("creates frozen convertCurrency function nodes", () => {
+    const reference = ReferenceNode.create("AnnualRevenue");
+    const convertCurrency = ConvertCurrencyFunctionNode.create(reference);
+
+    expect(convertCurrency).toEqual({
+      kind: "ConvertCurrencyFunctionNode",
+      reference,
+    });
+    expectFrozen(convertCurrency);
   });
 
   it("creates frozen value-list nodes and members", () => {
