@@ -86,17 +86,29 @@ describe("DefaultQueryCompiler", () => {
     );
   });
 
-  it("compiles additive ORDER BY fields and directions", () => {
+  it("compiles additive ORDER BY fields with direction and null placement", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")
       .select(["Id", "Name"])
       .where("Name", "like", "Acme%")
-      .orderBy("Name", "asc")
-      .orderBy("Id", "desc")
+      .orderBy("Name", "asc", "first")
+      .orderBy("Id", "desc", "last")
       .compile();
 
     expect(compiled.soql).toBe(
-      "SELECT Id, Name FROM Account WHERE Name LIKE 'Acme%' ORDER BY Name ASC, Id DESC",
+      "SELECT Id, Name FROM Account WHERE Name LIKE 'Acme%' ORDER BY Name ASC NULLS FIRST, Id DESC NULLS LAST",
+    );
+  });
+
+  it("compiles null placement without an explicit direction", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Name")
+      .orderBy("Name", undefined, "last")
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT Name FROM Account ORDER BY Name NULLS LAST",
     );
   });
 

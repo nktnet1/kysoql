@@ -21,7 +21,10 @@ import {
   parseOrderBy,
   type SortableFieldName,
 } from "#/parser/order-by-parser";
-import type { OrderByDirection } from "#/operation-node/order-by-item-node";
+import type {
+  OrderByDirection,
+  OrderByNulls,
+} from "#/operation-node/order-by-item-node";
 import { freeze } from "#/util/object-utils";
 
 export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
@@ -36,6 +39,7 @@ export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
   orderBy<OE extends SortableFieldName<DB, TB>>(
     field: OE,
     direction?: OrderByDirection,
+    nulls?: OrderByNulls,
   ): SelectQueryBuilder<DB, TB, O>;
 
   where<
@@ -104,11 +108,12 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
   orderBy<OE extends SortableFieldName<DB, TB>>(
     field: OE,
     direction?: OrderByDirection,
+    nulls?: OrderByNulls,
   ): SelectQueryBuilder<DB, TB, O> {
     return new SelectQueryBuilderImpl<DB, TB, O>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithOrderByItems(this.#props.queryNode, [
-        parseOrderBy(field, direction),
+        parseOrderBy(field, direction, nulls),
       ]),
     });
   }

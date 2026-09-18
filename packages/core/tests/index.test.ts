@@ -19,6 +19,7 @@ import {
   type OperatorNode,
   type OrderByDirection,
   type OrderByItemNode,
+  type OrderByNulls,
   type OrderByNode,
   type OrderedComparisonOperator,
   type QueryCompiler,
@@ -58,6 +59,7 @@ type PublicTypeSurface = {
   operatorNode: OperatorNode;
   orderByDirection: OrderByDirection;
   orderByItemNode: OrderByItemNode;
+  orderByNulls: OrderByNulls;
   orderByNode: OrderByNode;
   orderedComparisonOperator: OrderedComparisonOperator;
   queryCompiler: QueryCompiler;

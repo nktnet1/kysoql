@@ -14,6 +14,7 @@ export type { OffsetNode } from "#/operation-node/offset-node";
 export type {
   OrderByDirection,
   OrderByItemNode,
+  OrderByNulls,
 } from "#/operation-node/order-by-item-node";
 export type { OrderByNode } from "#/operation-node/order-by-node";
 export type { ReferenceNode } from "#/operation-node/reference-node";

@@ -156,8 +156,8 @@ describe("SelectQueryBuilder", () => {
   it("adds sortable ORDER BY items without mutating earlier builders", () => {
     const db = new Kysoql<FixtureSchema>();
     const baseQuery = db.selectFrom("Account").select(["Id", "Name"]);
-    const nameQuery = baseQuery.orderBy("Name", "asc");
-    const orderedQuery = nameQuery.orderBy("Id", "desc");
+    const nameQuery = baseQuery.orderBy("Name", "asc", "first");
+    const orderedQuery = nameQuery.orderBy("Id", "desc", "last");
 
     expect(baseQuery.toOperationNode().orderBy).toBeUndefined();
     expect(nameQuery.toOperationNode().orderBy).toEqual({
@@ -167,6 +167,7 @@ describe("SelectQueryBuilder", () => {
           kind: "OrderByItemNode",
           orderBy: { kind: "ReferenceNode", name: "Name" },
           direction: "asc",
+          nulls: "first",
         },
       ],
     });
@@ -177,11 +178,13 @@ describe("SelectQueryBuilder", () => {
           kind: "OrderByItemNode",
           orderBy: { kind: "ReferenceNode", name: "Name" },
           direction: "asc",
+          nulls: "first",
         },
         {
           kind: "OrderByItemNode",
           orderBy: { kind: "ReferenceNode", name: "Id" },
           direction: "desc",
+          nulls: "last",
         },
       ],
     });
@@ -537,6 +540,12 @@ describe("SelectQueryBuilder", () => {
 
     // @ts-expect-error ORDER BY direction is limited to Kysely-style asc/desc.
     query.orderBy("Name", "ascending");
+
+    query.orderBy("Name", undefined, "first");
+    query.orderBy("Name", "asc", "last");
+
+    // @ts-expect-error ORDER BY null placement is limited to first/last.
+    query.orderBy("Name", "asc", "middle");
   });
 
   it("rejects unknown objects and fields at compile time", () => {

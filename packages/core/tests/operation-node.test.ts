@@ -67,18 +67,20 @@ describe("operation nodes", () => {
     expectFrozen(offset);
   });
 
-  it("creates order items with and without explicit directions", () => {
+  it("creates order items with optional direction and null placement", () => {
     const reference = ReferenceNode.create("Name");
     const implicit = OrderByItemNode.create(reference);
-    const explicit = OrderByItemNode.create(reference, "desc");
+    const explicit = OrderByItemNode.create(reference, "desc", "last");
 
     expect(implicit).toEqual({ kind: "OrderByItemNode", orderBy: reference });
     expect(explicit).toEqual({
       kind: "OrderByItemNode",
       orderBy: reference,
       direction: "desc",
+      nulls: "last",
     });
     expect("direction" in implicit).toBe(false);
+    expect("nulls" in implicit).toBe(false);
     expectFrozen(implicit);
     expectFrozen(explicit);
   });

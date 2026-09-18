@@ -79,13 +79,17 @@ export class DefaultQueryCompiler implements QueryCompiler {
   }
 
   #compileOrderByItem(item: OrderByItemNode): string {
-    const field = this.#compileReference(item.orderBy);
+    let orderBy = this.#compileReference(item.orderBy);
 
-    if (!item.direction) {
-      return field;
+    if (item.direction) {
+      orderBy += ` ${item.direction === "asc" ? "ASC" : "DESC"}`;
     }
 
-    return `${field} ${item.direction === "asc" ? "ASC" : "DESC"}`;
+    if (item.nulls) {
+      orderBy += ` NULLS ${item.nulls === "first" ? "FIRST" : "LAST"}`;
+    }
+
+    return orderBy;
   }
 
   #compileOperation(node: OperationNode): string {

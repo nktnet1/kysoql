@@ -1,6 +1,7 @@
 import {
   OrderByItemNode,
   type OrderByDirection,
+  type OrderByNulls,
 } from "#/operation-node/order-by-item-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
 import type { FieldName, FieldsOf } from "#/parser/reference-parser";
@@ -16,6 +17,7 @@ export type SortableFieldName<DB, TB extends keyof DB> = {
 export function parseOrderBy(
   field: string,
   direction?: OrderByDirection,
+  nulls?: OrderByNulls,
 ): OrderByItemNode {
-  return OrderByItemNode.create(ReferenceNode.create(field), direction);
+  return OrderByItemNode.create(ReferenceNode.create(field), direction, nulls);
 }
