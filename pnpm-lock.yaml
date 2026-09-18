@@ -220,6 +220,9 @@ importers:
       jsforce:
         specifier: 3.10.25
         version: 3.10.25(@types/node@26.5.1)
+      valibot:
+        specifier: 1.4.2
+        version: 1.4.2(typescript@7.0.2)
 
 packages:
 

@@ -80,6 +80,43 @@ describe("createJsforceExecutor", () => {
     ]);
   });
 
+  it("rejects malformed initial query results", async () => {
+    const query = vi.fn(async (_soql: string) => ({
+      done: "true",
+      records: [],
+    }));
+    const queryMore = vi.fn(async (_locator: string) => ({
+      done: true,
+      records: [],
+    }));
+
+    const executor = createJsforceExecutor({ query, queryMore });
+
+    await expect(executor.executeQuery(compiledQuery)).rejects.toThrow(
+      "Invalid JSforce query result:",
+    );
+    expect(queryMore).not.toHaveBeenCalled();
+  });
+
+  it("rejects malformed pagination results", async () => {
+    const query = vi.fn(async (_soql: string): Promise<JsforceQueryResult> => ({
+      done: false,
+      nextRecordsUrl: "/services/data/v65.0/query/01g-first",
+      records: [{ Id: "001000000000001", Name: "Acme" }],
+    }));
+    const queryMore = vi.fn(async (_locator: string) => ({
+      done: true,
+      records: [null],
+    }));
+
+    const executor = createJsforceExecutor({ query, queryMore });
+
+    await expect(executor.executeQuery(compiledQuery)).rejects.toThrow(
+      "Invalid JSforce query result:",
+    );
+    expect(queryMore).toHaveBeenCalledOnce();
+  });
+
   it("rejects incomplete pagination instead of returning a truncated result", async () => {
     const query = vi.fn(
       async (_soql: string): Promise<JsforceQueryResult> => ({

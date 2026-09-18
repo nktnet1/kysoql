@@ -1,4 +1,11 @@
 import type { CompiledQuery, QueryExecutor } from "@kysoql/core";
+import * as v from "valibot";
+
+const jsforceQueryResultSchema = v.object({
+  done: v.boolean(),
+  nextRecordsUrl: v.optional(v.string()),
+  records: v.array(v.record(v.string(), v.unknown())),
+});
 
 export interface JsforceQueryResult {
   readonly done: boolean;
@@ -7,11 +14,27 @@ export interface JsforceQueryResult {
 }
 
 export interface JsforceConnection {
-  query(soql: string): PromiseLike<JsforceQueryResult>;
-  queryMore(locator: string): PromiseLike<JsforceQueryResult>;
+  query(soql: string): PromiseLike<unknown>;
+  queryMore(locator: string): PromiseLike<unknown>;
 }
 
 export type JsforceExecutor = QueryExecutor;
+
+const parseJsforceQueryResult = (input: unknown): JsforceQueryResult => {
+  const result = v.safeParse(jsforceQueryResultSchema, input);
+
+  if (!result.success) {
+    throw new TypeError(
+      `Invalid JSforce query result:\n${v.summarize(result.issues)}`,
+    );
+  }
+
+  const { done, nextRecordsUrl, records } = result.output;
+
+  return nextRecordsUrl === undefined
+    ? { done, records }
+    : { done, nextRecordsUrl, records };
+};
 
 class JsforceQueryExecutor implements QueryExecutor {
   readonly #connection: JsforceConnection;
@@ -24,7 +47,9 @@ class JsforceQueryExecutor implements QueryExecutor {
     compiledQuery: CompiledQuery<O>,
   ): Promise<readonly O[]> {
     const records: Record<string, unknown>[] = [];
-    let result = await this.#connection.query(compiledQuery.soql);
+    let result = parseJsforceQueryResult(
+      await this.#connection.query(compiledQuery.soql),
+    );
 
     records.push(...result.records);
 
@@ -35,7 +60,9 @@ class JsforceQueryExecutor implements QueryExecutor {
         );
       }
 
-      result = await this.#connection.queryMore(result.nextRecordsUrl);
+      result = parseJsforceQueryResult(
+        await this.#connection.queryMore(result.nextRecordsUrl),
+      );
       records.push(...result.records);
     }
 
