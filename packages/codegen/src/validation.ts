@@ -46,47 +46,6 @@ const salesforceObjectDescriptionSchema = v.object({
   ),
 });
 
-export const parseGenerateCommand = (input: unknown): "generate" => {
-  const result = v.safeParse(
-    v.literal("generate", `Unknown command: ${String(input ?? "")}`),
-    input,
-  );
-
-  if (!result.success) {
-    throw new Error(result.issues[0].message);
-  }
-  return result.output;
-};
-
-const generateOptions = ["--object", "--output", "--schema-name"] as const;
-
-type GenerateOption = (typeof generateOptions)[number];
-
-export const parseGenerateOption = (input: unknown): GenerateOption => {
-  const result = v.safeParse(
-    v.picklist(generateOptions, `Unknown option: ${String(input ?? "")}`),
-    input,
-  );
-
-  if (!result.success) {
-    throw new Error(result.issues[0].message);
-  }
-  return result.output;
-};
-
-export const parseCliValue = (input: unknown, flag: string): string => {
-  const message = `${flag} requires a value.`;
-  const result = v.safeParse(
-    v.pipe(v.string(message), v.nonEmpty(message), v.regex(/^(?!--)/, message)),
-    input,
-  );
-
-  if (!result.success) {
-    throw new Error(result.issues[0].message);
-  }
-  return result.output;
-};
-
 export const parseSchemaName = (input: unknown): string => {
   const result = v.safeParse(
     v.pipe(

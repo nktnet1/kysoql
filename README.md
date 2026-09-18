@@ -56,6 +56,27 @@ playground to an ignored `dist/` directory, then logs the immutable AST after
 `orderBy()` calls, `limit()`, the compiled SOQL, and a mock executor call made
 by `.execute()`.
 
+## Schema generation CLI
+
+`@kysoql/codegen` uses oclif for command discovery, parsing, validation, and
+generated help. Set the Salesforce connection environment variables, then run
+the `generate` command:
+
+```bash
+export SF_INSTANCE_URL="https://example.my.salesforce.com"
+export SF_ACCESS_TOKEN="..."
+
+kysoql generate \
+  --object Account \
+  --object Contact \
+  --output src/salesforce.generated.ts \
+  --schema-name SalesforceSchema
+```
+
+`--object` is repeatable. If it is omitted, codegen includes every queryable
+object returned by Salesforce. Run `kysoql --help` or
+`kysoql generate --help` for the oclif-generated command reference.
+
 ## Current query surface
 
 The core builder currently supports schema-checked selection, typed scalar

@@ -29,7 +29,18 @@
   "bin": {
     "kysoql": "./dist/cli.mjs"
   },
+  "oclif": {
+    "bin": "kysoql",
+    "dirname": "kysoql",
+    "commands": {
+      "strategy": "explicit",
+      "target": "./dist/commands.mjs",
+      "identifier": "COMMANDS"
+    },
+    "topicSeparator": " "
+  },
   "dependencies": {
+    "@oclif/core": "4.14.0",
     "jsforce": "3.10.25",
     "valibot": "1.4.2"
   },

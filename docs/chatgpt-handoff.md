@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.66`, the next patch
-   is `v1.0.67`.
+   reuse or rewrite a version already handed off. After `v1.0.67`, the next patch
+   is `v1.0.68`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.66`
+## Current state after `v1.0.67`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -119,6 +119,7 @@ recent patch sequence:
 | `v1.0.64` | Add typed ordering by row-producing aggregate-function expressions on grouped queries, preserving field capabilities and excluding scalar `COUNT()`. |
 | `v1.0.65` | Add typed aliased `toLabel()` selection for generated picklist/multipicklist fields in root and relationship-subquery SELECT lists. |
 | `v1.0.66` | Add typed aliased `convertCurrency()` selection for generated currency fields in root and relationship-subquery SELECT lists. |
+| `v1.0.67` | Migrate the codegen executable to oclif with explicit bundled command discovery, generated help, and typed repeatable flags. |
 
 ### Build/tooling state
 
@@ -126,6 +127,10 @@ recent patch sequence:
   tsdown.
 - `@kysoql/core`, `@kysoql/codegen`, and `@kysoql/jsforce` are publishable and
   build with tsdown.
+- `@kysoql/codegen` uses `@oclif/core` with explicit command discovery so its
+  bundled `commands.mjs` registry remains compatible with tsdown; `generate` is
+  a real oclif command, while the package's normal library entry remains
+  independent of CLI runtime code.
 - `@kysoql/debug` is private and intentionally remains a simple `tsc`-built
   playground.
 - Root `pnpm test` and `pnpm t` both run `vitest run`.
@@ -157,9 +162,10 @@ exports: {
 }
 ```
 
-`@kysoql/codegen` additionally has separate `index` and CLI entries and keeps the
-CLI out of package exports. Cross-package imports always use workspace package
-names such as `@kysoql/core`; never reach into another package's `src` or `dist`.
+`@kysoql/codegen` additionally has separate library, executable, and oclif
+command-registry entries and keeps the CLI-only entries out of package exports.
+Cross-package imports always use workspace package names such as
+`@kysoql/core`; never reach into another package's `src` or `dist`.
 
 ### Core query surface currently implemented
 
@@ -284,7 +290,7 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.67` and should add typed `FORMAT(...)` SELECT
+**The next patch should be `v1.0.68` and should add typed `FORMAT(...)` SELECT
 expressions.** Reuse the scalar-function selection path established by
 `toLabel()` and `convertCurrency()`; leave polymorphic `TYPEOF`, `FIELDS(...)`,
 and specialist clauses for later slices.
@@ -303,7 +309,7 @@ Recommended next unit:
   and negative type tests; keep aggregate-function nesting, filtering, ordering,
   `FIELDS(...)`, `TYPEOF`, and unrelated refactors out of the patch.
 
-If the supplied bundle already contains `v1.0.66` or later, inspect the code and
+If the supplied bundle already contains `v1.0.67` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice

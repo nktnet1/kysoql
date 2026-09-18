@@ -694,6 +694,44 @@ relationship-query and aggregate-query output typing treated as major architectu
 milestones. Do not equate "all SOQL" with blindly exposing Apex-only execution
 semantics in the transport-neutral core API.
 
+## Codegen CLI framework
+
+Sources re-checked on 2026-09-18:
+
+- https://oclif.io/docs/introduction/
+- https://oclif.io/docs/commands/
+- https://oclif.io/docs/flags/
+- https://oclif.io/docs/command_discovery_strategies/
+- https://oclif.io/docs/esm/
+
+Useful findings:
+
+- oclif v4 models each operation as a `Command` class with a required async
+  `run()` method. Command metadata and flag declarations drive parsing and help
+  output from one definition.
+- `Flags.string(...)` supports defaults and repeatable inputs. Using
+  `multipleNonGreedy` with `multiple` preserves one object API name per repeated
+  `--object` flag instead of greedily consuming adjacent values.
+- oclif's explicit discovery strategy loads a named command map from one target
+  file. The official documentation specifically identifies this strategy as
+  useful when command code is bundled and filesystem naming cannot be used for
+  discovery.
+- An ESM executable delegates to oclif through `execute({ dir:
+  import.meta.url })`; oclif then resolves the package configuration and command
+  registry. Keeping the bin and registry as separate tsdown entries avoids
+  publishing CLI internals through the package's library exports.
+
+Implemented consequence in `v1.0.67`: `@kysoql/codegen` now depends directly on
+`@oclif/core` and registers a real `generate` command through an explicit
+`commands.mjs` bundle. oclif owns routing, strict flag parsing, repeatable object
+flags, errors, and generated root/command help. The existing Salesforce
+environment variables, output/schema defaults, generation flow, Valibot
+validation of schema names, JSforce Describe adapter, and success message are
+preserved.
+The former handwritten parser and usage text are removed, command behaviour is
+tested at the class boundary, and a built-executable smoke check covers command
+discovery and help.
+
 ## Salesforce CLI
 
 ### Credential retrieval change
