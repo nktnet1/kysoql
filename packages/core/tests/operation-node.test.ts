@@ -6,6 +6,7 @@ import { AndNode } from "#/operation-node/and-node";
 import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 import { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
 import { DateFunctionNode } from "#/operation-node/date-function-node";
+import { FormatFunctionNode } from "#/operation-node/format-function-node";
 import { GroupByNode } from "#/operation-node/group-by-node";
 import { HavingNode } from "#/operation-node/having-node";
 import { LimitNode } from "#/operation-node/limit-node";
@@ -103,6 +104,24 @@ describe("operation nodes", () => {
       reference,
     });
     expectFrozen(convertCurrency);
+  });
+
+  it("creates frozen FORMAT function nodes", () => {
+    const reference = ReferenceNode.create("AnnualRevenue");
+    const directFormat = FormatFunctionNode.create(reference);
+    const convertedCurrency = ConvertCurrencyFunctionNode.create(reference);
+    const convertedFormat = FormatFunctionNode.create(convertedCurrency);
+
+    expect(directFormat).toEqual({
+      kind: "FormatFunctionNode",
+      expression: reference,
+    });
+    expect(convertedFormat).toEqual({
+      kind: "FormatFunctionNode",
+      expression: convertedCurrency,
+    });
+    expectFrozen(directFormat);
+    expectFrozen(convertedFormat);
   });
 
   it("creates frozen value-list nodes and members", () => {

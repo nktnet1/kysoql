@@ -32,6 +32,9 @@ import {
   type EqualityComparisonOperator,
   type ExpressionBuilder,
   type ExpressionWrapper,
+  type FormatFunctionBuilder,
+  type FormatFunctionNode,
+  type FormattableFieldReference,
   type GroupByNode,
   type GroupedHavingFieldName,
   type GroupingFunctionBuilder,
@@ -171,6 +174,13 @@ type PublicTypeSurface = {
   equalityComparisonOperator: EqualityComparisonOperator;
   expressionBuilder: ExpressionBuilder<Record<string, never>, never>;
   expressionWrapper: ExpressionWrapper<Record<string, never>, never>;
+  formattableFieldReference: FormattableFieldReference<
+    Record<string, never>,
+    never,
+    "Amount"
+  >;
+  formatFunctionBuilder: FormatFunctionBuilder<string>;
+  formatFunctionNode: FormatFunctionNode;
   groupByNode: GroupByNode;
   groupedHavingFieldName: GroupedHavingFieldName<
     Record<string, never>,

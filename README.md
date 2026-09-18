@@ -155,6 +155,27 @@ const opportunities = await db
   .execute();
 ```
 
+Localized number, currency, and temporal display values can be selected with an
+aliased `format()` expression. Direct inputs are restricted to generated
+`currency`, `double`, `int`, `percent`, `date`, `datetime`, and `time` fields,
+including child-to-parent paths. Outputs are strings with source/relationship
+nullability preserved. `format()` can also wrap an unaliased
+`convertCurrency()` expression when the localized value should use the querying
+user's currency.
+
+```ts
+const opportunities = await db
+  .selectFrom("Opportunity")
+  .select("Id")
+  .select(({ fn }) => [
+    fn.format("CloseDate").as("localizedCloseDate"),
+    fn
+      .format(fn.convertCurrency("Amount"))
+      .as("localizedConvertedAmount"),
+  ])
+  .execute();
+```
+
 Generated parent-relationship metadata also enables typed child-to-parent dotted
 paths in `.select()`, `.where()`, expression callbacks, and `.orderBy()`. The
 terminal related field keeps its generated value/operator/capability checks, and

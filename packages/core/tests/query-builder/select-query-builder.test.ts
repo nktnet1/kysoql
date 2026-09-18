@@ -31,6 +31,30 @@ interface FixtureSchema {
         true,
         true
       >;
+      readonly EmployeeCount__c: SalesforceField<
+        number,
+        "int",
+        false,
+        true,
+        true,
+        true
+      >;
+      readonly Satisfaction__c: SalesforceField<
+        number,
+        "double",
+        true,
+        true,
+        true,
+        true
+      >;
+      readonly GrowthRate__c: SalesforceField<
+        number,
+        "percent",
+        false,
+        true,
+        true,
+        true
+      >;
       readonly CloseDate: SalesforceField<
         string,
         "date",
@@ -334,6 +358,74 @@ describe("SelectQueryBuilder", () => {
     ).toBe(true);
   });
 
+  it("selects aliased localized values with inferred output", () => {
+    const baseQuery = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id");
+    const query = baseQuery.select(({ fn }) => [
+      fn.format("AnnualRevenue").as("formattedRevenue"),
+      fn.format("CommittedRevenue__c").as("formattedCommittedRevenue"),
+      fn.format("EmployeeCount__c").as("formattedEmployeeCount"),
+      fn.format("Satisfaction__c").as("formattedSatisfaction"),
+      fn.format("GrowthRate__c").as("formattedGrowthRate"),
+      fn.format("CloseDate").as("formattedCloseDate"),
+      fn.format("LastActivityAt__c").as("formattedLastActivity"),
+      fn.format("OpeningTime__c").as("formattedOpeningTime"),
+      fn.format("Owner.Quota__c").as("formattedOwnerQuota"),
+      fn
+        .format(fn.convertCurrency("AnnualRevenue"))
+        .as("formattedConvertedRevenue"),
+      fn
+        .format(fn.convertCurrency("CommittedRevenue__c"))
+        .as("formattedConvertedCommittedRevenue"),
+    ]);
+
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly Id: string;
+      readonly formattedRevenue: string | null;
+      readonly formattedCommittedRevenue: string;
+      readonly formattedEmployeeCount: string;
+      readonly formattedSatisfaction: string | null;
+      readonly formattedGrowthRate: string;
+      readonly formattedCloseDate: string | null;
+      readonly formattedLastActivity: string | null;
+      readonly formattedOpeningTime: string | null;
+      readonly formattedOwnerQuota: string | null;
+      readonly formattedConvertedRevenue: string | null;
+      readonly formattedConvertedCommittedRevenue: string;
+    }>();
+    expect(baseQuery.toOperationNode().selections).toHaveLength(1);
+    expect(query.toOperationNode().selections?.[1]).toEqual({
+      kind: "SelectionNode",
+      selection: {
+        kind: "AliasNode",
+        alias: "formattedRevenue",
+        node: {
+          kind: "FormatFunctionNode",
+          expression: { kind: "ReferenceNode", name: "AnnualRevenue" },
+        },
+      },
+    });
+    expect(query.toOperationNode().selections?.at(-2)).toEqual({
+      kind: "SelectionNode",
+      selection: {
+        kind: "AliasNode",
+        alias: "formattedConvertedRevenue",
+        node: {
+          kind: "FormatFunctionNode",
+          expression: {
+            kind: "ConvertCurrencyFunctionNode",
+            reference: { kind: "ReferenceNode", name: "AnnualRevenue" },
+          },
+        },
+      },
+    });
+    expect(Object.isFrozen(query.toOperationNode().selections?.[1])).toBe(true);
+    expect(
+      Object.isFrozen(query.toOperationNode().selections?.[1]?.selection),
+    ).toBe(true);
+  });
+
   it("rejects invalid SELECT-function selections at runtime", () => {
     const baseQuery = new Kysoql<FixtureSchema>().selectFrom("Account");
 
@@ -351,6 +443,16 @@ describe("SelectQueryBuilder", () => {
         ({ fn }) => fn.convertCurrency("AnnualRevenue") as never,
       ),
     ).toThrow("SOQL SELECT function expressions must be aliased.");
+    expect(() =>
+      baseQuery.select(({ fn }) => fn.format("CloseDate") as never),
+    ).toThrow("SOQL SELECT function expressions must be aliased.");
+    expect(() =>
+      baseQuery.select(({ fn }) =>
+        fn.format(fn.toLabel("Industry") as never).as("formattedIndustry"),
+      ),
+    ).toThrow(
+      "SOQL FORMAT() only supports field references or unaliased convertCurrency() expressions.",
+    );
 
     const selected = baseQuery.select(({ fn }) =>
       fn.toLabel("Industry").as("label"),
@@ -915,6 +1017,10 @@ describe("SelectQueryBuilder", () => {
     query.select(({ fn }) =>
       fn.convertCurrency("Owner.Quota__c").as("convertedOwnerQuota"),
     );
+    query.select(({ fn }) => fn.format("AnnualRevenue").as("revenueLabel"));
+    query.select(({ fn }) =>
+      fn.format(fn.convertCurrency("Owner.Quota__c")).as("formattedOwnerQuota"),
+    );
 
     const invalidToLabelSelections = () => {
       // @ts-expect-error toLabel requires a generated picklist or multipicklist field.
@@ -955,5 +1061,38 @@ describe("SelectQueryBuilder", () => {
     };
 
     expect(invalidConvertCurrencySelections).toBeTypeOf("function");
+
+    const invalidFormatSelections = () => {
+      query.select(({ fn }) => {
+        // @ts-expect-error FORMAT requires a generated number, date, datetime, time, or currency field.
+        return fn.format("Name").as("formattedName");
+      });
+      query.select(({ fn }) => {
+        // @ts-expect-error FORMAT does not accept picklist fields.
+        return fn.format("Industry").as("formattedIndustry");
+      });
+      query.select(({ fn }) => {
+        // @ts-expect-error FORMAT fields must exist in the generated schema.
+        return fn.format("Does_Not_Exist__c").as("formattedMissing");
+      });
+      query.select(({ fn }) => {
+        // @ts-expect-error FORMAT nesting is currently limited to unaliased convertCurrency expressions.
+        return fn.format(fn.toLabel("Industry")).as("formattedIndustry");
+      });
+      query.select(({ fn }) => {
+        return (
+          fn
+            // @ts-expect-error Aliased convertCurrency selections cannot be nested inside FORMAT.
+            .format(fn.convertCurrency("AnnualRevenue").as("convertedRevenue"))
+            .as("formattedRevenue")
+        );
+      });
+      // @ts-expect-error SELECT function expressions require deterministic aliases.
+      query.select(({ fn }) => fn.format("CloseDate"));
+      // @ts-expect-error Salesforce does not support ordering by FORMAT expressions.
+      query.orderBy(({ fn }) => fn.format("CloseDate"));
+    };
+
+    expect(invalidFormatSelections).toBeTypeOf("function");
   });
 });

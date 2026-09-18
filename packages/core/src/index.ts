@@ -13,6 +13,8 @@ export type {
   DateFunctionExpression,
   DateFunctionIdentity,
   DateGroupableFieldReference,
+  FormatFunctionBuilder,
+  FormattableFieldReference,
   GroupingFunctionBuilder,
   NumericAggregatableFieldReference,
   SelectExpressionBuilder,
@@ -44,6 +46,7 @@ export type {
   DateFunction,
   DateFunctionNode,
 } from "#/operation-node/date-function-node";
+export type { FormatFunctionNode } from "#/operation-node/format-function-node";
 export type {
   AdvancedGroupByMode,
   GroupByNode,

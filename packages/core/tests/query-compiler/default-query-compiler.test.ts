@@ -105,6 +105,23 @@ describe("DefaultQueryCompiler", () => {
     );
   });
 
+  it("compiles direct and converted FORMAT selections in builder order", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .select(({ fn }) => [
+        fn.format("CloseDate").as("formattedCloseDate"),
+        fn
+          .format(fn.convertCurrency("AnnualRevenue"))
+          .as("formattedConvertedRevenue"),
+      ])
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT Id, FORMAT(CloseDate) formattedCloseDate, FORMAT(convertCurrency(AnnualRevenue)) formattedConvertedRevenue FROM Account",
+    );
+  });
+
   it("compiles chained filters and SOQL operator casing", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")

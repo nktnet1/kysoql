@@ -6,6 +6,7 @@ import type { AndNode } from "#/operation-node/and-node";
 import type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 import type { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
 import type { DateFunctionNode } from "#/operation-node/date-function-node";
+import type { FormatFunctionNode } from "#/operation-node/format-function-node";
 import type { GroupByNode } from "#/operation-node/group-by-node";
 import type { HavingNode } from "#/operation-node/having-node";
 import type { LimitNode } from "#/operation-node/limit-node";
@@ -188,6 +189,8 @@ export class DefaultQueryCompiler implements QueryCompiler {
         );
       case "DateFunctionNode":
         return this.#compileDateFunction(node as DateFunctionNode);
+      case "FormatFunctionNode":
+        return this.#compileFormatFunction(node as FormatFunctionNode);
       case "NotNode":
         return this.#compileNot(node as NotNode);
       case "OrNode":
@@ -248,6 +251,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileConvertCurrencyFunction(node: ConvertCurrencyFunctionNode): string {
     return `convertCurrency(${this.#compileReference(node.reference)})`;
+  }
+
+  #compileFormatFunction(node: FormatFunctionNode): string {
+    return `FORMAT(${this.#compileOperation(node.expression)})`;
   }
 
   #compileToLabelFunction(node: ToLabelFunctionNode): string {

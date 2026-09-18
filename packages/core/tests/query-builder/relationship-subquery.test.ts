@@ -363,6 +363,33 @@ describe("parent-to-child relationship subqueries", () => {
     }>();
   });
 
+  it("selects localized values in relationship subqueries", () => {
+    const query = new Kysoql<RelationshipSubquerySchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .selectSubquery("Contacts", (contacts) =>
+        contacts.select(({ fn }) => [
+          fn.format("LifetimeValue__c").as("formattedLifetimeValue"),
+          fn
+            .format(fn.convertCurrency("LifetimeValue__c"))
+            .as("formattedConvertedLifetimeValue"),
+          fn.format("CreatedBy.Quota__c").as("formattedCreatorQuota"),
+        ]),
+      );
+
+    expect(query.compile().soql).toBe(
+      "SELECT Id, (SELECT FORMAT(LifetimeValue__c) formattedLifetimeValue, FORMAT(convertCurrency(LifetimeValue__c)) formattedConvertedLifetimeValue, FORMAT(CreatedBy.Quota__c) formattedCreatorQuota FROM Contacts) FROM Account",
+    );
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly Id: string;
+      readonly Contacts: SalesforceQueryResult<{
+        readonly formattedLifetimeValue: string | null;
+        readonly formattedConvertedLifetimeValue: string | null;
+        readonly formattedCreatorQuota: string;
+      }>;
+    }>();
+  });
+
   it("supports nested parent-to-child subqueries through four child levels", () => {
     const query = new Kysoql<RelationshipSubquerySchema>()
       .selectFrom("Account")
@@ -437,6 +464,11 @@ describe("parent-to-child relationship subqueries", () => {
         contacts.select(({ fn }) => {
           // @ts-expect-error Child currency conversion retains generated field-type metadata.
           return fn.convertCurrency("LastName").as("convertedLastName");
+        });
+
+        contacts.select(({ fn }) => {
+          // @ts-expect-error Child localized formatting retains generated field-type metadata.
+          return fn.format("LastName").as("formattedLastName");
         });
 
         return contacts.select("Id");

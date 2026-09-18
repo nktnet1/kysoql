@@ -54,6 +54,7 @@ function operationNodeOf(expression: unknown): OperationNode | undefined {
 function isSelectFunctionNode(node: OperationNode | undefined): boolean {
   return (
     node?.kind === "ConvertCurrencyFunctionNode" ||
+    node?.kind === "FormatFunctionNode" ||
     node?.kind === "ToLabelFunctionNode"
   );
 }

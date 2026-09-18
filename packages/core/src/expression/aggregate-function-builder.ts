@@ -5,6 +5,7 @@ import {
   type DateFunction,
   DateFunctionNode,
 } from "#/operation-node/date-function-node";
+import { FormatFunctionNode } from "#/operation-node/format-function-node";
 import type {
   ComparisonOperator,
   EqualityComparisonOperator,
@@ -97,6 +98,10 @@ type NumericAggregateOperator =
 
 type TemporalSalesforceType = "date" | "datetime";
 type TranslatableSalesforceType = "multipicklist" | "picklist";
+type FormattableSalesforceType =
+  | NumericAggregateSalesforceType
+  | TemporalSalesforceType
+  | "time";
 
 export type DateGroupableFieldReference<
   DB,
@@ -247,10 +252,33 @@ export type CurrencyFieldReference<
       : never
   : never;
 
+export type FormattableFieldReference<
+  DB,
+  TB extends keyof DB,
+  Reference extends string,
+> = Reference extends unknown
+  ? [FieldReferenceDefinition<DB, TB, Reference>] extends [never]
+    ? never
+    : SalesforceTypeOfReference<
+          DB,
+          TB,
+          Reference
+        > extends FormattableSalesforceType
+      ? Reference
+      : never
+  : never;
+
 type ConvertCurrencyOutput<DB, TB extends keyof DB, Reference extends string> =
   true extends FieldReferenceNullable<DB, TB, Reference>
     ? number | null
     : number;
+
+type FormatOutput<DB, TB extends keyof DB, Reference extends string> =
+  true extends FieldReferenceNullable<DB, TB, Reference>
+    ? string | null
+    : string;
+
+type NestedFormatOutput<Output> = null extends Output ? string | null : string;
 
 type ToLabelOutput<DB, TB extends keyof DB, Reference extends string> =
   true extends FieldReferenceNullable<DB, TB, Reference>
@@ -275,6 +303,16 @@ export interface ConvertCurrencyFunctionBuilder<Output> {
   ): AliasedSelectFunctionBuilder<Output, Alias>;
 
   toOperationNode(): ConvertCurrencyFunctionNode;
+}
+
+export interface FormatFunctionBuilder<Output> {
+  readonly expressionType: Output | undefined;
+
+  as<Alias extends string>(
+    alias: Alias,
+  ): AliasedSelectFunctionBuilder<Output, Alias>;
+
+  toOperationNode(): FormatFunctionNode;
 }
 
 export interface AliasedSelectFunctionBuilder<Output, Alias extends string> {
@@ -476,7 +514,37 @@ class ConvertCurrencyFunctionBuilderImpl<Output>
   }
 }
 
-type SelectFunctionNode = ConvertCurrencyFunctionNode | ToLabelFunctionNode;
+class FormatFunctionBuilderImpl<Output>
+  implements FormatFunctionBuilder<Output>
+{
+  readonly #node: FormatFunctionNode;
+
+  constructor(node: FormatFunctionNode) {
+    this.#node = node;
+  }
+
+  get expressionType(): Output | undefined {
+    return undefined;
+  }
+
+  as<Alias extends string>(
+    alias: Alias,
+  ): AliasedSelectFunctionBuilder<Output, Alias> {
+    return new AliasedSelectFunctionBuilderImpl<Output, Alias>(
+      this.#node,
+      parseSelectionAlias(alias) as Alias,
+    );
+  }
+
+  toOperationNode(): FormatFunctionNode {
+    return this.#node;
+  }
+}
+
+type SelectFunctionNode =
+  | ConvertCurrencyFunctionNode
+  | FormatFunctionNode
+  | ToLabelFunctionNode;
 
 class AliasedSelectFunctionBuilderImpl<Output, Alias extends string>
   implements AliasedSelectFunctionBuilder<Output, Alias>
@@ -652,6 +720,14 @@ export interface SelectFunctionModule<
     field: Reference & CurrencyFieldReference<DB, TB, Reference>,
   ): ConvertCurrencyFunctionBuilder<ConvertCurrencyOutput<DB, TB, Reference>>;
 
+  format<Reference extends string>(
+    field: Reference & FormattableFieldReference<DB, TB, Reference>,
+  ): FormatFunctionBuilder<FormatOutput<DB, TB, Reference>>;
+
+  format<Output>(
+    expression: ConvertCurrencyFunctionBuilder<Output>,
+  ): FormatFunctionBuilder<NestedFormatOutput<Output>>;
+
   toLabel<Reference extends string>(
     field: Reference & TranslatableFieldReference<DB, TB, Reference>,
   ): ToLabelFunctionBuilder<ToLabelOutput<DB, TB, Reference>>;
@@ -777,6 +853,34 @@ class AggregateFunctionModuleImpl<
     return new ConvertCurrencyFunctionBuilderImpl<
       ConvertCurrencyOutput<DB, TB, Reference>
     >(ConvertCurrencyFunctionNode.create(ReferenceNode.create(field)));
+  }
+
+  format<Reference extends string>(
+    field: Reference & FormattableFieldReference<DB, TB, Reference>,
+  ): FormatFunctionBuilder<FormatOutput<DB, TB, Reference>>;
+  format<Output>(
+    expression: ConvertCurrencyFunctionBuilder<Output>,
+  ): FormatFunctionBuilder<NestedFormatOutput<Output>>;
+  format(
+    fieldOrExpression: string | ConvertCurrencyFunctionBuilder<unknown>,
+  ): FormatFunctionBuilder<string | null> {
+    const expression =
+      typeof fieldOrExpression === "string"
+        ? ReferenceNode.create(fieldOrExpression)
+        : fieldOrExpression.toOperationNode();
+
+    if (
+      expression.kind !== "ReferenceNode" &&
+      expression.kind !== "ConvertCurrencyFunctionNode"
+    ) {
+      throw new TypeError(
+        "SOQL FORMAT() only supports field references or unaliased convertCurrency() expressions.",
+      );
+    }
+
+    return new FormatFunctionBuilderImpl<string | null>(
+      FormatFunctionNode.create(expression),
+    );
   }
 
   toLabel<Reference extends string>(

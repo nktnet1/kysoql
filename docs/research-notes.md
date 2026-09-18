@@ -654,6 +654,42 @@ duplicate aliases consistently. The type surface intentionally exposes no
 currency conversion in filtering, aggregate arguments, or expression ordering,
 and documents rather than guesses whether multiple currencies are enabled.
 
+### Localized SELECT values with FORMAT()
+
+Sources re-checked on 2026-09-18:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-format.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-querying-currency-fields.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-functions.html
+
+Useful findings:
+
+- `FORMAT(field)` localizes number, date, datetime, time, and currency field
+  values according to the querying user's locale. Currency values include the
+  appropriate currency code and formatting, and function results are strings.
+- Salesforce supports aliases for formatted values and requires one when the
+  same field appears more than once in a SELECT list. Kysoql consistently
+  requires aliases for scalar SELECT functions to keep result keys explicit.
+- `FORMAT(convertCurrency(field))` is a documented composition that first
+  converts a currency value into the querying user's currency and then formats
+  the result for their locale.
+- Salesforce also permits aggregate-function nesting, but aggregate result rows
+  have a distinct builder/type path. That composition remains a later,
+  aggregate-specific addition instead of weakening the record-selection API.
+- `FORMAT()` is a SELECT function. This slice does not expose it through
+  filtering or ordering callbacks.
+
+Implemented consequence in `v1.0.68`: record and parent-to-child relationship
+subquery builders accept aliased `fn.format(...)` selections for generated
+`currency`, `double`, `int`, `percent`, `date`, `datetime`, and `time`
+references, including child-to-parent paths. A dedicated frozen function node
+compiles direct fields as `FORMAT(field) alias` and composes with the existing
+unaliased currency builder as `FORMAT(convertCurrency(field)) alias`. Outputs
+infer as localized strings with field and relationship nullability propagated.
+Unsupported inputs, aliased nested expressions, aggregate nesting, filtering,
+and ordering remain outside the type surface, with matching runtime validation
+for invalid nested nodes.
+
 ### Remaining SOQL surface / roadmap references
 
 Sources re-checked on 2026-09-18:
