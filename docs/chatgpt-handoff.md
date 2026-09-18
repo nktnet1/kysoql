@@ -45,7 +45,7 @@ Kysely findings that support the architecture below.
    its contents. Do not explain how to apply patches, or report `git diff --check` /
    `git apply --check`, unless the user asks. Include a one-line Conventional Commit
    message (for example `fix: ...` or `feat: ...`) in a code block after every
-   patch handoff.
+   patch handoff, inside a `git commit -m "..."` command.
 9. Update this handoff whenever the current milestone or patch sequence changes,
    so the next no-context session does not need the conversation history.
 
