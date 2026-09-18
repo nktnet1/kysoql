@@ -8,7 +8,14 @@ import {
 } from "#/soql-relative-date-literal";
 
 describe("SOQL relative date literals", () => {
-  it.each(["TODAY", "YESTERDAY", "TOMORROW"] as const)(
+  it.each([
+    "TODAY",
+    "YESTERDAY",
+    "TOMORROW",
+    "LAST_MONTH",
+    "THIS_MONTH",
+    "NEXT_MONTH",
+  ] as const)(
     "creates a frozen %s literal",
     (value) => {
       const literal = soqlRelativeDate(value);
@@ -54,7 +61,7 @@ describe("SOQL relative date literals", () => {
     expect(() =>
       soqlRelativeDate("LAST_N_DAYS:5" as "TODAY"),
     ).toThrow(
-      "SOQL fixed relative date literals must be TODAY, YESTERDAY, or TOMORROW.",
+      "SOQL fixed relative date literals must be TODAY, YESTERDAY, TOMORROW, LAST_MONTH, THIS_MONTH, or NEXT_MONTH.",
     );
     expect(() =>
       soqlRelativeDate("LAST_N_YEARS" as SoqlRelativeDateFamily, 5),
@@ -113,12 +120,18 @@ describe("SOQL relative date literals", () => {
       | "TODAY"
       | "YESTERDAY"
       | "TOMORROW"
+      | "LAST_MONTH"
+      | "THIS_MONTH"
+      | "NEXT_MONTH"
       | `LAST_N_DAYS:${number}`
       | `NEXT_N_DAYS:${number}`
       | `LAST_N_MONTHS:${number}`
       | `NEXT_N_MONTHS:${number}`
     >();
 
+    soqlRelativeDate("LAST_MONTH");
+    soqlRelativeDate("THIS_MONTH");
+    soqlRelativeDate("NEXT_MONTH");
     soqlRelativeDate("LAST_N_DAYS", 30);
     soqlRelativeDate("NEXT_N_DAYS", 30);
     soqlRelativeDate("LAST_N_MONTHS", 12);

@@ -4,7 +4,14 @@ import { freeze } from "#/util/object-utils";
 
 declare const soqlRelativeDateLiteralBrand: unique symbol;
 
-const fixedRelativeDateValues = ["TODAY", "YESTERDAY", "TOMORROW"] as const;
+const fixedRelativeDateValues = [
+  "TODAY",
+  "YESTERDAY",
+  "TOMORROW",
+  "LAST_MONTH",
+  "THIS_MONTH",
+  "NEXT_MONTH",
+] as const;
 const relativeDateFamilies = [
   "LAST_N_DAYS",
   "NEXT_N_DAYS",
@@ -29,7 +36,7 @@ export interface SoqlRelativeDateLiteral {
 }
 
 const INVALID_FIXED_RELATIVE_DATE =
-  "SOQL fixed relative date literals must be TODAY, YESTERDAY, or TOMORROW.";
+  "SOQL fixed relative date literals must be TODAY, YESTERDAY, TOMORROW, LAST_MONTH, THIS_MONTH, or NEXT_MONTH.";
 const INVALID_RELATIVE_DATE_FAMILY =
   "SOQL relative date family must be LAST_N_DAYS, NEXT_N_DAYS, LAST_N_MONTHS, or NEXT_N_MONTHS.";
 const INVALID_RELATIVE_DATE_COUNT =

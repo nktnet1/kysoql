@@ -180,6 +180,11 @@ supports `soqlRelativeDate("LAST_N_MONTHS", n)` and
 `soqlRelativeDate("NEXT_N_MONTHS", n)`, reusing the same non-negative
 safe-integer count validation and branded unquoted literal representation.
 
+Implemented consequence in `v1.0.44`: the fixed-literal path also supports
+`LAST_MONTH`, `THIS_MONTH`, and `NEXT_MONTH`. They remain branded relative-date
+values, are valid only for Salesforce `date` / `datetime` filters, and compile
+unquoted through the existing relative-date compiler path.
+
 ### ORDER BY
 
 Sources:

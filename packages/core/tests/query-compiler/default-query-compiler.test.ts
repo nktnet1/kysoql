@@ -281,6 +281,20 @@ describe("DefaultQueryCompiler", () => {
     );
   });
 
+  it("compiles fixed month relative date literals without quotes", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .where("CloseDate", "=", soqlRelativeDate("LAST_MONTH"))
+      .where("LastActivityAt__c", ">=", soqlRelativeDate("THIS_MONTH"))
+      .where("CloseDate", "<", soqlRelativeDate("NEXT_MONTH"))
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT Id FROM Account WHERE CloseDate = LAST_MONTH AND LastActivityAt__c >= THIS_MONTH AND CloseDate < NEXT_MONTH",
+    );
+  });
+
   it("compiles parameterized day relative date literals without quotes", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")
