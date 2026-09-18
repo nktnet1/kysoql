@@ -27,41 +27,46 @@ type AggregatableField<
 >;
 
 interface FixtureSchema {
-  readonly Account: SalesforceObject<{
-    readonly Id: AggregatableField<string, "id", false>;
-    readonly Name: AggregatableField<string, "string", true>;
-    readonly AnnualRevenue: AggregatableField<number, "currency", true>;
-    readonly EmployeeCount__c: AggregatableField<number, "int", true>;
-    readonly CloseDate: AggregatableField<string, "date", true>;
-    readonly OwnerId: AggregatableField<string, "reference", false>;
-    readonly Active__c: SalesforceField<
-      boolean,
-      "boolean",
-      false,
-      true,
-      true,
-      true,
-      never,
-      never,
-      never,
-      false
-    >;
-    readonly Internal_Note__c: SalesforceField<
-      string,
-      "string",
-      true,
-      true,
-      false,
-      false,
-      never,
-      never,
-      never,
-      false
-    >;
-  }, {
-    readonly Owner: SalesforceParentRelationship<"User", "OwnerId", true>;
-  }>;
+  readonly Account: SalesforceObject<
+    {
+      readonly Id: AggregatableField<string, "id", false>;
+      readonly Name: AggregatableField<string, "string", true>;
+      readonly AnnualRevenue: AggregatableField<number, "currency", true>;
+      readonly EmployeeCount__c: AggregatableField<number, "int", true>;
+      readonly CloseDate: AggregatableField<string, "date", true>;
+      readonly CreatedDate: AggregatableField<string, "datetime", false>;
+      readonly OwnerId: AggregatableField<string, "reference", false>;
+      readonly Active__c: SalesforceField<
+        boolean,
+        "boolean",
+        false,
+        true,
+        true,
+        true,
+        never,
+        never,
+        never,
+        false
+      >;
+      readonly Internal_Note__c: SalesforceField<
+        string,
+        "string",
+        true,
+        true,
+        false,
+        false,
+        never,
+        never,
+        never,
+        false
+      >;
+    },
+    {
+      readonly Owner: SalesforceParentRelationship<"User", "OwnerId", true>;
+    }
+  >;
   readonly User: SalesforceObject<{
+    readonly CreatedDate: AggregatableField<string, "datetime", false>;
     readonly Name: AggregatableField<string, "string", false>;
   }>;
 }
@@ -252,6 +257,76 @@ describe("aggregate queries", () => {
     });
   });
 
+  it("groups, selects, filters, and orders by typed date functions", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupBy(({ fn }) => fn.calendarYear("CloseDate"))
+      .groupBy(({ fn }) => fn.dayOnly("CreatedDate"))
+      .groupBy(({ fn }) => fn.hourInDay("Owner.CreatedDate"))
+      .select(({ fn }) => [
+        fn.calendarYear("CloseDate").as("closeYear"),
+        fn.dayOnly("CreatedDate").as("createdDay"),
+        fn.hourInDay("Owner.CreatedDate").as("ownerCreatedHour"),
+      ])
+      .having((eb) => eb(eb.fn.calendarYear("CloseDate"), ">=", 2020))
+      .orderBy(({ fn }) => fn.dayOnly("CreatedDate"), "desc");
+
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly rowCount: number;
+      readonly closeYear: number | null;
+      readonly createdDay: string;
+      readonly ownerCreatedHour: number | null;
+    }>();
+
+    expect(query.toOperationNode().groupBy).toEqual({
+      kind: "GroupByNode",
+      items: [
+        {
+          kind: "DateFunctionNode",
+          function: "calendarYear",
+          reference: { kind: "ReferenceNode", name: "CloseDate" },
+        },
+        {
+          kind: "DateFunctionNode",
+          function: "dayOnly",
+          reference: { kind: "ReferenceNode", name: "CreatedDate" },
+        },
+        {
+          kind: "DateFunctionNode",
+          function: "hourInDay",
+          reference: {
+            kind: "ReferenceNode",
+            name: "Owner.CreatedDate",
+          },
+        },
+      ],
+    });
+    expect(Object.isFrozen(query.toOperationNode().groupBy)).toBe(true);
+    expect(Object.isFrozen(query.toOperationNode().groupBy?.items)).toBe(true);
+  });
+
+  it("rejects date functions outside the matching grouping set at runtime", () => {
+    const grouped = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupBy(({ fn }) => fn.calendarYear("CloseDate"));
+
+    expect(() =>
+      grouped.select(
+        ({ fn }) => fn.calendarMonth("CloseDate").as("closeMonth") as never,
+      ),
+    ).toThrow("SOQL date function expressions must also appear in GROUP BY.");
+    expect(() =>
+      grouped.having((eb) =>
+        eb(eb.fn.calendarMonth("CloseDate") as never, "=", 1),
+      ),
+    ).toThrow("SOQL date function expressions must also appear in GROUP BY.");
+    expect(() =>
+      grouped.orderBy(({ fn }) => fn.calendarMonth("CloseDate") as never),
+    ).toThrow("SOQL date function expressions must also appear in GROUP BY.");
+  });
+
   it("rejects GROUPING() outside the matching advanced grouping set at runtime", () => {
     const aggregate = new Kysoql<FixtureSchema>()
       .selectFrom("Account")
@@ -260,9 +335,7 @@ describe("aggregate queries", () => {
     expect(() =>
       aggregate
         .groupBy("Name")
-        .select(({ fn }) =>
-          fn.grouping("Name" as never).as("nameGrouping"),
-        ),
+        .select(({ fn }) => fn.grouping("Name" as never).as("nameGrouping")),
     ).toThrow(
       "SOQL GROUPING() is available only for fields in GROUP BY ROLLUP or GROUP BY CUBE.",
     );
@@ -284,46 +357,43 @@ describe("aggregate queries", () => {
     );
   });
 
-  it(
-    "rejects mixed advanced grouping forms and more than three advanced fields at runtime",
-    () => {
-      const aggregate = new Kysoql<FixtureSchema>()
-        .selectFrom("Account")
-        .select(({ fn }) => fn.count("Id").as("rowCount"));
+  it("rejects mixed advanced grouping forms and more than three advanced fields at runtime", () => {
+    const aggregate = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"));
 
-      const rollup = aggregate.groupByRollup(["Name", "Active__c"]);
-      expect(() =>
-        (rollup as unknown as { groupBy(field: string): unknown }).groupBy("Id"),
-      ).toThrow(
-        "SOQL GROUP BY, GROUP BY ROLLUP, and GROUP BY CUBE forms cannot be mixed.",
-      );
-      expect(() =>
-        (
-          rollup as unknown as { groupByCube(field: string): unknown }
-        ).groupByCube("Id"),
-      ).toThrow(
-        "SOQL GROUP BY, GROUP BY ROLLUP, and GROUP BY CUBE forms cannot be mixed.",
-      );
-      expect(() =>
-        (
-          rollup as unknown as {
-            groupByRollup(fields: string[]): unknown;
-          }
-        ).groupByRollup(["Id", "Owner.Name"]),
-      ).toThrow("SOQL GROUP BY ROLLUP can include at most three fields.");
+    const rollup = aggregate.groupByRollup(["Name", "Active__c"]);
+    expect(() =>
+      (rollup as unknown as { groupBy(field: string): unknown }).groupBy("Id"),
+    ).toThrow(
+      "SOQL GROUP BY, GROUP BY ROLLUP, and GROUP BY CUBE forms cannot be mixed.",
+    );
+    expect(() =>
+      (
+        rollup as unknown as { groupByCube(field: string): unknown }
+      ).groupByCube("Id"),
+    ).toThrow(
+      "SOQL GROUP BY, GROUP BY ROLLUP, and GROUP BY CUBE forms cannot be mixed.",
+    );
+    expect(() =>
+      (
+        rollup as unknown as {
+          groupByRollup(fields: string[]): unknown;
+        }
+      ).groupByRollup(["Id", "Owner.Name"]),
+    ).toThrow("SOQL GROUP BY ROLLUP can include at most three fields.");
 
-      const ordinary = aggregate.groupBy("Name");
-      expect(() =>
-        (
-          ordinary as unknown as {
-            groupByRollup(field: string): unknown;
-          }
-        ).groupByRollup("Id"),
-      ).toThrow(
-        "SOQL GROUP BY, GROUP BY ROLLUP, and GROUP BY CUBE forms cannot be mixed.",
-      );
-    },
-  );
+    const ordinary = aggregate.groupBy("Name");
+    expect(() =>
+      (
+        ordinary as unknown as {
+          groupByRollup(field: string): unknown;
+        }
+      ).groupByRollup("Id"),
+    ).toThrow(
+      "SOQL GROUP BY, GROUP BY ROLLUP, and GROUP BY CUBE forms cannot be mixed.",
+    );
+  });
 
   it("adds immutable typed HAVING conditions after grouping", () => {
     const grouped = new Kysoql<FixtureSchema>()
@@ -461,15 +531,15 @@ describe("aggregate queries", () => {
       "SOQL selection aliases must start with a letter or underscore and contain only letters, numbers, and underscores.",
     );
     expect(() =>
-      db
-        .selectFrom("Account")
-        .select(({ fn }) => fn.count("Id").as("SELECT")),
+      db.selectFrom("Account").select(({ fn }) => fn.count("Id").as("SELECT")),
     ).toThrow("SOQL selection aliases cannot be reserved keywords.");
     expect(() =>
-      db.selectFrom("Account").select(({ fn }) => [
-        fn.count("Id").as("duplicate"),
-        fn.max("Name").as("duplicate"),
-      ]),
+      db
+        .selectFrom("Account")
+        .select(({ fn }) => [
+          fn.count("Id").as("duplicate"),
+          fn.max("Name").as("duplicate"),
+        ]),
     ).toThrow("Duplicate SOQL aggregate selection alias: duplicate.");
     expect(() =>
       db
@@ -605,6 +675,42 @@ describe("aggregate queries", () => {
       // @ts-expect-error Ordinary GROUP BY cannot order by GROUPING.
       groupedQuery.orderBy(({ fn }) => fn.grouping("Name"));
 
+      const dateGroupedQuery = aggregateQuery
+        .groupBy(({ fn }) => fn.calendarYear("CloseDate"))
+        .groupBy(({ fn }) => fn.dayOnly("CreatedDate"));
+      dateGroupedQuery.select(({ fn }) =>
+        fn.calendarYear("CloseDate").as("closeYear"),
+      );
+      dateGroupedQuery.having((eb) =>
+        eb(eb.fn.calendarYear("CloseDate"), ">", 2020),
+      );
+      dateGroupedQuery.orderBy(({ fn }) => fn.dayOnly("CreatedDate"));
+      // @ts-expect-error Selected date functions must be exact GROUP BY members.
+      dateGroupedQuery.select(({ fn }) => {
+        return fn.calendarMonth("CloseDate").as("closeMonth");
+      });
+      dateGroupedQuery.having((eb) => {
+        // @ts-expect-error HAVING date functions must be exact GROUP BY members.
+        return eb(eb.fn.calendarMonth("CloseDate"), "=", 1);
+      });
+      // @ts-expect-error ORDER BY date functions must be exact GROUP BY members.
+      dateGroupedQuery.orderBy(({ fn }) => fn.calendarMonth("CloseDate"));
+
+      aggregateQuery.groupBy(({ fn }) => {
+        // @ts-expect-error Date grouping functions require date or datetime fields.
+        return fn.calendarYear("Name");
+      });
+      aggregateQuery.groupBy(({ fn }) => {
+        // @ts-expect-error DAY_ONLY accepts only datetime fields.
+        return fn.dayOnly("CloseDate");
+      });
+      aggregateQuery.groupBy(({ fn }) => {
+        // @ts-expect-error HOUR_IN_DAY accepts only datetime fields.
+        return fn.hourInDay("CloseDate");
+      });
+      // @ts-expect-error Date function grouping cannot be mixed with ROLLUP.
+      dateGroupedQuery.groupByRollup("Name");
+
       const ownerGroupedQuery = aggregateQuery.groupBy("OwnerId");
       // @ts-expect-error HAVING IN operands cannot be semi-join callbacks.
       ownerGroupedQuery.having("OwnerId", "in", () => undefined);
@@ -615,9 +721,7 @@ describe("aggregate queries", () => {
       rollupQuery.select(["Name", "Active__c", "Owner.Name"]);
       rollupQuery.having((eb) => eb(eb.fn.count("Id"), ">", 1));
       rollupQuery.having((eb) => eb(eb.fn.grouping("Name"), "=", 1));
-      rollupQuery.select(({ fn }) =>
-        fn.grouping("Name").as("nameGrouping"),
-      );
+      rollupQuery.select(({ fn }) => fn.grouping("Name").as("nameGrouping"));
       rollupQuery.orderBy(({ fn }) => fn.grouping("Name"));
       rollupQuery.orderBy("Name");
       rollupQuery.limit(10);
@@ -637,6 +741,8 @@ describe("aggregate queries", () => {
       rollupQuery.groupBy("Id");
       // @ts-expect-error CUBE cannot be mixed with ROLLUP.
       rollupQuery.groupByCube("Id");
+      // @ts-expect-error Date function grouping cannot be mixed with ROLLUP.
+      rollupQuery.groupBy(({ fn }) => fn.calendarYear("CloseDate"));
 
       // @ts-expect-error ROLLUP field lists can contain at most three fields.
       aggregateQuery.groupByRollup(["Name", "Active__c", "Id", "Owner.Name"]);

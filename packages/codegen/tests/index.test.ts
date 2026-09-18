@@ -267,7 +267,9 @@ describe("loadSchema", () => {
 
   it("propagates describe failures", async () => {
     const client = createClient();
-    vi.mocked(client.describe).mockRejectedValueOnce(new Error("describe failed"));
+    vi.mocked(client.describe).mockRejectedValueOnce(
+      new Error("describe failed"),
+    );
 
     await expect(loadSchema(client, ["Account"])).rejects.toThrow(
       "describe failed",

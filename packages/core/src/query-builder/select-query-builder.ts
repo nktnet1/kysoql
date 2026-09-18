@@ -1,6 +1,6 @@
 import {
-  createSelectExpressionBuilder,
   type CountAllFunctionBuilder,
+  createSelectExpressionBuilder,
   type SelectExpressionBuilder,
 } from "#/expression/aggregate-function-builder";
 import {
@@ -15,19 +15,20 @@ import type {
 import { QueryNode } from "#/operation-node/query-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
 import { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
-import { SelectionNode } from "#/operation-node/selection-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
+import { SelectionNode } from "#/operation-node/selection-node";
 import {
   type AggregateSelection,
   type AggregateSelectionArg,
   parseAggregateSelectArg,
   parseCountSelectArg,
 } from "#/parser/aggregate-selection-parser";
-import {
-  type ComparisonOperatorExpression,
-  type FilterableFieldName,
-  type OperandValueExpression,
+import type {
+  ComparisonOperatorExpression,
+  FilterableFieldName,
+  OperandValueExpression,
 } from "#/parser/binary-operation-parser";
+import { validateDateFunctionSelections } from "#/parser/date-function-parser";
 import {
   parseFilterBinaryOperation,
   validateSemiJoinWhere,
@@ -35,10 +36,7 @@ import {
 import { validateGroupingSelections } from "#/parser/grouping-expression-parser";
 import { parseLimit } from "#/parser/limit-parser";
 import { parseOffset } from "#/parser/offset-parser";
-import {
-  parseOrderBy,
-  type SortableFieldName,
-} from "#/parser/order-by-parser";
+import { parseOrderBy, type SortableFieldName } from "#/parser/order-by-parser";
 import type {
   ChildObjectName,
   ChildRelationshipName,
@@ -51,12 +49,12 @@ import {
   type Selection,
 } from "#/parser/select-parser";
 import {
-  createAggregateSelectQueryBuilder,
   type AggregateSelectQueryBuilder,
+  createAggregateSelectQueryBuilder,
 } from "#/query-builder/aggregate-select-query-builder";
 import {
-  createCountQueryBuilder,
   type CountQueryBuilder,
+  createCountQueryBuilder,
 } from "#/query-builder/count-query-builder";
 import {
   createRelationshipSubqueryBuilder,
@@ -125,10 +123,7 @@ export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
   ): CountQueryBuilder<DB, TB>;
 
   select<Aggregate extends AggregateSelectionArg>(
-    selection: UnselectedOnly<
-      O,
-      AggregateSelectionFactory<DB, TB, Aggregate>
-    >,
+    selection: UnselectedOnly<O, AggregateSelectionFactory<DB, TB, Aggregate>>,
   ): AggregateSelectQueryBuilder<DB, TB, AggregateSelection<Aggregate>>;
 
   select<SE extends string>(
@@ -271,10 +266,7 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     selection: UnselectedOnly<O, CountSelectionFactory<DB, TB>>,
   ): CountQueryBuilder<DB, TB>;
   select<Aggregate extends AggregateSelectionArg>(
-    selection: UnselectedOnly<
-      O,
-      AggregateSelectionFactory<DB, TB, Aggregate>
-    >,
+    selection: UnselectedOnly<O, AggregateSelectionFactory<DB, TB, Aggregate>>,
   ): AggregateSelectQueryBuilder<DB, TB, AggregateSelection<Aggregate>>;
   select<SE extends string>(
     selection: SelectArg<DB, TB, SE>,
@@ -320,6 +312,7 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     );
 
     validateGroupingSelections(selections, []);
+    validateDateFunctionSelections(selections, []);
 
     return createAggregateSelectQueryBuilder<DB, TB, unknown>({
       ...this.#props,

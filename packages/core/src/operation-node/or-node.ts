@@ -1,5 +1,5 @@
-import { freeze } from "#/util/object-utils";
 import type { OperationNode } from "#/operation-node/operation-node";
+import { freeze } from "#/util/object-utils";
 
 export interface OrNode {
   readonly kind: "OrNode";

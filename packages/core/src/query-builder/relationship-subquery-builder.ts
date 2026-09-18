@@ -2,26 +2,23 @@ import {
   createExpressionBuilder,
   type WhereExpressionFactory,
 } from "#/expression/expression-builder";
+import type { ComparisonOperator } from "#/operation-node/operator-node";
 import type {
   OrderByDirection,
   OrderByNulls,
 } from "#/operation-node/order-by-item-node";
-import type { ComparisonOperator } from "#/operation-node/operator-node";
 import { QueryNode } from "#/operation-node/query-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
 import { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 import { SelectionNode } from "#/operation-node/selection-node";
 import {
-  parseValueBinaryOperation,
   type ComparisonOperatorExpression,
   type FilterableFieldName,
   type OperandValueExpression,
+  parseValueBinaryOperation,
 } from "#/parser/binary-operation-parser";
 import { parseLimit } from "#/parser/limit-parser";
-import {
-  parseOrderBy,
-  type SortableFieldName,
-} from "#/parser/order-by-parser";
+import { parseOrderBy, type SortableFieldName } from "#/parser/order-by-parser";
 import type {
   ChildObjectName,
   ChildRelationshipName,
@@ -190,12 +187,7 @@ class RelationshipSubqueryBuilderImpl<
 
   select<SE extends string>(
     selection: SelectArg<DB, TB, SE>,
-  ): RelationshipSubqueryBuilder<
-    DB,
-    TB,
-    O & Selection<DB, TB, SE>,
-    Depth
-  > {
+  ): RelationshipSubqueryBuilder<DB, TB, O & Selection<DB, TB, SE>, Depth> {
     return new RelationshipSubqueryBuilderImpl<
       DB,
       TB,

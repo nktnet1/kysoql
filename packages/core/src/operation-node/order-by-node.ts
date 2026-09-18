@@ -1,5 +1,5 @@
-import { freeze } from "#/util/object-utils";
 import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
+import { freeze } from "#/util/object-utils";
 
 export interface OrderByNode {
   readonly kind: "OrderByNode";

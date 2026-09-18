@@ -1,5 +1,6 @@
 import type {
   AliasedAggregateFunctionBuilder,
+  AliasedDateFunctionBuilder,
   CountAllFunctionBuilder,
 } from "#/expression/aggregate-function-builder";
 import type { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
@@ -15,25 +16,46 @@ export type AggregateSelectionArg =
   | AggregateSelectionExpression
   | readonly AggregateSelectionExpression[];
 
+export type DateFunctionSelectionExpression = AliasedDateFunctionBuilder<
+  unknown,
+  string,
+  string
+>;
+
+export type GroupedSelectionExpression =
+  | AggregateSelectionExpression
+  | DateFunctionSelectionExpression;
+
+export type GroupedSelectionArg =
+  | GroupedSelectionExpression
+  | readonly GroupedSelectionExpression[];
+
 type AggregateSelectionOutput<Selection> =
   Selection extends AliasedAggregateFunctionBuilder<
     infer Output,
     infer Alias extends string
   >
     ? { readonly [Key in Alias]: Output }
-    : never;
+    : Selection extends AliasedDateFunctionBuilder<
+          infer Output,
+          infer Alias extends string,
+          string
+        >
+      ? { readonly [Key in Alias]: Output }
+      : never;
 
 type UnionToIntersection<Union> = (
-  Union extends unknown ? (value: Union) => void : never
+  Union extends unknown
+    ? (value: Union) => void
+    : never
 ) extends (value: infer Intersection) => void
   ? Intersection
   : never;
 
-export type AggregateSelection<Selection> = Selection extends readonly (
-  infer Item
-)[]
-  ? UnionToIntersection<AggregateSelectionOutput<Item>>
-  : AggregateSelectionOutput<Selection>;
+export type AggregateSelection<Selection> =
+  Selection extends readonly (infer Item)[]
+    ? UnionToIntersection<AggregateSelectionOutput<Item>>
+    : AggregateSelectionOutput<Selection>;
 
 const AGGREGATE_SELECTION_ERROR =
   "SOQL aggregate selections must be aliased aggregate function expressions.";
@@ -56,7 +78,8 @@ function parseAliasedAggregateNode(expression: unknown): AliasNode {
 
   if (
     node.kind !== "AliasNode" ||
-    node.node.kind !== "AggregateFunctionNode"
+    (node.node.kind !== "AggregateFunctionNode" &&
+      node.node.kind !== "DateFunctionNode")
   ) {
     throw new TypeError(AGGREGATE_SELECTION_ERROR);
   }
@@ -65,7 +88,7 @@ function parseAliasedAggregateNode(expression: unknown): AliasNode {
 }
 
 export function parseAggregateSelectArg(
-  selection: AggregateSelectionArg,
+  selection: GroupedSelectionArg,
 ): readonly SelectionNode[] {
   const selections = Array.isArray(selection) ? selection : [selection];
 

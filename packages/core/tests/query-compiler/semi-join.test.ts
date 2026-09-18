@@ -19,7 +19,14 @@ interface SemiJoinCompilerSchema {
       true,
       "Account"
     >;
-    readonly LastName: SalesforceField<string, "string", false, true, true, true>;
+    readonly LastName: SalesforceField<
+      string,
+      "string",
+      false,
+      true,
+      true,
+      true
+    >;
   }>;
   readonly Opportunity: SalesforceObject<{
     readonly Id: SalesforceField<string, "id", false, true, true, true>;

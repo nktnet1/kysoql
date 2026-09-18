@@ -1,11 +1,11 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
 import { Kysoql } from "#/kysoql";
+import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import type { SalesforceField, SalesforceObject } from "#/schema";
 import { soqlRelativeDate } from "#/soql-relative-date-literal";
 import { soqlDate, soqlDateTime, soqlTime } from "#/soql-temporal-literal";
-import type { SalesforceField, SalesforceObject } from "#/schema";
 import type { Simplify } from "#/util/type-utils";
-import type { CompiledQuery } from "#/query-compiler/compiled-query";
 
 interface FixtureSchema {
   readonly Account: SalesforceObject<{
@@ -19,14 +19,7 @@ interface FixtureSchema {
       true,
       true
     >;
-    readonly CloseDate: SalesforceField<
-      string,
-      "date",
-      true,
-      true,
-      true,
-      true
-    >;
+    readonly CloseDate: SalesforceField<string, "date", true, true, true, true>;
     readonly LastActivityAt__c: SalesforceField<
       string,
       "datetime",
@@ -92,10 +85,7 @@ describe("DefaultQueryCompiler", () => {
       .selectFrom("Account")
       .select(["Id", "Name"])
       .where((eb) =>
-        eb.or([
-          eb("Name", "=", "Acme"),
-          eb("AnnualRevenue", ">=", 100_000),
-        ]),
+        eb.or([eb("Name", "=", "Acme"), eb("AnnualRevenue", ">=", 100_000)]),
       )
       .where("Name", "!=", null)
       .compile();
@@ -112,10 +102,7 @@ describe("DefaultQueryCompiler", () => {
       .where((eb) =>
         eb.and([
           eb("Name", "!=", null),
-          eb.or([
-            eb("Name", "=", "Acme"),
-            eb("AnnualRevenue", ">=", 100_000),
-          ]),
+          eb.or([eb("Name", "=", "Acme"), eb("AnnualRevenue", ">=", 100_000)]),
         ]),
       )
       .compile();
@@ -131,10 +118,7 @@ describe("DefaultQueryCompiler", () => {
       .select(["Id", "Name"])
       .where((eb) =>
         eb.not(
-          eb.or([
-            eb("Name", "=", "Acme"),
-            eb("AnnualRevenue", ">=", 100_000),
-          ]),
+          eb.or([eb("Name", "=", "Acme"), eb("AnnualRevenue", ">=", 100_000)]),
         ),
       )
       .where("Name", "!=", null)
@@ -328,11 +312,7 @@ describe("DefaultQueryCompiler", () => {
       .selectFrom("Account")
       .select("Id")
       .where("CloseDate", "=", soqlRelativeDate("LAST_FISCAL_YEAR"))
-      .where(
-        "LastActivityAt__c",
-        ">=",
-        soqlRelativeDate("THIS_FISCAL_YEAR"),
-      )
+      .where("LastActivityAt__c", ">=", soqlRelativeDate("THIS_FISCAL_YEAR"))
       .where("CloseDate", "<", soqlRelativeDate("NEXT_FISCAL_YEAR"))
       .compile();
 
@@ -346,11 +326,7 @@ describe("DefaultQueryCompiler", () => {
       .selectFrom("Account")
       .select("Id")
       .where("CloseDate", "=", soqlRelativeDate("LAST_FISCAL_QUARTER"))
-      .where(
-        "LastActivityAt__c",
-        ">=",
-        soqlRelativeDate("THIS_FISCAL_QUARTER"),
-      )
+      .where("LastActivityAt__c", ">=", soqlRelativeDate("THIS_FISCAL_QUARTER"))
       .where("CloseDate", "<", soqlRelativeDate("NEXT_FISCAL_QUARTER"))
       .compile();
 
@@ -389,11 +365,7 @@ describe("DefaultQueryCompiler", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")
       .select("Id")
-      .where(
-        "CloseDate",
-        "=",
-        soqlRelativeDate("LAST_N_FISCAL_QUARTERS", 4),
-      )
+      .where("CloseDate", "=", soqlRelativeDate("LAST_N_FISCAL_QUARTERS", 4))
       .where(
         "LastActivityAt__c",
         "<",
@@ -410,11 +382,7 @@ describe("DefaultQueryCompiler", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")
       .select("Id")
-      .where(
-        "CloseDate",
-        "=",
-        soqlRelativeDate("LAST_N_FISCAL_YEARS", 3),
-      )
+      .where("CloseDate", "=", soqlRelativeDate("LAST_N_FISCAL_YEARS", 3))
       .where(
         "LastActivityAt__c",
         "<",
@@ -505,9 +473,9 @@ describe("DefaultQueryCompiler", () => {
   });
 
   it("rejects queries without selections and non-finite numbers", () => {
-    expect(() => new Kysoql<FixtureSchema>().selectFrom("Account").compile()).toThrow(
-      "Cannot compile a SELECT query without selections.",
-    );
+    expect(() =>
+      new Kysoql<FixtureSchema>().selectFrom("Account").compile(),
+    ).toThrow("Cannot compile a SELECT query without selections.");
 
     expect(() =>
       new Kysoql<FixtureSchema>()
@@ -524,9 +492,7 @@ describe("DefaultQueryCompiler", () => {
       .select(["Id", "Name"])
       .compile();
 
-    expectTypeOf<
-      Simplify<OutputOfCompiled<typeof compiled>>
-    >().toEqualTypeOf<{
+    expectTypeOf<Simplify<OutputOfCompiled<typeof compiled>>>().toEqualTypeOf<{
       readonly Id: string;
       readonly Name: string | null;
     }>();

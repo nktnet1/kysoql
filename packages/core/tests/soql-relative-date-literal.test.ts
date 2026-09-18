@@ -2,9 +2,9 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 
 import {
   isSoqlRelativeDateLiteral,
-  soqlRelativeDate,
   type SoqlRelativeDateFamily,
   type SoqlRelativeDateValue,
+  soqlRelativeDate,
 } from "#/soql-relative-date-literal";
 
 type ExpectedRelativeDateFamily =
@@ -184,12 +184,8 @@ describe("SOQL relative date literals", () => {
   });
 
   it("exposes all documented fixed values and parameterized families", () => {
-    expectTypeOf<SoqlRelativeDateFamily>().toEqualTypeOf<
-      ExpectedRelativeDateFamily
-    >();
-    expectTypeOf<SoqlRelativeDateValue>().toEqualTypeOf<
-      ExpectedRelativeDateValue
-    >();
+    expectTypeOf<SoqlRelativeDateFamily>().toEqualTypeOf<ExpectedRelativeDateFamily>();
+    expectTypeOf<SoqlRelativeDateValue>().toEqualTypeOf<ExpectedRelativeDateValue>();
 
     function typecheckOnly(): void {
       // @ts-expect-error Parameterized relative dates require the family/count API.

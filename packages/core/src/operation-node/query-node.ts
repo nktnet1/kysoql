@@ -1,6 +1,6 @@
-import { freeze } from "#/util/object-utils";
 import type { OperationNode } from "#/operation-node/operation-node";
 import { WhereNode } from "#/operation-node/where-node";
+import { freeze } from "#/util/object-utils";
 
 type HasWhere = { readonly where?: WhereNode };
 

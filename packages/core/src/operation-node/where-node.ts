@@ -1,6 +1,6 @@
-import { freeze } from "#/util/object-utils";
 import { AndNode } from "#/operation-node/and-node";
 import type { OperationNode } from "#/operation-node/operation-node";
+import { freeze } from "#/util/object-utils";
 
 export interface WhereNode {
   readonly kind: "WhereNode";
@@ -15,7 +15,10 @@ export const WhereNode = {
     });
   },
 
-  cloneWithOperation(whereNode: WhereNode, operation: OperationNode): WhereNode {
+  cloneWithOperation(
+    whereNode: WhereNode,
+    operation: OperationNode,
+  ): WhereNode {
     return freeze({
       ...whereNode,
       where: AndNode.create(whereNode.where, operation),

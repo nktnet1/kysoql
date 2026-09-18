@@ -1,11 +1,11 @@
 import { AndNode } from "#/operation-node/and-node";
 import { NotNode } from "#/operation-node/not-node";
-import { OrNode } from "#/operation-node/or-node";
 import type { OperationNode } from "#/operation-node/operation-node";
-import {
-  type ComparisonOperatorExpression,
-  type FilterableFieldName,
-  type OperandValueExpression,
+import { OrNode } from "#/operation-node/or-node";
+import type {
+  ComparisonOperatorExpression,
+  FilterableFieldName,
+  OperandValueExpression,
 } from "#/parser/binary-operation-parser";
 import { parseFilterBinaryOperation } from "#/parser/filter-parser";
 

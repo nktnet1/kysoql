@@ -17,14 +17,7 @@ type MultiPicklistField = SalesforceField<
 
 interface FixtureSchema {
   readonly Account: SalesforceObject<{
-    readonly Name: SalesforceField<
-      string,
-      "string",
-      true,
-      true,
-      true,
-      true
-    >;
+    readonly Name: SalesforceField<string, "string", true, true, true, true>;
     readonly Tags__c: MultiPicklistField;
   }>;
 }

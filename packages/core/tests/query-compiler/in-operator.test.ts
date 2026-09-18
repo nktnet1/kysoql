@@ -8,14 +8,7 @@ interface FixtureSchema {
   readonly Account: SalesforceObject<{
     readonly Id: SalesforceField<string, "id", false, true, true, true>;
     readonly Name: SalesforceField<string, "string", true, true, true, true>;
-    readonly CloseDate: SalesforceField<
-      string,
-      "date",
-      true,
-      true,
-      true,
-      true
-    >;
+    readonly CloseDate: SalesforceField<string, "date", true, true, true, true>;
   }>;
 }
 

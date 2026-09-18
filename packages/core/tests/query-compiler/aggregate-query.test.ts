@@ -6,6 +6,7 @@ import type {
   SalesforceObject,
   SalesforceParentRelationship,
 } from "#/schema";
+import { soqlDate } from "#/soql-temporal-literal";
 
 type AggregatableField<
   Value,
@@ -25,17 +26,22 @@ type AggregatableField<
 >;
 
 interface FixtureSchema {
-  readonly Account: SalesforceObject<{
-    readonly Id: AggregatableField<string, "id", false>;
-    readonly Name: AggregatableField<string, "string", true>;
-    readonly AnnualRevenue: AggregatableField<number, "currency", true>;
-    readonly EmployeeCount__c: AggregatableField<number, "int", true>;
-    readonly CloseDate: AggregatableField<string, "date", true>;
-    readonly OwnerId: AggregatableField<string, "reference", false>;
-  }, {
-    readonly Owner: SalesforceParentRelationship<"User", "OwnerId", true>;
-  }>;
+  readonly Account: SalesforceObject<
+    {
+      readonly Id: AggregatableField<string, "id", false>;
+      readonly Name: AggregatableField<string, "string", true>;
+      readonly AnnualRevenue: AggregatableField<number, "currency", true>;
+      readonly EmployeeCount__c: AggregatableField<number, "int", true>;
+      readonly CloseDate: AggregatableField<string, "date", true>;
+      readonly CreatedDate: AggregatableField<string, "datetime", false>;
+      readonly OwnerId: AggregatableField<string, "reference", false>;
+    },
+    {
+      readonly Owner: SalesforceParentRelationship<"User", "OwnerId", true>;
+    }
+  >;
   readonly User: SalesforceObject<{
+    readonly CreatedDate: AggregatableField<string, "datetime", false>;
     readonly Name: AggregatableField<string, "string", false>;
   }>;
 }
@@ -165,6 +171,63 @@ describe("aggregate query compilation", () => {
 
     expect(compiled.soql).toBe(
       "SELECT COUNT(Id) rowCount, GROUPING(Name) isNameSubtotal, GROUPING(Owner.Name) isOwnerSubtotal FROM Account GROUP BY CUBE(Name, Owner.Name) HAVING GROUPING(Name) = 0 ORDER BY GROUPING(Name), GROUPING(Owner.Name) DESC",
+    );
+  });
+
+  it("compiles the complete date grouping function family", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupBy(({ fn }) => fn.calendarMonth("CloseDate"))
+      .groupBy(({ fn }) => fn.calendarQuarter("CloseDate"))
+      .groupBy(({ fn }) => fn.calendarYear("CloseDate"))
+      .groupBy(({ fn }) => fn.dayInMonth("CloseDate"))
+      .groupBy(({ fn }) => fn.dayInWeek("CloseDate"))
+      .groupBy(({ fn }) => fn.dayInYear("CloseDate"))
+      .groupBy(({ fn }) => fn.dayOnly("CreatedDate"))
+      .groupBy(({ fn }) => fn.fiscalMonth("CloseDate"))
+      .groupBy(({ fn }) => fn.fiscalQuarter("CloseDate"))
+      .groupBy(({ fn }) => fn.fiscalYear("CloseDate"))
+      .groupBy(({ fn }) => fn.hourInDay("CreatedDate"))
+      .groupBy(({ fn }) => fn.weekInMonth("CloseDate"))
+      .groupBy(({ fn }) => fn.weekInYear("CloseDate"))
+      .select(({ fn }) => [
+        fn.calendarMonth("CloseDate").as("calendarMonth"),
+        fn.calendarQuarter("CloseDate").as("calendarQuarter"),
+        fn.calendarYear("CloseDate").as("calendarYear"),
+        fn.dayInMonth("CloseDate").as("dayInMonth"),
+        fn.dayInWeek("CloseDate").as("dayInWeek"),
+        fn.dayInYear("CloseDate").as("dayInYear"),
+        fn.dayOnly("CreatedDate").as("dayOnly"),
+        fn.fiscalMonth("CloseDate").as("fiscalMonth"),
+        fn.fiscalQuarter("CloseDate").as("fiscalQuarter"),
+        fn.fiscalYear("CloseDate").as("fiscalYear"),
+        fn.hourInDay("CreatedDate").as("hourInDay"),
+        fn.weekInMonth("CloseDate").as("weekInMonth"),
+        fn.weekInYear("CloseDate").as("weekInYear"),
+      ])
+      .having((eb) => eb(eb.fn.calendarYear("CloseDate"), ">=", 2020))
+      .orderBy(({ fn }) => fn.dayOnly("CreatedDate"), "desc")
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT COUNT(Id) rowCount, CALENDAR_MONTH(CloseDate) calendarMonth, CALENDAR_QUARTER(CloseDate) calendarQuarter, CALENDAR_YEAR(CloseDate) calendarYear, DAY_IN_MONTH(CloseDate) dayInMonth, DAY_IN_WEEK(CloseDate) dayInWeek, DAY_IN_YEAR(CloseDate) dayInYear, DAY_ONLY(CreatedDate) dayOnly, FISCAL_MONTH(CloseDate) fiscalMonth, FISCAL_QUARTER(CloseDate) fiscalQuarter, FISCAL_YEAR(CloseDate) fiscalYear, HOUR_IN_DAY(CreatedDate) hourInDay, WEEK_IN_MONTH(CloseDate) weekInMonth, WEEK_IN_YEAR(CloseDate) weekInYear FROM Account GROUP BY CALENDAR_MONTH(CloseDate), CALENDAR_QUARTER(CloseDate), CALENDAR_YEAR(CloseDate), DAY_IN_MONTH(CloseDate), DAY_IN_WEEK(CloseDate), DAY_IN_YEAR(CloseDate), DAY_ONLY(CreatedDate), FISCAL_MONTH(CloseDate), FISCAL_QUARTER(CloseDate), FISCAL_YEAR(CloseDate), HOUR_IN_DAY(CreatedDate), WEEK_IN_MONTH(CloseDate), WEEK_IN_YEAR(CloseDate) HAVING CALENDAR_YEAR(CloseDate) >= 2020 ORDER BY DAY_ONLY(CreatedDate) DESC",
+    );
+  });
+
+  it("compiles DAY_ONLY HAVING comparisons as date literals", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupBy(({ fn }) => fn.dayOnly("CreatedDate"))
+      .select(({ fn }) => fn.dayOnly("CreatedDate").as("createdDay"))
+      .having((eb) =>
+        eb(eb.fn.dayOnly("CreatedDate"), "=", soqlDate("2026-09-18")),
+      )
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT COUNT(Id) rowCount, DAY_ONLY(CreatedDate) createdDay FROM Account GROUP BY DAY_ONLY(CreatedDate) HAVING DAY_ONLY(CreatedDate) = 2026-09-18",
     );
   });
 

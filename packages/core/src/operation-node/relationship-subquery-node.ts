@@ -1,10 +1,10 @@
-import { freeze } from "#/util/object-utils";
 import type { LimitNode } from "#/operation-node/limit-node";
 import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import { OrderByNode } from "#/operation-node/order-by-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { SelectionNode } from "#/operation-node/selection-node";
 import type { WhereNode } from "#/operation-node/where-node";
+import { freeze } from "#/util/object-utils";
 
 export interface RelationshipSubqueryNode {
   readonly kind: "RelationshipSubqueryNode";

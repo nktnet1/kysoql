@@ -1,23 +1,16 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
 import {
-  DefaultQueryCompiler,
-  Kysoql,
-  QueryCreator,
-  kysoql,
-  soqlDate,
-  soqlDateTime,
-  soqlRelativeDate,
-  soqlTime,
   type AdvancedGroupByMode,
+  type AggregatableFieldReference,
   type AggregateFunction,
   type AggregateFunctionBuilder,
   type AggregateFunctionExpression,
   type AggregateFunctionModule,
   type AggregateFunctionNode,
   type AggregateSelectQueryBuilder,
-  type AggregatableFieldReference,
   type AliasedAggregateFunctionBuilder,
+  type AliasedDateFunctionBuilder,
   type AliasNode,
   type AndNode,
   type BinaryOperationNode,
@@ -25,6 +18,13 @@ import {
   type CompiledQuery,
   type CountAllFunctionBuilder,
   type CountQueryBuilder,
+  type DateFunction,
+  type DateFunctionBuilder,
+  type DateFunctionExpression,
+  type DateFunctionIdentity,
+  type DateFunctionNode,
+  type DateGroupableFieldReference,
+  DefaultQueryCompiler,
   type EqualityComparisonOperator,
   type ExpressionBuilder,
   type ExpressionWrapper,
@@ -35,21 +35,23 @@ import {
   type HavingExpressionFactory,
   type HavingExpressionWrapper,
   type HavingNode,
+  Kysoql,
+  kysoql,
   type LikeComparisonOperator,
   type LimitNode,
   type MultiSelectComparisonOperator,
   type NotNode,
   type NumericAggregatableFieldReference,
   type OperationNode,
-  type OrNode,
   type OperatorNode,
   type OrderByDirection,
   type OrderByItemNode,
-  type OrderByNulls,
   type OrderByNode,
+  type OrderByNulls,
   type OrderedComparisonOperator,
-  type SetComparisonOperator,
+  type OrNode,
   type QueryCompiler,
+  QueryCreator,
   type QueryCreatorConfig,
   type QueryExecutor,
   type ReferenceNode,
@@ -64,17 +66,18 @@ import {
   type SalesforceQueryResult,
   type SalesforceRow,
   type SalesforceSchema,
+  type SelectExpressionBuilder,
+  type SelectedSemiJoinSubqueryBuilder,
+  type SelectionNode,
   type SelectQueryBuilder,
   type SelectQueryBuilderProps,
   type SelectQueryNode,
-  type SelectedSemiJoinSubqueryBuilder,
   type SemiJoinQueryCreator,
   type SemiJoinSubqueryBuilder,
   type SemiJoinSubqueryExpression,
   type SemiJoinSubqueryFactory,
   type SemiJoinSubqueryNode,
-  type SelectExpressionBuilder,
-  type SelectionNode,
+  type SetComparisonOperator,
   type SObjectNode,
   type SoqlDateLiteral,
   type SoqlDateTimeLiteral,
@@ -83,6 +86,10 @@ import {
   type SoqlRelativeDateValue,
   type SoqlTemporalLiteral,
   type SoqlTimeLiteral,
+  soqlDate,
+  soqlDateTime,
+  soqlRelativeDate,
+  soqlTime,
   type ValueListNode,
   type ValueNode,
   type WhereExpressionFactory,
@@ -94,7 +101,10 @@ type PublicTypeSurface = {
   aggregateFunction: AggregateFunction;
   aggregateFunctionBuilder: AggregateFunctionBuilder<number>;
   aggregateFunctionExpression: AggregateFunctionExpression<number>;
-  aggregateFunctionModule: AggregateFunctionModule<Record<string, never>, never>;
+  aggregateFunctionModule: AggregateFunctionModule<
+    Record<string, never>,
+    never
+  >;
   aggregateFunctionNode: AggregateFunctionNode;
   aggregateSelectQueryBuilder: AggregateSelectQueryBuilder<
     Record<string, never>,
@@ -110,6 +120,11 @@ type PublicTypeSurface = {
     number,
     "count"
   >;
+  aliasedDateFunctionBuilder: AliasedDateFunctionBuilder<
+    number,
+    "year",
+    "calendarYear(CreatedDate)"
+  >;
   aliasNode: AliasNode;
   andNode: AndNode;
   binaryOperationNode: BinaryOperationNode;
@@ -117,6 +132,26 @@ type PublicTypeSurface = {
   compiledQuery: CompiledQuery;
   countAllFunctionBuilder: CountAllFunctionBuilder;
   countQueryBuilder: CountQueryBuilder<Record<string, never>, never>;
+  dateFunction: DateFunction;
+  dateFunctionBuilder: DateFunctionBuilder<
+    number,
+    number,
+    EqualityComparisonOperator,
+    "calendarYear(CreatedDate)"
+  >;
+  dateFunctionExpression: DateFunctionExpression<
+    number,
+    number,
+    EqualityComparisonOperator,
+    "calendarYear(CreatedDate)"
+  >;
+  dateFunctionIdentity: DateFunctionIdentity<"calendarYear", "CreatedDate">;
+  dateFunctionNode: DateFunctionNode;
+  dateGroupableFieldReference: DateGroupableFieldReference<
+    Record<string, never>,
+    never,
+    "CreatedDate"
+  >;
   equalityComparisonOperator: EqualityComparisonOperator;
   expressionBuilder: ExpressionBuilder<Record<string, never>, never>;
   expressionWrapper: ExpressionWrapper<Record<string, never>, never>;
@@ -230,7 +265,10 @@ type PublicTypeSurface = {
     "Id"
   >;
   semiJoinSubqueryNode: SemiJoinSubqueryNode;
-  selectExpressionBuilder: SelectExpressionBuilder<Record<string, never>, never>;
+  selectExpressionBuilder: SelectExpressionBuilder<
+    Record<string, never>,
+    never
+  >;
   selectionNode: SelectionNode;
   sobjectNode: SObjectNode;
   soqlDateLiteral: SoqlDateLiteral;
@@ -261,10 +299,7 @@ describe("@kysoql/core public API", () => {
     expect(soqlTime).toBeTypeOf("function");
   });
 
-  it(
-    "exports the complete public type surface through the package barrel",
-    () => {
-      expectTypeOf<PublicTypeSurface>().toMatchTypeOf<PublicTypeSurface>();
-    },
-  );
+  it("exports the complete public type surface through the package barrel", () => {
+    expectTypeOf<PublicTypeSurface>().toMatchTypeOf<PublicTypeSurface>();
+  });
 });

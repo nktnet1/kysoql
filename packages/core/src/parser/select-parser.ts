@@ -31,8 +31,10 @@ type SelectedParentRelationshipName<
     : never
   : never;
 
-type ParentSelectionReference<SE, Relationship extends string> =
-  SE extends `${Relationship}.${infer Reference}` ? Reference : never;
+type ParentSelectionReference<
+  SE,
+  Relationship extends string,
+> = SE extends `${Relationship}.${infer Reference}` ? Reference : never;
 
 type ParentSelection<
   DB,
@@ -44,7 +46,8 @@ type ParentSelection<
     DB,
     TB,
     SE
-  >]: ParentObjectName<DB, TB, Relationship> extends infer ParentTB extends keyof DB
+  >]: ParentObjectName<DB, TB, Relationship> extends infer ParentTB extends
+    keyof DB
     ? true extends ParentRelationshipNullable<DB, TB, Relationship>
       ? Selection<
           DB,
@@ -68,11 +71,13 @@ export type Selection<
   ForceNullable extends boolean = false,
 > = Simplify<
   {
-    readonly [Field in Extract<SE, FieldName<DB, TB>>]: ForceNullable extends true
+    readonly [Field in Extract<
+      SE,
+      FieldName<DB, TB>
+    >]: ForceNullable extends true
       ? SalesforceFieldValue<FieldDefinition<DB, TB, Field>> | null
       : SalesforceFieldValue<FieldDefinition<DB, TB, Field>>;
-  } &
-    ParentSelection<DB, TB, SE, ForceNullable>
+  } & ParentSelection<DB, TB, SE, ForceNullable>
 >;
 
 export function parseSelectArg(selection: string | ReadonlyArray<string>) {

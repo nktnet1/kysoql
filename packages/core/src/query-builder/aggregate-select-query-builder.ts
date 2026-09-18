@@ -1,5 +1,7 @@
 import {
+  type AliasedDateFunctionBuilder,
   createSelectExpressionBuilder,
+  type DateFunctionExpression,
   type GroupingFunctionBuilder,
   type SelectExpressionBuilder,
 } from "#/expression/aggregate-function-builder";
@@ -16,22 +18,29 @@ import type { AdvancedGroupByMode } from "#/operation-node/group-by-node";
 import type { ComparisonOperator } from "#/operation-node/operator-node";
 import type {
   OrderByDirection,
-  OrderByItemNode,
   OrderByNulls,
 } from "#/operation-node/order-by-item-node";
+import { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import { QueryNode } from "#/operation-node/query-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
 import type { SelectionNode } from "#/operation-node/selection-node";
 import {
-  type ComparisonOperatorExpression,
-  type FilterableFieldName,
-  type OperandValueExpression,
-} from "#/parser/binary-operation-parser";
-import {
   type AggregateSelection,
   type AggregateSelectionArg,
+  type GroupedSelectionArg,
   parseAggregateSelectArg,
 } from "#/parser/aggregate-selection-parser";
+import type {
+  ComparisonOperatorExpression,
+  FilterableFieldName,
+  OperandValueExpression,
+} from "#/parser/binary-operation-parser";
+import {
+  dateFunctionIdentity,
+  parseDateGroupByExpression,
+  validateDateFunctionSelections,
+  validateGroupedDateFunctionNode,
+} from "#/parser/date-function-parser";
 import {
   parseFilterBinaryOperation,
   validateSemiJoinWhere,
@@ -80,9 +89,37 @@ type GroupingOrderByExpressionFactory<
   DB,
   TB extends keyof DB,
   GroupedBy extends string,
-> = (
-  eb: SelectExpressionBuilder<DB, TB, GroupedBy>,
-) => GroupingFunctionBuilder;
+> = (eb: SelectExpressionBuilder<DB, TB, GroupedBy>) => GroupingFunctionBuilder;
+
+type DateFunctionIdentityOf<Expression> =
+  Expression extends DateFunctionExpression<
+    unknown,
+    unknown,
+    ComparisonOperator,
+    infer Identity
+  >
+    ? Identity
+    : never;
+
+type GroupedFunctionSelection<
+  Selection,
+  GroupedBy extends string,
+> = Selection extends readonly unknown[]
+  ? {
+      readonly [Index in keyof Selection]: GroupedFunctionSelection<
+        Selection[Index],
+        GroupedBy
+      >;
+    }
+  : Selection extends AliasedDateFunctionBuilder<
+        unknown,
+        string,
+        infer Identity
+      >
+    ? Identity extends GroupedBy
+      ? Selection
+      : never
+    : Selection;
 
 type GroupModeOnly<
   Current extends AggregateGroupMode,
@@ -107,21 +144,14 @@ type GroupedSortableFieldName<
   TB extends keyof DB,
   GroupedBy extends string,
   Reference extends string,
-> = Reference extends GroupedBy
-  ? SortableFieldName<DB, TB, Reference>
-  : never;
+> = Reference extends GroupedBy ? SortableFieldName<DB, TB, Reference> : never;
 
 type GroupedSelection<
   DB,
   TB extends keyof DB,
   SE,
   GroupMode extends AggregateGroupMode,
-> = Selection<
-  DB,
-  TB,
-  SE,
-  GroupMode extends AdvancedGroupByMode ? true : false
->;
+> = Selection<DB, TB, SE, GroupMode extends AdvancedGroupByMode ? true : false>;
 
 type AdvancedGroupByAllowedLength<Count extends AdvancedGroupFieldCount> =
   Count extends 0
@@ -229,6 +259,28 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  groupBy<
+    Expression extends DateFunctionExpression<
+      unknown,
+      unknown,
+      ComparisonOperator,
+      string
+    >,
+  >(
+    expression: GroupModeOnly<
+      GroupMode,
+      "ordinary",
+      (eb: SelectExpressionBuilder<DB, TB>) => Expression
+    >,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy | DateFunctionIdentityOf<Expression>,
+    NextGroupMode<GroupMode, "ordinary">,
+    AdvancedFieldCount
+  >;
+
   groupBy<GE extends string>(
     fields: GroupModeOnly<
       GroupMode,
@@ -299,10 +351,7 @@ export interface AggregateSelectQueryBuilder<
     RHS extends OperandValueExpression<DB, TB, RE, NoInfer<OP>, false>,
   >(
     lhs: RE &
-      GroupedOnly<
-        GroupedBy,
-        GroupedHavingFieldName<DB, TB, GroupedBy, RE>
-      >,
+      GroupedOnly<GroupedBy, GroupedHavingFieldName<DB, TB, GroupedBy, RE>>,
     op: OP,
     rhs: RHS,
   ): AggregateSelectQueryBuilder<
@@ -327,10 +376,7 @@ export interface AggregateSelectQueryBuilder<
 
   orderBy<OE extends string>(
     field: OE &
-      GroupedOnly<
-        GroupedBy,
-        GroupedSortableFieldName<DB, TB, GroupedBy, OE>
-      >,
+      GroupedOnly<GroupedBy, GroupedSortableFieldName<DB, TB, GroupedBy, OE>>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
   ): AggregateSelectQueryBuilder<
@@ -357,6 +403,28 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  orderBy<
+    Output,
+    Value,
+    Operator extends ComparisonOperator,
+    Identity extends GroupedBy,
+  >(
+    expression: GroupedOnly<
+      GroupedBy,
+      (
+        eb: SelectExpressionBuilder<DB, TB>,
+      ) => DateFunctionExpression<Output, Value, Operator, Identity>
+    >,
+    direction?: OrderByDirection,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
   select<Aggregate extends AggregateSelectionArg>(
     selection: (
       eb: SelectExpressionBuilder<
@@ -369,6 +437,23 @@ export interface AggregateSelectQueryBuilder<
     DB,
     TB,
     O & AggregateSelection<Aggregate>,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
+  select<Selection extends GroupedSelectionArg>(
+    selection: (
+      eb: SelectExpressionBuilder<
+        DB,
+        TB,
+        AdvancedGroupingFields<GroupedBy, GroupMode>
+      >,
+    ) => Selection & GroupedFunctionSelection<Selection, GroupedBy>,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O & AggregateSelection<Selection>,
     GroupedBy,
     GroupMode,
     AdvancedFieldCount
@@ -494,10 +579,39 @@ class AggregateSelectQueryBuilderImpl<
     NextGroupMode<GroupMode, "ordinary">,
     AdvancedFieldCount
   >;
+  groupBy<
+    Expression extends DateFunctionExpression<
+      unknown,
+      unknown,
+      ComparisonOperator,
+      string
+    >,
+  >(
+    expression: GroupModeOnly<
+      GroupMode,
+      "ordinary",
+      (eb: SelectExpressionBuilder<DB, TB>) => Expression
+    >,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy | DateFunctionIdentityOf<Expression>,
+    NextGroupMode<GroupMode, "ordinary">,
+    AdvancedFieldCount
+  >;
   groupBy<GE extends string>(
     groupBy:
       | (GE & GroupableFieldName<DB, TB, GE>)
-      | ReadonlyArray<GE & GroupableFieldName<DB, TB, GE>>,
+      | ReadonlyArray<GE & GroupableFieldName<DB, TB, GE>>
+      | ((
+          eb: SelectExpressionBuilder<DB, TB>,
+        ) => DateFunctionExpression<
+          unknown,
+          unknown,
+          ComparisonOperator,
+          string
+        >),
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -506,6 +620,15 @@ class AggregateSelectQueryBuilderImpl<
     NextGroupMode<GroupMode, "ordinary">,
     AdvancedFieldCount
   > {
+    const parsed =
+      typeof groupBy === "function"
+        ? [
+            parseDateGroupByExpression(
+              groupBy(createSelectExpressionBuilder<DB, TB>()) as never,
+            ),
+          ]
+        : parseGroupBy(groupBy);
+
     return new AggregateSelectQueryBuilderImpl<
       DB,
       TB,
@@ -517,7 +640,7 @@ class AggregateSelectQueryBuilderImpl<
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithGroupByItems(
         this.#props.queryNode,
-        parseGroupBy(groupBy),
+        parsed,
       ),
     });
   }
@@ -620,10 +743,7 @@ class AggregateSelectQueryBuilderImpl<
     RHS extends OperandValueExpression<DB, TB, RE, NoInfer<OP>, false>,
   >(
     lhs: RE &
-      GroupedOnly<
-        GroupedBy,
-        GroupedHavingFieldName<DB, TB, GroupedBy, RE>
-      >,
+      GroupedOnly<GroupedBy, GroupedHavingFieldName<DB, TB, GroupedBy, RE>>,
     op: OP,
     rhs: RHS,
   ): AggregateSelectQueryBuilder<
@@ -655,8 +775,7 @@ class AggregateSelectQueryBuilderImpl<
   > {
     assertGroupedQuery(this.#props.queryNode);
 
-    const groupedBy =
-      this.#props.queryNode.groupBy?.items.map((item) => item.name) ?? [];
+    const groupedBy = getGroupedByIdentities(this.#props.queryNode);
     const groupingFields = getAdvancedGroupingFields(this.#props.queryNode);
     const operation =
       typeof lhsOrExpression === "function"
@@ -725,10 +844,7 @@ class AggregateSelectQueryBuilderImpl<
 
   orderBy<OE extends string>(
     field: OE &
-      GroupedOnly<
-        GroupedBy,
-        GroupedSortableFieldName<DB, TB, GroupedBy, OE>
-      >,
+      GroupedOnly<GroupedBy, GroupedSortableFieldName<DB, TB, GroupedBy, OE>>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
   ): AggregateSelectQueryBuilder<
@@ -754,10 +870,39 @@ class AggregateSelectQueryBuilderImpl<
     GroupMode,
     AdvancedFieldCount
   >;
+  orderBy<
+    Output,
+    Value,
+    Operator extends ComparisonOperator,
+    Identity extends GroupedBy,
+  >(
+    expression: GroupedOnly<
+      GroupedBy,
+      (
+        eb: SelectExpressionBuilder<DB, TB>,
+      ) => DateFunctionExpression<Output, Value, Operator, Identity>
+    >,
+    direction?: OrderByDirection,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
   orderBy(
     fieldOrExpression:
       | string
-      | GroupingOrderByExpressionFactory<DB, TB, GroupedBy>,
+      | GroupingOrderByExpressionFactory<DB, TB, GroupedBy>
+      | ((
+          eb: SelectExpressionBuilder<DB, TB>,
+        ) => DateFunctionExpression<
+          unknown,
+          unknown,
+          ComparisonOperator,
+          string
+        >),
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
   ): AggregateSelectQueryBuilder<
@@ -773,20 +918,27 @@ class AggregateSelectQueryBuilderImpl<
     let item: OrderByItemNode;
 
     if (typeof fieldOrExpression === "function") {
-      const groupingFields = requireAdvancedGroupingFields(
-        this.#props.queryNode,
-      );
+      const groupingFields = getAdvancedGroupingFields(this.#props.queryNode);
       const expression = fieldOrExpression(
         createSelectExpressionBuilder<DB, TB, GroupedBy>({ groupingFields }),
       );
 
-      item = parseGroupingOrderBy(expression, groupingFields, direction);
+      if (expression.toOperationNode().kind === "DateFunctionNode") {
+        const node = expression.toOperationNode();
+        validateGroupedDateFunctionNode(
+          node,
+          getGroupedByIdentities(this.#props.queryNode),
+        );
+        item = OrderByItemNode.create(node, direction);
+      } else {
+        item = parseGroupingOrderBy(
+          expression as GroupingFunctionBuilder,
+          requireAdvancedGroupingFields(this.#props.queryNode),
+          direction,
+        );
+      }
     } else {
-      assertGroupedField(
-        this.#props.queryNode,
-        fieldOrExpression,
-        "ORDER BY",
-      );
+      assertGroupedField(this.#props.queryNode, fieldOrExpression, "ORDER BY");
       item = parseOrderBy(fieldOrExpression, direction, nulls);
     }
 
@@ -817,6 +969,22 @@ class AggregateSelectQueryBuilderImpl<
     DB,
     TB,
     O & AggregateSelection<Aggregate>,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+  select<Selection extends GroupedSelectionArg>(
+    selection: (
+      eb: SelectExpressionBuilder<
+        DB,
+        TB,
+        AdvancedGroupingFields<GroupedBy, GroupMode>
+      >,
+    ) => Selection & GroupedFunctionSelection<Selection, GroupedBy>,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O & AggregateSelection<Selection>,
     GroupedBy,
     GroupMode,
     AdvancedFieldCount
@@ -853,7 +1021,7 @@ class AggregateSelectQueryBuilderImpl<
             TB,
             AdvancedGroupingFields<GroupedBy, GroupMode>
           >,
-        ) => AggregateSelectionArg),
+        ) => GroupedSelectionArg),
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -894,6 +1062,10 @@ class AggregateSelectQueryBuilderImpl<
 
     validateUniqueAliases(this.#props.queryNode, parsedSelections);
     validateGroupingSelections(parsedSelections, groupingFields);
+    validateDateFunctionSelections(
+      parsedSelections,
+      getGroupedByIdentities(this.#props.queryNode),
+    );
 
     return new AggregateSelectQueryBuilderImpl<
       DB,
@@ -993,11 +1165,7 @@ export interface AggregateSelectQueryBuilderProps {
   readonly queryNode: SelectQueryNode;
 }
 
-export function createAggregateSelectQueryBuilder<
-  DB,
-  TB extends keyof DB,
-  O,
->(
+export function createAggregateSelectQueryBuilder<DB, TB extends keyof DB, O>(
   props: AggregateSelectQueryBuilderProps,
 ): AggregateSelectQueryBuilder<DB, TB, O> {
   return new AggregateSelectQueryBuilderImpl<DB, TB, O, never, "none", 0>(
@@ -1047,11 +1215,23 @@ function assertGroupedField(
 ): void {
   assertGroupedQuery(queryNode);
 
-  if (!queryNode.groupBy?.items.some((item) => item.name === field)) {
+  if (
+    !queryNode.groupBy?.items.some(
+      (item) => item.kind === "ReferenceNode" && item.name === field,
+    )
+  ) {
     throw new TypeError(
       `SOQL aggregate ${clause} fields must also appear in GROUP BY.`,
     );
   }
+}
+
+function getGroupedByIdentities(queryNode: SelectQueryNode): readonly string[] {
+  return (
+    queryNode.groupBy?.items.map((item) =>
+      item.kind === "ReferenceNode" ? item.name : dateFunctionIdentity(item),
+    ) ?? []
+  );
 }
 
 function validateGroupedSelections(
@@ -1069,7 +1249,15 @@ function getAdvancedGroupingFields(
   queryNode: SelectQueryNode,
 ): readonly string[] {
   return queryNode.groupBy?.mode
-    ? queryNode.groupBy.items.map((item) => item.name)
+    ? queryNode.groupBy.items.map((item) => {
+        if (item.kind !== "ReferenceNode") {
+          throw new TypeError(
+            "SOQL date grouping functions are supported only by ordinary GROUP BY.",
+          );
+        }
+
+        return item.name;
+      })
     : [];
 }
 

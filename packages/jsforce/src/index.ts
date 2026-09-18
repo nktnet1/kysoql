@@ -9,14 +9,8 @@ const jsforceQueryResultSchema = v.object({
 
 const jsforceCountQueryResultSchema = v.object({
   done: v.boolean(),
-  records: v.optional(
-    v.nullable(v.array(v.record(v.string(), v.unknown()))),
-  ),
-  totalSize: v.pipe(
-    v.number(),
-    v.safeInteger(),
-    v.minValue(0),
-  ),
+  records: v.optional(v.nullable(v.array(v.record(v.string(), v.unknown())))),
+  totalSize: v.pipe(v.number(), v.safeInteger(), v.minValue(0)),
 });
 
 export interface JsforceQueryResult {

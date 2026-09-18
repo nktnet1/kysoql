@@ -205,6 +205,31 @@ const byStage = await db
   .execute();
 ```
 
+SOQL's complete date grouping family is available through the same `fn` module.
+Date functions accept generated `date` or `datetime` fields, while `dayOnly()`
+and `hourInDay()` are restricted to `datetime`. The exact function expression
+must be accumulated through ordinary `groupBy(...)` before it can be selected,
+used in `HAVING`, or used for ordering. Child-to-parent field references retain
+their generated temporal checks and relationship nullability.
+
+```ts
+const revenueByCloseYear = await db
+  .selectFrom("Opportunity")
+  .select(({ fn }) => fn.sum("Amount").as("totalAmount"))
+  .groupBy(({ fn }) => fn.calendarYear("CloseDate"))
+  .select(({ fn }) => fn.calendarYear("CloseDate").as("closeYear"))
+  .having((eb) => eb(eb.fn.calendarYear("CloseDate"), ">=", 2025))
+  .orderBy(({ fn }) => fn.calendarYear("CloseDate"))
+  .execute();
+```
+
+The numeric family comprises `calendarMonth`, `calendarQuarter`,
+`calendarYear`, `dayInMonth`, `dayInWeek`, `dayInYear`, `fiscalMonth`,
+`fiscalQuarter`, `fiscalYear`, `hourInDay`, `weekInMonth`, and `weekInYear`.
+`dayOnly` returns the date portion as a string, matching Salesforce query-result
+semantics. Date function grouping is intentionally kept separate from the
+field-only `ROLLUP` / `CUBE` and `GROUPING(field)` API.
+
 For subtotal reports, aggregate builders also expose `.groupByRollup(...)` and
 `.groupByCube(...)`. Both forms retain the same generated `groupable` checks,
 can accumulate fields across calls, and enforce Salesforce's three-field limit.

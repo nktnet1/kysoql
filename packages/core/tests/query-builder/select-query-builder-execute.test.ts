@@ -1,8 +1,7 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-
+import { Kysoql } from "#/kysoql";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryExecutor } from "#/query-executor";
-import { Kysoql } from "#/kysoql";
 import type { SalesforceField, SalesforceObject } from "#/schema";
 import type { Simplify } from "#/util/type-utils";
 
@@ -20,7 +19,8 @@ type ExecutedRow<Query> = Query extends {
   : never;
 
 class RecordingExecutor implements QueryExecutor {
-  readonly calls: Array<{ readonly soql: string; readonly query: unknown }> = [];
+  readonly calls: Array<{ readonly soql: string; readonly query: unknown }> =
+    [];
 
   async executeQuery<O>(
     compiledQuery: CompiledQuery<O>,

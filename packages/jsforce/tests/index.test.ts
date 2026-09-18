@@ -168,11 +168,13 @@ describe("createJsforceExecutor", () => {
   });
 
   it("rejects malformed pagination results", async () => {
-    const query = vi.fn(async (_soql: string): Promise<JsforceQueryResult> => ({
-      done: false,
-      nextRecordsUrl: "/services/data/v65.0/query/01g-first",
-      records: [{ Id: "001000000000001", Name: "Acme" }],
-    }));
+    const query = vi.fn(
+      async (_soql: string): Promise<JsforceQueryResult> => ({
+        done: false,
+        nextRecordsUrl: "/services/data/v65.0/query/01g-first",
+        records: [{ Id: "001000000000001", Name: "Acme" }],
+      }),
+    );
     const queryMore = vi.fn(async (_locator: string) => ({
       done: true,
       records: [null],

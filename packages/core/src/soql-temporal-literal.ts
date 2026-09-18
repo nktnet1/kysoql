@@ -56,10 +56,7 @@ const dateSchema = v.pipe(
 const dateTimeSchema = v.pipe(
   v.string(INVALID_DATE_TIME_FORMAT),
   v.regex(DATE_TIME_PATTERN, INVALID_DATE_TIME_FORMAT),
-  v.check(
-    (value) => isValidDate(value.slice(0, 10)),
-    INVALID_DATE_TIME_DATE,
-  ),
+  v.check((value) => isValidDate(value.slice(0, 10)), INVALID_DATE_TIME_DATE),
   v.check(
     (value) => isValidClockTime(value.slice(11, 19)),
     INVALID_DATE_TIME_TIME,

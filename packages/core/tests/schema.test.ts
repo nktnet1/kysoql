@@ -55,28 +55,23 @@ it("derives scalar field values from nullability metadata", () => {
   expectTypeOf<SalesforceFieldValue<unknown>>().toEqualTypeOf<never>();
 });
 
-it(
-  "maps temporal filter values to wrappers while preserving nullability",
-  () => {
-    expectTypeOf<
-      SalesforceFieldFilterValue<
-        SalesforceField<string, "date", false, true, true, true>
-      >
-    >().toEqualTypeOf<SoqlDateLiteral | SoqlRelativeDateLiteral>();
-    expectTypeOf<
-      SalesforceFieldFilterValue<
-        SalesforceField<string, "datetime", true, true, true, true>
-      >
-    >().toEqualTypeOf<
-      SoqlDateTimeLiteral | SoqlRelativeDateLiteral | null
-    >();
-    expectTypeOf<
-      SalesforceFieldFilterValue<
-        SalesforceField<string, "time", false, true, true, true>
-      >
-    >().toEqualTypeOf<SoqlTimeLiteral>();
-  },
-);
+it("maps temporal filter values to wrappers while preserving nullability", () => {
+  expectTypeOf<
+    SalesforceFieldFilterValue<
+      SalesforceField<string, "date", false, true, true, true>
+    >
+  >().toEqualTypeOf<SoqlDateLiteral | SoqlRelativeDateLiteral>();
+  expectTypeOf<
+    SalesforceFieldFilterValue<
+      SalesforceField<string, "datetime", true, true, true, true>
+    >
+  >().toEqualTypeOf<SoqlDateTimeLiteral | SoqlRelativeDateLiteral | null>();
+  expectTypeOf<
+    SalesforceFieldFilterValue<
+      SalesforceField<string, "time", false, true, true, true>
+    >
+  >().toEqualTypeOf<SoqlTimeLiteral>();
+});
 
 it("leaves non-temporal filter values unchanged", () => {
   expectTypeOf<
@@ -92,47 +87,42 @@ it("leaves non-temporal filter values unchanged", () => {
   expectTypeOf<SalesforceFieldFilterValue<unknown>>().toEqualTypeOf<never>();
 });
 
-it(
-  "preserves parent and child relationship metadata in SalesforceObject",
-  () => {
-    type ObjectWithRelationships = SalesforceObject<
-      {
-        readonly Parent__c: SalesforceField<
-          string,
-          "reference",
-          true,
-          true,
-          true,
-          true,
-          "Account",
-          "Parent__r"
-        >;
-      },
-      {
-        readonly Parent__r: SalesforceParentRelationship<
-          "Account",
-          "Parent__c",
-          true
-        >;
-      },
-      {
-        readonly Children__r: SalesforceChildRelationship<
-          "Child__c",
-          "Parent__c"
-        >;
-      }
-    >;
+it("preserves parent and child relationship metadata in SalesforceObject", () => {
+  type ObjectWithRelationships = SalesforceObject<
+    {
+      readonly Parent__c: SalesforceField<
+        string,
+        "reference",
+        true,
+        true,
+        true,
+        true,
+        "Account",
+        "Parent__r"
+      >;
+    },
+    {
+      readonly Parent__r: SalesforceParentRelationship<
+        "Account",
+        "Parent__c",
+        true
+      >;
+    },
+    {
+      readonly Children__r: SalesforceChildRelationship<
+        "Child__c",
+        "Parent__c"
+      >;
+    }
+  >;
 
-    expectTypeOf<
-      ObjectWithRelationships["parents"]["Parent__r"]
-    >().toEqualTypeOf<
-      SalesforceParentRelationship<"Account", "Parent__c", true>
-    >();
-    expectTypeOf<
-      ObjectWithRelationships["children"]["Children__r"]
-    >().toEqualTypeOf<SalesforceChildRelationship<"Child__c", "Parent__c">>();
-  },
-);
+  expectTypeOf<ObjectWithRelationships["parents"]["Parent__r"]>().toEqualTypeOf<
+    SalesforceParentRelationship<"Account", "Parent__c", true>
+  >();
+  expectTypeOf<
+    ObjectWithRelationships["children"]["Children__r"]
+  >().toEqualTypeOf<SalesforceChildRelationship<"Child__c", "Parent__c">>();
+});
 
 it("returns never for non-Salesforce row inputs", () => {
   expectTypeOf<SalesforceRow<unknown>>().toEqualTypeOf<never>();

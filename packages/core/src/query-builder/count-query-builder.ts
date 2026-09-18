@@ -5,10 +5,10 @@ import {
 import type { ComparisonOperator } from "#/operation-node/operator-node";
 import { QueryNode } from "#/operation-node/query-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
-import {
-  type ComparisonOperatorExpression,
-  type FilterableFieldName,
-  type OperandValueExpression,
+import type {
+  ComparisonOperatorExpression,
+  FilterableFieldName,
+  OperandValueExpression,
 } from "#/parser/binary-operation-parser";
 import {
   parseFilterBinaryOperation,
@@ -52,7 +52,9 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
   }
 
   compile(): CompiledQuery<number> {
-    return this.#props.queryCompiler.compileQuery<number>(this.#props.queryNode);
+    return this.#props.queryCompiler.compileQuery<number>(
+      this.#props.queryNode,
+    );
   }
 
   async execute(): Promise<number> {

@@ -119,19 +119,14 @@ describe("parseCli", () => {
     },
   );
 
-  it.each([
-    "not-valid",
-    "9Invalid",
-    "with space",
-    "Salesforce.Schema",
-    "",
-  ])("rejects invalid schema identifiers: %j", (schemaName) => {
-    expect(() =>
-      parseCli(["generate", "--schema-name", schemaName]),
-    ).toThrow(
-      schemaName.length === 0
-        ? "--schema-name requires a value."
-        : `Invalid schema name: ${schemaName}`,
-    );
-  });
+  it.each(["not-valid", "9Invalid", "with space", "Salesforce.Schema", ""])(
+    "rejects invalid schema identifiers: %j",
+    (schemaName) => {
+      expect(() => parseCli(["generate", "--schema-name", schemaName])).toThrow(
+        schemaName.length === 0
+          ? "--schema-name requires a value."
+          : `Invalid schema name: ${schemaName}`,
+      );
+    },
+  );
 });

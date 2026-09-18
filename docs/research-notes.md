@@ -507,6 +507,47 @@ type. Runtime validation mirrors the type boundary, and `OrderByItemNode` now
 accepts the bounded aggregate-expression form without opening broader aggregate
 ordering yet.
 
+### Date grouping functions
+
+Sources re-checked on 2026-09-18:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-date-functions.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-functions.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-groupby.html
+
+Useful findings:
+
+- Salesforce documents thirteen date functions for grouping or filtering by
+  calendar/fiscal periods. `CALENDAR_MONTH`, `CALENDAR_QUARTER`,
+  `CALENDAR_YEAR`, `DAY_IN_MONTH`, `DAY_IN_WEEK`, `DAY_IN_YEAR`,
+  `FISCAL_MONTH`, `FISCAL_QUARTER`, `FISCAL_YEAR`, `WEEK_IN_MONTH`, and
+  `WEEK_IN_YEAR` accept date fields and return numbers; the documented examples
+  also use the family with dateTime fields.
+- `DAY_ONLY` and `HOUR_IN_DAY` accept only dateTime fields. `DAY_ONLY` returns a
+  date value, while `HOUR_IN_DAY` returns a number.
+- A date function selected by a grouped query must participate in `GROUP BY`.
+  Salesforce permits grouping by the underlying date field as an exception for
+  date (not dateTime) inputs, but exact expression membership is the uniform,
+  conservative safe-builder rule.
+- Client-query dateTime behavior is UTC unless `convertTimezone()` is applied.
+  Timezone conversion remains a separate future function slice rather than an
+  implicit behavior of date grouping.
+- Fiscal functions are unavailable in organizations with custom fiscal years.
+  That org-level setting is not present in generated field metadata, so the
+  typed builder preserves the documented function but cannot statically prove
+  org compatibility.
+
+Implemented consequence in `v1.0.62`: the `fn` module exposes the complete
+camel-cased date-function family through one frozen `DateFunctionNode` path.
+Generated `groupable` plus `date` / `datetime` metadata gates inputs, including
+child-to-parent references; `DAY_ONLY` and `HOUR_IN_DAY` are datetime-only.
+Ordinary `groupBy(({ fn }) => ...)` accumulates the exact function identity, which
+then scopes aliased selection, `HAVING`, and expression ordering at both type and
+runtime boundaries. Numeric outputs preserve source/relationship nullability;
+`DAY_ONLY` returns the generated API date representation (`string`) and compares
+against `soqlDate(...)`. ROLLUP/CUBE remain field-only so `GROUPING(field)` keeps
+its documented field argument and existing subtotal semantics.
+
 ### Remaining SOQL surface / roadmap references
 
 Sources re-checked on 2026-09-18:

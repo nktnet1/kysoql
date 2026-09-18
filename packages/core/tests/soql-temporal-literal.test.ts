@@ -102,14 +102,12 @@ describe("SOQL temporal literals", () => {
     expect(() => soqlDateTime(value)).toThrow(TypeError);
   });
 
-  it.each([
-    "00:00:00Z",
-    "07:30:45Z",
-    "07:30:45.125Z",
-    "23:59:59.999Z",
-  ])("accepts supported time forms: %s", (value) => {
-    expect(soqlTime(value).value).toBe(value);
-  });
+  it.each(["00:00:00Z", "07:30:45Z", "07:30:45.125Z", "23:59:59.999Z"])(
+    "accepts supported time forms: %s",
+    (value) => {
+      expect(soqlTime(value).value).toBe(value);
+    },
+  );
 
   it("preserves validation error messages", () => {
     expect(() => soqlDate("2026-02-30")).toThrow(

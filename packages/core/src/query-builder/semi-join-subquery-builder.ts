@@ -8,15 +8,12 @@ import { ReferenceNode } from "#/operation-node/reference-node";
 import { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
 import { SObjectNode } from "#/operation-node/sobject-node";
 import {
-  parseValueBinaryOperation,
   type ComparisonOperatorExpression,
   type FilterableFieldName,
   type OperandValueExpression,
+  parseValueBinaryOperation,
 } from "#/parser/binary-operation-parser";
-import type {
-  FieldDefinition,
-  FieldName,
-} from "#/parser/reference-parser";
+import type { FieldDefinition, FieldName } from "#/parser/reference-parser";
 import { freeze } from "#/util/object-utils";
 
 declare const semiJoinSubqueryExpressionType: unique symbol;
@@ -33,7 +30,10 @@ const SEMI_JOIN_SUBQUERY_OBJECT_ERROR =
   "This Salesforce object is not supported in semi-join or anti-join subqueries.";
 
 function assertSupportedSemiJoinSubqueryObject(from: string): void {
-  if (UNSUPPORTED_SEMI_JOIN_SUBQUERY_OBJECTS.has(from) || from.endsWith("Tag")) {
+  if (
+    UNSUPPORTED_SEMI_JOIN_SUBQUERY_OBJECTS.has(from) ||
+    from.endsWith("Tag")
+  ) {
     throw new TypeError(SEMI_JOIN_SUBQUERY_OBJECT_ERROR);
   }
 }
@@ -42,29 +42,31 @@ type SemiJoinObjectNamesForField<
   DB,
   TB extends keyof DB,
   Field extends FieldName<DB, TB>,
-> = FieldDefinition<DB, TB, Field> extends {
-  readonly salesforceType: "id";
-}
-  ? Extract<TB, string>
-  : FieldDefinition<DB, TB, Field> extends {
-        readonly salesforceType: "reference";
-        readonly referenceTo: infer ReferenceTo extends string;
-      }
-    ? ReferenceTo
-    : never;
+> =
+  FieldDefinition<DB, TB, Field> extends {
+    readonly salesforceType: "id";
+  }
+    ? Extract<TB, string>
+    : FieldDefinition<DB, TB, Field> extends {
+          readonly salesforceType: "reference";
+          readonly referenceTo: infer ReferenceTo extends string;
+        }
+      ? ReferenceTo
+      : never;
 
 export type SemiJoinOperandFieldName<
   DB,
   TB extends keyof DB,
   Reference extends string,
-> = Reference extends FieldName<DB, TB>
-  ? FieldDefinition<DB, TB, Reference> extends {
-      readonly filterable: true;
-      readonly salesforceType: "id" | "reference";
-    }
-    ? Reference
-    : never
-  : never;
+> =
+  Reference extends FieldName<DB, TB>
+    ? FieldDefinition<DB, TB, Reference> extends {
+        readonly filterable: true;
+        readonly salesforceType: "id" | "reference";
+      }
+      ? Reference
+      : never
+    : never;
 
 type SemiJoinSelectionFieldName<
   DB,
@@ -72,16 +74,17 @@ type SemiJoinSelectionFieldName<
   OuterReference extends string,
   TB extends keyof DB,
   Reference extends string,
-> = OuterReference extends FieldName<DB, OuterTB>
-  ? Reference extends FieldName<DB, TB>
-    ? Extract<
-        SemiJoinObjectNamesForField<DB, OuterTB, OuterReference>,
-        SemiJoinObjectNamesForField<DB, TB, Reference>
-      > extends never
-      ? never
-      : Reference
-    : never
-  : never;
+> =
+  OuterReference extends FieldName<DB, OuterTB>
+    ? Reference extends FieldName<DB, TB>
+      ? Extract<
+          SemiJoinObjectNamesForField<DB, OuterTB, OuterReference>,
+          SemiJoinObjectNamesForField<DB, TB, Reference>
+        > extends never
+        ? never
+        : Reference
+      : never
+    : never;
 
 type UnsupportedSemiJoinSubqueryObjectName =
   | "ActivityHistory"
@@ -95,13 +98,14 @@ type SelectableSemiJoinSubqueryObjectName<
   DB,
   OuterTB extends keyof DB,
   TB extends string,
-> = TB extends Extract<OuterTB, string>
-  ? never
-  : TB extends UnsupportedSemiJoinSubqueryObjectName | `${string}Tag`
+> =
+  TB extends Extract<OuterTB, string>
     ? never
-    : TB extends keyof DB & string
-      ? TB
-      : never;
+    : TB extends UnsupportedSemiJoinSubqueryObjectName | `${string}Tag`
+      ? never
+      : TB extends keyof DB & string
+        ? TB
+        : never;
 
 export interface SemiJoinSubqueryExpression<
   DB,
@@ -124,19 +128,13 @@ interface SemiJoinWhereBuilder<
   TB extends keyof DB,
   Result,
 > {
-  where(
-    expression: WhereExpressionFactory<DB, TB, false>,
-  ): Result;
+  where(expression: WhereExpressionFactory<DB, TB, false>): Result;
 
   where<
     RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
     RHS extends OperandValueExpression<DB, TB, RE, NoInfer<OP>, false>,
-  >(
-    lhs: RE & FilterableFieldName<DB, TB, RE>,
-    op: OP,
-    rhs: RHS,
-  ): Result;
+  >(lhs: RE & FilterableFieldName<DB, TB, RE>, op: OP, rhs: RHS): Result;
 }
 
 export interface SemiJoinSubqueryBuilder<

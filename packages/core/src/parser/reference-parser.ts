@@ -21,13 +21,20 @@ export type ChildrenOf<DB, TB extends keyof DB> = DB[TB] extends {
   ? Children
   : never;
 
-export type FieldName<DB, TB extends keyof DB> = keyof FieldsOf<DB, TB> & string;
+export type FieldName<DB, TB extends keyof DB> = keyof FieldsOf<DB, TB> &
+  string;
 
-export type ParentRelationshipName<DB, TB extends keyof DB> =
-  keyof ParentsOf<DB, TB> & string;
+export type ParentRelationshipName<DB, TB extends keyof DB> = keyof ParentsOf<
+  DB,
+  TB
+> &
+  string;
 
-export type ChildRelationshipName<DB, TB extends keyof DB> =
-  keyof ChildrenOf<DB, TB> & string;
+export type ChildRelationshipName<DB, TB extends keyof DB> = keyof ChildrenOf<
+  DB,
+  TB
+> &
+  string;
 
 export type FieldDefinition<
   DB,
@@ -66,10 +73,7 @@ type ParentNullabilityFromRelationship<Relationship> =
     : never;
 
 type ChildObjectNameFromRelationship<Relationship> =
-  Relationship extends SalesforceChildRelationship<
-    infer ObjectName,
-    string
-  >
+  Relationship extends SalesforceChildRelationship<infer ObjectName, string>
     ? ObjectName
     : never;
 
@@ -77,13 +81,14 @@ export type ParentObjectName<
   DB,
   TB extends keyof DB,
   Relationship extends ParentRelationshipName<DB, TB>,
-> = ParentObjectNameFromRelationship<
-  ParentRelationshipDefinition<DB, TB, Relationship>
-> extends infer ObjectName extends string
-  ? [ObjectName] extends [keyof DB & string]
-    ? ObjectName
-    : never
-  : never;
+> =
+  ParentObjectNameFromRelationship<
+    ParentRelationshipDefinition<DB, TB, Relationship>
+  > extends infer ObjectName extends string
+    ? [ObjectName] extends [keyof DB & string]
+      ? ObjectName
+      : never
+    : never;
 
 export type ParentRelationshipNullable<
   DB,
@@ -97,23 +102,25 @@ export type ChildObjectName<
   DB,
   TB extends keyof DB,
   Relationship extends ChildRelationshipName<DB, TB>,
-> = ChildObjectNameFromRelationship<
-  ChildRelationshipDefinition<DB, TB, Relationship>
-> extends infer ObjectName extends string
-  ? [ObjectName] extends [keyof DB & string]
-    ? ObjectName
-    : never
-  : never;
+> =
+  ChildObjectNameFromRelationship<
+    ChildRelationshipDefinition<DB, TB, Relationship>
+  > extends infer ObjectName extends string
+    ? [ObjectName] extends [keyof DB & string]
+      ? ObjectName
+      : never
+    : never;
 
 export type ChildRelationshipReference<
   DB,
   TB extends keyof DB,
   Relationship extends string,
-> = Relationship extends ChildRelationshipName<DB, TB>
-  ? [ChildObjectName<DB, TB, Relationship>] extends [never]
-    ? never
-    : Relationship
-  : never;
+> =
+  Relationship extends ChildRelationshipName<DB, TB>
+    ? [ChildObjectName<DB, TB, Relationship>] extends [never]
+      ? never
+      : Relationship
+    : never;
 
 type NextRelationshipDepth<Depth extends readonly unknown[]> = readonly [
   ...Depth,
@@ -129,11 +136,8 @@ export type FieldReferenceDefinition<
   ? Depth["length"] extends 5
     ? never
     : Relationship extends ParentRelationshipName<DB, TB>
-      ? ParentObjectName<
-          DB,
-          TB,
-          Relationship
-        > extends infer ParentTB extends keyof DB
+      ? ParentObjectName<DB, TB, Relationship> extends infer ParentTB extends
+          keyof DB
         ? ParentReference extends string
           ? FieldReferenceDefinition<
               DB,
@@ -146,6 +150,35 @@ export type FieldReferenceDefinition<
       : never
   : Reference extends FieldName<DB, TB>
     ? FieldDefinition<DB, TB, Reference>
+    : never;
+
+export type FieldReferenceNullable<
+  DB,
+  TB extends keyof DB,
+  Reference extends string,
+  Depth extends readonly unknown[] = readonly [],
+> = Reference extends `${infer Relationship}.${infer ParentReference}`
+  ? Depth["length"] extends 5
+    ? never
+    : Relationship extends ParentRelationshipName<DB, TB>
+      ? ParentObjectName<DB, TB, Relationship> extends infer ParentTB extends
+          keyof DB
+        ? true extends ParentRelationshipNullable<DB, TB, Relationship>
+          ? true
+          : FieldReferenceNullable<
+              DB,
+              ParentTB,
+              ParentReference,
+              NextRelationshipDepth<Depth>
+            >
+        : never
+      : never
+  : Reference extends FieldName<DB, TB>
+    ? FieldDefinition<DB, TB, Reference> extends {
+        readonly nullable: infer Nullable;
+      }
+      ? Nullable
+      : never
     : never;
 
 export type FieldReference<

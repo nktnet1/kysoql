@@ -2,7 +2,8 @@ import * as v from "valibot";
 
 const ALIAS_ERROR =
   "SOQL selection aliases must start with a letter or underscore and contain only letters, numbers, and underscores.";
-const RESERVED_ALIAS_ERROR = "SOQL selection aliases cannot be reserved keywords.";
+const RESERVED_ALIAS_ERROR =
+  "SOQL selection aliases cannot be reserved keywords.";
 
 const reservedAliases = new Set([
   "AND",

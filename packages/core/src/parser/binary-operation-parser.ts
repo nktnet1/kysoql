@@ -1,28 +1,25 @@
 import * as v from "valibot";
 
 import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
+import type { OperationNode } from "#/operation-node/operation-node";
 import {
-  OperatorNode,
   type ComparisonOperator,
   type EqualityComparisonOperator,
   type LikeComparisonOperator,
   type MultiSelectComparisonOperator,
+  OperatorNode,
   type OrderedComparisonOperator,
   type SetComparisonOperator,
 } from "#/operation-node/operator-node";
-import type { OperationNode } from "#/operation-node/operation-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
 import { ValueListNode } from "#/operation-node/value-list-node";
 import { ValueNode } from "#/operation-node/value-node";
-import type {
-  SalesforceField,
-  SalesforceFieldFilterValue,
-} from "#/schema";
 import type { FieldReferenceDefinition } from "#/parser/reference-parser";
 import type {
   SemiJoinOperandFieldName,
   SemiJoinSubqueryFactory,
 } from "#/query-builder/semi-join-subquery-builder";
+import type { SalesforceField, SalesforceFieldFilterValue } from "#/schema";
 
 export type FilterableFieldName<
   DB,
@@ -38,43 +35,37 @@ export type FilterableFieldName<
       : never
   : never;
 
-type SalesforceTypeOfField<
-  DB,
-  TB extends keyof DB,
-  RE extends string,
-> = FieldReferenceDefinition<DB, TB, RE> extends SalesforceField<
-  unknown,
-  infer SalesforceType,
-  boolean,
-  boolean,
-  boolean,
-  boolean,
-  string,
-  string,
-  string,
-  boolean
->
-  ? SalesforceType
-  : never;
+type SalesforceTypeOfField<DB, TB extends keyof DB, RE extends string> =
+  FieldReferenceDefinition<DB, TB, RE> extends SalesforceField<
+    unknown,
+    infer SalesforceType,
+    boolean,
+    boolean,
+    boolean,
+    boolean,
+    string,
+    string,
+    string,
+    boolean
+  >
+    ? SalesforceType
+    : never;
 
-type ActivePicklistValueOfField<
-  DB,
-  TB extends keyof DB,
-  RE extends string,
-> = FieldReferenceDefinition<DB, TB, RE> extends SalesforceField<
-  unknown,
-  string,
-  boolean,
-  boolean,
-  boolean,
-  boolean,
-  string,
-  string,
-  infer ActivePicklistValue,
-  boolean
->
-  ? ActivePicklistValue
-  : never;
+type ActivePicklistValueOfField<DB, TB extends keyof DB, RE extends string> =
+  FieldReferenceDefinition<DB, TB, RE> extends SalesforceField<
+    unknown,
+    string,
+    boolean,
+    boolean,
+    boolean,
+    boolean,
+    string,
+    string,
+    infer ActivePicklistValue,
+    boolean
+  >
+    ? ActivePicklistValue
+    : never;
 
 type OrderedSalesforceType =
   | "currency"
@@ -101,29 +92,20 @@ type LikeSalesforceType =
   | "textarea"
   | "url";
 
-type OrderedOperatorForField<
-  DB,
-  TB extends keyof DB,
-  RE extends string,
-> = SalesforceTypeOfField<DB, TB, RE> extends OrderedSalesforceType
-  ? OrderedComparisonOperator
-  : never;
+type OrderedOperatorForField<DB, TB extends keyof DB, RE extends string> =
+  SalesforceTypeOfField<DB, TB, RE> extends OrderedSalesforceType
+    ? OrderedComparisonOperator
+    : never;
 
-type LikeOperatorForField<
-  DB,
-  TB extends keyof DB,
-  RE extends string,
-> = SalesforceTypeOfField<DB, TB, RE> extends LikeSalesforceType
-  ? LikeComparisonOperator
-  : never;
+type LikeOperatorForField<DB, TB extends keyof DB, RE extends string> =
+  SalesforceTypeOfField<DB, TB, RE> extends LikeSalesforceType
+    ? LikeComparisonOperator
+    : never;
 
-type MultiSelectOperatorForField<
-  DB,
-  TB extends keyof DB,
-  RE extends string,
-> = SalesforceTypeOfField<DB, TB, RE> extends "multipicklist"
-  ? MultiSelectComparisonOperator
-  : never;
+type MultiSelectOperatorForField<DB, TB extends keyof DB, RE extends string> =
+  SalesforceTypeOfField<DB, TB, RE> extends "multipicklist"
+    ? MultiSelectComparisonOperator
+    : never;
 
 export type ComparisonOperatorExpression<
   DB,
@@ -153,12 +135,13 @@ export type OperandValueExpression<
   : OP extends OrderedComparisonOperator
     ? NonNullable<FieldValueExpression<DB, TB, RE>>
     : OP extends SetComparisonOperator
-      ? readonly FieldValueExpression<DB, TB, RE>[]
-        | (AllowSemiJoin extends true
-            ? RE extends SemiJoinOperandFieldName<DB, TB, RE>
-              ? SemiJoinSubqueryFactory<DB, TB, RE>
-              : never
-            : never)
+      ?
+          | readonly FieldValueExpression<DB, TB, RE>[]
+          | (AllowSemiJoin extends true
+              ? RE extends SemiJoinOperandFieldName<DB, TB, RE>
+                ? SemiJoinSubqueryFactory<DB, TB, RE>
+                : never
+              : never)
       : OP extends MultiSelectComparisonOperator
         ? readonly ActivePicklistValueOfField<DB, TB, RE>[]
         : FieldValueExpression<DB, TB, RE>;

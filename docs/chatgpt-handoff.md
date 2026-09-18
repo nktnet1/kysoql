@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.61`, the next patch
-   is `v1.0.62`.
+   reuse or rewrite a version already handed off. After `v1.0.62`, the next patch
+   is `v1.0.63`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.61`
+## Current state after `v1.0.62`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -114,6 +114,7 @@ recent patch sequence:
 | `v1.0.59` | Add typed grouped `HAVING`: immutable AST/compiler support, aggregate/grouped-field operands, logical composition, and semi/anti-join exclusion. |
 | `v1.0.60` | Add typed `GROUP BY ROLLUP` / `CUBE`: advanced grouping modes, three-field limits, mode-mixing rejection, and nullable subtotal result fields. |
 | `v1.0.61` | Complete typed `GROUPING(field)` for accumulated ROLLUP/CUBE fields in SELECT, HAVING, and ORDER BY, with exact `0 | 1` indicator output. |
+| `v1.0.62` | Add the complete typed calendar/fiscal date grouping-function family with exact expression membership across ordinary GROUP BY, SELECT, HAVING, and ORDER BY. |
 
 ### Build/tooling state
 
@@ -213,6 +214,12 @@ Core currently has:
   aliased SELECT output and HAVING values use the exact `0 | 1` indicator type,
   and focused expression callbacks support documented GROUPING ordering without
   exposing broader aggregate-expression ordering;
+- typed date grouping functions for the complete documented calendar/fiscal
+  family through `.groupBy(({ fn }) => ...)`; generated temporal/groupable
+  metadata gates inputs (including child-to-parent references), `DAY_ONLY` and
+  `HOUR_IN_DAY` are datetime-only, aliased outputs preserve temporal and
+  relationship nullability, and exact function membership is retained across
+  ordinary GROUP BY, SELECT, HAVING, and ORDER BY; ROLLUP/CUBE remain field-only;
 - bare `COUNT()` as a dedicated scalar `CountQueryBuilder` with scalar `WHERE`
   and `LIMIT`; it compiles independently from row-producing aggregates and uses
   the executor's optional `executeCountQuery` capability, implemented by the
@@ -253,26 +260,23 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.62` and should add the first coherent typed
-calendar/date grouping-function family.** Keep it focused on expressions that
-participate in aggregate grouping; leave the broader SELECT function family and
-`TYPEOF` for later slices.
+**The next patch should be `v1.0.63` and should add documented ordering by the
+existing aggregate-function expressions.** Keep it focused on aggregate query
+ordering; leave aliases, broader SELECT functions, and `TYPEOF` for later slices.
 
 Recommended next unit:
 
-- confirm the Salesforce date/datetime input and output semantics for the
-  documented calendar/fiscal grouping functions and implement them as one shared
-  immutable expression/compiler path;
-- restrict each function to compatible generated temporal fields, including
-  supported child-to-parent references, and preserve field membership across
-  GROUP BY, selection, HAVING, and any documented ordering positions;
-- keep the existing direct-field GROUP BY, ROLLUP/CUBE, GROUPING, and aggregate
-  function APIs coherent; add focused output, compiler, runtime, and negative type
-  tests;
-- keep `FIELDS(...)`, translation/format/currency functions, geolocation,
-  `TYPEOF`, and unrelated refactors out of this patch.
+- confirm which row-producing aggregate expressions Salesforce documents in
+  `ORDER BY`, then expose only those existing typed function builders;
+- preserve each function's generated field capability and comparison/output
+  semantics without requiring the aggregate expression to be selected;
+- keep grouped field ordering, date-function ordering, and the focused
+  `GROUPING(field)` ordering path coherent; add compiler, runtime, and negative
+  type tests;
+- keep selection-alias ordering, `FIELDS(...)`, translation/format/currency
+  functions, geolocation, `TYPEOF`, and unrelated refactors out of this patch.
 
-If the supplied bundle already contains `v1.0.61` or later, inspect the code and
+If the supplied bundle already contains `v1.0.62` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
@@ -280,9 +284,9 @@ advance from the actual state instead of reimplementing this section.
 Group closely related syntax when it shares the same type/AST/compiler path, but
 keep major architecture changes independently reviewable:
 
-1. **Additional aggregate grouping expressions.** Add calendar/date grouping
-   functions, broader aggregate-expression ordering, and any output refinements
-   that depend on those expressions after the completed `GROUPING()` slice.
+1. **Additional aggregate expression ordering.** Add documented ordering by the
+   existing aggregate functions and any output refinements that depend on those
+   expressions after the completed `GROUPING()` and date-grouping slices.
 2. **Broader SELECT expressions/functions.** `FIELDS(...)`, `toLabel()`,
    `FORMAT()`, `convertCurrency()`, calendar/date functions,
    `convertTimezone()`, and geolocation expressions where safely modelable.

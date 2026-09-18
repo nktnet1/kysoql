@@ -1,10 +1,10 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
 import { Kysoql } from "#/kysoql";
-import { soqlDate, soqlDateTime, soqlTime } from "#/soql-temporal-literal";
-import type { SalesforceField, SalesforceObject } from "#/schema";
-import type { Simplify } from "#/util/type-utils";
 import type { SelectQueryBuilder } from "#/query-builder/select-query-builder";
+import type { SalesforceField, SalesforceObject } from "#/schema";
+import { soqlDate, soqlDateTime, soqlTime } from "#/soql-temporal-literal";
+import type { Simplify } from "#/util/type-utils";
 
 interface FixtureSchema {
   readonly Account: SalesforceObject<{
@@ -18,14 +18,7 @@ interface FixtureSchema {
       true,
       true
     >;
-    readonly CloseDate: SalesforceField<
-      string,
-      "date",
-      true,
-      true,
-      true,
-      true
-    >;
+    readonly CloseDate: SalesforceField<string, "date", true, true, true, true>;
     readonly LastActivityAt__c: SalesforceField<
       string,
       "datetime",
@@ -340,9 +333,9 @@ describe("SelectQueryBuilder", () => {
       },
     });
     expect(Object.isFrozen(filteredQuery.toOperationNode().where)).toBe(true);
-    expect(
-      Object.isFrozen(filteredQuery.toOperationNode().where?.where),
-    ).toBe(true);
+    expect(Object.isFrozen(filteredQuery.toOperationNode().where?.where)).toBe(
+      true,
+    );
   });
 
   it("groups typed OR comparisons inside WHERE", () => {
@@ -350,10 +343,7 @@ describe("SelectQueryBuilder", () => {
       .selectFrom("Account")
       .select(["Id", "Name"]);
     const orQuery = baseQuery.where((eb) =>
-      eb.or([
-        eb("Name", "=", "Acme"),
-        eb("AnnualRevenue", ">=", 100_000),
-      ]),
+      eb.or([eb("Name", "=", "Acme"), eb("AnnualRevenue", ">=", 100_000)]),
     );
     const filteredQuery = orQuery.where("Name", "!=", null);
 
@@ -396,10 +386,7 @@ describe("SelectQueryBuilder", () => {
       .where((eb) =>
         eb.and([
           eb("Name", "!=", null),
-          eb.or([
-            eb("Name", "=", "Acme"),
-            eb("AnnualRevenue", ">=", 100_000),
-          ]),
+          eb.or([eb("Name", "=", "Acme"), eb("AnnualRevenue", ">=", 100_000)]),
         ]),
       );
 
@@ -436,10 +423,7 @@ describe("SelectQueryBuilder", () => {
       .select(["Id", "Name"])
       .where((eb) =>
         eb.not(
-          eb.or([
-            eb("Name", "=", "Acme"),
-            eb("AnnualRevenue", ">=", 100_000),
-          ]),
+          eb.or([eb("Name", "=", "Acme"), eb("AnnualRevenue", ">=", 100_000)]),
         ),
       );
 

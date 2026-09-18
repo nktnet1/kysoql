@@ -1,3 +1,4 @@
+import type { DateFunctionNode } from "#/operation-node/date-function-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import { freeze } from "#/util/object-utils";
 
@@ -5,13 +6,13 @@ export type AdvancedGroupByMode = "rollup" | "cube";
 
 export interface GroupByNode {
   readonly kind: "GroupByNode";
-  readonly items: ReadonlyArray<ReferenceNode>;
+  readonly items: ReadonlyArray<DateFunctionNode | ReferenceNode>;
   readonly mode?: AdvancedGroupByMode;
 }
 
 export const GroupByNode = {
   create(
-    items: ReadonlyArray<ReferenceNode>,
+    items: ReadonlyArray<DateFunctionNode | ReferenceNode>,
     mode?: AdvancedGroupByMode,
   ): GroupByNode {
     return freeze(
@@ -30,7 +31,7 @@ export const GroupByNode = {
 
   cloneWithItems(
     groupBy: GroupByNode,
-    items: ReadonlyArray<ReferenceNode>,
+    items: ReadonlyArray<DateFunctionNode | ReferenceNode>,
     mode?: AdvancedGroupByMode,
   ): GroupByNode {
     if (groupBy.mode !== mode) {

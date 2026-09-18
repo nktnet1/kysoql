@@ -102,11 +102,25 @@ interface SemiJoinSchema {
       "Contact",
       "Contact"
     >;
-    readonly Status: SalesforceField<string, "picklist", false, true, true, true>;
+    readonly Status: SalesforceField<
+      string,
+      "picklist",
+      false,
+      true,
+      true,
+      true
+    >;
   }>;
   readonly Lead: SalesforceObject<{
     readonly Id: SalesforceField<string, "id", false, true, true, true>;
-    readonly LastName: SalesforceField<string, "string", false, true, true, true>;
+    readonly LastName: SalesforceField<
+      string,
+      "string",
+      false,
+      true,
+      true,
+      true
+    >;
   }>;
   readonly Task: SalesforceObject<{
     readonly Id: SalesforceField<string, "id", false, true, true, true>;

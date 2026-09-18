@@ -3,8 +3,8 @@ import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 import type { NotNode } from "#/operation-node/not-node";
 import type { OperationNode } from "#/operation-node/operation-node";
 import {
-  OperatorNode,
   type ComparisonOperator,
+  OperatorNode,
 } from "#/operation-node/operator-node";
 import type { OrNode } from "#/operation-node/or-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
@@ -111,7 +111,8 @@ function inspectSemiJoinWhere(
     case "OrNode": {
       const or = node as OrNode;
       return (
-        inspectSemiJoinWhere(or.left, true) + inspectSemiJoinWhere(or.right, true)
+        inspectSemiJoinWhere(or.left, true) +
+        inspectSemiJoinWhere(or.right, true)
       );
     }
     case "SemiJoinSubqueryNode": {

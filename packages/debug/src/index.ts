@@ -1,12 +1,12 @@
 import {
-  Kysoql,
-  soqlDate,
-  soqlDateTime,
-  soqlTime,
   type CompiledQuery,
+  Kysoql,
   type QueryExecutor,
   type SalesforceField,
   type SalesforceObject,
+  soqlDate,
+  soqlDateTime,
+  soqlTime,
 } from "@kysoql/core";
 
 interface DebugSchema {
@@ -78,11 +78,7 @@ const filteredQuery = selectedQuery
   .where("Name", "like", "Acme%")
   .where("AnnualRevenue", ">=", 100_000)
   .where("Occurred_On__c", ">=", soqlDate("2026-01-01"))
-  .where(
-    "LastActivityAt__c",
-    "<",
-    soqlDateTime("2027-01-01T00:00:00Z"),
-  )
+  .where("LastActivityAt__c", "<", soqlDateTime("2027-01-01T00:00:00Z"))
   .where("OpeningTime__c", ">=", soqlTime("09:00:00.000Z"));
 printQuery("chained scalar + temporal where() calls", filteredQuery);
 

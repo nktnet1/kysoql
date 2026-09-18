@@ -1,18 +1,19 @@
-import { freeze } from "#/util/object-utils";
+import type { DateFunctionNode } from "#/operation-node/date-function-node";
 import {
   type AdvancedGroupByMode,
   GroupByNode,
 } from "#/operation-node/group-by-node";
 import { HavingNode } from "#/operation-node/having-node";
 import type { LimitNode } from "#/operation-node/limit-node";
-import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { OffsetNode } from "#/operation-node/offset-node";
 import type { OperationNode } from "#/operation-node/operation-node";
 import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import { OrderByNode } from "#/operation-node/order-by-node";
+import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { SelectionNode } from "#/operation-node/selection-node";
 import type { SObjectNode } from "#/operation-node/sobject-node";
 import type { WhereNode } from "#/operation-node/where-node";
+import { freeze } from "#/util/object-utils";
 
 export interface SelectQueryNode {
   readonly kind: "SelectQueryNode";
@@ -48,7 +49,7 @@ export const SelectQueryNode = {
 
   cloneWithGroupByItems(
     select: SelectQueryNode,
-    items: ReadonlyArray<ReferenceNode>,
+    items: ReadonlyArray<DateFunctionNode | ReferenceNode>,
     mode?: AdvancedGroupByMode,
   ): SelectQueryNode {
     return freeze({
@@ -78,7 +79,10 @@ export const SelectQueryNode = {
     });
   },
 
-  cloneWithOffset(select: SelectQueryNode, offset: OffsetNode): SelectQueryNode {
+  cloneWithOffset(
+    select: SelectQueryNode,
+    offset: OffsetNode,
+  ): SelectQueryNode {
     return freeze({
       ...select,
       offset,

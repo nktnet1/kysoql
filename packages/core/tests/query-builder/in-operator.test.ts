@@ -16,14 +16,7 @@ interface FixtureSchema {
       true,
       true
     >;
-    readonly CloseDate: SalesforceField<
-      string,
-      "date",
-      true,
-      true,
-      true,
-      true
-    >;
+    readonly CloseDate: SalesforceField<string, "date", true, true, true, true>;
   }>;
 }
 

@@ -69,10 +69,8 @@ export interface SoqlRelativeDateLiteral {
   readonly [soqlRelativeDateLiteralBrand]: never;
 }
 
-const INVALID_FIXED_RELATIVE_DATE =
-  `SOQL fixed relative date literal must be one of: ${fixedRelativeDateValues.join(", ")}.`;
-const INVALID_RELATIVE_DATE_FAMILY =
-  `SOQL relative date family must be one of: ${relativeDateFamilies.join(", ")}.`;
+const INVALID_FIXED_RELATIVE_DATE = `SOQL fixed relative date literal must be one of: ${fixedRelativeDateValues.join(", ")}.`;
+const INVALID_RELATIVE_DATE_FAMILY = `SOQL relative date family must be one of: ${relativeDateFamilies.join(", ")}.`;
 const INVALID_RELATIVE_DATE_COUNT =
   "SOQL relative date count must be a non-negative safe integer.";
 const INVALID_RELATIVE_DATE = "Invalid SOQL relative date literal.";

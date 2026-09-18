@@ -1,23 +1,29 @@
 import { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
 import { AliasNode } from "#/operation-node/alias-node";
-import { ReferenceNode } from "#/operation-node/reference-node";
+import {
+  type DateFunction,
+  DateFunctionNode,
+} from "#/operation-node/date-function-node";
 import type {
   ComparisonOperator,
   EqualityComparisonOperator,
   OrderedComparisonOperator,
   SetComparisonOperator,
 } from "#/operation-node/operator-node";
-import type {
-  ComparisonOperatorExpression,
-} from "#/parser/binary-operation-parser";
+import { ReferenceNode } from "#/operation-node/reference-node";
+import type { ComparisonOperatorExpression } from "#/parser/binary-operation-parser";
 import type { GroupableFieldName } from "#/parser/group-by-parser";
 import { validateGroupingField } from "#/parser/grouping-expression-parser";
-import type { FieldReferenceDefinition } from "#/parser/reference-parser";
+import type {
+  FieldReferenceDefinition,
+  FieldReferenceNullable,
+} from "#/parser/reference-parser";
 import { parseSelectionAlias } from "#/parser/selection-alias-parser";
 import type {
   SalesforceFieldFilterValue,
   SalesforceFieldValue,
 } from "#/schema";
+import type { SoqlDateLiteral } from "#/soql-temporal-literal";
 import { freeze } from "#/util/object-utils";
 
 export type AggregatableFieldReference<
@@ -38,11 +44,12 @@ type SalesforceTypeOfReference<
   DB,
   TB extends keyof DB,
   Reference extends string,
-> = FieldReferenceDefinition<DB, TB, Reference> extends {
-  readonly salesforceType: infer SalesforceType extends string;
-}
-  ? SalesforceType
-  : never;
+> =
+  FieldReferenceDefinition<DB, TB, Reference> extends {
+    readonly salesforceType: infer SalesforceType extends string;
+  }
+    ? SalesforceType
+    : never;
 
 type NumericAggregateSalesforceType = "currency" | "double" | "int" | "percent";
 
@@ -50,15 +57,16 @@ export type NumericAggregatableFieldReference<
   DB,
   TB extends keyof DB,
   Reference extends string,
-> = Reference extends AggregatableFieldReference<DB, TB, Reference>
-  ? SalesforceTypeOfReference<
-      DB,
-      TB,
-      Reference
-    > extends NumericAggregateSalesforceType
-    ? Reference
-    : never
-  : never;
+> =
+  Reference extends AggregatableFieldReference<DB, TB, Reference>
+    ? SalesforceTypeOfReference<
+        DB,
+        TB,
+        Reference
+      > extends NumericAggregateSalesforceType
+      ? Reference
+      : never
+    : never;
 
 type AggregateFieldValue<
   DB,
@@ -85,7 +93,46 @@ type NumericAggregateOperator =
   | OrderedComparisonOperator
   | SetComparisonOperator;
 
+type TemporalSalesforceType = "date" | "datetime";
+
+export type DateGroupableFieldReference<
+  DB,
+  TB extends keyof DB,
+  Reference extends string,
+  SalesforceType extends TemporalSalesforceType = TemporalSalesforceType,
+> =
+  Reference extends GroupableFieldName<DB, TB, Reference>
+    ? SalesforceTypeOfReference<DB, TB, Reference> extends SalesforceType
+      ? Reference
+      : never
+    : never;
+
+type DateFunctionOutput<
+  DB,
+  TB extends keyof DB,
+  Reference extends string,
+  Output,
+> =
+  true extends FieldReferenceNullable<DB, TB, Reference>
+    ? Output | null
+    : Output;
+
+type DateFunctionComparisonValue<
+  DB,
+  TB extends keyof DB,
+  Reference extends string,
+  Value,
+> =
+  true extends FieldReferenceNullable<DB, TB, Reference> ? Value | null : Value;
+
 declare const groupingFunctionType: unique symbol;
+declare const dateFunctionIdentityType: unique symbol;
+declare const aggregateFunctionSelectionType: unique symbol;
+
+export type DateFunctionIdentity<
+  Function extends DateFunction,
+  Reference extends string,
+> = `${Function}(${Reference})`;
 
 export interface AggregateFunctionExpression<
   Output,
@@ -97,6 +144,43 @@ export interface AggregateFunctionExpression<
   readonly comparisonOperatorType?: Operator;
 
   toOperationNode(): AggregateFunctionNode;
+}
+
+export interface DateFunctionExpression<
+  Output,
+  ComparisonValue,
+  Operator extends ComparisonOperator,
+  Identity extends string,
+> {
+  readonly expressionType: Output | undefined;
+  readonly comparisonValueType?: ComparisonValue;
+  readonly comparisonOperatorType?: Operator;
+  readonly [dateFunctionIdentityType]: Identity;
+
+  toOperationNode(): DateFunctionNode;
+}
+
+export interface DateFunctionBuilder<
+  Output,
+  ComparisonValue,
+  Operator extends ComparisonOperator,
+  Identity extends string,
+> extends DateFunctionExpression<Output, ComparisonValue, Operator, Identity> {
+  as<Alias extends string>(
+    alias: Alias,
+  ): AliasedDateFunctionBuilder<Output, Alias, Identity>;
+}
+
+export interface AliasedDateFunctionBuilder<
+  Output,
+  Alias extends string,
+  Identity extends string,
+> {
+  readonly expressionType: Output | undefined;
+  readonly alias: Alias | undefined;
+  readonly [dateFunctionIdentityType]: Identity;
+
+  toOperationNode(): AliasNode;
 }
 
 export interface CountAllFunctionBuilder
@@ -119,20 +203,14 @@ export interface AggregateFunctionBuilder<
 }
 
 export interface GroupingFunctionBuilder
-  extends AggregateFunctionBuilder<
-    0 | 1,
-    0 | 1,
-    NumericAggregateOperator
-  > {
+  extends AggregateFunctionBuilder<0 | 1, 0 | 1, NumericAggregateOperator> {
   readonly [groupingFunctionType]: true;
 }
 
-export interface AliasedAggregateFunctionBuilder<
-  Output,
-  Alias extends string,
-> {
+export interface AliasedAggregateFunctionBuilder<Output, Alias extends string> {
   readonly expressionType: Output | undefined;
   readonly alias: Alias | undefined;
+  readonly [aggregateFunctionSelectionType]: true;
 
   toOperationNode(): AliasNode;
 }
@@ -180,21 +258,79 @@ class AggregateFunctionBuilderImpl<
 }
 
 class GroupingFunctionBuilderImpl
-  extends AggregateFunctionBuilderImpl<
-    0 | 1,
-    0 | 1,
-    NumericAggregateOperator
-  >
+  extends AggregateFunctionBuilderImpl<0 | 1, 0 | 1, NumericAggregateOperator>
   implements GroupingFunctionBuilder
 {
   declare readonly [groupingFunctionType]: true;
 }
 
-class AliasedAggregateFunctionBuilderImpl<
+class DateFunctionBuilderImpl<
+  Output,
+  ComparisonValue,
+  Operator extends ComparisonOperator,
+  Identity extends string,
+> implements DateFunctionBuilder<Output, ComparisonValue, Operator, Identity>
+{
+  declare readonly [dateFunctionIdentityType]: Identity;
+
+  readonly #node: DateFunctionNode;
+
+  constructor(node: DateFunctionNode) {
+    this.#node = node;
+  }
+
+  get expressionType(): Output | undefined {
+    return undefined;
+  }
+
+  as<Alias extends string>(
+    alias: Alias,
+  ): AliasedDateFunctionBuilder<Output, Alias, Identity> {
+    return new AliasedDateFunctionBuilderImpl<Output, Alias, Identity>(
+      this.#node,
+      parseSelectionAlias(alias) as Alias,
+    );
+  }
+
+  toOperationNode(): DateFunctionNode {
+    return this.#node;
+  }
+}
+
+class AliasedDateFunctionBuilderImpl<
   Output,
   Alias extends string,
-> implements AliasedAggregateFunctionBuilder<Output, Alias>
+  Identity extends string,
+> implements AliasedDateFunctionBuilder<Output, Alias, Identity>
 {
+  declare readonly [dateFunctionIdentityType]: Identity;
+
+  readonly #node: AliasNode;
+  readonly #alias: Alias;
+
+  constructor(node: DateFunctionNode, alias: Alias) {
+    this.#node = AliasNode.create(node, alias);
+    this.#alias = alias;
+  }
+
+  get expressionType(): Output | undefined {
+    return undefined;
+  }
+
+  get alias(): Alias | undefined {
+    return this.#alias;
+  }
+
+  toOperationNode(): AliasNode {
+    return this.#node;
+  }
+}
+
+class AliasedAggregateFunctionBuilderImpl<Output, Alias extends string>
+  implements AliasedAggregateFunctionBuilder<Output, Alias>
+{
+  declare readonly [aggregateFunctionSelectionType]: true;
+
   readonly #node: AliasNode;
   readonly #alias: Alias;
 
@@ -225,11 +361,88 @@ export type GroupingFieldReference<
   ? GroupableFieldName<DB, TB, Reference>
   : never;
 
+type NumericDateFunctionBuilder<
+  DB,
+  TB extends keyof DB,
+  Function extends DateFunction,
+  Reference extends string,
+> = DateFunctionBuilder<
+  DateFunctionOutput<DB, TB, Reference, number>,
+  DateFunctionComparisonValue<DB, TB, Reference, number>,
+  NumericAggregateOperator,
+  DateFunctionIdentity<Function, Reference>
+>;
+
+type DayOnlyFunctionBuilder<
+  DB,
+  TB extends keyof DB,
+  Reference extends string,
+> = DateFunctionBuilder<
+  DateFunctionOutput<DB, TB, Reference, string>,
+  DateFunctionComparisonValue<DB, TB, Reference, SoqlDateLiteral>,
+  NumericAggregateOperator,
+  DateFunctionIdentity<"dayOnly", Reference>
+>;
+
 export interface AggregateFunctionModule<
   DB,
   TB extends keyof DB,
   GroupingFields extends string = never,
 > {
+  calendarMonth<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "calendarMonth", Reference>;
+
+  calendarQuarter<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "calendarQuarter", Reference>;
+
+  calendarYear<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "calendarYear", Reference>;
+
+  dayInMonth<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "dayInMonth", Reference>;
+
+  dayInWeek<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "dayInWeek", Reference>;
+
+  dayInYear<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "dayInYear", Reference>;
+
+  dayOnly<Reference extends string>(
+    field: Reference &
+      DateGroupableFieldReference<DB, TB, Reference, "datetime">,
+  ): DayOnlyFunctionBuilder<DB, TB, Reference>;
+
+  fiscalMonth<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "fiscalMonth", Reference>;
+
+  fiscalQuarter<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "fiscalQuarter", Reference>;
+
+  fiscalYear<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "fiscalYear", Reference>;
+
+  hourInDay<Reference extends string>(
+    field: Reference &
+      DateGroupableFieldReference<DB, TB, Reference, "datetime">,
+  ): NumericDateFunctionBuilder<DB, TB, "hourInDay", Reference>;
+
+  weekInMonth<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "weekInMonth", Reference>;
+
+  weekInYear<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "weekInYear", Reference>;
+
   grouping<Reference extends string>(
     field: Reference &
       GroupingFieldReference<DB, TB, GroupingFields, Reference>,
@@ -282,12 +495,114 @@ class AggregateFunctionModuleImpl<
   DB,
   TB extends keyof DB,
   GroupingFields extends string,
-> implements AggregateFunctionModule<DB, TB, GroupingFields>
-{
+> {
   readonly #groupingFields: readonly string[];
 
   constructor(groupingFields: readonly string[]) {
     this.#groupingFields = freeze([...groupingFields]);
+  }
+
+  #numericDateFunction<Function extends DateFunction, Reference extends string>(
+    dateFunction: Function,
+    reference: Reference,
+  ): NumericDateFunctionBuilder<DB, TB, Function, Reference> {
+    return new DateFunctionBuilderImpl<
+      DateFunctionOutput<DB, TB, Reference, number>,
+      DateFunctionComparisonValue<DB, TB, Reference, number>,
+      NumericAggregateOperator,
+      DateFunctionIdentity<Function, Reference>
+    >(DateFunctionNode.create(dateFunction, ReferenceNode.create(reference)));
+  }
+
+  #dayOnly<Reference extends string>(
+    reference: Reference,
+  ): DayOnlyFunctionBuilder<DB, TB, Reference> {
+    return new DateFunctionBuilderImpl<
+      DateFunctionOutput<DB, TB, Reference, string>,
+      DateFunctionComparisonValue<DB, TB, Reference, SoqlDateLiteral>,
+      NumericAggregateOperator,
+      DateFunctionIdentity<"dayOnly", Reference>
+    >(DateFunctionNode.create("dayOnly", ReferenceNode.create(reference)));
+  }
+
+  calendarMonth<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "calendarMonth", Reference> {
+    return this.#numericDateFunction("calendarMonth", field as Reference);
+  }
+
+  calendarQuarter<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "calendarQuarter", Reference> {
+    return this.#numericDateFunction("calendarQuarter", field as Reference);
+  }
+
+  calendarYear<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "calendarYear", Reference> {
+    return this.#numericDateFunction("calendarYear", field as Reference);
+  }
+
+  dayInMonth<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "dayInMonth", Reference> {
+    return this.#numericDateFunction("dayInMonth", field as Reference);
+  }
+
+  dayInWeek<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "dayInWeek", Reference> {
+    return this.#numericDateFunction("dayInWeek", field as Reference);
+  }
+
+  dayInYear<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "dayInYear", Reference> {
+    return this.#numericDateFunction("dayInYear", field as Reference);
+  }
+
+  dayOnly<Reference extends string>(
+    field: Reference &
+      DateGroupableFieldReference<DB, TB, Reference, "datetime">,
+  ): DayOnlyFunctionBuilder<DB, TB, Reference> {
+    return this.#dayOnly(field as Reference);
+  }
+
+  fiscalMonth<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "fiscalMonth", Reference> {
+    return this.#numericDateFunction("fiscalMonth", field as Reference);
+  }
+
+  fiscalQuarter<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "fiscalQuarter", Reference> {
+    return this.#numericDateFunction("fiscalQuarter", field as Reference);
+  }
+
+  fiscalYear<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "fiscalYear", Reference> {
+    return this.#numericDateFunction("fiscalYear", field as Reference);
+  }
+
+  hourInDay<Reference extends string>(
+    field: Reference &
+      DateGroupableFieldReference<DB, TB, Reference, "datetime">,
+  ): NumericDateFunctionBuilder<DB, TB, "hourInDay", Reference> {
+    return this.#numericDateFunction("hourInDay", field as Reference);
+  }
+
+  weekInMonth<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "weekInMonth", Reference> {
+    return this.#numericDateFunction("weekInMonth", field as Reference);
+  }
+
+  weekInYear<Reference extends string>(
+    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
+  ): NumericDateFunctionBuilder<DB, TB, "weekInYear", Reference> {
+    return this.#numericDateFunction("weekInYear", field as Reference);
   }
 
   grouping<Reference extends string>(
@@ -316,9 +631,7 @@ class AggregateFunctionModuleImpl<
           number,
           number,
           NumericAggregateOperator
-        >(
-          AggregateFunctionNode.create("count", ReferenceNode.create(field)),
-        );
+        >(AggregateFunctionNode.create("count", ReferenceNode.create(field)));
   }
 
   countDistinct<Reference extends string>(
@@ -347,9 +660,7 @@ class AggregateFunctionModuleImpl<
       number | null,
       number | null,
       NumericAggregateOperator
-    >(
-      AggregateFunctionNode.create("avg", ReferenceNode.create(field)),
-    );
+    >(AggregateFunctionNode.create("avg", ReferenceNode.create(field)));
   }
 
   max<Reference extends string>(
@@ -391,9 +702,7 @@ class AggregateFunctionModuleImpl<
       number | null,
       number | null,
       NumericAggregateOperator
-    >(
-      AggregateFunctionNode.create("sum", ReferenceNode.create(field)),
-    );
+    >(AggregateFunctionNode.create("sum", ReferenceNode.create(field)));
   }
 }
 
@@ -419,6 +728,6 @@ export function createSelectExpressionBuilder<
   return freeze({
     fn: new AggregateFunctionModuleImpl<DB, TB, GroupingFields>(
       options.groupingFields,
-    ),
+    ) as unknown as AggregateFunctionModule<DB, TB, GroupingFields>,
   });
 }

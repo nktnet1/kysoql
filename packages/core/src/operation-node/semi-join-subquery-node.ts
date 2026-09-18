@@ -1,7 +1,7 @@
-import { freeze } from "#/util/object-utils";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { SObjectNode } from "#/operation-node/sobject-node";
 import type { WhereNode } from "#/operation-node/where-node";
+import { freeze } from "#/util/object-utils";
 
 export interface SemiJoinSubqueryNode {
   readonly kind: "SemiJoinSubqueryNode";

@@ -1,12 +1,12 @@
 import { SelectQueryNode } from "#/operation-node/select-query-node";
-import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
-import type { QueryCompiler } from "#/query-compiler/query-compiler";
-import type { QueryExecutor } from "#/query-executor";
 import { SObjectNode } from "#/operation-node/sobject-node";
 import {
   createSelectQueryBuilder,
   type SelectQueryBuilder,
 } from "#/query-builder/select-query-builder";
+import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
+import type { QueryCompiler } from "#/query-compiler/query-compiler";
+import type { QueryExecutor } from "#/query-executor";
 
 export interface QueryCreatorConfig {
   readonly executor?: QueryExecutor;
@@ -21,9 +21,7 @@ export class QueryCreator<DB> {
   readonly #queryCompiler: QueryCompiler;
   readonly #queryExecutor: QueryExecutor | undefined;
 
-  constructor(
-    configOrQueryCompiler: QueryCreatorConfig | QueryCompiler = {},
-  ) {
+  constructor(configOrQueryCompiler: QueryCreatorConfig | QueryCompiler = {}) {
     const config: QueryCreatorConfig = isQueryCompiler(configOrQueryCompiler)
       ? { queryCompiler: configOrQueryCompiler }
       : configOrQueryCompiler;

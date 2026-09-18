@@ -95,7 +95,14 @@ interface RelationshipSubquerySchema {
         "Contact",
         "Contact"
       >;
-      readonly Subject: SalesforceField<string, "string", true, true, true, true>;
+      readonly Subject: SalesforceField<
+        string,
+        "string",
+        true,
+        true,
+        true,
+        true
+      >;
     },
     {
       readonly Contact: SalesforceParentRelationship<
@@ -105,10 +112,7 @@ interface RelationshipSubquerySchema {
       >;
     },
     {
-      readonly Comments: SalesforceChildRelationship<
-        "CaseComment",
-        "ParentId"
-      >;
+      readonly Comments: SalesforceChildRelationship<"CaseComment", "ParentId">;
     }
   >;
   readonly CaseComment: SalesforceObject<
@@ -166,7 +170,10 @@ interface RelationshipSubquerySchema {
       >;
     },
     {
-      readonly Tags: SalesforceChildRelationship<"AttachmentTag", "AttachmentId">;
+      readonly Tags: SalesforceChildRelationship<
+        "AttachmentTag",
+        "AttachmentId"
+      >;
     }
   >;
   readonly AttachmentTag: SalesforceObject<{
@@ -293,15 +300,19 @@ describe("parent-to-child relationship subqueries", () => {
       .selectFrom("Account")
       .select("Id")
       .selectSubquery("Contacts", (contacts) =>
-        contacts.select("Id").selectSubquery("Cases", (cases) =>
-          cases.select("Id").selectSubquery("Comments", (comments) =>
-            comments
+        contacts
+          .select("Id")
+          .selectSubquery("Cases", (cases) =>
+            cases
               .select("Id")
-              .selectSubquery("Attachments", (attachments) =>
-                attachments.select(["Id", "Name"]),
+              .selectSubquery("Comments", (comments) =>
+                comments
+                  .select("Id")
+                  .selectSubquery("Attachments", (attachments) =>
+                    attachments.select(["Id", "Name"]),
+                  ),
               ),
           ),
-        ),
       );
 
     expect(query.compile().soql).toBe(

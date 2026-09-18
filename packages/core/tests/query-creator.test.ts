@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type {
-  SelectQueryNode,
-} from "#/operation-node/select-query-node";
+import type { SelectQueryNode } from "#/operation-node/select-query-node";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import { QueryCreator } from "#/query-creator";

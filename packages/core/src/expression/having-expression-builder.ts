@@ -1,5 +1,12 @@
+import {
+  type AggregateFunctionExpression,
+  type AggregateFunctionModule,
+  createSelectExpressionBuilder,
+  type DateFunctionExpression,
+} from "#/expression/aggregate-function-builder";
 import { AndNode } from "#/operation-node/and-node";
 import { NotNode } from "#/operation-node/not-node";
+import type { OperationNode } from "#/operation-node/operation-node";
 import type {
   ComparisonOperator,
   LikeComparisonOperator,
@@ -8,17 +15,12 @@ import type {
   SetComparisonOperator,
 } from "#/operation-node/operator-node";
 import { OrNode } from "#/operation-node/or-node";
-import type { OperationNode } from "#/operation-node/operation-node";
-import {
-  type AggregateFunctionExpression,
-  type AggregateFunctionModule,
-  createSelectExpressionBuilder,
-} from "#/expression/aggregate-function-builder";
 import {
   type ComparisonOperatorExpression,
   type OperandValueExpression,
   parseOperationValueBinaryOperation,
 } from "#/parser/binary-operation-parser";
+import { validateGroupedDateFunctionNode } from "#/parser/date-function-parser";
 import { parseFilterBinaryOperation } from "#/parser/filter-parser";
 import type { GroupableFieldName } from "#/parser/group-by-parser";
 import { validateGroupingFunctionNode } from "#/parser/grouping-expression-parser";
@@ -35,9 +37,7 @@ export type GroupedHavingFieldName<
   TB extends keyof DB,
   GroupedBy extends string,
   Reference extends string,
-> = Reference extends GroupedBy
-  ? GroupableFieldName<DB, TB, Reference>
-  : never;
+> = Reference extends GroupedBy ? GroupableFieldName<DB, TB, Reference> : never;
 
 type AggregateOperandValue<
   Value,
@@ -94,6 +94,19 @@ export interface HavingExpressionBuilder<
     Right extends AggregateOperandValue<Value, NoInfer<Operator>>,
   >(
     lhs: AggregateFunctionExpression<Output, Value, AllowedOperator>,
+    op: Operator,
+    rhs: Right,
+  ): HavingExpressionWrapper<DB, TB, GroupedBy>;
+
+  <
+    Output,
+    Value,
+    AllowedOperator extends ComparisonOperator,
+    Identity extends GroupedBy,
+    Operator extends AllowedOperator,
+    Right extends AggregateOperandValue<Value, NoInfer<Operator>>,
+  >(
+    lhs: DateFunctionExpression<Output, Value, AllowedOperator, Identity>,
     op: Operator,
     rhs: Right,
   ): HavingExpressionWrapper<DB, TB, GroupedBy>;
@@ -167,17 +180,21 @@ export function createHavingExpressionBuilder<
   options: HavingExpressionBuilderOptions,
 ): HavingExpressionBuilder<DB, TB, GroupedBy, GroupingFields> {
   const expression = (
-    lhs: string | AggregateFunctionExpression<unknown, unknown>,
+    lhs:
+      | string
+      | AggregateFunctionExpression<unknown, unknown>
+      | DateFunctionExpression<unknown, unknown, ComparisonOperator, string>,
     op: ComparisonOperator,
     rhs: unknown,
   ): HavingExpressionWrapper<DB, TB, GroupedBy> =>
     new HavingExpressionWrapperImpl<DB, TB, GroupedBy>(
       typeof lhs === "string"
         ? parseGroupedFieldBinaryOperation(lhs, op, rhs, options.groupedBy)
-        : parseAggregateBinaryOperation(
+        : parseFunctionBinaryOperation(
             lhs,
             op,
             rhs,
+            options.groupedBy,
             options.groupingFields,
           ),
     );
@@ -254,19 +271,27 @@ function parseGroupedFieldBinaryOperation(
   });
 }
 
-function parseAggregateBinaryOperation(
-  expression: AggregateFunctionExpression<unknown, unknown>,
+function parseFunctionBinaryOperation(
+  expression:
+    | AggregateFunctionExpression<unknown, unknown>
+    | DateFunctionExpression<unknown, unknown, ComparisonOperator, string>,
   operator: ComparisonOperator,
   value: unknown,
+  groupedBy: readonly string[],
   groupingFields: readonly string[],
 ): OperationNode {
   const node = expression.toOperationNode();
 
-  if (node.kind !== "AggregateFunctionNode") {
+  if (
+    node.kind !== "AggregateFunctionNode" &&
+    node.kind !== "DateFunctionNode"
+  ) {
     throw new TypeError(HAVING_AGGREGATE_EXPRESSION_ERROR);
   }
 
-  if (node.function === "grouping") {
+  if (node.kind === "DateFunctionNode") {
+    validateGroupedDateFunctionNode(node, groupedBy);
+  } else if (node.function === "grouping") {
     validateGroupingFunctionNode(node, groupingFields);
   }
 

@@ -4,29 +4,30 @@ import type { AggregateFunctionNode } from "#/operation-node/aggregate-function-
 import type { AliasNode } from "#/operation-node/alias-node";
 import type { AndNode } from "#/operation-node/and-node";
 import type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
+import type { DateFunctionNode } from "#/operation-node/date-function-node";
 import type { GroupByNode } from "#/operation-node/group-by-node";
 import type { HavingNode } from "#/operation-node/having-node";
-import type { OperationNode } from "#/operation-node/operation-node";
 import type { LimitNode } from "#/operation-node/limit-node";
-import type { OffsetNode } from "#/operation-node/offset-node";
 import type { NotNode } from "#/operation-node/not-node";
-import type { OrNode } from "#/operation-node/or-node";
+import type { OffsetNode } from "#/operation-node/offset-node";
+import type { OperationNode } from "#/operation-node/operation-node";
 import type { OperatorNode } from "#/operation-node/operator-node";
+import type { OrNode } from "#/operation-node/or-node";
 import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import type { OrderByNode } from "#/operation-node/order-by-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 import type { SelectQueryNode } from "#/operation-node/select-query-node";
-import type { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
 import type { SelectionNode } from "#/operation-node/selection-node";
+import type { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
 import type { ValueListNode } from "#/operation-node/value-list-node";
 import type { ValueNode } from "#/operation-node/value-node";
 import type { WhereNode } from "#/operation-node/where-node";
+import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import { isSoqlRelativeDateLiteral } from "#/soql-relative-date-literal";
 import { isSoqlTemporalLiteral } from "#/soql-temporal-literal";
 import { freeze } from "#/util/object-utils";
-import type { CompiledQuery } from "#/query-compiler/compiled-query";
-import type { QueryCompiler } from "#/query-compiler/query-compiler";
 
 const NUMERIC_LITERAL_ERROR = "SOQL numeric literals must be finite numbers.";
 const numericLiteralSchema = v.pipe(
@@ -84,6 +85,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
         );
       case "AliasNode":
         return this.#compileAlias(selection.selection as AliasNode);
+      case "DateFunctionNode":
+        return this.#compileDateFunction(
+          selection.selection as DateFunctionNode,
+        );
       case "ReferenceNode":
         return this.#compileReference(selection.selection as ReferenceNode);
       case "RelationshipSubqueryNode":
@@ -97,7 +102,9 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileRelationshipSubquery(query: RelationshipSubqueryNode): string {
     if (!query.selections?.length) {
-      throw new Error("Cannot compile a relationship subquery without selections.");
+      throw new Error(
+        "Cannot compile a relationship subquery without selections.",
+      );
     }
 
     let soql = `SELECT ${query.selections
@@ -133,7 +140,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileGroupBy(groupBy: GroupByNode): string {
     const fields = groupBy.items
-      .map((item) => this.#compileReference(item))
+      .map((item) => this.#compileOperation(item))
       .join(", ");
 
     return groupBy.mode ? `${groupBy.mode.toUpperCase()}(${fields})` : fields;
@@ -144,7 +151,9 @@ export class DefaultQueryCompiler implements QueryCompiler {
   }
 
   #compileOrderBy(orderBy: OrderByNode): string {
-    return orderBy.items.map((item) => this.#compileOrderByItem(item)).join(", ");
+    return orderBy.items
+      .map((item) => this.#compileOrderByItem(item))
+      .join(", ");
   }
 
   #compileOrderByItem(item: OrderByItemNode): string {
@@ -171,6 +180,8 @@ export class DefaultQueryCompiler implements QueryCompiler {
         return this.#compileAnd(node as AndNode);
       case "BinaryOperationNode":
         return this.#compileBinaryOperation(node as BinaryOperationNode);
+      case "DateFunctionNode":
+        return this.#compileDateFunction(node as DateFunctionNode);
       case "NotNode":
         return this.#compileNot(node as NotNode);
       case "OrNode":
@@ -207,6 +218,26 @@ export class DefaultQueryCompiler implements QueryCompiler {
     return `${name}(${argument})`;
   }
 
+  #compileDateFunction(node: DateFunctionNode): string {
+    const name = {
+      calendarMonth: "CALENDAR_MONTH",
+      calendarQuarter: "CALENDAR_QUARTER",
+      calendarYear: "CALENDAR_YEAR",
+      dayInMonth: "DAY_IN_MONTH",
+      dayInWeek: "DAY_IN_WEEK",
+      dayInYear: "DAY_IN_YEAR",
+      dayOnly: "DAY_ONLY",
+      fiscalMonth: "FISCAL_MONTH",
+      fiscalQuarter: "FISCAL_QUARTER",
+      fiscalYear: "FISCAL_YEAR",
+      hourInDay: "HOUR_IN_DAY",
+      weekInMonth: "WEEK_IN_MONTH",
+      weekInYear: "WEEK_IN_YEAR",
+    }[node.function];
+
+    return `${name}(${this.#compileReference(node.reference)})`;
+  }
+
   #compileAlias(node: AliasNode): string {
     return `${this.#compileOperation(node.node)} ${node.alias}`;
   }
@@ -232,7 +263,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
     const left = this.#compileOperation(node.leftOperand);
     const right =
       node.rightOperand.kind === "ValueNode"
-        ? this.#compileValue(node.rightOperand as ValueNode, operator.operator === "like")
+        ? this.#compileValue(
+            node.rightOperand as ValueNode,
+            operator.operator === "like",
+          )
         : this.#compileOperation(node.rightOperand);
 
     return `${left} ${this.#compileOperator(operator)} ${right}`;
@@ -307,9 +341,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
       case "boolean":
         return value ? "TRUE" : "FALSE";
       default:
-        throw new TypeError(
-          `Unsupported SOQL literal type: ${typeof value}`,
-        );
+        throw new TypeError(`Unsupported SOQL literal type: ${typeof value}`);
     }
   }
 

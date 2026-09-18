@@ -2,14 +2,14 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
 import { renderSchema } from "#/render";
-import {
-  parseSalesforceGlobalDescription,
-  parseSalesforceObjectDescription,
-} from "#/validation";
 import type {
   SalesforceDescribeClient,
   SalesforceObjectDescription,
 } from "#/types";
+import {
+  parseSalesforceGlobalDescription,
+  parseSalesforceObjectDescription,
+} from "#/validation";
 
 export { renderSchema } from "#/render";
 export type {

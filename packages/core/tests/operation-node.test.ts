@@ -3,24 +3,23 @@ import { describe, expect, it } from "vitest";
 import { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
 import { AliasNode } from "#/operation-node/alias-node";
 import { AndNode } from "#/operation-node/and-node";
-import {
-  BinaryOperationNode,
-} from "#/operation-node/binary-operation-node";
+import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
+import { DateFunctionNode } from "#/operation-node/date-function-node";
 import { GroupByNode } from "#/operation-node/group-by-node";
 import { HavingNode } from "#/operation-node/having-node";
 import { LimitNode } from "#/operation-node/limit-node";
-import { OffsetNode } from "#/operation-node/offset-node";
 import { NotNode } from "#/operation-node/not-node";
-import { OrNode } from "#/operation-node/or-node";
+import { OffsetNode } from "#/operation-node/offset-node";
 import { OperatorNode } from "#/operation-node/operator-node";
+import { OrNode } from "#/operation-node/or-node";
 import { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import { OrderByNode } from "#/operation-node/order-by-node";
 import { QueryNode } from "#/operation-node/query-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
 import { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
-import { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
 import { SelectionNode } from "#/operation-node/selection-node";
+import { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
 import { SObjectNode } from "#/operation-node/sobject-node";
 import { ValueListNode } from "#/operation-node/value-list-node";
 import { ValueNode } from "#/operation-node/value-node";
@@ -68,6 +67,18 @@ describe("operation nodes", () => {
     expectFrozen(aggregate);
     expectFrozen(alias);
     expectFrozen(selection);
+  });
+
+  it("creates frozen date function nodes", () => {
+    const reference = ReferenceNode.create("CreatedDate");
+    const dateFunction = DateFunctionNode.create("calendarYear", reference);
+
+    expect(dateFunction).toEqual({
+      kind: "DateFunctionNode",
+      function: "calendarYear",
+      reference,
+    });
+    expectFrozen(dateFunction);
   });
 
   it("creates frozen value-list nodes and members", () => {
@@ -180,9 +191,7 @@ describe("operation nodes", () => {
       mode: "rollup",
     });
     expect(cube.mode).toBe("cube");
-    expect(() =>
-      GroupByNode.cloneWithItems(rollup, [second], "cube"),
-    ).toThrow(
+    expect(() => GroupByNode.cloneWithItems(rollup, [second], "cube")).toThrow(
       "SOQL GROUP BY, GROUP BY ROLLUP, and GROUP BY CUBE forms cannot be mixed.",
     );
     expectFrozen(rollup);
@@ -251,22 +260,19 @@ describe("operation nodes", () => {
     expectFrozen(extended.where);
   });
 
-  it(
-    "adds a new WHERE node or extends an existing WHERE node through QueryNode",
-    () => {
-      const base = SelectQueryNode.createFrom(SObjectNode.create("Account"));
-      const first = ValueNode.create(true);
-      const withWhere = QueryNode.cloneWithWhere(base, first);
-      const second = ValueNode.create(false);
-      const withAnd = QueryNode.cloneWithWhere(withWhere, second);
+  it("adds a new WHERE node or extends an existing WHERE node through QueryNode", () => {
+    const base = SelectQueryNode.createFrom(SObjectNode.create("Account"));
+    const first = ValueNode.create(true);
+    const withWhere = QueryNode.cloneWithWhere(base, first);
+    const second = ValueNode.create(false);
+    const withAnd = QueryNode.cloneWithWhere(withWhere, second);
 
-      expect(base.where).toBeUndefined();
-      expect(withWhere.where).toEqual(WhereNode.create(first));
-      expect(withAnd.where?.where).toEqual(AndNode.create(first, second));
-      expectFrozen(withWhere);
-      expectFrozen(withAnd);
-    },
-  );
+    expect(base.where).toBeUndefined();
+    expect(withWhere.where).toEqual(WhereNode.create(first));
+    expect(withAnd.where?.where).toEqual(AndNode.create(first, second));
+    expectFrozen(withWhere);
+    expectFrozen(withAnd);
+  });
 
   it("sets and replaces immutable SELECT limits", () => {
     const base = SelectQueryNode.createFrom(SObjectNode.create("Account"));
@@ -283,37 +289,34 @@ describe("operation nodes", () => {
     expectFrozen(relimited);
   });
 
-  it(
-    "creates and extends immutable SELECT selection and ORDER BY lists",
-    () => {
-      const base = SelectQueryNode.createFrom(SObjectNode.create("Account"));
-      const id = SelectionNode.create(ReferenceNode.create("Id"));
-      const name = SelectionNode.create(ReferenceNode.create("Name"));
-      const withId = SelectQueryNode.cloneWithSelections(base, [id]);
-      const withName = SelectQueryNode.cloneWithSelections(withId, [name]);
-      const firstOrder = OrderByItemNode.create(ReferenceNode.create("Name"));
-      const secondOrder = OrderByItemNode.create(
-        ReferenceNode.create("Id"),
-        "desc",
-      );
-      const ordered = SelectQueryNode.cloneWithOrderByItems(withName, [
-        firstOrder,
-      ]);
-      const reordered = SelectQueryNode.cloneWithOrderByItems(ordered, [
-        secondOrder,
-      ]);
+  it("creates and extends immutable SELECT selection and ORDER BY lists", () => {
+    const base = SelectQueryNode.createFrom(SObjectNode.create("Account"));
+    const id = SelectionNode.create(ReferenceNode.create("Id"));
+    const name = SelectionNode.create(ReferenceNode.create("Name"));
+    const withId = SelectQueryNode.cloneWithSelections(base, [id]);
+    const withName = SelectQueryNode.cloneWithSelections(withId, [name]);
+    const firstOrder = OrderByItemNode.create(ReferenceNode.create("Name"));
+    const secondOrder = OrderByItemNode.create(
+      ReferenceNode.create("Id"),
+      "desc",
+    );
+    const ordered = SelectQueryNode.cloneWithOrderByItems(withName, [
+      firstOrder,
+    ]);
+    const reordered = SelectQueryNode.cloneWithOrderByItems(ordered, [
+      secondOrder,
+    ]);
 
-      expect(base.selections).toBeUndefined();
-      expect(withId.selections).toEqual([id]);
-      expect(withName.selections).toEqual([id, name]);
-      expect(ordered.orderBy?.items).toEqual([firstOrder]);
-      expect(reordered.orderBy?.items).toEqual([firstOrder, secondOrder]);
-      expectFrozen(withId.selections as readonly object[]);
-      expectFrozen(withName.selections as readonly object[]);
-      expectFrozen(ordered.orderBy as object);
-      expectFrozen(reordered.orderBy as object);
-    },
-  );
+    expect(base.selections).toBeUndefined();
+    expect(withId.selections).toEqual([id]);
+    expect(withName.selections).toEqual([id, name]);
+    expect(ordered.orderBy?.items).toEqual([firstOrder]);
+    expect(reordered.orderBy?.items).toEqual([firstOrder, secondOrder]);
+    expectFrozen(withId.selections as readonly object[]);
+    expectFrozen(withName.selections as readonly object[]);
+    expectFrozen(ordered.orderBy as object);
+    expectFrozen(reordered.orderBy as object);
+  });
 
   it("creates and selects immutable semi-join subqueries", () => {
     const base = SemiJoinSubqueryNode.createFrom(

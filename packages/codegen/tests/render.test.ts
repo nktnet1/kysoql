@@ -284,13 +284,16 @@ describe("renderSchema", () => {
 
     const source = renderSchema(objects);
 
-    expect(source.indexOf('readonly "Alpha__c": SalesforceObject<')).toBeLessThan(
-      source.indexOf('readonly "Zulu__c": SalesforceObject<'),
-    );
-    expect(source.indexOf('readonly "Alpha__c": SalesforceField<')).toBeLessThan(
-      source.indexOf('readonly "Zulu__c": SalesforceField<'),
-    );
-    expect(objects.map((object) => object.name)).toEqual(["Zulu__c", "Alpha__c"]);
+    expect(
+      source.indexOf('readonly "Alpha__c": SalesforceObject<'),
+    ).toBeLessThan(source.indexOf('readonly "Zulu__c": SalesforceObject<'));
+    expect(
+      source.indexOf('readonly "Alpha__c": SalesforceField<'),
+    ).toBeLessThan(source.indexOf('readonly "Zulu__c": SalesforceField<'));
+    expect(objects.map((object) => object.name)).toEqual([
+      "Zulu__c",
+      "Alpha__c",
+    ]);
     expect(fields.map((item) => item.name)).toEqual(["Zulu__c", "Alpha__c"]);
   });
 

@@ -63,7 +63,9 @@ describe("kysoql CLI", () => {
     await runCli(["--help"]);
 
     expect(log).toHaveBeenCalledOnce();
-    expect(log.mock.calls[0]?.[0]).toContain("Usage: kysoql generate [options]");
+    expect(log.mock.calls[0]?.[0]).toContain(
+      "Usage: kysoql generate [options]",
+    );
     expect(mocks.Connection).not.toHaveBeenCalled();
     expect(process.exitCode).toBeUndefined();
   });

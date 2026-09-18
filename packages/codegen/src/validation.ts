@@ -77,11 +77,7 @@ export const parseGenerateOption = (input: unknown): GenerateOption => {
 export const parseCliValue = (input: unknown, flag: string): string => {
   const message = `${flag} requires a value.`;
   const result = v.safeParse(
-    v.pipe(
-      v.string(message),
-      v.nonEmpty(message),
-      v.regex(/^(?!--)/, message),
-    ),
+    v.pipe(v.string(message), v.nonEmpty(message), v.regex(/^(?!--)/, message)),
     input,
   );
 
