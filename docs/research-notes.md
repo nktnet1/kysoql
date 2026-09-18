@@ -185,6 +185,10 @@ Implemented consequence in `v1.0.44`: the fixed-literal path also supports
 values, are valid only for Salesforce `date` / `datetime` filters, and compile
 unquoted through the existing relative-date compiler path.
 
+Implemented consequence in `v1.0.45`: the same fixed-literal path also supports
+`LAST_QUARTER`, `THIS_QUARTER`, and `NEXT_QUARTER`, with the same date/datetime
+filter restriction and unquoted compiler behavior.
+
 ### ORDER BY
 
 Sources:

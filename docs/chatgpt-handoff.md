@@ -24,8 +24,8 @@ Kysely findings that support the architecture below.
    coherent unit of work with focused tests. Do not bundle the next roadmap item,
    cleanup, or unrelated refactors into it.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.44`, the next patch
-   is `v1.0.45`.
+   reuse or rewrite a version already handed off. After `v1.0.45`, the next patch
+   is `v1.0.46`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -65,7 +65,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.44`
+## Current state after `v1.0.45`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -90,6 +90,7 @@ recent patch sequence:
 | `v1.0.42` | Extend `soqlRelativeDate(...)` with validated `LAST_N_DAYS:n` / `NEXT_N_DAYS:n` factory forms. |
 | `v1.0.43` | Extend `soqlRelativeDate(...)` with validated `LAST_N_MONTHS:n` / `NEXT_N_MONTHS:n` factory forms. |
 | `v1.0.44` | Add fixed `LAST_MONTH`, `THIS_MONTH`, and `NEXT_MONTH` relative-date literals. |
+| `v1.0.45` | Add fixed `LAST_QUARTER`, `THIS_QUARTER`, and `NEXT_QUARTER` relative-date literals. |
 
 ### Build/tooling state
 
@@ -145,9 +146,10 @@ Core currently has:
 - explicit `soqlDate(...)`, `soqlDateTime(...)`, and `soqlTime(...)` absolute
   temporal filter literals;
 - branded `soqlRelativeDate(...)` support for fixed `TODAY`, `YESTERDAY`, and
-  `TOMORROW`, `LAST_MONTH`, `THIS_MONTH`, and `NEXT_MONTH` plus validated
-  `LAST_N_DAYS:n`, `NEXT_N_DAYS:n`, `LAST_N_MONTHS:n`, and `NEXT_N_MONTHS:n`
-  forms on `date` / `datetime` filters;
+  `TOMORROW`, `LAST_MONTH`, `THIS_MONTH`, `NEXT_MONTH`, `LAST_QUARTER`,
+  `THIS_QUARTER`, and `NEXT_QUARTER` plus validated `LAST_N_DAYS:n`,
+  `NEXT_N_DAYS:n`, `LAST_N_MONTHS:n`, and `NEXT_N_MONTHS:n` forms on `date` /
+  `datetime` filters;
 - grouped `eb.or([...])`, grouped/nested `eb.and([...])`, and `eb.not(expr)`;
 - typed `.orderBy(field, direction?, nulls?)`, additive in call order;
 - `.limit(number)` with non-negative safe-integer validation and replacement on
@@ -171,28 +173,28 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.45` and should add only the fixed quarter
+**The next patch should be `v1.0.46` and should add only the fixed year
 relative-date literals.** Keep them in the existing branded representation.
 
 Recommended next unit:
 
-- add `LAST_QUARTER`, `THIS_QUARTER`, and `NEXT_QUARTER` through the one-argument
+- add `LAST_YEAR`, `THIS_YEAR`, and `NEXT_YEAR` through the one-argument
   `soqlRelativeDate(...)` factory;
 - validate them through the existing fixed-literal path and compile them
   unquoted;
 - add focused factory/type/compiler tests;
-- do **not** add year/fiscal variants, relationship traversal, or subqueries in
-  the same patch.
+- do **not** add fiscal variants, relationship traversal, or subqueries in the
+  same patch.
 
-If the supplied bundle already contains `v1.0.45` or later, inspect the code and
+If the supplied bundle already contains `v1.0.46` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
 
 Keep these as separate incremental patches or short patch series:
 
-1. **Finish relative date literals after the fixed quarter slice.** Add the
-   remaining year and fiscal variants in separate small slices with explicit
+1. **Finish relative date literals after the fixed year slice.** Add the
+   remaining fiscal variants in separate small slices with explicit
    validation. They must not be ordinary strings or be smuggled through
    `soqlDate(...)`.
 2. **Relationship paths and relationship queries.** First child-to-parent dotted
