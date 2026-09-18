@@ -7,10 +7,28 @@ const jsforceQueryResultSchema = v.object({
   records: v.array(v.record(v.string(), v.unknown())),
 });
 
+const jsforceCountQueryResultSchema = v.object({
+  done: v.boolean(),
+  records: v.optional(
+    v.nullable(v.array(v.record(v.string(), v.unknown()))),
+  ),
+  totalSize: v.pipe(
+    v.number(),
+    v.safeInteger(),
+    v.minValue(0),
+  ),
+});
+
 export interface JsforceQueryResult {
   readonly done: boolean;
   readonly nextRecordsUrl?: string;
   readonly records: readonly Record<string, unknown>[];
+}
+
+export interface JsforceCountQueryResult {
+  readonly done: boolean;
+  readonly records?: readonly Record<string, unknown>[] | null;
+  readonly totalSize: number;
 }
 
 export interface JsforceConnection {
@@ -18,7 +36,9 @@ export interface JsforceConnection {
   queryMore(locator: string): PromiseLike<unknown>;
 }
 
-export type JsforceExecutor = QueryExecutor;
+export interface JsforceExecutor extends QueryExecutor {
+  executeCountQuery(compiledQuery: CompiledQuery<number>): Promise<number>;
+}
 
 const parseJsforceQueryResult = (input: unknown): JsforceQueryResult => {
   const result = v.safeParse(jsforceQueryResultSchema, input);
@@ -36,7 +56,24 @@ const parseJsforceQueryResult = (input: unknown): JsforceQueryResult => {
     : { done, nextRecordsUrl, records };
 };
 
-class JsforceQueryExecutor implements QueryExecutor {
+const parseJsforceCountQueryResult = (
+  input: unknown,
+): JsforceCountQueryResult => {
+  const result = v.safeParse(jsforceCountQueryResultSchema, input);
+
+  if (!result.success) {
+    throw new TypeError(
+      `Invalid JSforce COUNT() query result:\n${v.summarize(result.issues)}`,
+    );
+  }
+
+  const { done, records, totalSize } = result.output;
+  return records === undefined
+    ? { done, totalSize }
+    : { done, records, totalSize };
+};
+
+class JsforceQueryExecutor implements JsforceExecutor {
   readonly #connection: JsforceConnection;
 
   constructor(connection: JsforceConnection) {
@@ -67,6 +104,22 @@ class JsforceQueryExecutor implements QueryExecutor {
     }
 
     return records as unknown as readonly O[];
+  }
+
+  async executeCountQuery(
+    compiledQuery: CompiledQuery<number>,
+  ): Promise<number> {
+    const result = parseJsforceCountQueryResult(
+      await this.#connection.query(compiledQuery.soql),
+    );
+
+    if (!result.done) {
+      throw new Error(
+        "JSforce returned an incomplete SOQL COUNT() query result.",
+      );
+    }
+
+    return result.totalSize;
   }
 }
 

@@ -144,6 +144,7 @@ describe("kysoql CLI", () => {
           filterable: true,
           sortable: true,
           groupable: true,
+          aggregatable: true,
         },
       ],
     });

@@ -26,6 +26,7 @@ const salesforceFieldDescriptionSchema = v.object({
   filterable: v.boolean(),
   sortable: v.boolean(),
   groupable: v.boolean(),
+  aggregatable: v.boolean(),
   referenceTo: v.optional(v.array(v.string())),
   relationshipName: v.optional(v.nullable(v.string())),
   picklistValues: v.optional(v.array(salesforcePicklistValueSchema)),
@@ -156,6 +157,7 @@ export const parseSalesforceObjectDescription = (
       filterable: field.filterable,
       sortable: field.sortable,
       groupable: field.groupable,
+      aggregatable: field.aggregatable,
       ...(field.referenceTo === undefined
         ? {}
         : { referenceTo: field.referenceTo }),

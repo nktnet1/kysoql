@@ -354,6 +354,45 @@ are excluded, relationship-subquery filters disable semi/anti-joins, expression
 wrappers track whether they contain a semi/anti-join so `OR` / `NOT` reject them,
 and the top-level builder enforces Salesforce's two-subquery limit.
 
+### Aggregate query selection foundation
+
+Sources re-checked on 2026-09-18:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-agg-functions.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-agg-functions-field-types.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-count.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-groupby-alias.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-limit.html
+
+Useful findings:
+
+- Salesforce supports `COUNT()`, `COUNT(field)`, `COUNT_DISTINCT(field)`,
+  `SUM(field)`, `AVG(field)`, `MIN(field)`, and `MAX(field)`. `SUM` and `AVG`
+  apply to numeric field families, while the broader aggregate functions still
+  depend on the field's Describe aggregate capability.
+- Aggregate expressions can be followed directly by an alias (without SQL
+  `AS`). Without an explicit alias, Salesforce generates `exprN` keys for
+  aggregate result records, so the safe builder should require aliases whenever
+  a row-producing aggregate expression is selected.
+- `COUNT()` is a special query form: it is selected by itself and the query
+  result reports the count directly rather than returning an `AggregateResult`
+  row. Salesforce documents `LIMIT` for this form but not `ORDER BY`; normal
+  aggregate queries without `GROUP BY` cannot use `LIMIT`.
+- Aggregate functions other than bare `COUNT()` return aggregate result records.
+  Aggregate functions generally ignore null field values; `MIN`/`MAX`/`SUM`/`AVG`
+  therefore still need nullable result typing for empty/all-null input sets.
+
+Implemented consequence in `v1.0.57`: generated field metadata now preserves
+Describe's `aggregatable` flag. Root `.select(({ fn }) => ...)` can enter a
+dedicated aggregate mode with explicitly aliased `COUNT(field)`,
+`COUNT_DISTINCT`, `SUM`, `AVG`, `MIN`, and `MAX` expressions and typed output
+keys/values. `SUM`/`AVG` additionally require numeric Salesforce field types.
+Bare `COUNT()` transitions to a scalar `CountQueryBuilder`; core's executor
+contract has an optional count method for backward structural compatibility, and
+the JSforce adapter implements it from a validated `totalSize` result. Ordinary
+record selections and aggregate selections remain intentionally separate until
+typed `GROUP BY` support is added.
+
 ### Remaining SOQL surface / roadmap references
 
 Sources re-checked on 2026-09-18:

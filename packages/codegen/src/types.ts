@@ -19,6 +19,7 @@ export interface SalesforceFieldDescription {
   readonly filterable: boolean;
   readonly sortable: boolean;
   readonly groupable: boolean;
+  readonly aggregatable: boolean;
   readonly referenceTo?: readonly string[];
   readonly relationshipName?: string | null;
   readonly picklistValues?: readonly SalesforcePicklistValue[];

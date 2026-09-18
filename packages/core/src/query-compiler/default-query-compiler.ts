@@ -1,5 +1,7 @@
 import * as v from "valibot";
 
+import type { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
+import type { AliasNode } from "#/operation-node/alias-node";
 import type { AndNode } from "#/operation-node/and-node";
 import type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 import type { OperationNode } from "#/operation-node/operation-node";
@@ -66,6 +68,12 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileSelection(selection: SelectionNode): string {
     switch (selection.selection.kind) {
+      case "AggregateFunctionNode":
+        return this.#compileAggregateFunction(
+          selection.selection as AggregateFunctionNode,
+        );
+      case "AliasNode":
+        return this.#compileAlias(selection.selection as AliasNode);
       case "ReferenceNode":
         return this.#compileReference(selection.selection as ReferenceNode);
       case "RelationshipSubqueryNode":
@@ -133,6 +141,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileOperation(node: OperationNode): string {
     switch (node.kind) {
+      case "AggregateFunctionNode":
+        return this.#compileAggregateFunction(node as AggregateFunctionNode);
+      case "AliasNode":
+        return this.#compileAlias(node as AliasNode);
       case "AndNode":
         return this.#compileAnd(node as AndNode);
       case "BinaryOperationNode":
@@ -154,6 +166,26 @@ export class DefaultQueryCompiler implements QueryCompiler {
       default:
         throw new Error(`Unsupported operation node: ${node.kind}`);
     }
+  }
+
+  #compileAggregateFunction(node: AggregateFunctionNode): string {
+    const name = {
+      avg: "AVG",
+      count: "COUNT",
+      countDistinct: "COUNT_DISTINCT",
+      max: "MAX",
+      min: "MIN",
+      sum: "SUM",
+    }[node.function];
+    const argument = node.reference
+      ? this.#compileReference(node.reference)
+      : "";
+
+    return `${name}(${argument})`;
+  }
+
+  #compileAlias(node: AliasNode): string {
+    return `${this.#compileOperation(node.node)} ${node.alias}`;
   }
 
   #compileAnd(node: AndNode): string {

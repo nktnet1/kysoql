@@ -5,6 +5,7 @@ import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import {
   createJsforceExecutor,
   type JsforceConnection,
+  type JsforceCountQueryResult,
   type JsforceQueryResult,
 } from "#/index";
 
@@ -17,6 +18,11 @@ const compiledQuery = {
   query: {} as CompiledQuery<AccountRow>["query"],
   soql: "SELECT Id, Name FROM Account",
 } satisfies CompiledQuery<AccountRow>;
+
+const compiledCountQuery = {
+  query: {} as CompiledQuery<number>["query"],
+  soql: "SELECT COUNT() FROM Account",
+} satisfies CompiledQuery<number>;
 
 describe("createJsforceExecutor", () => {
   it("accepts the query/queryMore surface of a JSforce Connection", () => {
@@ -44,6 +50,69 @@ describe("createJsforceExecutor", () => {
     ]);
     expect(query).toHaveBeenCalledOnce();
     expect(query).toHaveBeenCalledWith("SELECT Id, Name FROM Account");
+    expect(queryMore).not.toHaveBeenCalled();
+  });
+
+  it("executes bare COUNT() queries through totalSize without pagination", async () => {
+    const query = vi.fn(
+      async (_soql: string): Promise<JsforceCountQueryResult> => ({
+        done: true,
+        records: null,
+        totalSize: 42,
+      }),
+    );
+    const queryMore = vi.fn(async (_locator: string) => ({
+      done: true,
+      records: [],
+    }));
+
+    const executor = createJsforceExecutor({ query, queryMore });
+
+    await expect(executor.executeCountQuery(compiledCountQuery)).resolves.toBe(
+      42,
+    );
+    expect(query).toHaveBeenCalledWith("SELECT COUNT() FROM Account");
+    expect(queryMore).not.toHaveBeenCalled();
+  });
+
+  it("rejects malformed or incomplete bare COUNT() results", async () => {
+    const malformedQuery = vi.fn(async (_soql: string) => ({
+      done: true,
+      records: [],
+      totalSize: -1,
+    }));
+    const queryMore = vi.fn(async (_locator: string) => ({
+      done: true,
+      records: [],
+    }));
+
+    const malformedExecutor = createJsforceExecutor({
+      query: malformedQuery,
+      queryMore,
+    });
+
+    await expect(
+      malformedExecutor.executeCountQuery(compiledCountQuery),
+    ).rejects.toThrow("Invalid JSforce COUNT() query result:");
+
+    const incompleteQuery = vi.fn(
+      async (_soql: string): Promise<JsforceCountQueryResult> => ({
+        done: false,
+        records: [],
+        totalSize: 42,
+      }),
+    );
+
+    const incompleteExecutor = createJsforceExecutor({
+      query: incompleteQuery,
+      queryMore,
+    });
+
+    await expect(
+      incompleteExecutor.executeCountQuery(compiledCountQuery),
+    ).rejects.toThrow(
+      "JSforce returned an incomplete SOQL COUNT() query result.",
+    );
     expect(queryMore).not.toHaveBeenCalled();
   });
 

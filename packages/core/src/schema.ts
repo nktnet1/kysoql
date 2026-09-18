@@ -15,6 +15,7 @@ export interface SalesforceField<
   ReferenceTo extends string = never,
   RelationshipName extends string = never,
   ActivePicklistValue extends string = never,
+  Aggregatable extends boolean = false,
 > {
   readonly value: Value;
   readonly salesforceType: SalesforceType;
@@ -25,6 +26,7 @@ export interface SalesforceField<
   readonly referenceTo: ReferenceTo;
   readonly relationshipName: RelationshipName;
   readonly activePicklistValue: ActivePicklistValue;
+  readonly aggregatable: Aggregatable;
 }
 
 export interface SalesforceParentRelationship<
@@ -64,7 +66,8 @@ export interface SalesforceObject<
       boolean,
       string,
       string,
-      string
+      string,
+      boolean
     >
   >,
   Parents extends Record<
@@ -95,7 +98,8 @@ export type SalesforceSchema = Record<
         boolean,
         string,
         string,
-        string
+        string,
+        boolean
       >
     >,
     Record<string, SalesforceParentRelationship<string, string, boolean>>,
@@ -113,7 +117,8 @@ export type SalesforceFieldValue<Field> =
     boolean,
     string,
     string,
-    string
+    string,
+    boolean
   >
     ? Nullable extends true
       ? Value | null
@@ -141,7 +146,8 @@ export type SalesforceFieldFilterValue<Field> =
     boolean,
     string,
     string,
-    string
+    string,
+    boolean
   >
     ? Nullable extends true
       ? SalesforceFieldFilterScalar<Value, SalesforceType> | null

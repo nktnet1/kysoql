@@ -1,3 +1,8 @@
+export type {
+  AggregateFunction,
+  AggregateFunctionNode,
+} from "#/operation-node/aggregate-function-node";
+export type { AliasNode } from "#/operation-node/alias-node";
 export type { AndNode } from "#/operation-node/and-node";
 export type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 export type {
@@ -12,6 +17,15 @@ export type {
 export type { OperationNode } from "#/operation-node/operation-node";
 export type { OrNode } from "#/operation-node/or-node";
 export { Kysoql } from "#/kysoql";
+export type {
+  AggregateFunctionBuilder,
+  AggregateFunctionModule,
+  AggregatableFieldReference,
+  AliasedAggregateFunctionBuilder,
+  CountAllFunctionBuilder,
+  NumericAggregatableFieldReference,
+  SelectExpressionBuilder,
+} from "#/expression/aggregate-function-builder";
 export type {
   ExpressionBuilder,
   ExpressionWrapper,
@@ -35,6 +49,10 @@ export type { SObjectNode } from "#/operation-node/sobject-node";
 export type { ValueListNode } from "#/operation-node/value-list-node";
 export type { ValueNode } from "#/operation-node/value-node";
 export type { WhereNode } from "#/operation-node/where-node";
+export type {
+  AggregateSelectQueryBuilder,
+} from "#/query-builder/aggregate-select-query-builder";
+export type { CountQueryBuilder } from "#/query-builder/count-query-builder";
 export type {
   RelationshipSubqueryBuilder,
 } from "#/query-builder/relationship-subquery-builder";

@@ -22,6 +22,7 @@ const account: SalesforceObjectDescription = {
       filterable: true,
       sortable: true,
       groupable: true,
+      aggregatable: true,
     },
     {
       name: "Id",
@@ -30,6 +31,7 @@ const account: SalesforceObjectDescription = {
       filterable: true,
       sortable: true,
       groupable: true,
+      aggregatable: true,
     },
   ],
   childRelationships: [
@@ -51,6 +53,7 @@ const kysoqlRecord: SalesforceObjectDescription = {
       filterable: true,
       sortable: true,
       groupable: true,
+      aggregatable: true,
       picklistValues: [
         { value: "Gamma", active: true },
         { value: "Alpha", active: true },
@@ -64,6 +67,7 @@ const kysoqlRecord: SalesforceObjectDescription = {
       filterable: true,
       sortable: true,
       groupable: true,
+      aggregatable: true,
       referenceTo: ["Account"],
       relationshipName: "Account__r",
     },
@@ -74,6 +78,7 @@ const kysoqlRecord: SalesforceObjectDescription = {
       filterable: true,
       sortable: true,
       groupable: true,
+      aggregatable: true,
     },
     {
       name: "Active__c",
@@ -82,6 +87,7 @@ const kysoqlRecord: SalesforceObjectDescription = {
       filterable: true,
       sortable: true,
       groupable: true,
+      aggregatable: true,
     },
   ],
 };
@@ -203,12 +209,34 @@ describe("loadSchema", () => {
           nillable: false,
           sortable: true,
           groupable: true,
+          aggregatable: true,
         },
       ],
     } as never);
 
     await expect(loadSchema(client, ["Account"])).rejects.toThrow(
       /Invalid Salesforce describe response for Account:[\s\S]*fields\.0\.filterable/,
+    );
+  });
+
+  it("requires aggregate capability metadata on described fields", async () => {
+    const client = createClient();
+    vi.mocked(client.describe).mockResolvedValueOnce({
+      name: "Account",
+      fields: [
+        {
+          name: "Id",
+          type: "id",
+          nillable: false,
+          filterable: true,
+          sortable: true,
+          groupable: true,
+        },
+      ],
+    } as never);
+
+    await expect(loadSchema(client, ["Account"])).rejects.toThrow(
+      /Invalid Salesforce describe response for Account:[\s\S]*fields\.0\.aggregatable/,
     );
   });
 

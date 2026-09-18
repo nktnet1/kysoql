@@ -1,17 +1,28 @@
-import { QueryNode } from "#/operation-node/query-node";
-import { ReferenceNode } from "#/operation-node/reference-node";
-import { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
-import { SelectionNode } from "#/operation-node/selection-node";
+import {
+  createSelectExpressionBuilder,
+  type CountAllFunctionBuilder,
+  type SelectExpressionBuilder,
+} from "#/expression/aggregate-function-builder";
 import {
   createExpressionBuilder,
   type WhereExpressionFactory,
 } from "#/expression/expression-builder";
-import type { CompiledQuery } from "#/query-compiler/compiled-query";
-import type { QueryCompiler } from "#/query-compiler/query-compiler";
-import type { QueryExecutor } from "#/query-executor";
+import type { ComparisonOperator } from "#/operation-node/operator-node";
+import type {
+  OrderByDirection,
+  OrderByNulls,
+} from "#/operation-node/order-by-item-node";
+import { QueryNode } from "#/operation-node/query-node";
+import { ReferenceNode } from "#/operation-node/reference-node";
+import { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
+import { SelectionNode } from "#/operation-node/selection-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
-import { parseLimit } from "#/parser/limit-parser";
-import { parseOffset } from "#/parser/offset-parser";
+import {
+  type AggregateSelection,
+  type AggregateSelectionArg,
+  parseAggregateSelectArg,
+  parseCountSelectArg,
+} from "#/parser/aggregate-selection-parser";
 import {
   type ComparisonOperatorExpression,
   type FilterableFieldName,
@@ -21,7 +32,17 @@ import {
   parseFilterBinaryOperation,
   validateSemiJoinWhere,
 } from "#/parser/filter-parser";
-import type { ComparisonOperator } from "#/operation-node/operator-node";
+import { parseLimit } from "#/parser/limit-parser";
+import { parseOffset } from "#/parser/offset-parser";
+import {
+  parseOrderBy,
+  type SortableFieldName,
+} from "#/parser/order-by-parser";
+import type {
+  ChildObjectName,
+  ChildRelationshipName,
+  ChildRelationshipReference,
+} from "#/parser/reference-parser";
 import {
   parseSelectArg,
   type SelectArg,
@@ -29,24 +50,22 @@ import {
   type Selection,
 } from "#/parser/select-parser";
 import {
-  parseOrderBy,
-  type SortableFieldName,
-} from "#/parser/order-by-parser";
-import type {
-  OrderByDirection,
-  OrderByNulls,
-} from "#/operation-node/order-by-item-node";
-import { freeze } from "#/util/object-utils";
+  createAggregateSelectQueryBuilder,
+  type AggregateSelectQueryBuilder,
+} from "#/query-builder/aggregate-select-query-builder";
+import {
+  createCountQueryBuilder,
+  type CountQueryBuilder,
+} from "#/query-builder/count-query-builder";
 import {
   createRelationshipSubqueryBuilder,
   type RelationshipSubqueryBuilder,
 } from "#/query-builder/relationship-subquery-builder";
-import type {
-  ChildObjectName,
-  ChildRelationshipName,
-  ChildRelationshipReference,
-} from "#/parser/reference-parser";
+import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import type { QueryCompiler } from "#/query-compiler/query-compiler";
+import type { QueryExecutor } from "#/query-executor";
 import type { SalesforceQueryResult } from "#/schema";
+import { freeze } from "#/util/object-utils";
 import type { Simplify } from "#/util/type-utils";
 
 type ChildObjectForRelationship<
@@ -58,6 +77,18 @@ type ChildObjectForRelationship<
   TB,
   Extract<Relationship, ChildRelationshipName<DB, TB>>
 >;
+
+type UnselectedOnly<O, Value> = [keyof O] extends [never] ? Value : never;
+
+type CountSelectionFactory<DB, TB extends keyof DB> = (
+  eb: SelectExpressionBuilder<DB, TB>,
+) => CountAllFunctionBuilder;
+
+type AggregateSelectionFactory<
+  DB,
+  TB extends keyof DB,
+  Aggregate extends AggregateSelectionArg,
+> = (eb: SelectExpressionBuilder<DB, TB>) => Aggregate;
 
 export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
   compile(): CompiledQuery<O>;
@@ -87,6 +118,17 @@ export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
     op: OP,
     rhs: RHS,
   ): SelectQueryBuilder<DB, TB, O>;
+
+  select(
+    selection: UnselectedOnly<O, CountSelectionFactory<DB, TB>>,
+  ): CountQueryBuilder<DB, TB>;
+
+  select<Aggregate extends AggregateSelectionArg>(
+    selection: UnselectedOnly<
+      O,
+      AggregateSelectionFactory<DB, TB, Aggregate>
+    >,
+  ): AggregateSelectQueryBuilder<DB, TB, AggregateSelection<Aggregate>>;
 
   select<SE extends string>(
     selections: ReadonlyArray<SE & SelectExpression<DB, TB, SE>>,
@@ -182,6 +224,18 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
   }
 
   where(
+    expression: WhereExpressionFactory<DB, TB>,
+  ): SelectQueryBuilder<DB, TB, O>;
+  where<
+    RE extends string,
+    OP extends ComparisonOperatorExpression<DB, TB, RE>,
+    RHS extends OperandValueExpression<DB, TB, RE, NoInfer<OP>>,
+  >(
+    lhs: RE & FilterableFieldName<DB, TB, RE>,
+    op: OP,
+    rhs: RHS,
+  ): SelectQueryBuilder<DB, TB, O>;
+  where(
     lhsOrExpression: string | WhereExpressionFactory<DB, TB>,
     op?: ComparisonOperator,
     rhs?: unknown,
@@ -212,14 +266,59 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     });
   }
 
+  select(
+    selection: UnselectedOnly<O, CountSelectionFactory<DB, TB>>,
+  ): CountQueryBuilder<DB, TB>;
+  select<Aggregate extends AggregateSelectionArg>(
+    selection: UnselectedOnly<
+      O,
+      AggregateSelectionFactory<DB, TB, Aggregate>
+    >,
+  ): AggregateSelectQueryBuilder<DB, TB, AggregateSelection<Aggregate>>;
   select<SE extends string>(
     selection: SelectArg<DB, TB, SE>,
-  ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>> {
-    return new SelectQueryBuilderImpl<DB, TB, O & Selection<DB, TB, SE>>({
+  ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>>;
+  select(
+    selection:
+      | string
+      | readonly string[]
+      | ((eb: SelectExpressionBuilder<DB, TB>) => unknown),
+  ):
+    | AggregateSelectQueryBuilder<DB, TB, unknown>
+    | CountQueryBuilder<DB, TB>
+    | SelectQueryBuilder<DB, TB, unknown> {
+    if (typeof selection !== "function") {
+      return new SelectQueryBuilderImpl<DB, TB, unknown>({
+        ...this.#props,
+        queryNode: SelectQueryNode.cloneWithSelections(
+          this.#props.queryNode,
+          parseSelectArg(selection),
+        ),
+      });
+    }
+
+    assertNoExistingSelections(this.#props.queryNode);
+
+    const aggregate = selection(createSelectExpressionBuilder<DB, TB>());
+
+    if (isCountAllFunctionBuilder(aggregate)) {
+      assertCountClauses(this.#props.queryNode);
+
+      return createCountQueryBuilder<DB, TB>({
+        ...this.#props,
+        queryNode: SelectQueryNode.cloneWithSelections(this.#props.queryNode, [
+          parseCountSelectArg(aggregate),
+        ]),
+      });
+    }
+
+    assertAggregateClauses(this.#props.queryNode);
+
+    return createAggregateSelectQueryBuilder<DB, TB, unknown>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithSelections(
         this.#props.queryNode,
-        parseSelectArg(selection),
+        parseAggregateSelectArg(aggregate as AggregateSelectionArg),
       ),
     });
   }
@@ -293,4 +392,47 @@ export function createSelectQueryBuilder<DB, TB extends keyof DB, O>(
   props: SelectQueryBuilderProps,
 ): SelectQueryBuilder<DB, TB, O> {
   return new SelectQueryBuilderImpl(props);
+}
+
+function isCountAllFunctionBuilder(
+  value: unknown,
+): value is CountAllFunctionBuilder {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !("toOperationNode" in value) ||
+    typeof value.toOperationNode !== "function"
+  ) {
+    return false;
+  }
+
+  const node = value.toOperationNode();
+
+  return (
+    node.kind === "AggregateFunctionNode" &&
+    node.function === "count" &&
+    node.reference === undefined
+  );
+}
+
+function assertNoExistingSelections(queryNode: SelectQueryNode): void {
+  if (queryNode.selections?.length) {
+    throw new TypeError(
+      "SOQL aggregate selections cannot be mixed with record selections before GROUP BY support is added.",
+    );
+  }
+}
+
+function assertAggregateClauses(queryNode: SelectQueryNode): void {
+  if (queryNode.orderBy || queryNode.limit || queryNode.offset) {
+    throw new TypeError(
+      "SOQL aggregate queries without GROUP BY cannot use ORDER BY, LIMIT, or OFFSET.",
+    );
+  }
+}
+
+function assertCountClauses(queryNode: SelectQueryNode): void {
+  if (queryNode.orderBy || queryNode.offset) {
+    throw new TypeError("SOQL COUNT() queries cannot use ORDER BY or OFFSET.");
+  }
 }

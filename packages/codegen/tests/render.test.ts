@@ -15,6 +15,7 @@ const field = (
   filterable: true,
   sortable: true,
   groupable: true,
+  aggregatable: true,
   ...overrides,
 });
 
@@ -66,6 +67,7 @@ describe("renderSchema", () => {
           filterable: false,
           sortable: false,
           groupable: false,
+          aggregatable: false,
         }),
       ]),
     ]);
@@ -81,7 +83,8 @@ describe("renderSchema", () => {
         "        false,",
         "        never,",
         "        never,",
-        "        never",
+        "        never,",
+        "        false",
       ].join("\n"),
     );
   });
@@ -128,7 +131,7 @@ describe("renderSchema", () => {
 
     expect(withValues).toContain('"Alpha" | "Beta"');
     expect(withoutValues).toContain(
-      '        "multipicklist",\n        false,\n        true,\n        true,\n        true,\n        never,\n        never,\n        never',
+      '        "multipicklist",\n        false,\n        true,\n        true,\n        true,\n        never,\n        never,\n        never,\n        true',
     );
   });
 
@@ -144,7 +147,7 @@ describe("renderSchema", () => {
 
     expect(source).not.toContain("Unexpected");
     expect(source).toContain(
-      '        "string",\n        false,\n        true,\n        true,\n        true,\n        never,\n        never,\n        never',
+      '        "string",\n        false,\n        true,\n        true,\n        true,\n        never,\n        never,\n        never,\n        true',
     );
   });
 
@@ -162,7 +165,7 @@ describe("renderSchema", () => {
     ]);
 
     expect(source).toContain(
-      '        "Account" | "User",\n        "Owner__r",\n        never',
+      '        "Account" | "User",\n        "Owner__r",\n        never,\n        true',
     );
     expect(source).toContain(
       [
@@ -230,7 +233,7 @@ describe("renderSchema", () => {
     ]);
 
     expect(source).toContain(
-      '        "reference",\n        false,\n        true,\n        true,\n        true,\n        never,\n        "EmptyReference__r",\n        never',
+      '        "reference",\n        false,\n        true,\n        true,\n        true,\n        never,\n        "EmptyReference__r",\n        never,\n        true',
     );
     expect(source).not.toContain(
       'readonly "EmptyReference__r": SalesforceParentRelationship<',

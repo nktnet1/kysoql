@@ -167,6 +167,41 @@ including polymorphic reference targets. Semi/anti-join subqueries remain
 top-level `WHERE` terms, cannot be wrapped in `OR` / `NOT`, cannot query the same
 object as the outer query, and are limited to two per query.
 
+Aggregate selection starts from the same root builder with a Kysely-style
+expression callback. Row-producing aggregate functions require explicit aliases,
+so result keys are stable and typed instead of depending on Salesforce `exprN`
+names. Generated Describe metadata carries each field's `aggregatable` capability;
+`SUM` and `AVG` additionally accept only numeric Salesforce field types.
+
+```ts
+const totals = await db
+  .selectFrom("Opportunity")
+  .select(({ fn }) => [
+    fn.count("Id").as("opportunityCount"),
+    fn.countDistinct("AccountId").as("accountCount"),
+    fn.sum("Amount").as("totalAmount"),
+    fn.avg("Amount").as("averageAmount"),
+    fn.min("CloseDate").as("firstCloseDate"),
+    fn.max("CloseDate").as("lastCloseDate"),
+  ])
+  .where("IsClosed", "=", false)
+  .execute();
+```
+
+Bare `COUNT()` uses a dedicated scalar result builder because Salesforce returns
+the count through the query-result count rather than an aggregate record. It
+supports scalar `WHERE` filters and `LIMIT`, and the JSforce executor maps the
+validated query result to a `number`. Mixing ordinary selected fields with
+aggregates remains deferred until typed `GROUP BY` support is added.
+
+```ts
+const count = await db
+  .selectFrom("Opportunity")
+  .where("IsClosed", "=", false)
+  .select(({ fn }) => fn.count())
+  .execute();
+```
+
 Salesforce `date`, `datetime`, and `time` fields still infer as strings when
 selected because that is how the generated API schema represents returned values.
 Filters deliberately require `soqlDate(...)`, `soqlDateTime(...)`, or

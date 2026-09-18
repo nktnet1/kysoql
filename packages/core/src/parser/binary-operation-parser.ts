@@ -50,7 +50,8 @@ type SalesforceTypeOfField<
   boolean,
   string,
   string,
-  string
+  string,
+  boolean
 >
   ? SalesforceType
   : never;
@@ -68,7 +69,8 @@ type ActivePicklistValueOfField<
   boolean,
   string,
   string,
-  infer ActivePicklistValue
+  infer ActivePicklistValue,
+  boolean
 >
   ? ActivePicklistValue
   : never;

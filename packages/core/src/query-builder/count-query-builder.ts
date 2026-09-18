@@ -1,0 +1,140 @@
+import {
+  createExpressionBuilder,
+  type WhereExpressionFactory,
+} from "#/expression/expression-builder";
+import type { ComparisonOperator } from "#/operation-node/operator-node";
+import { QueryNode } from "#/operation-node/query-node";
+import { SelectQueryNode } from "#/operation-node/select-query-node";
+import {
+  type ComparisonOperatorExpression,
+  type FilterableFieldName,
+  type OperandValueExpression,
+} from "#/parser/binary-operation-parser";
+import {
+  parseFilterBinaryOperation,
+  validateSemiJoinWhere,
+} from "#/parser/filter-parser";
+import { parseLimit } from "#/parser/limit-parser";
+import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import type { QueryCompiler } from "#/query-compiler/query-compiler";
+import type { QueryExecutor } from "#/query-executor";
+import { freeze } from "#/util/object-utils";
+
+export interface CountQueryBuilder<DB, TB extends keyof DB> {
+  compile(): CompiledQuery<number>;
+
+  execute(): Promise<number>;
+
+  limit(limit: number): CountQueryBuilder<DB, TB>;
+
+  where(expression: WhereExpressionFactory<DB, TB>): CountQueryBuilder<DB, TB>;
+
+  where<
+    RE extends string,
+    OP extends ComparisonOperatorExpression<DB, TB, RE>,
+    RHS extends OperandValueExpression<DB, TB, RE, NoInfer<OP>>,
+  >(
+    lhs: RE & FilterableFieldName<DB, TB, RE>,
+    op: OP,
+    rhs: RHS,
+  ): CountQueryBuilder<DB, TB>;
+
+  toOperationNode(): SelectQueryNode;
+}
+
+class CountQueryBuilderImpl<DB, TB extends keyof DB>
+  implements CountQueryBuilder<DB, TB>
+{
+  readonly #props: CountQueryBuilderProps;
+
+  constructor(props: CountQueryBuilderProps) {
+    this.#props = freeze(props);
+  }
+
+  compile(): CompiledQuery<number> {
+    return this.#props.queryCompiler.compileQuery<number>(this.#props.queryNode);
+  }
+
+  async execute(): Promise<number> {
+    if (!this.#props.queryExecutor) {
+      throw new Error(
+        "No query executor configured. Pass an executor when creating Kysoql.",
+      );
+    }
+
+    if (!this.#props.queryExecutor.executeCountQuery) {
+      throw new Error(
+        "The configured query executor does not support SOQL COUNT() queries.",
+      );
+    }
+
+    return this.#props.queryExecutor.executeCountQuery(this.compile());
+  }
+
+  limit(limit: number): CountQueryBuilder<DB, TB> {
+    return new CountQueryBuilderImpl<DB, TB>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithLimit(
+        this.#props.queryNode,
+        parseLimit(limit),
+      ),
+    });
+  }
+
+  where(expression: WhereExpressionFactory<DB, TB>): CountQueryBuilder<DB, TB>;
+  where<
+    RE extends string,
+    OP extends ComparisonOperatorExpression<DB, TB, RE>,
+    RHS extends OperandValueExpression<DB, TB, RE, NoInfer<OP>>,
+  >(
+    lhs: RE & FilterableFieldName<DB, TB, RE>,
+    op: OP,
+    rhs: RHS,
+  ): CountQueryBuilder<DB, TB>;
+  where(
+    lhsOrExpression: string | WhereExpressionFactory<DB, TB>,
+    op?: ComparisonOperator,
+    rhs?: unknown,
+  ): CountQueryBuilder<DB, TB> {
+    const operation =
+      typeof lhsOrExpression === "function"
+        ? lhsOrExpression(
+            createExpressionBuilder<DB, TB>({
+              outerObject: this.#props.queryNode.from.name,
+            }),
+          ).toOperationNode()
+        : parseFilterBinaryOperation(
+            lhsOrExpression,
+            op as ComparisonOperator,
+            rhs,
+            { outerObject: this.#props.queryNode.from.name },
+          );
+    const queryNode = QueryNode.cloneWithWhere(
+      this.#props.queryNode,
+      operation,
+    );
+
+    validateSemiJoinWhere(queryNode.where?.where ?? operation);
+
+    return new CountQueryBuilderImpl<DB, TB>({
+      ...this.#props,
+      queryNode,
+    });
+  }
+
+  toOperationNode(): SelectQueryNode {
+    return this.#props.queryNode;
+  }
+}
+
+export interface CountQueryBuilderProps {
+  readonly queryCompiler: QueryCompiler;
+  readonly queryExecutor: QueryExecutor | undefined;
+  readonly queryNode: SelectQueryNode;
+}
+
+export function createCountQueryBuilder<DB, TB extends keyof DB>(
+  props: CountQueryBuilderProps,
+): CountQueryBuilder<DB, TB> {
+  return new CountQueryBuilderImpl(props);
+}

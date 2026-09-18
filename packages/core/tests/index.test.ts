@@ -9,10 +9,20 @@ import {
   soqlDateTime,
   soqlRelativeDate,
   soqlTime,
+  type AggregateFunction,
+  type AggregateFunctionBuilder,
+  type AggregateFunctionModule,
+  type AggregateFunctionNode,
+  type AggregateSelectQueryBuilder,
+  type AggregatableFieldReference,
+  type AliasedAggregateFunctionBuilder,
+  type AliasNode,
   type AndNode,
   type BinaryOperationNode,
   type ComparisonOperator,
   type CompiledQuery,
+  type CountAllFunctionBuilder,
+  type CountQueryBuilder,
   type EqualityComparisonOperator,
   type ExpressionBuilder,
   type ExpressionWrapper,
@@ -20,6 +30,7 @@ import {
   type LimitNode,
   type MultiSelectComparisonOperator,
   type NotNode,
+  type NumericAggregatableFieldReference,
   type OperationNode,
   type OrNode,
   type OperatorNode,
@@ -53,6 +64,7 @@ import {
   type SemiJoinSubqueryExpression,
   type SemiJoinSubqueryFactory,
   type SemiJoinSubqueryNode,
+  type SelectExpressionBuilder,
   type SelectionNode,
   type SObjectNode,
   type SoqlDateLiteral,
@@ -69,10 +81,31 @@ import {
 } from "#/index";
 
 type PublicTypeSurface = {
+  aggregateFunction: AggregateFunction;
+  aggregateFunctionBuilder: AggregateFunctionBuilder<number>;
+  aggregateFunctionModule: AggregateFunctionModule<Record<string, never>, never>;
+  aggregateFunctionNode: AggregateFunctionNode;
+  aggregateSelectQueryBuilder: AggregateSelectQueryBuilder<
+    Record<string, never>,
+    never,
+    Record<never, never>
+  >;
+  aggregatableFieldReference: AggregatableFieldReference<
+    Record<string, never>,
+    never,
+    "Id"
+  >;
+  aliasedAggregateFunctionBuilder: AliasedAggregateFunctionBuilder<
+    number,
+    "count"
+  >;
+  aliasNode: AliasNode;
   andNode: AndNode;
   binaryOperationNode: BinaryOperationNode;
   comparisonOperator: ComparisonOperator;
   compiledQuery: CompiledQuery;
+  countAllFunctionBuilder: CountAllFunctionBuilder;
+  countQueryBuilder: CountQueryBuilder<Record<string, never>, never>;
   equalityComparisonOperator: EqualityComparisonOperator;
   expressionBuilder: ExpressionBuilder<Record<string, never>, never>;
   expressionWrapper: ExpressionWrapper<Record<string, never>, never>;
@@ -80,6 +113,11 @@ type PublicTypeSurface = {
   limitNode: LimitNode;
   multiSelectComparisonOperator: MultiSelectComparisonOperator;
   notNode: NotNode;
+  numericAggregatableFieldReference: NumericAggregatableFieldReference<
+    Record<string, never>,
+    never,
+    "Amount"
+  >;
   operationNode: OperationNode;
   orNode: OrNode;
   operatorNode: OperatorNode;
@@ -157,6 +195,7 @@ type PublicTypeSurface = {
     "Id"
   >;
   semiJoinSubqueryNode: SemiJoinSubqueryNode;
+  selectExpressionBuilder: SelectExpressionBuilder<Record<string, never>, never>;
   selectionNode: SelectionNode;
   sobjectNode: SObjectNode;
   soqlDateLiteral: SoqlDateLiteral;

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
+import { AliasNode } from "#/operation-node/alias-node";
 import { AndNode } from "#/operation-node/and-node";
 import {
   BinaryOperationNode,
@@ -42,6 +44,28 @@ describe("operation nodes", () => {
     for (const node of [reference, operator, value, sobject, selection]) {
       expectFrozen(node);
     }
+  });
+
+  it("creates frozen aggregate function and alias nodes", () => {
+    const reference = ReferenceNode.create("AnnualRevenue");
+    const aggregate = AggregateFunctionNode.create("sum", reference);
+    const alias = AliasNode.create(aggregate, "totalRevenue");
+    const selection = SelectionNode.create(alias);
+
+    expect(aggregate).toEqual({
+      kind: "AggregateFunctionNode",
+      function: "sum",
+      reference,
+    });
+    expect(alias).toEqual({
+      kind: "AliasNode",
+      node: aggregate,
+      alias: "totalRevenue",
+    });
+    expect(selection).toEqual({ kind: "SelectionNode", selection: alias });
+    expectFrozen(aggregate);
+    expectFrozen(alias);
+    expectFrozen(selection);
   });
 
   it("creates frozen value-list nodes and members", () => {

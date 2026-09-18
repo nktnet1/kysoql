@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.55`, the next patch
-   is `v1.0.56`.
+   reuse or rewrite a version already handed off. After `v1.0.57`, the next patch
+   is `v1.0.58`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.56`
+## Current state after `v1.0.57`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -109,6 +109,7 @@ recent patch sequence:
 | `v1.0.54` | Fix parent-to-child subquery builder return generics so accumulated nested output types satisfy `compile()` under strict TypeScript checking. |
 | `v1.0.55` | Add typed SOQL semi-joins and anti-joins through `IN` / `NOT IN`, with a dedicated restricted subquery builder/AST and Salesforce nesting/compatibility limits. |
 | `v1.0.56` | Fix the fifth-level relationship-subquery negative type assertion so it tests the rejected relationship without cascading through a `never` child builder. |
+| `v1.0.57` | Add the typed aggregate-selection foundation: generated aggregateability metadata, aliased aggregate functions, scalar `COUNT()`, compiler support, and JSforce count execution. |
 
 ### Build/tooling state
 
@@ -179,6 +180,17 @@ Core currently has:
   Salesforce objects/tag objects, relationship-subquery use, nested semi-joins,
   `OR` / logical `NOT` nesting, and more than two semi/anti-join terms are
   rejected;
+- typed aggregate selection through `.select(({ fn }) => ...)` for aliased
+  `COUNT(field)`, `COUNT_DISTINCT(field)`, `SUM(field)`, `AVG(field)`,
+  `MIN(field)`, and `MAX(field)` expressions; generated `aggregatable` metadata
+  gates aggregate-capable fields and `SUM` / `AVG` additionally require numeric
+  Salesforce field types; aggregate output keys and value/nullability types are
+  inferred from aliases and terminal field metadata;
+- bare `COUNT()` as a dedicated scalar `CountQueryBuilder` with scalar `WHERE`
+  and `LIMIT`; it compiles independently from row-producing aggregates and uses
+  the executor's optional `executeCountQuery` capability, implemented by the
+  JSforce adapter from a validated `totalSize` response; ordinary record fields
+  are intentionally not mixed with aggregate selections before `GROUP BY`;
 - field-aware `.where(field, operator, value)` plus expression callbacks;
 - equality, ordered comparisons, lowercase `like`, scalar-list `in` / `not in`,
   and multipicklist `includes` / `excludes`;
@@ -197,9 +209,10 @@ Core currently has:
 - `.offset(number)` with integer `0..2000` validation and replacement on repeated
   calls;
 - `CompiledQuery<O>`, compiler output, transport-neutral execution, and the
-  JSforce adapter with full explicit pagination;
-- generated field metadata for filterable/sortable/groupable flags, active
-  picklist values, and parent/child relationships.
+  JSforce adapter with full explicit pagination plus scalar bare-`COUNT()`
+  execution;
+- generated field metadata for filterable/sortable/groupable/aggregatable flags,
+  active picklist values, and parent/child relationships.
 
 Important current filter typing rules:
 
@@ -214,28 +227,25 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.57` and should start the aggregate-query
-foundation.** This is the next major output-type architecture change, so group
-the closely related aggregate selection functions in one coherent slice instead
-of making one patch per function.
+**The next patch should be `v1.0.58` and should add the first typed `GROUP BY`
+foundation on top of the aggregate-selection machinery.** Keep this slice focused
+on ordinary grouping before adding advanced grouping forms.
 
 Recommended next unit:
 
-- add a dedicated typed selection expression/AST path for the closely related
-  aggregate functions `COUNT()`, `COUNT(field)`, `COUNT_DISTINCT(field)`,
-  `SUM(field)`, `AVG(field)`, `MIN(field)`, and `MAX(field)`;
-- model aliases in the safe API so aggregate output keys are intentional and
-  predictable rather than relying on Salesforce's generated `exprN` names;
-- enforce field capability/type restrictions from generated schema metadata
-  where Salesforce exposes them (for example aggregateability and numeric-only
-  functions);
-- make compiled-query/result output typing reflect aggregate result values;
-- add focused AST/compiler/type tests for the grouped function family;
-- keep `GROUP BY`, `HAVING`, `ROLLUP`, `CUBE`, `GROUPING()`, broader SELECT
-  functions, and `TYPEOF` out unless a minimal internal abstraction is required
-  to avoid a dead-end API.
+- add immutable `GROUP BY` AST/compiler support and a typed `.groupBy(...)` path
+  restricted to generated `groupable: true` field references;
+- allow grouped aggregate queries to select the grouped field(s) alongside
+  aliased aggregate expressions, with output typing that accumulates both shapes;
+- preserve additive grouping order and validate clause interactions that differ
+  from ungrouped aggregate queries;
+- add focused compiler/type tests for single and multiple grouped fields,
+  relationship-path grouping where the terminal field is groupable, and negative
+  capability cases;
+- keep `HAVING`, `ROLLUP`, `CUBE`, `GROUPING()`, broader SELECT functions, and
+  `TYPEOF` out of this patch unless a minimal internal abstraction is necessary.
 
-If the supplied bundle already contains `v1.0.55` or later, inspect the code and
+If the supplied bundle already contains `v1.0.57` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
@@ -243,9 +253,9 @@ advance from the actual state instead of reimplementing this section.
 Group closely related syntax when it shares the same type/AST/compiler path, but
 keep major architecture changes independently reviewable:
 
-1. **Aggregate queries after the selection-function foundation.** `GROUP BY`,
-   `HAVING`, `ROLLUP`, `CUBE`, and `GROUPING()`, plus any aggregate-query output
-   refinements not covered by `v1.0.57`.
+1. **Aggregate queries after basic `GROUP BY`.** Add typed `HAVING`, then
+   `ROLLUP`, `CUBE`, and `GROUPING()`, plus aggregate-query output refinements
+   that depend on grouped semantics.
 2. **Broader SELECT expressions/functions.** `FIELDS(...)`, `toLabel()`,
    `FORMAT()`, `convertCurrency()`, calendar/date functions,
    `convertTimezone()`, and geolocation expressions where safely modelable.
@@ -257,10 +267,9 @@ keep major architecture changes independently reviewable:
    `FOR UPDATE`, `WITH USER_MODE`, binds, etc. separately from the
    transport-neutral REST/JSforce core.
 
-The largest remaining architecture change is aggregate-query output typing.
-Keep its first slice focused on the shared aggregate-selection machinery rather
-than pulling grouping/HAVING semantics into the same review unless the design
-truly requires them.
+The aggregate-selection output foundation is now in place. Keep grouping and
+`HAVING` incremental so each new clause can preserve capability checks and result
+typing without reopening the transport-neutral execution boundary.
 
 ## Validation and runtime-boundary conventions
 
