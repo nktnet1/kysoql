@@ -17,6 +17,7 @@ export type {
 } from "#/expression/expression-builder";
 export type { LimitNode } from "#/operation-node/limit-node";
 export type { OffsetNode } from "#/operation-node/offset-node";
+export type { NotNode } from "#/operation-node/not-node";
 export type {
   OrderByDirection,
   OrderByItemNode,

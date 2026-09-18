@@ -17,6 +17,7 @@ import {
   type ExpressionWrapper,
   type LikeComparisonOperator,
   type LimitNode,
+  type NotNode,
   type OperationNode,
   type OrNode,
   type OperatorNode,
@@ -61,6 +62,7 @@ type PublicTypeSurface = {
   expressionWrapper: ExpressionWrapper<Record<string, never>, never>;
   likeComparisonOperator: LikeComparisonOperator;
   limitNode: LimitNode;
+  notNode: NotNode;
   operationNode: OperationNode;
   orNode: OrNode;
   operatorNode: OperatorNode;

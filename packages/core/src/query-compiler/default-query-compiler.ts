@@ -5,6 +5,7 @@ import type { BinaryOperationNode } from "#/operation-node/binary-operation-node
 import type { OperationNode } from "#/operation-node/operation-node";
 import type { LimitNode } from "#/operation-node/limit-node";
 import type { OffsetNode } from "#/operation-node/offset-node";
+import type { NotNode } from "#/operation-node/not-node";
 import type { OrNode } from "#/operation-node/or-node";
 import type { OperatorNode } from "#/operation-node/operator-node";
 import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
@@ -99,6 +100,8 @@ export class DefaultQueryCompiler implements QueryCompiler {
         return this.#compileAnd(node as AndNode);
       case "BinaryOperationNode":
         return this.#compileBinaryOperation(node as BinaryOperationNode);
+      case "NotNode":
+        return this.#compileNot(node as NotNode);
       case "OrNode":
         return this.#compileOr(node as OrNode);
       case "ReferenceNode":
@@ -114,6 +117,14 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileAnd(node: AndNode): string {
     return `${this.#compileOperation(node.left)} AND ${this.#compileOperation(node.right)}`;
+  }
+
+  #compileNot(node: NotNode): string {
+    const operand = this.#compileOperation(node.operand);
+
+    return node.operand.kind === "OrNode"
+      ? `NOT ${operand}`
+      : `NOT (${operand})`;
   }
 
   #compileOr(node: OrNode): string {

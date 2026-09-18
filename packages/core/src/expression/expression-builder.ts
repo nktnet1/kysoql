@@ -1,4 +1,5 @@
 import { AndNode } from "#/operation-node/and-node";
+import { NotNode } from "#/operation-node/not-node";
 import { OrNode } from "#/operation-node/or-node";
 import type { OperationNode } from "#/operation-node/operation-node";
 import {
@@ -36,6 +37,8 @@ export interface ExpressionBuilder<DB, TB extends keyof DB> {
       ...ExpressionWrapper<DB, TB>[],
     ],
   ): ExpressionWrapper<DB, TB>;
+
+  not(expression: ExpressionWrapper<DB, TB>): ExpressionWrapper<DB, TB>;
 
   or(
     expressions: readonly [
@@ -105,6 +108,13 @@ export function createExpressionBuilder<DB, TB extends keyof DB>(): ExpressionBu
     return new ExpressionWrapperImpl<DB, TB>(operation);
   };
 
+  const not = (
+    operand: ExpressionWrapper<DB, TB>,
+  ): ExpressionWrapper<DB, TB> =>
+    new ExpressionWrapperImpl<DB, TB>(
+      NotNode.create(operand.toOperationNode()),
+    );
+
   const or = (
     expressions: readonly [
       ExpressionWrapper<DB, TB>,
@@ -125,5 +135,5 @@ export function createExpressionBuilder<DB, TB extends keyof DB>(): ExpressionBu
     return new ExpressionWrapperImpl<DB, TB>(operation);
   };
 
-  return Object.assign(expression, { and, or });
+  return Object.assign(expression, { and, not, or });
 }

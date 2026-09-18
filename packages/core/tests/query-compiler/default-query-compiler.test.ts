@@ -124,6 +124,26 @@ describe("DefaultQueryCompiler", () => {
     );
   });
 
+  it("compiles logical NOT with grouped predicates", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(["Id", "Name"])
+      .where((eb) =>
+        eb.not(
+          eb.or([
+            eb("Name", "=", "Acme"),
+            eb("AnnualRevenue", ">=", 100_000),
+          ]),
+        ),
+      )
+      .where("Name", "!=", null)
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT Id, Name FROM Account WHERE NOT (Name = 'Acme' OR AnnualRevenue >= 100000) AND Name != null",
+    );
+  });
+
   it("compiles additive ORDER BY fields with direction and null placement", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")
