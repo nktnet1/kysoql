@@ -71,7 +71,9 @@ type OutputOf<Query> =
     infer _DB,
     infer _TB,
     infer Output,
-    infer _GroupedBy
+    infer _GroupedBy,
+    infer _GroupMode,
+    infer _AdvancedFieldCount
   >
     ? Output
     : never;
@@ -166,6 +168,93 @@ describe("aggregate queries", () => {
     expect(Object.isFrozen(node.groupBy)).toBe(true);
     expect(Object.isFrozen(node.groupBy?.items)).toBe(true);
   });
+
+  it("adds typed ROLLUP grouping with nullable subtotal output", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupByRollup("Active__c")
+      .groupByRollup(["Owner.Name"])
+      .select(["Active__c", "Owner.Name"])
+      .having((eb) => eb(eb.fn.count("Id"), ">", 1))
+      .orderBy("Active__c")
+      .limit(25);
+
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly rowCount: number;
+      readonly Active__c: boolean | null;
+      readonly Owner: {
+        readonly Name: string | null;
+      } | null;
+    }>();
+
+    expect(query.toOperationNode().groupBy).toEqual({
+      kind: "GroupByNode",
+      items: [
+        { kind: "ReferenceNode", name: "Active__c" },
+        { kind: "ReferenceNode", name: "Owner.Name" },
+      ],
+      mode: "rollup",
+    });
+  });
+
+  it("adds typed CUBE grouping with nullable subtotal output", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.sum("AnnualRevenue").as("totalRevenue"))
+      .groupByCube(["Active__c", "Owner.Name"])
+      .select(["Active__c", "Owner.Name"]);
+
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly totalRevenue: number | null;
+      readonly Active__c: boolean | null;
+      readonly Owner: {
+        readonly Name: string | null;
+      } | null;
+    }>();
+    expect(query.toOperationNode().groupBy?.mode).toBe("cube");
+  });
+
+  it(
+    "rejects mixed advanced grouping forms and more than three advanced fields at runtime",
+    () => {
+      const aggregate = new Kysoql<FixtureSchema>()
+        .selectFrom("Account")
+        .select(({ fn }) => fn.count("Id").as("rowCount"));
+
+      const rollup = aggregate.groupByRollup(["Name", "Active__c"]);
+      expect(() =>
+        (rollup as unknown as { groupBy(field: string): unknown }).groupBy("Id"),
+      ).toThrow(
+        "SOQL GROUP BY, GROUP BY ROLLUP, and GROUP BY CUBE forms cannot be mixed.",
+      );
+      expect(() =>
+        (
+          rollup as unknown as { groupByCube(field: string): unknown }
+        ).groupByCube("Id"),
+      ).toThrow(
+        "SOQL GROUP BY, GROUP BY ROLLUP, and GROUP BY CUBE forms cannot be mixed.",
+      );
+      expect(() =>
+        (
+          rollup as unknown as {
+            groupByRollup(fields: string[]): unknown;
+          }
+        ).groupByRollup(["Id", "Owner.Name"]),
+      ).toThrow("SOQL GROUP BY ROLLUP can include at most three fields.");
+
+      const ordinary = aggregate.groupBy("Name");
+      expect(() =>
+        (
+          ordinary as unknown as {
+            groupByRollup(field: string): unknown;
+          }
+        ).groupByRollup("Id"),
+      ).toThrow(
+        "SOQL GROUP BY, GROUP BY ROLLUP, and GROUP BY CUBE forms cannot be mixed.",
+      );
+    },
+  );
 
   it("adds immutable typed HAVING conditions after grouping", () => {
     const grouped = new Kysoql<FixtureSchema>()
@@ -439,6 +528,38 @@ describe("aggregate queries", () => {
       const ownerGroupedQuery = aggregateQuery.groupBy("OwnerId");
       // @ts-expect-error HAVING IN operands cannot be semi-join callbacks.
       ownerGroupedQuery.having("OwnerId", "in", () => undefined);
+
+      const rollupQuery = aggregateQuery
+        .groupByRollup(["Name", "Active__c"])
+        .groupByRollup("Owner.Name");
+      rollupQuery.select(["Name", "Active__c", "Owner.Name"]);
+      rollupQuery.having((eb) => eb(eb.fn.count("Id"), ">", 1));
+      rollupQuery.orderBy("Name");
+      rollupQuery.limit(10);
+      // @ts-expect-error ROLLUP supports at most three grouping fields.
+      rollupQuery.groupByRollup("Id");
+      // @ts-expect-error Ordinary GROUP BY cannot be mixed with ROLLUP.
+      rollupQuery.groupBy("Id");
+      // @ts-expect-error CUBE cannot be mixed with ROLLUP.
+      rollupQuery.groupByCube("Id");
+
+      // @ts-expect-error ROLLUP field lists can contain at most three fields.
+      aggregateQuery.groupByRollup(["Name", "Active__c", "Id", "Owner.Name"]);
+      // @ts-expect-error ROLLUP cannot group fields that are not groupable.
+      aggregateQuery.groupByRollup("Internal_Note__c");
+      // @ts-expect-error ROLLUP requires at least one field.
+      aggregateQuery.groupByRollup([]);
+
+      const cubeQuery = aggregateQuery
+        .groupByCube("Name")
+        .groupByCube(["Active__c", "Owner.Name"]);
+      cubeQuery.select(["Name", "Active__c", "Owner.Name"]);
+      // @ts-expect-error CUBE supports at most three grouping fields.
+      cubeQuery.groupByCube("Id");
+      // @ts-expect-error Ordinary GROUP BY cannot be mixed with CUBE.
+      cubeQuery.groupBy("Id");
+      // @ts-expect-error ROLLUP cannot be mixed with CUBE.
+      cubeQuery.groupByRollup("Id");
 
       const relationshipGroupedQuery = aggregateQuery.groupBy("Owner.Name");
       relationshipGroupedQuery.select("Owner.Name");

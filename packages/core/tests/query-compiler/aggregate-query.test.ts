@@ -76,6 +76,36 @@ describe("aggregate query compilation", () => {
     );
   });
 
+  it("compiles additive GROUP BY ROLLUP fields", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupByRollup("Name")
+      .groupByRollup("Owner.Name")
+      .select(["Name", "Owner.Name"])
+      .having((eb) => eb(eb.fn.count("Id"), ">", 1))
+      .orderBy("Name")
+      .limit(10)
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT COUNT(Id) rowCount, Name, Owner.Name FROM Account GROUP BY ROLLUP(Name, Owner.Name) HAVING COUNT(Id) > 1 ORDER BY Name LIMIT 10",
+    );
+  });
+
+  it("compiles GROUP BY CUBE fields", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.sum("AnnualRevenue").as("totalRevenue"))
+      .groupByCube(["Name", "Owner.Name"])
+      .select(["Name", "Owner.Name"])
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT SUM(AnnualRevenue) totalRevenue, Name, Owner.Name FROM Account GROUP BY CUBE(Name, Owner.Name)",
+    );
+  });
+
   it("compiles HAVING after GROUP BY with aggregate and grouped-field conditions", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")

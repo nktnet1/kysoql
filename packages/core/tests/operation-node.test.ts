@@ -154,6 +154,36 @@ describe("operation nodes", () => {
     expectFrozen(extended.items);
   });
 
+  it("creates and extends immutable advanced GROUP BY modes", () => {
+    const first = ReferenceNode.create("Name");
+    const second = ReferenceNode.create("Owner.Name");
+    const rollup = GroupByNode.create([first], "rollup");
+    const extended = GroupByNode.cloneWithItems(rollup, [second], "rollup");
+    const cube = GroupByNode.create([first, second], "cube");
+
+    expect(rollup).toEqual({
+      kind: "GroupByNode",
+      items: [first],
+      mode: "rollup",
+    });
+    expect(extended).toEqual({
+      kind: "GroupByNode",
+      items: [first, second],
+      mode: "rollup",
+    });
+    expect(cube.mode).toBe("cube");
+    expect(() =>
+      GroupByNode.cloneWithItems(rollup, [second], "cube"),
+    ).toThrow(
+      "SOQL GROUP BY, GROUP BY ROLLUP, and GROUP BY CUBE forms cannot be mixed.",
+    );
+    expectFrozen(rollup);
+    expectFrozen(rollup.items);
+    expectFrozen(extended);
+    expectFrozen(extended.items);
+    expectFrozen(cube);
+  });
+
   it("creates and extends immutable HAVING trees", () => {
     const first = BinaryOperationNode.create(
       AggregateFunctionNode.create("count", ReferenceNode.create("Id")),

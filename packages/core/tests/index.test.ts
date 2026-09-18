@@ -9,6 +9,7 @@ import {
   soqlDateTime,
   soqlRelativeDate,
   soqlTime,
+  type AdvancedGroupByMode,
   type AggregateFunction,
   type AggregateFunctionBuilder,
   type AggregateFunctionExpression,
@@ -88,6 +89,7 @@ import {
 } from "#/index";
 
 type PublicTypeSurface = {
+  advancedGroupByMode: AdvancedGroupByMode;
   aggregateFunction: AggregateFunction;
   aggregateFunctionBuilder: AggregateFunctionBuilder<number>;
   aggregateFunctionExpression: AggregateFunctionExpression<number>;

@@ -205,6 +205,22 @@ const byStage = await db
   .execute();
 ```
 
+For subtotal reports, aggregate builders also expose `.groupByRollup(...)` and
+`.groupByCube(...)`. Both forms retain the same generated `groupable` checks,
+can accumulate fields across calls, and enforce Salesforce's three-field limit.
+Ordinary `GROUP BY`, `ROLLUP`, and `CUBE` forms cannot be mixed in one query.
+Because advanced grouping adds subtotal and grand-total rows, selected grouping
+fields are typed as nullable even when the underlying Salesforce field is not.
+
+```ts
+const pipeline = await db
+  .selectFrom("Opportunity")
+  .select(({ fn }) => fn.sum("Amount").as("totalAmount"))
+  .groupByRollup(["StageName", "Type"])
+  .select(["StageName", "Type"])
+  .execute();
+```
+
 Grouped aggregate queries also expose typed `HAVING`. Direct field operands must
 already be grouped; aggregate operands use the same `fn` module without aliases.
 The callback form supports `AND`, `OR`, and `NOT`, while semi/anti-join

@@ -132,7 +132,11 @@ export class DefaultQueryCompiler implements QueryCompiler {
   }
 
   #compileGroupBy(groupBy: GroupByNode): string {
-    return groupBy.items.map((item) => this.#compileReference(item)).join(", ");
+    const fields = groupBy.items
+      .map((item) => this.#compileReference(item))
+      .join(", ");
+
+    return groupBy.mode ? `${groupBy.mode.toUpperCase()}(${fields})` : fields;
   }
 
   #compileHaving(having: HavingNode): string {

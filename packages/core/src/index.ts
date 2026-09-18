@@ -5,7 +5,10 @@ export type {
 export type { AliasNode } from "#/operation-node/alias-node";
 export type { AndNode } from "#/operation-node/and-node";
 export type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
-export type { GroupByNode } from "#/operation-node/group-by-node";
+export type {
+  AdvancedGroupByMode,
+  GroupByNode,
+} from "#/operation-node/group-by-node";
 export type { HavingNode } from "#/operation-node/having-node";
 export type {
   ComparisonOperator,

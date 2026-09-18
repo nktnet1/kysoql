@@ -34,25 +34,45 @@ type SelectedParentRelationshipName<
 type ParentSelectionReference<SE, Relationship extends string> =
   SE extends `${Relationship}.${infer Reference}` ? Reference : never;
 
-type ParentSelection<DB, TB extends keyof DB, SE> = {
+type ParentSelection<
+  DB,
+  TB extends keyof DB,
+  SE,
+  ForceNullable extends boolean,
+> = {
   readonly [Relationship in SelectedParentRelationshipName<
     DB,
     TB,
     SE
   >]: ParentObjectName<DB, TB, Relationship> extends infer ParentTB extends keyof DB
     ? true extends ParentRelationshipNullable<DB, TB, Relationship>
-      ? Selection<DB, ParentTB, ParentSelectionReference<SE, Relationship>> | null
-      : Selection<DB, ParentTB, ParentSelectionReference<SE, Relationship>>
+      ? Selection<
+          DB,
+          ParentTB,
+          ParentSelectionReference<SE, Relationship>,
+          ForceNullable
+        > | null
+      : Selection<
+          DB,
+          ParentTB,
+          ParentSelectionReference<SE, Relationship>,
+          ForceNullable
+        >
     : never;
 };
 
-export type Selection<DB, TB extends keyof DB, SE> = Simplify<
+export type Selection<
+  DB,
+  TB extends keyof DB,
+  SE,
+  ForceNullable extends boolean = false,
+> = Simplify<
   {
-    readonly [Field in Extract<SE, FieldName<DB, TB>>]: SalesforceFieldValue<
-      FieldDefinition<DB, TB, Field>
-    >;
+    readonly [Field in Extract<SE, FieldName<DB, TB>>]: ForceNullable extends true
+      ? SalesforceFieldValue<FieldDefinition<DB, TB, Field>> | null
+      : SalesforceFieldValue<FieldDefinition<DB, TB, Field>>;
   } &
-    ParentSelection<DB, TB, SE>
+    ParentSelection<DB, TB, SE, ForceNullable>
 >;
 
 export function parseSelectArg(selection: string | ReadonlyArray<string>) {

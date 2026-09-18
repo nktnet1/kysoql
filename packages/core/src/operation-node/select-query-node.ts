@@ -1,5 +1,8 @@
 import { freeze } from "#/util/object-utils";
-import { GroupByNode } from "#/operation-node/group-by-node";
+import {
+  type AdvancedGroupByMode,
+  GroupByNode,
+} from "#/operation-node/group-by-node";
 import { HavingNode } from "#/operation-node/having-node";
 import type { LimitNode } from "#/operation-node/limit-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
@@ -46,12 +49,13 @@ export const SelectQueryNode = {
   cloneWithGroupByItems(
     select: SelectQueryNode,
     items: ReadonlyArray<ReferenceNode>,
+    mode?: AdvancedGroupByMode,
   ): SelectQueryNode {
     return freeze({
       ...select,
       groupBy: select.groupBy
-        ? GroupByNode.cloneWithItems(select.groupBy, items)
-        : GroupByNode.create(items),
+        ? GroupByNode.cloneWithItems(select.groupBy, items, mode)
+        : GroupByNode.create(items, mode),
     });
   },
 

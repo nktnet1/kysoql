@@ -11,6 +11,7 @@ import {
   type GroupedHavingFieldName,
   type HavingExpressionFactory,
 } from "#/expression/having-expression-builder";
+import type { AdvancedGroupByMode } from "#/operation-node/group-by-node";
 import type { ComparisonOperator } from "#/operation-node/operator-node";
 import type {
   OrderByDirection,
@@ -35,6 +36,7 @@ import {
 } from "#/parser/filter-parser";
 import {
   type GroupableFieldName,
+  parseAdvancedGroupBy,
   parseGroupBy,
 } from "#/parser/group-by-parser";
 import { parseLimit } from "#/parser/limit-parser";
@@ -52,9 +54,24 @@ import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { QueryExecutor } from "#/query-executor";
 import { freeze } from "#/util/object-utils";
 
+type AggregateGroupMode = "none" | "ordinary" | AdvancedGroupByMode;
+type AdvancedGroupFieldCount = 0 | 1 | 2 | 3;
+type AdvancedGroupByInput = string | readonly string[];
+
 type GroupedOnly<GroupedBy extends string, Value> = [GroupedBy] extends [never]
   ? never
   : Value;
+
+type GroupModeOnly<
+  Current extends AggregateGroupMode,
+  Target extends Exclude<AggregateGroupMode, "none">,
+  Value,
+> = Current extends "none" | Target ? Value : never;
+
+type NextGroupMode<
+  Current extends AggregateGroupMode,
+  Target extends Exclude<AggregateGroupMode, "none">,
+> = Current extends "none" ? Target : Current;
 
 type GroupedSelectExpression<
   DB,
@@ -72,30 +89,182 @@ type GroupedSortableFieldName<
   ? SortableFieldName<DB, TB, Reference>
   : never;
 
+type GroupedSelection<
+  DB,
+  TB extends keyof DB,
+  SE,
+  GroupMode extends AggregateGroupMode,
+> = Selection<
+  DB,
+  TB,
+  SE,
+  GroupMode extends AdvancedGroupByMode ? true : false
+>;
+
+type AdvancedGroupByAllowedLength<Count extends AdvancedGroupFieldCount> =
+  Count extends 0
+    ? 1 | 2 | 3
+    : Count extends 1
+      ? 1 | 2
+      : Count extends 2
+        ? 1
+        : never;
+
+type AdvancedGroupByShape<
+  Count extends AdvancedGroupFieldCount,
+  Input extends AdvancedGroupByInput,
+> = Input extends string
+  ? Count extends 3
+    ? never
+    : Input
+  : Input extends readonly string[]
+    ? Input extends readonly []
+      ? never
+      : Input["length"] extends AdvancedGroupByAllowedLength<Count>
+        ? Input
+        : never
+    : never;
+
+type GroupableGroupByInput<
+  DB,
+  TB extends keyof DB,
+  Input extends AdvancedGroupByInput,
+> = Input extends string
+  ? Input & GroupableFieldName<DB, TB, Input>
+  : Input extends readonly string[]
+    ? {
+        readonly [Index in keyof Input]: Input[Index] extends string
+          ? Input[Index] & GroupableFieldName<DB, TB, Input[Index]>
+          : Input[Index];
+      }
+    : never;
+
+type AdvancedGroupByArgument<
+  DB,
+  TB extends keyof DB,
+  Count extends AdvancedGroupFieldCount,
+  Input extends AdvancedGroupByInput,
+> = Input &
+  AdvancedGroupByShape<Count, Input> &
+  GroupableGroupByInput<DB, TB, Input>;
+
+type AdvancedGroupByField<Input extends AdvancedGroupByInput> =
+  Input extends string ? Input : Input[number];
+
+type AdvancedGroupByInputCount<Input extends AdvancedGroupByInput> =
+  Input extends string
+    ? 1
+    : Input extends readonly [string]
+      ? 1
+      : Input extends readonly [string, string]
+        ? 2
+        : Input extends readonly [string, string, string]
+          ? 3
+          : never;
+
+type AddAdvancedGroupFieldCount<
+  Count extends AdvancedGroupFieldCount,
+  Added extends 1 | 2 | 3,
+> = Count extends 0
+  ? Added
+  : Count extends 1
+    ? Added extends 1
+      ? 2
+      : 3
+    : Count extends 2
+      ? 3
+      : 3;
+
+type NextAdvancedGroupFieldCount<
+  Count extends AdvancedGroupFieldCount,
+  Input extends AdvancedGroupByInput,
+> = AddAdvancedGroupFieldCount<Count, AdvancedGroupByInputCount<Input>>;
+
 export interface AggregateSelectQueryBuilder<
   DB,
   TB extends keyof DB,
   O,
   GroupedBy extends string = never,
+  GroupMode extends AggregateGroupMode = "none",
+  AdvancedFieldCount extends AdvancedGroupFieldCount = 0,
 > {
   compile(): CompiledQuery<O>;
 
   execute(): Promise<readonly O[]>;
 
   groupBy<GE extends string>(
-    field: GE & GroupableFieldName<DB, TB, GE>,
-  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy | GE>;
+    field: GroupModeOnly<
+      GroupMode,
+      "ordinary",
+      GE & GroupableFieldName<DB, TB, GE>
+    >,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy | GE,
+    NextGroupMode<GroupMode, "ordinary">,
+    AdvancedFieldCount
+  >;
 
   groupBy<GE extends string>(
-    fields: ReadonlyArray<GE & GroupableFieldName<DB, TB, GE>>,
-  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy | GE>;
+    fields: GroupModeOnly<
+      GroupMode,
+      "ordinary",
+      ReadonlyArray<GE & GroupableFieldName<DB, TB, GE>>
+    >,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy | GE,
+    NextGroupMode<GroupMode, "ordinary">,
+    AdvancedFieldCount
+  >;
+
+  groupByRollup<const Input extends AdvancedGroupByInput>(
+    fields: GroupModeOnly<
+      GroupMode,
+      "rollup",
+      AdvancedGroupByArgument<DB, TB, AdvancedFieldCount, Input>
+    >,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy | AdvancedGroupByField<Input>,
+    NextGroupMode<GroupMode, "rollup">,
+    NextAdvancedGroupFieldCount<AdvancedFieldCount, Input>
+  >;
+
+  groupByCube<const Input extends AdvancedGroupByInput>(
+    fields: GroupModeOnly<
+      GroupMode,
+      "cube",
+      AdvancedGroupByArgument<DB, TB, AdvancedFieldCount, Input>
+    >,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy | AdvancedGroupByField<Input>,
+    NextGroupMode<GroupMode, "cube">,
+    NextAdvancedGroupFieldCount<AdvancedFieldCount, Input>
+  >;
 
   having(
     expression: GroupedOnly<
       GroupedBy,
       HavingExpressionFactory<DB, TB, GroupedBy>
     >,
-  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy>;
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
 
   having<
     RE extends string,
@@ -109,11 +278,25 @@ export interface AggregateSelectQueryBuilder<
       >,
     op: OP,
     rhs: RHS,
-  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy>;
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
 
   limit(
     limit: GroupedOnly<GroupedBy, number>,
-  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy>;
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
 
   orderBy<OE extends string>(
     field: OE &
@@ -123,17 +306,24 @@ export interface AggregateSelectQueryBuilder<
       >,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
-  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy>;
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
 
   select<Aggregate extends AggregateSelectionArg>(
-    selection: (
-      eb: SelectExpressionBuilder<DB, TB>,
-    ) => Aggregate,
+    selection: (eb: SelectExpressionBuilder<DB, TB>) => Aggregate,
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
     O & AggregateSelection<Aggregate>,
-    GroupedBy
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
   >;
 
   select<SE extends string>(
@@ -143,8 +333,10 @@ export interface AggregateSelectQueryBuilder<
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
-    O & Selection<DB, TB, SE>,
-    GroupedBy
+    O & GroupedSelection<DB, TB, SE, GroupMode>,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
   >;
 
   select<SE extends string>(
@@ -152,13 +344,22 @@ export interface AggregateSelectQueryBuilder<
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
-    O & Selection<DB, TB, SE>,
-    GroupedBy
+    O & GroupedSelection<DB, TB, SE, GroupMode>,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
   >;
 
   where(
     expression: WhereExpressionFactory<DB, TB>,
-  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy>;
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
 
   where<
     RE extends string,
@@ -168,7 +369,14 @@ export interface AggregateSelectQueryBuilder<
     lhs: RE & FilterableFieldName<DB, TB, RE>,
     op: OP,
     rhs: RHS,
-  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy>;
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
 
   toOperationNode(): SelectQueryNode;
 }
@@ -178,7 +386,17 @@ class AggregateSelectQueryBuilderImpl<
   TB extends keyof DB,
   O,
   GroupedBy extends string,
-> implements AggregateSelectQueryBuilder<DB, TB, O, GroupedBy>
+  GroupMode extends AggregateGroupMode,
+  AdvancedFieldCount extends AdvancedGroupFieldCount,
+> implements
+    AggregateSelectQueryBuilder<
+      DB,
+      TB,
+      O,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >
 {
   readonly #props: AggregateSelectQueryBuilderProps;
 
@@ -201,15 +419,131 @@ class AggregateSelectQueryBuilderImpl<
   }
 
   groupBy<GE extends string>(
+    field: GroupModeOnly<
+      GroupMode,
+      "ordinary",
+      GE & GroupableFieldName<DB, TB, GE>
+    >,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy | GE,
+    NextGroupMode<GroupMode, "ordinary">,
+    AdvancedFieldCount
+  >;
+  groupBy<GE extends string>(
+    fields: GroupModeOnly<
+      GroupMode,
+      "ordinary",
+      ReadonlyArray<GE & GroupableFieldName<DB, TB, GE>>
+    >,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy | GE,
+    NextGroupMode<GroupMode, "ordinary">,
+    AdvancedFieldCount
+  >;
+  groupBy<GE extends string>(
     groupBy:
       | (GE & GroupableFieldName<DB, TB, GE>)
       | ReadonlyArray<GE & GroupableFieldName<DB, TB, GE>>,
-  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy | GE> {
-    return new AggregateSelectQueryBuilderImpl<DB, TB, O, GroupedBy | GE>({
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy | GE,
+    NextGroupMode<GroupMode, "ordinary">,
+    AdvancedFieldCount
+  > {
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy | GE,
+      NextGroupMode<GroupMode, "ordinary">,
+      AdvancedFieldCount
+    >({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithGroupByItems(
         this.#props.queryNode,
         parseGroupBy(groupBy),
+      ),
+    });
+  }
+
+  groupByRollup<const Input extends AdvancedGroupByInput>(
+    groupBy: GroupModeOnly<
+      GroupMode,
+      "rollup",
+      AdvancedGroupByArgument<DB, TB, AdvancedFieldCount, Input>
+    >,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy | AdvancedGroupByField<Input>,
+    NextGroupMode<GroupMode, "rollup">,
+    NextAdvancedGroupFieldCount<AdvancedFieldCount, Input>
+  > {
+    const parsed = parseAdvancedGroupBy(
+      groupBy as string | readonly string[],
+      "rollup",
+      this.#props.queryNode.groupBy?.items.length ?? 0,
+    );
+
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy | AdvancedGroupByField<Input>,
+      NextGroupMode<GroupMode, "rollup">,
+      NextAdvancedGroupFieldCount<AdvancedFieldCount, Input>
+    >({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithGroupByItems(
+        this.#props.queryNode,
+        parsed,
+        "rollup",
+      ),
+    });
+  }
+
+  groupByCube<const Input extends AdvancedGroupByInput>(
+    groupBy: GroupModeOnly<
+      GroupMode,
+      "cube",
+      AdvancedGroupByArgument<DB, TB, AdvancedFieldCount, Input>
+    >,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy | AdvancedGroupByField<Input>,
+    NextGroupMode<GroupMode, "cube">,
+    NextAdvancedGroupFieldCount<AdvancedFieldCount, Input>
+  > {
+    const parsed = parseAdvancedGroupBy(
+      groupBy as string | readonly string[],
+      "cube",
+      this.#props.queryNode.groupBy?.items.length ?? 0,
+    );
+
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy | AdvancedGroupByField<Input>,
+      NextGroupMode<GroupMode, "cube">,
+      NextAdvancedGroupFieldCount<AdvancedFieldCount, Input>
+    >({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithGroupByItems(
+        this.#props.queryNode,
+        parsed,
+        "cube",
       ),
     });
   }
@@ -219,7 +553,14 @@ class AggregateSelectQueryBuilderImpl<
       GroupedBy,
       HavingExpressionFactory<DB, TB, GroupedBy>
     >,
-  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy>;
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
   having<
     RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
@@ -232,19 +573,30 @@ class AggregateSelectQueryBuilderImpl<
       >,
     op: OP,
     rhs: RHS,
-  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy>;
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
   having(
-    lhsOrExpression:
-      | string
-      | HavingExpressionFactory<DB, TB, GroupedBy>,
+    lhsOrExpression: string | HavingExpressionFactory<DB, TB, GroupedBy>,
     op?: ComparisonOperator,
     rhs?: unknown,
-  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy> {
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
     assertGroupedQuery(this.#props.queryNode);
 
-    const groupedBy = this.#props.queryNode.groupBy?.items.map(
-      (item) => item.name,
-    ) ?? [];
+    const groupedBy =
+      this.#props.queryNode.groupBy?.items.map((item) => item.name) ?? [];
     const operation =
       typeof lhsOrExpression === "function"
         ? lhsOrExpression(
@@ -256,7 +608,14 @@ class AggregateSelectQueryBuilderImpl<
             rhs as never,
           ).toOperationNode();
 
-    return new AggregateSelectQueryBuilderImpl<DB, TB, O, GroupedBy>({
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithHaving(
         this.#props.queryNode,
@@ -267,10 +626,24 @@ class AggregateSelectQueryBuilderImpl<
 
   limit(
     limit: GroupedOnly<GroupedBy, number>,
-  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy> {
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
     assertGroupedQuery(this.#props.queryNode);
 
-    return new AggregateSelectQueryBuilderImpl<DB, TB, O, GroupedBy>({
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithLimit(
         this.#props.queryNode,
@@ -287,10 +660,24 @@ class AggregateSelectQueryBuilderImpl<
       >,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
-  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy> {
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
     assertGroupedField(this.#props.queryNode, field, "ORDER BY");
 
-    return new AggregateSelectQueryBuilderImpl<DB, TB, O, GroupedBy>({
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithOrderByItems(this.#props.queryNode, [
         parseOrderBy(field, direction, nulls),
@@ -299,14 +686,14 @@ class AggregateSelectQueryBuilderImpl<
   }
 
   select<Aggregate extends AggregateSelectionArg>(
-    selection: (
-      eb: SelectExpressionBuilder<DB, TB>,
-    ) => Aggregate,
+    selection: (eb: SelectExpressionBuilder<DB, TB>) => Aggregate,
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
     O & AggregateSelection<Aggregate>,
-    GroupedBy
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
   >;
   select<SE extends string>(
     selections: ReadonlyArray<
@@ -315,27 +702,45 @@ class AggregateSelectQueryBuilderImpl<
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
-    O & Selection<DB, TB, SE>,
-    GroupedBy
+    O & GroupedSelection<DB, TB, SE, GroupMode>,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
   >;
   select<SE extends string>(
     selection: SE & GroupedSelectExpression<DB, TB, GroupedBy, SE>,
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
-    O & Selection<DB, TB, SE>,
-    GroupedBy
+    O & GroupedSelection<DB, TB, SE, GroupMode>,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
   >;
   select(
     selection:
       | string
       | readonly string[]
       | ((eb: SelectExpressionBuilder<DB, TB>) => AggregateSelectionArg),
-  ): AggregateSelectQueryBuilder<DB, TB, unknown, GroupedBy> {
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    unknown,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
     if (typeof selection !== "function") {
       validateGroupedSelections(this.#props.queryNode, selection);
 
-      return new AggregateSelectQueryBuilderImpl<DB, TB, unknown, GroupedBy>({
+      return new AggregateSelectQueryBuilderImpl<
+        DB,
+        TB,
+        unknown,
+        GroupedBy,
+        GroupMode,
+        AdvancedFieldCount
+      >({
         ...this.#props,
         queryNode: SelectQueryNode.cloneWithSelections(
           this.#props.queryNode,
@@ -350,7 +755,14 @@ class AggregateSelectQueryBuilderImpl<
 
     validateUniqueAliases(this.#props.queryNode, parsedSelections);
 
-    return new AggregateSelectQueryBuilderImpl<DB, TB, unknown, GroupedBy>({
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      unknown,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithSelections(
         this.#props.queryNode,
@@ -361,7 +773,14 @@ class AggregateSelectQueryBuilderImpl<
 
   where(
     expression: WhereExpressionFactory<DB, TB>,
-  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy>;
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
   where<
     RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
@@ -370,12 +789,26 @@ class AggregateSelectQueryBuilderImpl<
     lhs: RE & FilterableFieldName<DB, TB, RE>,
     op: OP,
     rhs: RHS,
-  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy>;
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
   where(
     lhsOrExpression: string | WhereExpressionFactory<DB, TB>,
     op?: ComparisonOperator,
     rhs?: unknown,
-  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy> {
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
     const operation =
       typeof lhsOrExpression === "function"
         ? lhsOrExpression(
@@ -396,7 +829,14 @@ class AggregateSelectQueryBuilderImpl<
 
     validateSemiJoinWhere(queryNode.where?.where ?? operation);
 
-    return new AggregateSelectQueryBuilderImpl<DB, TB, O, GroupedBy>({
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({
       ...this.#props,
       queryNode,
     });
@@ -420,7 +860,9 @@ export function createAggregateSelectQueryBuilder<
 >(
   props: AggregateSelectQueryBuilderProps,
 ): AggregateSelectQueryBuilder<DB, TB, O> {
-  return new AggregateSelectQueryBuilderImpl<DB, TB, O, never>(props);
+  return new AggregateSelectQueryBuilderImpl<DB, TB, O, never, "none", 0>(
+    props,
+  );
 }
 
 function validateUniqueAliases(

@@ -1,3 +1,4 @@
+import type { AdvancedGroupByMode } from "#/operation-node/group-by-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
 import type { FieldReferenceDefinition } from "#/parser/reference-parser";
 
@@ -28,4 +29,20 @@ export function parseGroupBy(
   }
 
   return fields.map((field) => ReferenceNode.create(field));
+}
+
+export function parseAdvancedGroupBy(
+  groupBy: string | ReadonlyArray<string>,
+  mode: AdvancedGroupByMode,
+  existingFieldCount: number,
+): readonly ReferenceNode[] {
+  const items = parseGroupBy(groupBy);
+
+  if (existingFieldCount + items.length > 3) {
+    throw new TypeError(
+      `SOQL GROUP BY ${mode.toUpperCase()} can include at most three fields.`,
+    );
+  }
+
+  return items;
 }

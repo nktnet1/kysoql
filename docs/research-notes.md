@@ -444,8 +444,39 @@ Aggregate comparison values/operators retain the originating field semantics for
 `MIN` / `MAX`, while numeric aggregate functions use numeric comparisons. A
 dedicated immutable `HavingNode` compiles in SOQL clause order, and HAVING field
 parsing disables semi/anti-join operands at both the type and runtime boundaries.
-`ROLLUP`, `CUBE`, `GROUPING()`, date grouping functions, and ordering by aggregate
-expressions remain separate follow-up work.
+`GROUPING()`, date grouping functions, and ordering by aggregate expressions
+remain separate follow-up work.
+
+### GROUP BY ROLLUP and CUBE
+
+Sources re-checked on 2026-09-18:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-groupby-rollup.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-groupby-cube.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select.html
+
+Useful findings:
+
+- `GROUP BY ROLLUP(...)` adds hierarchical subtotal rows from right to left plus a
+  grand-total row; `GROUP BY CUBE(...)` adds subtotal rows for every grouping
+  combination plus a grand total.
+- Both advanced grouping forms accept at most three fields. Salesforce requires
+  all grouped fields to be inside the `ROLLUP(...)` / `CUBE(...)` parentheses;
+  ordinary `GROUP BY` syntax cannot be mixed with an advanced form in the same
+  statement.
+- Subtotal/grand-total rows can return `null` for a grouped field even when that
+  field's source metadata is non-nullable, so result typing must add nullability
+  independently of normal field nullability.
+
+Implemented consequence in `v1.0.60`: aggregate builders expose additive typed
+`.groupByRollup(...)` and `.groupByCube(...)` methods. They retain generated
+`groupable` gating, reject mixed grouping modes, enforce the cumulative
+three-field limit at the type and runtime boundaries, and compile through the
+existing immutable `GroupByNode` with an explicit advanced mode. Grouped field
+selection, `HAVING`, grouped ordering, and `LIMIT` continue to use the accumulated
+grouping set. Selected ROLLUP/CUBE fields are recursively nullable at the selected
+leaf so subtotal/grand-total rows are represented without weakening ordinary
+`GROUP BY` output types. `GROUPING()` remains the next separate slice.
 
 ### Remaining SOQL surface / roadmap references
 
