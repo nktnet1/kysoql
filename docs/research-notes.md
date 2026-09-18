@@ -389,9 +389,35 @@ dedicated aggregate mode with explicitly aliased `COUNT(field)`,
 keys/values. `SUM`/`AVG` additionally require numeric Salesforce field types.
 Bare `COUNT()` transitions to a scalar `CountQueryBuilder`; core's executor
 contract has an optional count method for backward structural compatibility, and
-the JSforce adapter implements it from a validated `totalSize` result. Ordinary
-record selections and aggregate selections remain intentionally separate until
-typed `GROUP BY` support is added.
+the JSforce adapter implements it from a validated `totalSize` result.
+
+### Basic GROUP BY
+
+Sources re-checked on 2026-09-18:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-groupby.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-group-by-considerations.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-limit.html
+
+Useful findings:
+
+- A grouped aggregate query must include every non-aggregate selected field in its
+  `GROUP BY` field list. Multiple grouping fields are comma-separated and their
+  order is significant to the emitted query.
+- Describe exposes a `groupable` boolean for determining whether a field can be
+  placed in `GROUP BY`; formula and other unsupported field forms must remain
+  excluded by generated metadata.
+- Aggregate queries can use `LIMIT` when `GROUP BY` is present, while aggregate
+  queries without grouping cannot use `LIMIT`.
+
+Implemented consequence in `v1.0.58`: aggregate mode now exposes additive typed
+`.groupBy(...)` calls restricted to generated `groupable: true` field references.
+After grouping, ordinary `.select(...)` fields must be members of the accumulated
+grouping set and contribute their normal nested selection shape to the aggregate
+result type. Grouped aggregate queries can order by grouped sortable fields and
+use `LIMIT`. The immutable `GroupByNode` compiles between `WHERE` and `ORDER BY`.
+`HAVING`, `ROLLUP`, `CUBE`, `GROUPING()`, date grouping functions, and ordering
+by aggregate expressions remain separate follow-up work.
 
 ### Remaining SOQL surface / roadmap references
 

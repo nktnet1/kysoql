@@ -1,5 +1,7 @@
 import { freeze } from "#/util/object-utils";
+import { GroupByNode } from "#/operation-node/group-by-node";
 import type { LimitNode } from "#/operation-node/limit-node";
+import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { OffsetNode } from "#/operation-node/offset-node";
 import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import { OrderByNode } from "#/operation-node/order-by-node";
@@ -12,6 +14,7 @@ export interface SelectQueryNode {
   readonly from: SObjectNode;
   readonly selections?: ReadonlyArray<SelectionNode>;
   readonly where?: WhereNode;
+  readonly groupBy?: GroupByNode;
   readonly orderBy?: OrderByNode;
   readonly limit?: LimitNode;
   readonly offset?: OffsetNode;
@@ -34,6 +37,18 @@ export const SelectQueryNode = {
       selections: select.selections
         ? freeze([...select.selections, ...selections])
         : freeze([...selections]),
+    });
+  },
+
+  cloneWithGroupByItems(
+    select: SelectQueryNode,
+    items: ReadonlyArray<ReferenceNode>,
+  ): SelectQueryNode {
+    return freeze({
+      ...select,
+      groupBy: select.groupBy
+        ? GroupByNode.cloneWithItems(select.groupBy, items)
+        : GroupByNode.create(items),
     });
   },
 

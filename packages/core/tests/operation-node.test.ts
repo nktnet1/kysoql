@@ -6,6 +6,7 @@ import { AndNode } from "#/operation-node/and-node";
 import {
   BinaryOperationNode,
 } from "#/operation-node/binary-operation-node";
+import { GroupByNode } from "#/operation-node/group-by-node";
 import { LimitNode } from "#/operation-node/limit-node";
 import { OffsetNode } from "#/operation-node/offset-node";
 import { NotNode } from "#/operation-node/not-node";
@@ -135,6 +136,21 @@ describe("operation nodes", () => {
     expect("nulls" in implicit).toBe(false);
     expectFrozen(implicit);
     expectFrozen(explicit);
+  });
+
+  it("creates and extends immutable GROUP BY lists", () => {
+    const first = ReferenceNode.create("Name");
+    const second = ReferenceNode.create("Owner.Name");
+    const initial = GroupByNode.create([first]);
+    const extended = GroupByNode.cloneWithItems(initial, [second]);
+
+    expect(initial.items).toEqual([first]);
+    expect(extended.items).toEqual([first, second]);
+    expect(initial).not.toBe(extended);
+    expectFrozen(initial);
+    expectFrozen(initial.items);
+    expectFrozen(extended);
+    expectFrozen(extended.items);
   });
 
   it("creates and extends immutable ORDER BY lists", () => {

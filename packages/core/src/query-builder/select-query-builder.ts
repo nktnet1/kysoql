@@ -418,7 +418,7 @@ function isCountAllFunctionBuilder(
 function assertNoExistingSelections(queryNode: SelectQueryNode): void {
   if (queryNode.selections?.length) {
     throw new TypeError(
-      "SOQL aggregate selections cannot be mixed with record selections before GROUP BY support is added.",
+      "Start SOQL aggregate mode before selecting grouped record fields.",
     );
   }
 }

@@ -2,7 +2,11 @@ import { describe, expect, expectTypeOf, it, vi } from "vitest";
 
 import { Kysoql } from "#/kysoql";
 import type { AggregateSelectQueryBuilder } from "#/query-builder/aggregate-select-query-builder";
-import type { SalesforceField, SalesforceObject } from "#/schema";
+import type {
+  SalesforceField,
+  SalesforceObject,
+  SalesforceParentRelationship,
+} from "#/schema";
 import type { Simplify } from "#/util/type-utils";
 
 type AggregatableField<
@@ -29,6 +33,7 @@ interface FixtureSchema {
     readonly AnnualRevenue: AggregatableField<number, "currency", true>;
     readonly EmployeeCount__c: AggregatableField<number, "int", true>;
     readonly CloseDate: AggregatableField<string, "date", true>;
+    readonly OwnerId: AggregatableField<string, "reference", false>;
     readonly Active__c: SalesforceField<
       boolean,
       "boolean",
@@ -53,11 +58,21 @@ interface FixtureSchema {
       never,
       false
     >;
+  }, {
+    readonly Owner: SalesforceParentRelationship<"User", "OwnerId", true>;
+  }>;
+  readonly User: SalesforceObject<{
+    readonly Name: AggregatableField<string, "string", false>;
   }>;
 }
 
 type OutputOf<Query> =
-  Query extends AggregateSelectQueryBuilder<infer _DB, infer _TB, infer Output>
+  Query extends AggregateSelectQueryBuilder<
+    infer _DB,
+    infer _TB,
+    infer Output,
+    infer _GroupedBy
+  >
     ? Output
     : never;
 
@@ -118,6 +133,51 @@ describe("aggregate queries", () => {
       readonly rowCount: number;
       readonly totalRevenue: number | null;
     }>();
+  });
+
+  it("adds typed grouping and accumulates grouped fields into aggregate output", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupBy("Name")
+      .groupBy(["Active__c", "Owner.Name"])
+      .select(["Name", "Active__c", "Owner.Name"])
+      .orderBy("Name", "desc", "last")
+      .limit(25);
+
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly rowCount: number;
+      readonly Name: string | null;
+      readonly Active__c: boolean;
+      readonly Owner: {
+        readonly Name: string;
+      } | null;
+    }>();
+
+    const node = query.toOperationNode();
+    expect(node.groupBy).toEqual({
+      kind: "GroupByNode",
+      items: [
+        { kind: "ReferenceNode", name: "Name" },
+        { kind: "ReferenceNode", name: "Active__c" },
+        { kind: "ReferenceNode", name: "Owner.Name" },
+      ],
+    });
+    expect(Object.isFrozen(node.groupBy)).toBe(true);
+    expect(Object.isFrozen(node.groupBy?.items)).toBe(true);
+  });
+
+  it("rejects grouped field selections that are not present in GROUP BY at runtime", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupBy("Name");
+
+    expect(() =>
+      (query as unknown as { select(field: string): unknown }).select(
+        "AnnualRevenue",
+      ),
+    ).toThrow("SOQL aggregate SELECT fields must also appear in GROUP BY.");
   });
 
   it("keeps scalar WHERE support on aggregate builders", () => {
@@ -194,7 +254,7 @@ describe("aggregate queries", () => {
     );
   });
 
-  it("rejects clauses that are invalid before GROUP BY support", () => {
+  it("keeps grouped-only clauses unavailable on ungrouped aggregate queries", () => {
     const db = new Kysoql<FixtureSchema>();
 
     expect(() =>
@@ -242,8 +302,26 @@ describe("aggregate queries", () => {
       const aggregateQuery = db
         .selectFrom("Account")
         .select(({ fn }) => fn.count("Id").as("rowCount"));
-      // @ts-expect-error Record field selections require GROUP BY support.
+      // @ts-expect-error Grouped record fields require an explicit GROUP BY first.
       aggregateQuery.select("Name");
+
+      // @ts-expect-error GROUP BY requires a generated groupable field.
+      aggregateQuery.groupBy("Internal_Note__c");
+
+      // @ts-expect-error LIMIT is available only after GROUP BY.
+      aggregateQuery.limit(1);
+
+      // @ts-expect-error ORDER BY is available only after GROUP BY.
+      aggregateQuery.orderBy("Name");
+
+      const groupedQuery = aggregateQuery.groupBy("Name");
+      // @ts-expect-error Non-aggregate selected fields must be grouped.
+      groupedQuery.select("AnnualRevenue");
+      // @ts-expect-error Aggregate ORDER BY fields must be grouped in this slice.
+      groupedQuery.orderBy("AnnualRevenue");
+
+      const relationshipGroupedQuery = aggregateQuery.groupBy("Owner.Name");
+      relationshipGroupedQuery.select("Owner.Name");
 
       const countQuery = db
         .selectFrom("Account")

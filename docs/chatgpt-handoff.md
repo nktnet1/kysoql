@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.57`, the next patch
-   is `v1.0.58`.
+   reuse or rewrite a version already handed off. After `v1.0.58`, the next patch
+   is `v1.0.59`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.57`
+## Current state after `v1.0.58`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -110,6 +110,7 @@ recent patch sequence:
 | `v1.0.55` | Add typed SOQL semi-joins and anti-joins through `IN` / `NOT IN`, with a dedicated restricted subquery builder/AST and Salesforce nesting/compatibility limits. |
 | `v1.0.56` | Fix the fifth-level relationship-subquery negative type assertion so it tests the rejected relationship without cascading through a `never` child builder. |
 | `v1.0.57` | Add the typed aggregate-selection foundation: generated aggregateability metadata, aliased aggregate functions, scalar `COUNT()`, compiler support, and JSforce count execution. |
+| `v1.0.58` | Add typed ordinary `GROUP BY`: immutable AST/compiler support, generated `groupable` gating, grouped-field selection/output typing, grouped ordering, and grouped `LIMIT`. |
 
 ### Build/tooling state
 
@@ -186,11 +187,16 @@ Core currently has:
   gates aggregate-capable fields and `SUM` / `AVG` additionally require numeric
   Salesforce field types; aggregate output keys and value/nullability types are
   inferred from aliases and terminal field metadata;
+- additive typed `.groupBy(...)` on row-producing aggregate queries, restricted
+  to generated `groupable: true` field references including supported
+  child-to-parent paths; grouped ordinary `.select(...)` fields must already be
+  members of the accumulated grouping set and contribute their normal nested
+  selection shape to the aggregate output; grouped queries can order by grouped
+  sortable fields and use `LIMIT`;
 - bare `COUNT()` as a dedicated scalar `CountQueryBuilder` with scalar `WHERE`
   and `LIMIT`; it compiles independently from row-producing aggregates and uses
   the executor's optional `executeCountQuery` capability, implemented by the
-  JSforce adapter from a validated `totalSize` response; ordinary record fields
-  are intentionally not mixed with aggregate selections before `GROUP BY`;
+  JSforce adapter from a validated `totalSize` response;
 - field-aware `.where(field, operator, value)` plus expression callbacks;
 - equality, ordered comparisons, lowercase `like`, scalar-list `in` / `not in`,
   and multipicklist `includes` / `excludes`;
@@ -227,25 +233,24 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.58` and should add the first typed `GROUP BY`
-foundation on top of the aggregate-selection machinery.** Keep this slice focused
-on ordinary grouping before adding advanced grouping forms.
+**The next patch should be `v1.0.59` and should add typed `HAVING` on grouped
+aggregate queries.** Keep it focused on post-group aggregate filtering; advanced
+grouping forms remain separate.
 
 Recommended next unit:
 
-- add immutable `GROUP BY` AST/compiler support and a typed `.groupBy(...)` path
-  restricted to generated `groupable: true` field references;
-- allow grouped aggregate queries to select the grouped field(s) alongside
-  aliased aggregate expressions, with output typing that accumulates both shapes;
-- preserve additive grouping order and validate clause interactions that differ
-  from ungrouped aggregate queries;
-- add focused compiler/type tests for single and multiple grouped fields,
-  relationship-path grouping where the terminal field is groupable, and negative
-  capability cases;
-- keep `HAVING`, `ROLLUP`, `CUBE`, `GROUPING()`, broader SELECT functions, and
-  `TYPEOF` out of this patch unless a minimal internal abstraction is necessary.
+- add immutable `HAVING` AST/compiler support in SOQL clause order after
+  `GROUP BY` and before `ORDER BY`;
+- expose `.having(...)` only after grouping and type its operands around grouped
+  field references plus aggregate expressions from the existing function module;
+- support the existing logical composition style (`AND`, `OR`, `NOT`) where it
+  maps cleanly, but do not allow semi/anti-join subqueries inside `HAVING`;
+- add focused compiler/type tests for aggregate comparisons, grouped-field
+  comparisons where Salesforce permits them, and negative ungrouped cases;
+- keep `ROLLUP`, `CUBE`, `GROUPING()`, broader SELECT functions, and `TYPEOF` out
+  of this patch unless a minimal internal abstraction is necessary.
 
-If the supplied bundle already contains `v1.0.57` or later, inspect the code and
+If the supplied bundle already contains `v1.0.58` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
@@ -253,9 +258,8 @@ advance from the actual state instead of reimplementing this section.
 Group closely related syntax when it shares the same type/AST/compiler path, but
 keep major architecture changes independently reviewable:
 
-1. **Aggregate queries after basic `GROUP BY`.** Add typed `HAVING`, then
-   `ROLLUP`, `CUBE`, and `GROUPING()`, plus aggregate-query output refinements
-   that depend on grouped semantics.
+1. **Advanced aggregate grouping.** Add `ROLLUP`, `CUBE`, and `GROUPING()`, plus
+   aggregate-query output refinements that depend on subtotal/grand-total rows.
 2. **Broader SELECT expressions/functions.** `FIELDS(...)`, `toLabel()`,
    `FORMAT()`, `convertCurrency()`, calendar/date functions,
    `convertTimezone()`, and geolocation expressions where safely modelable.
@@ -267,9 +271,10 @@ keep major architecture changes independently reviewable:
    `FOR UPDATE`, `WITH USER_MODE`, binds, etc. separately from the
    transport-neutral REST/JSforce core.
 
-The aggregate-selection output foundation is now in place. Keep grouping and
-`HAVING` incremental so each new clause can preserve capability checks and result
-typing without reopening the transport-neutral execution boundary.
+The aggregate-selection and ordinary grouping foundations are now in place. Keep
+`HAVING` and advanced grouping incremental so each new clause can preserve
+capability checks and result typing without reopening the transport-neutral
+execution boundary.
 
 ## Validation and runtime-boundary conventions
 

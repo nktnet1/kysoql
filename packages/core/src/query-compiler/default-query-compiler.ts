@@ -4,6 +4,7 @@ import type { AggregateFunctionNode } from "#/operation-node/aggregate-function-
 import type { AliasNode } from "#/operation-node/alias-node";
 import type { AndNode } from "#/operation-node/and-node";
 import type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
+import type { GroupByNode } from "#/operation-node/group-by-node";
 import type { OperationNode } from "#/operation-node/operation-node";
 import type { LimitNode } from "#/operation-node/limit-node";
 import type { OffsetNode } from "#/operation-node/offset-node";
@@ -49,6 +50,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
     if (query.where) {
       soql += ` WHERE ${this.#compileWhere(query.where)}`;
+    }
+
+    if (query.groupBy) {
+      soql += ` GROUP BY ${this.#compileGroupBy(query.groupBy)}`;
     }
 
     if (query.orderBy) {
@@ -119,6 +124,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileOffset(offset: OffsetNode): string {
     return String(offset.offset);
+  }
+
+  #compileGroupBy(groupBy: GroupByNode): string {
+    return groupBy.items.map((item) => this.#compileReference(item)).join(", ");
   }
 
   #compileOrderBy(orderBy: OrderByNode): string {

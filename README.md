@@ -188,11 +188,27 @@ const totals = await db
   .execute();
 ```
 
+Grouped aggregate queries add `.groupBy(...)` before selecting ordinary result
+fields. Grouping is restricted to generated `groupable` fields, grouped fields
+can be added incrementally (including supported child-to-parent references), and
+ordinary selected fields must already be present in the accumulated grouping set.
+Grouped queries can also order by grouped sortable fields and use `LIMIT`.
+
+```ts
+const byStage = await db
+  .selectFrom("Opportunity")
+  .select(({ fn }) => fn.sum("Amount").as("totalAmount"))
+  .groupBy("StageName")
+  .select("StageName")
+  .orderBy("StageName")
+  .limit(20)
+  .execute();
+```
+
 Bare `COUNT()` uses a dedicated scalar result builder because Salesforce returns
 the count through the query-result count rather than an aggregate record. It
 supports scalar `WHERE` filters and `LIMIT`, and the JSforce executor maps the
-validated query result to a `number`. Mixing ordinary selected fields with
-aggregates remains deferred until typed `GROUP BY` support is added.
+validated query result to a `number`.
 
 ```ts
 const count = await db

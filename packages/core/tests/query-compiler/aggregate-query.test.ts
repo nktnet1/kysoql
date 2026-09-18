@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { Kysoql } from "#/kysoql";
-import type { SalesforceField, SalesforceObject } from "#/schema";
+import type {
+  SalesforceField,
+  SalesforceObject,
+  SalesforceParentRelationship,
+} from "#/schema";
 
 type AggregatableField<
   Value,
@@ -27,6 +31,12 @@ interface FixtureSchema {
     readonly AnnualRevenue: AggregatableField<number, "currency", true>;
     readonly EmployeeCount__c: AggregatableField<number, "int", true>;
     readonly CloseDate: AggregatableField<string, "date", true>;
+    readonly OwnerId: AggregatableField<string, "reference", false>;
+  }, {
+    readonly Owner: SalesforceParentRelationship<"User", "OwnerId", true>;
+  }>;
+  readonly User: SalesforceObject<{
+    readonly Name: AggregatableField<string, "string", false>;
   }>;
 }
 
@@ -46,6 +56,23 @@ describe("aggregate query compilation", () => {
 
     expect(compiled.soql).toBe(
       "SELECT COUNT(Id) rowCount, COUNT_DISTINCT(Name) distinctNames, SUM(AnnualRevenue) totalRevenue, AVG(EmployeeCount__c) averageEmployees, MIN(CloseDate) firstCloseDate, MAX(Name) lastName FROM Account",
+    );
+  });
+
+  it("compiles single and multiple GROUP BY fields in clause order", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .where("Name", "!=", null)
+      .groupBy("Name")
+      .groupBy("Owner.Name")
+      .select(["Name", "Owner.Name"])
+      .orderBy("Name", "desc")
+      .limit(10)
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT COUNT(Id) rowCount, Name, Owner.Name FROM Account WHERE Name != null GROUP BY Name, Owner.Name ORDER BY Name DESC LIMIT 10",
     );
   });
 

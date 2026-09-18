@@ -26,6 +26,7 @@ import {
   type EqualityComparisonOperator,
   type ExpressionBuilder,
   type ExpressionWrapper,
+  type GroupByNode,
   type LikeComparisonOperator,
   type LimitNode,
   type MultiSelectComparisonOperator,
@@ -109,6 +110,7 @@ type PublicTypeSurface = {
   equalityComparisonOperator: EqualityComparisonOperator;
   expressionBuilder: ExpressionBuilder<Record<string, never>, never>;
   expressionWrapper: ExpressionWrapper<Record<string, never>, never>;
+  groupByNode: GroupByNode;
   likeComparisonOperator: LikeComparisonOperator;
   limitNode: LimitNode;
   multiSelectComparisonOperator: MultiSelectComparisonOperator;
