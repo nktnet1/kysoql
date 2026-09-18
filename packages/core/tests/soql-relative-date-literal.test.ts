@@ -21,6 +21,9 @@ describe("SOQL relative date literals", () => {
     "LAST_YEAR",
     "THIS_YEAR",
     "NEXT_YEAR",
+    "LAST_FISCAL_YEAR",
+    "THIS_FISCAL_YEAR",
+    "NEXT_FISCAL_YEAR",
   ] as const)(
     "creates a frozen %s literal",
     (value) => {
@@ -67,7 +70,7 @@ describe("SOQL relative date literals", () => {
     expect(() =>
       soqlRelativeDate("LAST_N_DAYS:5" as "TODAY"),
     ).toThrow(
-      "SOQL fixed relative date literals must be TODAY, YESTERDAY, TOMORROW, LAST_MONTH, THIS_MONTH, NEXT_MONTH, LAST_QUARTER, THIS_QUARTER, NEXT_QUARTER, LAST_YEAR, THIS_YEAR, or NEXT_YEAR.",
+      "SOQL fixed relative date literals must be TODAY, YESTERDAY, TOMORROW, LAST_MONTH, THIS_MONTH, NEXT_MONTH, LAST_QUARTER, THIS_QUARTER, NEXT_QUARTER, LAST_YEAR, THIS_YEAR, NEXT_YEAR, LAST_FISCAL_YEAR, THIS_FISCAL_YEAR, or NEXT_FISCAL_YEAR.",
     );
     expect(() =>
       soqlRelativeDate("LAST_N_YEARS" as SoqlRelativeDateFamily, 5),
@@ -135,6 +138,9 @@ describe("SOQL relative date literals", () => {
       | "LAST_YEAR"
       | "THIS_YEAR"
       | "NEXT_YEAR"
+      | "LAST_FISCAL_YEAR"
+      | "THIS_FISCAL_YEAR"
+      | "NEXT_FISCAL_YEAR"
       | `LAST_N_DAYS:${number}`
       | `NEXT_N_DAYS:${number}`
       | `LAST_N_MONTHS:${number}`
@@ -150,6 +156,9 @@ describe("SOQL relative date literals", () => {
     soqlRelativeDate("LAST_YEAR");
     soqlRelativeDate("THIS_YEAR");
     soqlRelativeDate("NEXT_YEAR");
+    soqlRelativeDate("LAST_FISCAL_YEAR");
+    soqlRelativeDate("THIS_FISCAL_YEAR");
+    soqlRelativeDate("NEXT_FISCAL_YEAR");
     soqlRelativeDate("LAST_N_DAYS", 30);
     soqlRelativeDate("NEXT_N_DAYS", 30);
     soqlRelativeDate("LAST_N_MONTHS", 12);

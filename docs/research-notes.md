@@ -193,6 +193,10 @@ Implemented consequence in `v1.0.46`: the same fixed-literal path also supports
 `LAST_YEAR`, `THIS_YEAR`, and `NEXT_YEAR`, with the same date/datetime filter
 restriction and unquoted compiler behavior.
 
+Implemented consequence in `v1.0.47`: the same fixed-literal path also supports
+`LAST_FISCAL_YEAR`, `THIS_FISCAL_YEAR`, and `NEXT_FISCAL_YEAR`, with the same
+date/datetime filter restriction and unquoted compiler behavior.
+
 ### ORDER BY
 
 Sources:
