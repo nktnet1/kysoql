@@ -1,4 +1,7 @@
-import type { SalesforceParentRelationship } from "#/schema";
+import type {
+  SalesforceChildRelationship,
+  SalesforceParentRelationship,
+} from "#/schema";
 
 export type FieldsOf<DB, TB extends keyof DB> = DB[TB] extends {
   readonly fields: infer Fields;
@@ -12,10 +15,19 @@ export type ParentsOf<DB, TB extends keyof DB> = DB[TB] extends {
   ? Parents
   : never;
 
+export type ChildrenOf<DB, TB extends keyof DB> = DB[TB] extends {
+  readonly children: infer Children;
+}
+  ? Children
+  : never;
+
 export type FieldName<DB, TB extends keyof DB> = keyof FieldsOf<DB, TB> & string;
 
 export type ParentRelationshipName<DB, TB extends keyof DB> =
   keyof ParentsOf<DB, TB> & string;
+
+export type ChildRelationshipName<DB, TB extends keyof DB> =
+  keyof ChildrenOf<DB, TB> & string;
 
 export type FieldDefinition<
   DB,
@@ -28,6 +40,12 @@ export type ParentRelationshipDefinition<
   TB extends keyof DB,
   Relationship extends ParentRelationshipName<DB, TB>,
 > = ParentsOf<DB, TB>[Relationship];
+
+export type ChildRelationshipDefinition<
+  DB,
+  TB extends keyof DB,
+  Relationship extends ChildRelationshipName<DB, TB>,
+> = ChildrenOf<DB, TB>[Relationship];
 
 type ParentObjectNameFromRelationship<Relationship> =
   Relationship extends SalesforceParentRelationship<
@@ -45,6 +63,14 @@ type ParentNullabilityFromRelationship<Relationship> =
     infer Nullable
   >
     ? Nullable
+    : never;
+
+type ChildObjectNameFromRelationship<Relationship> =
+  Relationship extends SalesforceChildRelationship<
+    infer ObjectName,
+    string
+  >
+    ? ObjectName
     : never;
 
 export type ParentObjectName<
@@ -66,6 +92,28 @@ export type ParentRelationshipNullable<
 > = ParentNullabilityFromRelationship<
   ParentRelationshipDefinition<DB, TB, Relationship>
 >;
+
+export type ChildObjectName<
+  DB,
+  TB extends keyof DB,
+  Relationship extends ChildRelationshipName<DB, TB>,
+> = ChildObjectNameFromRelationship<
+  ChildRelationshipDefinition<DB, TB, Relationship>
+> extends infer ObjectName extends string
+  ? [ObjectName] extends [keyof DB & string]
+    ? ObjectName
+    : never
+  : never;
+
+export type ChildRelationshipReference<
+  DB,
+  TB extends keyof DB,
+  Relationship extends string,
+> = Relationship extends ChildRelationshipName<DB, TB>
+  ? [ChildObjectName<DB, TB, Relationship>] extends [never]
+    ? never
+    : Relationship
+  : never;
 
 type NextRelationshipDepth<Depth extends readonly unknown[]> = readonly [
   ...Depth,

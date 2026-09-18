@@ -280,15 +280,27 @@ Sources:
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-relationships-query-limits.html
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-relationships-query-results.html
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-relationships-lookup.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-offset.html
 
 Useful findings:
 
 - SOQL uses declared Salesforce relationships rather than arbitrary SQL joins.
 - Child-to-parent traversal uses dotted relationship paths; each path can traverse
   at most five child-to-parent relationship levels.
-- Parent-to-child traversal uses subqueries.
+- Parent-to-child traversal uses nested `SELECT` subqueries whose `FROM` member is
+  the generated child relationship name, not necessarily the child object name.
+- In API version 58.0 and later, REST/SOAP/Apex query calls can return five total
+  parent-to-child levels: the root is level one and child relationships can nest
+  four levels beneath it. Salesforce allows at most 20 parent-to-child
+  relationships in one query.
 - Relationship query results are nested objects. Nullable lookup relationships can
-  produce a null parent while the driving record is still returned.
+  produce a null parent while the driving record is still returned. A selected
+  parent-to-child relationship contains its own query-result envelope with record
+  metadata plus the nested `records` array.
+- Child relationship subqueries support scalar `WHERE`, `ORDER BY`, and `LIMIT`
+  clauses. `OFFSET` in most subqueries remains disallowed; Salesforce documents a
+  conditional subquery `OFFSET` form as a pilot feature when the parent query uses
+  `LIMIT 1`, so kysoql should not expose it as a normal production clause.
 
 Implemented consequence in `v1.0.52`: child-to-parent references are validated
 lazily from generated parent metadata instead of eagerly expanding every possible
@@ -296,6 +308,16 @@ path. Related selections infer nested result objects with relationship nullabili
 and related filters/orderings reuse the terminal field's generated metadata. A
 traversed parent object must be present in the generated schema so its fields can
 be checked. No arbitrary SQL joins are exposed.
+
+Implemented consequence in `v1.0.53`: `.selectSubquery(relationship, callback)`
+validates the relationship lazily from generated `children` metadata and creates a
+dedicated immutable relationship-subquery AST/builder. Child subqueries reuse typed
+field selection, scalar filters/expression callbacks, ordering, and limits; they
+can select child-to-parent paths and nest parent-to-child subqueries through four
+child traversals below the root. Selected child relationships infer
+`SalesforceQueryResult<Row>` with `totalSize`, `done`, `records`, and optional
+`nextRecordsUrl`. Subquery `OFFSET`, semi/anti-joins, aggregates, and raw SOQL
+fragments remain outside this slice.
 
 ### Remaining SOQL surface / roadmap references
 

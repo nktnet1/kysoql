@@ -13,6 +13,7 @@ import { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import { OrderByNode } from "#/operation-node/order-by-node";
 import { QueryNode } from "#/operation-node/query-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
+import { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
 import { SelectionNode } from "#/operation-node/selection-node";
 import { SObjectNode } from "#/operation-node/sobject-node";
@@ -211,4 +212,39 @@ describe("operation nodes", () => {
       expectFrozen(reordered.orderBy as object);
     },
   );
+
+  it("creates and extends immutable relationship subqueries", () => {
+    const base = RelationshipSubqueryNode.create(
+      ReferenceNode.create("Contacts"),
+    );
+    const id = SelectionNode.create(ReferenceNode.create("Id"));
+    const selected = RelationshipSubqueryNode.cloneWithSelections(base, [id]);
+    const limited = RelationshipSubqueryNode.cloneWithLimit(
+      selected,
+      LimitNode.create(5),
+    );
+    const ordered = RelationshipSubqueryNode.cloneWithOrderByItems(limited, [
+      OrderByItemNode.create(ReferenceNode.create("LastName"), "asc"),
+    ]);
+
+    expect(base).toEqual({
+      kind: "RelationshipSubqueryNode",
+      relationship: { kind: "ReferenceNode", name: "Contacts" },
+    });
+    expect(selected.selections).toEqual([id]);
+    expect(limited.limit).toEqual({ kind: "LimitNode", limit: 5 });
+    expect(ordered.orderBy?.items).toEqual([
+      {
+        kind: "OrderByItemNode",
+        orderBy: { kind: "ReferenceNode", name: "LastName" },
+        direction: "asc",
+      },
+    ]);
+    expect(base.selections).toBeUndefined();
+    expectFrozen(base);
+    expectFrozen(selected);
+    expectFrozen(selected.selections as readonly object[]);
+    expectFrozen(limited);
+    expectFrozen(ordered);
+  });
 });

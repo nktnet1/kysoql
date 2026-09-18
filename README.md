@@ -88,8 +88,9 @@ const compiled = query.compile();
 Selected fields, filterable fields, filter values, and operators are checked from
 the generated Salesforce schema. Equality (`=`, `!=`), ordered comparisons
 (`<`, `<=`, `>`, `>=`), and Kysely-style `like` are available where the field
-type supports them. `.compile()` emits SOQL for the currently implemented scalar and relationship-path
-selection/filter/order/limit AST. `.orderBy(field, direction?)` only accepts fields
+type supports them. `.compile()` emits SOQL for the currently implemented scalar
+and relationship-query selection/filter/order/limit AST. `.orderBy(field,
+direction?)` only accepts fields
 whose generated Salesforce Describe metadata marks them `sortable: true`.
 Calls are additive, and directions use Kysely-style lowercase `asc` / `desc`
 while the compiler emits SOQL `ASC` / `DESC`. Omitting the direction uses
@@ -113,6 +114,33 @@ const records = await db
   .orderBy("Account__r.Name")
   .execute();
 ```
+
+Generated child-relationship metadata enables typed parent-to-child subqueries
+without accepting arbitrary subquery `FROM` strings. `.selectSubquery()` takes a
+generated child relationship name and a dedicated child-query builder with the
+same scalar selection/filter/order/limit rules as the root query. Child queries
+can also select child-to-parent paths and nest further child subqueries through
+Salesforce's supported REST/SOAP relationship-query depth.
+
+```ts
+const accountsWithContacts = await db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .selectSubquery("Contacts", (contacts) =>
+    contacts
+      .select(["Id", "LastName", "CreatedBy.Alias"])
+      .where("LastName", "like", "A%")
+      .orderBy("LastName")
+      .limit(10),
+  )
+  .execute();
+```
+
+Each selected child relationship retains Salesforce's nested query-result shape:
+the relationship value contains `totalSize`, `done`, `records`, and an optional
+`nextRecordsUrl`. Subquery `OFFSET` is intentionally not exposed because Salesforce
+still documents it as a conditional pilot feature rather than a general
+production child-query clause.
 
 Salesforce `date`, `datetime`, and `time` fields still infer as strings when
 selected because that is how the generated API schema represents returned values.

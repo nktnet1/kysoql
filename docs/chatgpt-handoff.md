@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.51`, the next patch
-   is `v1.0.52`.
+   reuse or rewrite a version already handed off. After `v1.0.54`, the next patch
+   is `v1.0.55`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -43,7 +43,9 @@ Kysely findings that support the architecture below.
    the patch, wait for their `validate` result, then continue. Do not spend a long
    time exploring future features. When handing off a patch, link it and summarize
    its contents. Do not explain how to apply patches, or report `git diff --check` /
-   `git apply --check`, unless the user asks.
+   `git apply --check`, unless the user asks. Include a one-line Conventional Commit
+   message (for example `fix: ...` or `feat: ...`) in a code block after every
+   patch handoff.
 9. Update this handoff whenever the current milestone or patch sequence changes,
    so the next no-context session does not need the conversation history.
 
@@ -70,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.52`
+## Current state after `v1.0.54`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -103,6 +105,8 @@ recent patch sequence:
 | `v1.0.50` | Add parameterized `LAST_N_FISCAL_YEARS:n` and `NEXT_N_FISCAL_YEARS:n` relative-date literals. |
 | `v1.0.51` | Complete documented relative-date literal support by grouping the remaining fixed week/90-day literals and parameterized calendar/fiscal families. |
 | `v1.0.52` | Add typed child-to-parent relationship paths for selection, filtering, expression callbacks, and ordering with nested output typing. |
+| `v1.0.53` | Add typed parent-to-child relationship subqueries with a dedicated immutable builder/AST, nested query-result typing, scalar child clauses, and API 58+ nested child traversal depth. |
+| `v1.0.54` | Fix parent-to-child subquery builder return generics so accumulated nested output types satisfy `compile()` under strict TypeScript checking. |
 
 ### Build/tooling state
 
@@ -156,6 +160,14 @@ Core currently has:
   metadata, available in selection/filtering/ordering up to Salesforce's five-level
   traversal limit; related selections infer nested output objects and lookup
   nullability; traversed target objects must be present in the generated schema;
+- typed `.selectSubquery(childRelationship, callback)` parent-to-child queries
+  derived lazily from generated `children` metadata; child builders support typed
+  scalar selections, child-to-parent paths, `where` expression callbacks,
+  `orderBy`, and `limit`, plus nested child subqueries through four child
+  traversals below the root (five total REST/SOAP query levels); selected child
+  relationships infer `SalesforceQueryResult<Row>` envelopes with `totalSize`,
+  `done`, `records`, and optional `nextRecordsUrl`; subquery `OFFSET` is omitted
+  because Salesforce still documents it as a conditional pilot feature;
 - field-aware `.where(field, operator, value)` plus expression callbacks;
 - equality, ordered comparisons, lowercase `like`, scalar-list `in` / `not in`,
   and multipicklist `includes` / `excludes`;
@@ -190,24 +202,24 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.53` and should add typed parent-to-child
-relationship subqueries.** This is the second relationship-query architecture
-slice and should remain separate from semi/anti-joins and aggregates.
+**The next patch should be `v1.0.55` and should add typed semi-joins and
+anti-joins.** Keep this relationship-filter slice separate from aggregate-query
+output architecture.
 
 Recommended next unit:
 
-- derive selectable parent-to-child relationships from generated `children`
-  metadata rather than accepting arbitrary subquery `FROM` names;
-- introduce a dedicated immutable subquery AST/builder surface rather than raw
-  SOQL fragments;
-- preserve the nested query-result shape for selected child relationships;
-- support the useful child-query clauses that fit the existing scalar builder
-  model without redesigning aggregates;
-- add focused type, AST/compiler, query-builder, and output-shape coverage;
-- do **not** add arbitrary SQL joins, semi/anti-joins, aggregate expressions, or
-  `TYPEOF` in the same patch.
+- extend `IN` / `NOT IN` with a typed subquery operand in addition to the existing
+  non-empty scalar-list operand;
+- use a dedicated safe subquery builder/AST rather than raw SOQL fragments;
+- enforce Salesforce's ID/reference-field and single-selected-field restrictions
+  for semi/anti-joins where the generated schema makes them knowable;
+- preserve existing scalar-list `IN` / `NOT IN` behavior and overload inference;
+- add focused compiler/type coverage for both semi-join and anti-join forms and
+  their important nesting restrictions;
+- do **not** add aggregate expressions, `HAVING`, arbitrary SQL joins, or `TYPEOF`
+  in the same patch.
 
-If the supplied bundle already contains `v1.0.53` or later, inspect the code and
+If the supplied bundle already contains `v1.0.55` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
@@ -215,25 +227,23 @@ advance from the actual state instead of reimplementing this section.
 Group closely related syntax when it shares the same type/AST/compiler path, but
 keep major architecture changes independently reviewable:
 
-1. **Semi-joins and anti-joins.** Extend `IN` / `NOT IN` to typed subquery operands
-   and enforce Salesforce reference/ID and nesting restrictions where practical.
-2. **Aggregate queries.** `COUNT`, `COUNT(field)`, `COUNT_DISTINCT`, `SUM`, `AVG`,
+1. **Aggregate queries.** `COUNT`, `COUNT(field)`, `COUNT_DISTINCT`, `SUM`, `AVG`,
    `MIN`, `MAX`, aliases, `GROUP BY`, `HAVING`, `ROLLUP`, `CUBE`, and `GROUPING()`.
    This is a major output-type architecture change.
-3. **Broader SELECT expressions/functions.** `FIELDS(...)`, `toLabel()`,
+2. **Broader SELECT expressions/functions.** `FIELDS(...)`, `toLabel()`,
    `FORMAT()`, `convertCurrency()`, calendar/date functions,
    `convertTimezone()`, and geolocation expressions where safely modelable.
-4. **Polymorphic references / `TYPEOF`.** Dedicated AST and discriminated output
+3. **Polymorphic references / `TYPEOF`.** Dedicated AST and discriminated output
    typing.
-5. **Specialist top-level clauses.** `USING SCOPE`, `WITH DATA CATEGORY`, and
+4. **Specialist top-level clauses.** `USING SCOPE`, `WITH DATA CATEGORY`, and
    other REST/SOAP-relevant specialist clauses.
-6. **Execution-context-specific syntax.** Re-evaluate Apex-only semantics such as
+5. **Execution-context-specific syntax.** Re-evaluate Apex-only semantics such as
    `FOR UPDATE`, `WITH USER_MODE`, binds, etc. separately from the
    transport-neutral REST/JSforce core.
 
-The largest remaining architecture changes are parent-to-child relationship
-subqueries and aggregate queries. Avoid redesigning aggregates while implementing
-relationship subqueries.
+The largest remaining architecture change is aggregate-query output typing. Keep
+semi/anti-join work focused on relationship filters rather than using it as a
+pretext to redesign aggregate selections.
 
 ## Validation and runtime-boundary conventions
 

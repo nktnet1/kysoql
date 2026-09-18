@@ -27,12 +27,16 @@ export type {
 } from "#/operation-node/order-by-item-node";
 export type { OrderByNode } from "#/operation-node/order-by-node";
 export type { ReferenceNode } from "#/operation-node/reference-node";
+export type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 export type { SelectQueryNode } from "#/operation-node/select-query-node";
 export type { SelectionNode } from "#/operation-node/selection-node";
 export type { SObjectNode } from "#/operation-node/sobject-node";
 export type { ValueListNode } from "#/operation-node/value-list-node";
 export type { ValueNode } from "#/operation-node/value-node";
 export type { WhereNode } from "#/operation-node/where-node";
+export type {
+  RelationshipSubqueryBuilder,
+} from "#/query-builder/relationship-subquery-builder";
 export type {
   SelectQueryBuilder,
   SelectQueryBuilderProps,
@@ -64,6 +68,7 @@ export type {
   SalesforceFieldValue,
   SalesforceObject,
   SalesforceParentRelationship,
+  SalesforceQueryResult,
   SalesforceRow,
   SalesforceSchema,
 } from "#/schema";

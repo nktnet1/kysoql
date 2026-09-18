@@ -33,12 +33,15 @@ import {
   type QueryCreatorConfig,
   type QueryExecutor,
   type ReferenceNode,
+  type RelationshipSubqueryBuilder,
+  type RelationshipSubqueryNode,
   type SalesforceChildRelationship,
   type SalesforceField,
   type SalesforceFieldFilterValue,
   type SalesforceFieldValue,
   type SalesforceObject,
   type SalesforceParentRelationship,
+  type SalesforceQueryResult,
   type SalesforceRow,
   type SalesforceSchema,
   type SelectQueryBuilder,
@@ -84,6 +87,12 @@ type PublicTypeSurface = {
   queryCreatorConfig: QueryCreatorConfig;
   queryExecutor: QueryExecutor;
   referenceNode: ReferenceNode;
+  relationshipSubqueryBuilder: RelationshipSubqueryBuilder<
+    Record<string, never>,
+    never,
+    Record<never, never>
+  >;
+  relationshipSubqueryNode: RelationshipSubqueryNode;
   salesforceChildRelationship: SalesforceChildRelationship<"Child", "Parent">;
   salesforceField: SalesforceField<string, "string", false, true, true, true>;
   salesforceFieldFilterValue: SalesforceFieldFilterValue<
@@ -100,6 +109,7 @@ type PublicTypeSurface = {
     "ParentId",
     true
   >;
+  salesforceQueryResult: SalesforceQueryResult<{ readonly Id: string }>;
   salesforceRow: SalesforceRow<
     SalesforceObject<{
       readonly Id: SalesforceField<string, "id", false, true, true, true>;

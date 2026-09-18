@@ -11,6 +11,7 @@ import type { OperatorNode } from "#/operation-node/operator-node";
 import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import type { OrderByNode } from "#/operation-node/order-by-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
+import type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 import type { SelectQueryNode } from "#/operation-node/select-query-node";
 import type { SelectionNode } from "#/operation-node/selection-node";
 import type { ValueListNode } from "#/operation-node/value-list-node";
@@ -63,7 +64,40 @@ export class DefaultQueryCompiler implements QueryCompiler {
   }
 
   #compileSelection(selection: SelectionNode): string {
-    return this.#compileReference(selection.selection);
+    switch (selection.selection.kind) {
+      case "ReferenceNode":
+        return this.#compileReference(selection.selection as ReferenceNode);
+      case "RelationshipSubqueryNode":
+        return `(${this.#compileRelationshipSubquery(
+          selection.selection as RelationshipSubqueryNode,
+        )})`;
+      default:
+        throw new Error("Unsupported selection node.");
+    }
+  }
+
+  #compileRelationshipSubquery(query: RelationshipSubqueryNode): string {
+    if (!query.selections?.length) {
+      throw new Error("Cannot compile a relationship subquery without selections.");
+    }
+
+    let soql = `SELECT ${query.selections
+      .map((selection) => this.#compileSelection(selection))
+      .join(", ")} FROM ${this.#compileReference(query.relationship)}`;
+
+    if (query.where) {
+      soql += ` WHERE ${this.#compileWhere(query.where)}`;
+    }
+
+    if (query.orderBy) {
+      soql += ` ORDER BY ${this.#compileOrderBy(query.orderBy)}`;
+    }
+
+    if (query.limit) {
+      soql += ` LIMIT ${this.#compileLimit(query.limit)}`;
+    }
+
+    return soql;
   }
 
   #compileWhere(where: WhereNode): string {

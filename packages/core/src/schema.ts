@@ -45,6 +45,13 @@ export interface SalesforceChildRelationship<
   readonly field: FieldName;
 }
 
+export interface SalesforceQueryResult<Row> {
+  readonly totalSize: number;
+  readonly done: boolean;
+  readonly records: readonly Row[];
+  readonly nextRecordsUrl?: string;
+}
+
 export interface SalesforceObject<
   Fields extends Record<
     string,

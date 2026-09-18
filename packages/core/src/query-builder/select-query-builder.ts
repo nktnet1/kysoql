@@ -1,4 +1,7 @@
 import { QueryNode } from "#/operation-node/query-node";
+import { ReferenceNode } from "#/operation-node/reference-node";
+import { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
+import { SelectionNode } from "#/operation-node/selection-node";
 import {
   createExpressionBuilder,
   type WhereExpressionFactory,
@@ -31,6 +34,27 @@ import type {
   OrderByNulls,
 } from "#/operation-node/order-by-item-node";
 import { freeze } from "#/util/object-utils";
+import {
+  createRelationshipSubqueryBuilder,
+  type RelationshipSubqueryBuilder,
+} from "#/query-builder/relationship-subquery-builder";
+import type {
+  ChildObjectName,
+  ChildRelationshipName,
+  ChildRelationshipReference,
+} from "#/parser/reference-parser";
+import type { SalesforceQueryResult } from "#/schema";
+import type { Simplify } from "#/util/type-utils";
+
+type ChildObjectForRelationship<
+  DB,
+  TB extends keyof DB,
+  Relationship extends string,
+> = ChildObjectName<
+  DB,
+  TB,
+  Extract<Relationship, ChildRelationshipName<DB, TB>>
+>;
 
 export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
   compile(): CompiledQuery<O>;
@@ -67,6 +91,32 @@ export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
   select<SE extends string>(
     selection: SE & SelectExpression<DB, TB, SE>,
   ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>>;
+
+  selectSubquery<Relationship extends string, SubqueryOutput>(
+    relationship: Relationship &
+      ChildRelationshipReference<DB, TB, Relationship>,
+    callback: (
+      query: RelationshipSubqueryBuilder<
+        DB,
+        ChildObjectForRelationship<DB, TB, Relationship>,
+        Record<never, never>,
+        readonly [unknown]
+      >,
+    ) => RelationshipSubqueryBuilder<
+      DB,
+      ChildObjectForRelationship<DB, TB, Relationship>,
+      SubqueryOutput,
+      readonly [unknown]
+    >,
+  ): SelectQueryBuilder<
+    DB,
+    TB,
+    O & {
+      readonly [Key in Relationship]: SalesforceQueryResult<
+        Simplify<SubqueryOutput>
+      >;
+    }
+  >;
 
   toOperationNode(): SelectQueryNode;
 }
@@ -152,6 +202,60 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
         this.#props.queryNode,
         parseSelectArg(selection),
       ),
+    });
+  }
+
+  selectSubquery<Relationship extends string, SubqueryOutput>(
+    relationship: Relationship &
+      ChildRelationshipReference<DB, TB, Relationship>,
+    callback: (
+      query: RelationshipSubqueryBuilder<
+        DB,
+        ChildObjectForRelationship<DB, TB, Relationship>,
+        Record<never, never>,
+        readonly [unknown]
+      >,
+    ) => RelationshipSubqueryBuilder<
+      DB,
+      ChildObjectForRelationship<DB, TB, Relationship>,
+      SubqueryOutput,
+      readonly [unknown]
+    >,
+  ): SelectQueryBuilder<
+    DB,
+    TB,
+    O & {
+      readonly [Key in Relationship]: SalesforceQueryResult<
+        Simplify<SubqueryOutput>
+      >;
+    }
+  > {
+    const subquery = callback(
+      createRelationshipSubqueryBuilder<
+        DB,
+        ChildObjectForRelationship<DB, TB, Relationship>,
+        Record<never, never>,
+        readonly [unknown]
+      >({
+        queryNode: RelationshipSubqueryNode.create(
+          ReferenceNode.create(relationship),
+        ),
+      }),
+    );
+
+    return new SelectQueryBuilderImpl<
+      DB,
+      TB,
+      O & {
+        readonly [Key in Relationship]: SalesforceQueryResult<
+          Simplify<SubqueryOutput>
+        >;
+      }
+    >({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithSelections(this.#props.queryNode, [
+        SelectionNode.create(subquery.toOperationNode()),
+      ]),
     });
   }
 
