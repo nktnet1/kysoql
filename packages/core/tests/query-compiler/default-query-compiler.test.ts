@@ -385,6 +385,27 @@ describe("DefaultQueryCompiler", () => {
     );
   });
 
+  it("compiles parameterized fiscal quarter relative date literals without quotes", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .where(
+        "CloseDate",
+        "=",
+        soqlRelativeDate("LAST_N_FISCAL_QUARTERS", 4),
+      )
+      .where(
+        "LastActivityAt__c",
+        "<",
+        soqlRelativeDate("NEXT_N_FISCAL_QUARTERS", 2),
+      )
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT Id FROM Account WHERE CloseDate = LAST_N_FISCAL_QUARTERS:4 AND LastActivityAt__c < NEXT_N_FISCAL_QUARTERS:2",
+    );
+  });
+
   it("does not accept forged temporal wrappers as raw SOQL", () => {
     const forgedDate = {
       kind: "SoqlDateLiteral",

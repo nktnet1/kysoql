@@ -29,6 +29,8 @@ const relativeDateFamilies = [
   "NEXT_N_DAYS",
   "LAST_N_MONTHS",
   "NEXT_N_MONTHS",
+  "LAST_N_FISCAL_QUARTERS",
+  "NEXT_N_FISCAL_QUARTERS",
 ] as const;
 
 export type SoqlRelativeDateFamily = (typeof relativeDateFamilies)[number];
@@ -50,7 +52,7 @@ export interface SoqlRelativeDateLiteral {
 const INVALID_FIXED_RELATIVE_DATE =
   "SOQL fixed relative date literals must be TODAY, YESTERDAY, TOMORROW, LAST_MONTH, THIS_MONTH, NEXT_MONTH, LAST_QUARTER, THIS_QUARTER, NEXT_QUARTER, LAST_YEAR, THIS_YEAR, NEXT_YEAR, LAST_FISCAL_YEAR, THIS_FISCAL_YEAR, NEXT_FISCAL_YEAR, LAST_FISCAL_QUARTER, THIS_FISCAL_QUARTER, or NEXT_FISCAL_QUARTER.";
 const INVALID_RELATIVE_DATE_FAMILY =
-  "SOQL relative date family must be LAST_N_DAYS, NEXT_N_DAYS, LAST_N_MONTHS, or NEXT_N_MONTHS.";
+  "SOQL relative date family must be LAST_N_DAYS, NEXT_N_DAYS, LAST_N_MONTHS, NEXT_N_MONTHS, LAST_N_FISCAL_QUARTERS, or NEXT_N_FISCAL_QUARTERS.";
 const INVALID_RELATIVE_DATE_COUNT =
   "SOQL relative date count must be a non-negative safe integer.";
 const INVALID_RELATIVE_DATE = "Invalid SOQL relative date literal.";
@@ -133,7 +135,7 @@ function isValidRelativeDateValue(value: string): boolean {
   }
 
   const match =
-    /^(?:LAST_N_DAYS|NEXT_N_DAYS|LAST_N_MONTHS|NEXT_N_MONTHS):(0|[1-9]\d*)$/u.exec(
+    /^(?:LAST_N_DAYS|NEXT_N_DAYS|LAST_N_MONTHS|NEXT_N_MONTHS|LAST_N_FISCAL_QUARTERS|NEXT_N_FISCAL_QUARTERS):(0|[1-9]\d*)$/u.exec(
       value,
     );
 

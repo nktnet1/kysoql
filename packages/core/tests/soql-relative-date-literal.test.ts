@@ -46,6 +46,8 @@ describe("SOQL relative date literals", () => {
     ["NEXT_N_DAYS", 0, "NEXT_N_DAYS:0"],
     ["LAST_N_MONTHS", 12, "LAST_N_MONTHS:12"],
     ["NEXT_N_MONTHS", 1, "NEXT_N_MONTHS:1"],
+    ["LAST_N_FISCAL_QUARTERS", 4, "LAST_N_FISCAL_QUARTERS:4"],
+    ["NEXT_N_FISCAL_QUARTERS", 0, "NEXT_N_FISCAL_QUARTERS:0"],
   ] as const)("creates a frozen %s:%d literal", (family, count, value) => {
     const literal = soqlRelativeDate(family, count);
 
@@ -66,6 +68,11 @@ describe("SOQL relative date literals", () => {
       expect(() => soqlRelativeDate("LAST_N_MONTHS", count)).toThrow(
         "SOQL relative date count must be a non-negative safe integer.",
       );
+      expect(() =>
+        soqlRelativeDate("LAST_N_FISCAL_QUARTERS", count),
+      ).toThrow(
+        "SOQL relative date count must be a non-negative safe integer.",
+      );
     },
   );
 
@@ -78,7 +85,7 @@ describe("SOQL relative date literals", () => {
     expect(() =>
       soqlRelativeDate("LAST_N_YEARS" as SoqlRelativeDateFamily, 5),
     ).toThrow(
-      "SOQL relative date family must be LAST_N_DAYS, NEXT_N_DAYS, LAST_N_MONTHS, or NEXT_N_MONTHS.",
+      "SOQL relative date family must be LAST_N_DAYS, NEXT_N_DAYS, LAST_N_MONTHS, NEXT_N_MONTHS, LAST_N_FISCAL_QUARTERS, or NEXT_N_FISCAL_QUARTERS.",
     );
   });
 
@@ -116,17 +123,31 @@ describe("SOQL relative date literals", () => {
     expect(
       isSoqlRelativeDateLiteral({
         kind: "SoqlRelativeDateLiteral",
+        value: "LAST_N_FISCAL_QUARTERS:4",
+      }),
+    ).toBe(true);
+    expect(
+      isSoqlRelativeDateLiteral({
+        kind: "SoqlRelativeDateLiteral",
+        value: "NEXT_N_FISCAL_QUARTERS:0",
+      }),
+    ).toBe(true);
+    expect(
+      isSoqlRelativeDateLiteral({
+        kind: "SoqlRelativeDateLiteral",
         value: "LAST_N_YEARS:5",
       }),
     ).toBe(false);
   });
 
-  it("exposes fixed values plus parameterized day and month families", () => {
+  it("exposes fixed values plus supported parameterized families", () => {
     expectTypeOf<SoqlRelativeDateFamily>().toEqualTypeOf<
       | "LAST_N_DAYS"
       | "NEXT_N_DAYS"
       | "LAST_N_MONTHS"
       | "NEXT_N_MONTHS"
+      | "LAST_N_FISCAL_QUARTERS"
+      | "NEXT_N_FISCAL_QUARTERS"
     >();
     expectTypeOf<SoqlRelativeDateValue>().toEqualTypeOf<
       | "TODAY"
@@ -151,6 +172,8 @@ describe("SOQL relative date literals", () => {
       | `NEXT_N_DAYS:${number}`
       | `LAST_N_MONTHS:${number}`
       | `NEXT_N_MONTHS:${number}`
+      | `LAST_N_FISCAL_QUARTERS:${number}`
+      | `NEXT_N_FISCAL_QUARTERS:${number}`
     >();
 
     soqlRelativeDate("LAST_MONTH");
@@ -172,6 +195,8 @@ describe("SOQL relative date literals", () => {
     soqlRelativeDate("NEXT_N_DAYS", 30);
     soqlRelativeDate("LAST_N_MONTHS", 12);
     soqlRelativeDate("NEXT_N_MONTHS", 12);
+    soqlRelativeDate("LAST_N_FISCAL_QUARTERS", 4);
+    soqlRelativeDate("NEXT_N_FISCAL_QUARTERS", 4);
 
     function typecheckOnly(): void {
       // @ts-expect-error Parameterized relative dates require the family/count API.

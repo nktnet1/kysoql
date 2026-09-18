@@ -201,6 +201,11 @@ Implemented consequence in `v1.0.48`: the same fixed-literal path also supports
 `LAST_FISCAL_QUARTER`, `THIS_FISCAL_QUARTER`, and `NEXT_FISCAL_QUARTER`, with
 the same date/datetime filter restriction and unquoted compiler behavior.
 
+Implemented consequence in `v1.0.49`: the parameterized factory path also supports
+`soqlRelativeDate("LAST_N_FISCAL_QUARTERS", n)` and
+`soqlRelativeDate("NEXT_N_FISCAL_QUARTERS", n)`, reusing the same non-negative
+safe-integer count validation and branded unquoted literal representation.
+
 ### ORDER BY
 
 Sources:
