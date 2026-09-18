@@ -10,16 +10,14 @@
     }
   },
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
+    ".": "./src/index.ts",
+    "./package.json": "./package.json"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsdown",
     "check": "biome check",
     "test": "vitest run --dir tests --passWithNoTests",
     "typecheck": "tsc -p tsconfig.test.json",
@@ -27,5 +25,11 @@
   },
   "dependencies": {
     "valibot": "1.4.2"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": "./dist/index.mjs",
+      "./package.json": "./package.json"
+    }
   }
 }
