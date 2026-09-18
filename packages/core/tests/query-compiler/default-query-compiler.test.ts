@@ -341,6 +341,24 @@ describe("DefaultQueryCompiler", () => {
     );
   });
 
+  it("compiles fixed fiscal quarter relative date literals without quotes", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .where("CloseDate", "=", soqlRelativeDate("LAST_FISCAL_QUARTER"))
+      .where(
+        "LastActivityAt__c",
+        ">=",
+        soqlRelativeDate("THIS_FISCAL_QUARTER"),
+      )
+      .where("CloseDate", "<", soqlRelativeDate("NEXT_FISCAL_QUARTER"))
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT Id FROM Account WHERE CloseDate = LAST_FISCAL_QUARTER AND LastActivityAt__c >= THIS_FISCAL_QUARTER AND CloseDate < NEXT_FISCAL_QUARTER",
+    );
+  });
+
   it("compiles parameterized day relative date literals without quotes", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")
