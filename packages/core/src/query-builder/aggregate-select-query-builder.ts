@@ -1,4 +1,6 @@
 import {
+  type AggregateFunctionBuilder,
+  type AggregateFunctionExpression,
   type AliasedDateFunctionBuilder,
   createSelectExpressionBuilder,
   type DateFunctionExpression,
@@ -53,6 +55,7 @@ import {
 import { validateGroupingSelections } from "#/parser/grouping-expression-parser";
 import { parseLimit } from "#/parser/limit-parser";
 import {
+  parseAggregateOrderBy,
   parseGroupingOrderBy,
   parseOrderBy,
   type SortableFieldName,
@@ -90,6 +93,10 @@ type GroupingOrderByExpressionFactory<
   TB extends keyof DB,
   GroupedBy extends string,
 > = (eb: SelectExpressionBuilder<DB, TB, GroupedBy>) => GroupingFunctionBuilder;
+
+type AggregateOrderByExpressionFactory<DB, TB extends keyof DB> = (
+  eb: SelectExpressionBuilder<DB, TB>,
+) => AggregateFunctionExpression<unknown>;
 
 type DateFunctionIdentityOf<Expression> =
   Expression extends DateFunctionExpression<
@@ -394,6 +401,24 @@ export interface AggregateSelectQueryBuilder<
       GroupingOrderByExpressionFactory<DB, TB, GroupedBy>
     >,
     direction?: OrderByDirection,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
+  orderBy<Output, Value, Operator extends ComparisonOperator>(
+    expression: GroupedOnly<
+      GroupedBy,
+      (
+        eb: SelectExpressionBuilder<DB, TB>,
+      ) => AggregateFunctionBuilder<Output, Value, Operator>
+    >,
+    direction?: OrderByDirection,
+    nulls?: OrderByNulls,
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -870,6 +895,23 @@ class AggregateSelectQueryBuilderImpl<
     GroupMode,
     AdvancedFieldCount
   >;
+  orderBy<Output, Value, Operator extends ComparisonOperator>(
+    expression: GroupedOnly<
+      GroupedBy,
+      (
+        eb: SelectExpressionBuilder<DB, TB>,
+      ) => AggregateFunctionBuilder<Output, Value, Operator>
+    >,
+    direction?: OrderByDirection,
+    nulls?: OrderByNulls,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
   orderBy<
     Output,
     Value,
@@ -895,6 +937,7 @@ class AggregateSelectQueryBuilderImpl<
     fieldOrExpression:
       | string
       | GroupingOrderByExpressionFactory<DB, TB, GroupedBy>
+      | AggregateOrderByExpressionFactory<DB, TB>
       | ((
           eb: SelectExpressionBuilder<DB, TB>,
         ) => DateFunctionExpression<
@@ -923,18 +966,28 @@ class AggregateSelectQueryBuilderImpl<
         createSelectExpressionBuilder<DB, TB, GroupedBy>({ groupingFields }),
       );
 
-      if (expression.toOperationNode().kind === "DateFunctionNode") {
-        const node = expression.toOperationNode();
+      const node = expression.toOperationNode();
+
+      if (node.kind === "DateFunctionNode") {
         validateGroupedDateFunctionNode(
           node,
           getGroupedByIdentities(this.#props.queryNode),
         );
         item = OrderByItemNode.create(node, direction);
-      } else {
+      } else if (
+        node.kind === "AggregateFunctionNode" &&
+        node.function === "grouping"
+      ) {
         item = parseGroupingOrderBy(
           expression as GroupingFunctionBuilder,
           requireAdvancedGroupingFields(this.#props.queryNode),
           direction,
+        );
+      } else {
+        item = parseAggregateOrderBy(
+          expression as AggregateFunctionExpression<unknown>,
+          direction,
+          nulls,
         );
       }
     } else {

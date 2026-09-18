@@ -306,6 +306,69 @@ describe("aggregate queries", () => {
     expect(Object.isFrozen(query.toOperationNode().groupBy?.items)).toBe(true);
   });
 
+  it("orders grouped results by typed row-producing aggregate functions", () => {
+    const grouped = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupBy("Name");
+    const query = grouped
+      .orderBy(({ fn }) => fn.countDistinct("Name"), "desc")
+      .orderBy(({ fn }) => fn.sum("AnnualRevenue"), undefined, "last")
+      .orderBy(({ fn }) => fn.max("Owner.Name"), "asc", "first");
+
+    expect(grouped.toOperationNode().orderBy).toBeUndefined();
+    expect(query.toOperationNode().orderBy?.items).toEqual([
+      {
+        kind: "OrderByItemNode",
+        orderBy: {
+          kind: "AggregateFunctionNode",
+          function: "countDistinct",
+          reference: { kind: "ReferenceNode", name: "Name" },
+        },
+        direction: "desc",
+      },
+      {
+        kind: "OrderByItemNode",
+        orderBy: {
+          kind: "AggregateFunctionNode",
+          function: "sum",
+          reference: { kind: "ReferenceNode", name: "AnnualRevenue" },
+        },
+        nulls: "last",
+      },
+      {
+        kind: "OrderByItemNode",
+        orderBy: {
+          kind: "AggregateFunctionNode",
+          function: "max",
+          reference: { kind: "ReferenceNode", name: "Owner.Name" },
+        },
+        direction: "asc",
+        nulls: "first",
+      },
+    ]);
+    expect(Object.isFrozen(query.toOperationNode().orderBy)).toBe(true);
+    expect(Object.isFrozen(query.toOperationNode().orderBy?.items)).toBe(true);
+  });
+
+  it("rejects invalid aggregate ORDER BY callbacks at runtime", () => {
+    const grouped = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupBy("Name");
+
+    expect(() => grouped.orderBy(({ fn }) => fn.count() as never)).toThrow(
+      "SOQL aggregate ORDER BY callbacks must return an unaliased aggregate function with a field argument.",
+    );
+    expect(() =>
+      grouped.orderBy(
+        ({ fn }) => fn.sum("AnnualRevenue").as("totalRevenue") as never,
+      ),
+    ).toThrow(
+      "SOQL aggregate ORDER BY callbacks must return an unaliased aggregate function with a field argument.",
+    );
+  });
+
   it("rejects date functions outside the matching grouping set at runtime", () => {
     const grouped = new Kysoql<FixtureSchema>()
       .selectFrom("Account")
@@ -647,6 +710,8 @@ describe("aggregate queries", () => {
 
       // @ts-expect-error ORDER BY is available only after GROUP BY.
       aggregateQuery.orderBy("Name");
+      // @ts-expect-error Aggregate expression ORDER BY is available only after GROUP BY.
+      aggregateQuery.orderBy(({ fn }) => fn.count("Id"));
 
       // @ts-expect-error HAVING is available only after GROUP BY.
       aggregateQuery.having((eb) => eb(eb.fn.count("Id"), ">", 1));
@@ -674,6 +739,26 @@ describe("aggregate queries", () => {
       });
       // @ts-expect-error Ordinary GROUP BY cannot order by GROUPING.
       groupedQuery.orderBy(({ fn }) => fn.grouping("Name"));
+      groupedQuery.orderBy(({ fn }) => fn.count("Id"), "desc");
+      groupedQuery.orderBy(
+        ({ fn }) => fn.sum("AnnualRevenue"),
+        undefined,
+        "last",
+      );
+      // @ts-expect-error Bare COUNT() cannot be used in ORDER BY.
+      groupedQuery.orderBy(({ fn }) => fn.count());
+      // @ts-expect-error Aggregate ORDER BY expressions must be unaliased.
+      groupedQuery.orderBy(({ fn }) => {
+        return fn.sum("AnnualRevenue").as("totalRevenue");
+      });
+      groupedQuery.orderBy(({ fn }) => {
+        // @ts-expect-error Aggregate ORDER BY preserves aggregatable metadata.
+        return fn.count("Internal_Note__c");
+      });
+      groupedQuery.orderBy(({ fn }) => {
+        // @ts-expect-error Aggregate ORDER BY preserves numeric field requirements.
+        return fn.avg("Name");
+      });
 
       const dateGroupedQuery = aggregateQuery
         .groupBy(({ fn }) => fn.calendarYear("CloseDate"))
@@ -733,7 +818,6 @@ describe("aggregate queries", () => {
         // @ts-expect-error GROUPING comparisons accept only the 0 | 1 indicators.
         return eb(eb.fn.grouping("Name"), "=", 2);
       });
-      // @ts-expect-error This slice orders only by GROUPING expressions.
       rollupQuery.orderBy(({ fn }) => fn.count("Id"));
       // @ts-expect-error ROLLUP supports at most three grouping fields.
       rollupQuery.groupByRollup("Id");

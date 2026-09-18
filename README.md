@@ -205,6 +205,23 @@ const byStage = await db
   .execute();
 ```
 
+Grouped result sets can also order by unaliased row-producing aggregate
+expressions, whether or not the expression is selected. The callback retains
+the same generated `aggregatable` checks, including the numeric-only rules for
+`sum()` and `avg()`, and supports direction plus explicit null placement. Bare
+`count()` remains a scalar-only query form and cannot be used for ordering.
+
+```ts
+const largestStages = await db
+  .selectFrom("Opportunity")
+  .select(({ fn }) => fn.sum("Amount").as("totalAmount"))
+  .groupBy("StageName")
+  .select("StageName")
+  .orderBy(({ fn }) => fn.count("Id"), "desc")
+  .orderBy(({ fn }) => fn.sum("Amount"), undefined, "last")
+  .execute();
+```
+
 SOQL's complete date grouping family is available through the same `fn` module.
 Date functions accept generated `date` or `datetime` fields, while `dayOnly()`
 and `hourInDay()` are restricted to `datetime`. The exact function expression

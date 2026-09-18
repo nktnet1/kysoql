@@ -174,6 +174,25 @@ describe("aggregate query compilation", () => {
     );
   });
 
+  it("compiles row-producing aggregate functions in ORDER BY", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupBy("Name")
+      .select("Name")
+      .orderBy(({ fn }) => fn.count("Id"), "desc")
+      .orderBy(({ fn }) => fn.countDistinct("Name"))
+      .orderBy(({ fn }) => fn.avg("AnnualRevenue"), undefined, "last")
+      .orderBy(({ fn }) => fn.min("CloseDate"))
+      .orderBy(({ fn }) => fn.max("Owner.Name"), "asc", "first")
+      .orderBy(({ fn }) => fn.sum("AnnualRevenue"), "desc")
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT COUNT(Id) rowCount, Name FROM Account GROUP BY Name ORDER BY COUNT(Id) DESC, COUNT_DISTINCT(Name), AVG(AnnualRevenue) NULLS LAST, MIN(CloseDate), MAX(Owner.Name) ASC NULLS FIRST, SUM(AnnualRevenue) DESC",
+    );
+  });
+
   it("compiles the complete date grouping function family", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")

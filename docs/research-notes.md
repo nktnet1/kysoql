@@ -548,6 +548,38 @@ runtime boundaries. Numeric outputs preserve source/relationship nullability;
 against `soqlDate(...)`. ROLLUP/CUBE remain field-only so `GROUPING(field)` keeps
 its documented field argument and existing subtotal semantics.
 
+### Aggregate expression ordering
+
+Sources re-checked on 2026-09-18:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-agg-functions.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-count.html
+- https://developer.salesforce.com/docs/platform/graphql/guide/aggregate-orderby-examples.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-orderby.html
+
+Useful findings:
+
+- Salesforce's row-producing aggregate family is `AVG(field)`, `COUNT(field)`,
+  `COUNT_DISTINCT(field)`, `MIN(field)`, `MAX(field)`, and `SUM(field)`.
+- Salesforce's aggregate ordering examples order grouped results by aggregate
+  values and provide equivalent SOQL statements. Aggregate-value ordering
+  requires grouping but does not require the ordered expression to appear in
+  the selection list.
+- Scalar `COUNT()` is a distinct query form. Salesforce explicitly disallows
+  `ORDER BY` in a bare `COUNT()` query, so it must not flow through the
+  row-producing aggregate-ordering API.
+- General SOQL ordering supports `ASC` / `DESC` and explicit `NULLS FIRST` /
+  `NULLS LAST`; aggregate result ordering uses the same order item modifiers.
+
+Implemented consequence in `v1.0.64`: grouped aggregate builders accept
+unaliased expression callbacks for the six row-producing aggregate functions in
+`ORDER BY`. The callbacks reuse the existing generated aggregateability and
+numeric-field constraints, support direction and null placement, and do not
+require a matching selected expression. The type boundary excludes aliased
+expressions and scalar `COUNT()`; runtime validation mirrors both restrictions.
+Grouped field, exact date-function, and advanced `GROUPING(field)` ordering keep
+their focused validation paths.
+
 ### Remaining SOQL surface / roadmap references
 
 Sources re-checked on 2026-09-18:

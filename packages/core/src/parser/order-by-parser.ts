@@ -1,4 +1,7 @@
-import type { GroupingFunctionBuilder } from "#/expression/aggregate-function-builder";
+import type {
+  AggregateFunctionExpression,
+  GroupingFunctionBuilder,
+} from "#/expression/aggregate-function-builder";
 import {
   type OrderByDirection,
   OrderByItemNode,
@@ -28,6 +31,26 @@ export function parseOrderBy(
   nulls?: OrderByNulls,
 ): OrderByItemNode {
   return OrderByItemNode.create(ReferenceNode.create(field), direction, nulls);
+}
+
+export function parseAggregateOrderBy(
+  expression: AggregateFunctionExpression<unknown>,
+  direction?: OrderByDirection,
+  nulls?: OrderByNulls,
+): OrderByItemNode {
+  const node = expression.toOperationNode();
+
+  if (
+    node.kind !== "AggregateFunctionNode" ||
+    node.function === "grouping" ||
+    node.reference === undefined
+  ) {
+    throw new TypeError(
+      "SOQL aggregate ORDER BY callbacks must return an unaliased aggregate function with a field argument.",
+    );
+  }
+
+  return OrderByItemNode.create(node, direction, nulls);
 }
 
 export function parseGroupingOrderBy(

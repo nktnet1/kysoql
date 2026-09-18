@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.62`, the next patch
-   is `v1.0.63`.
+   reuse or rewrite a version already handed off. After `v1.0.64`, the next patch
+   is `v1.0.65`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.62`
+## Current state after `v1.0.64`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -115,6 +115,8 @@ recent patch sequence:
 | `v1.0.60` | Add typed `GROUP BY ROLLUP` / `CUBE`: advanced grouping modes, three-field limits, mode-mixing rejection, and nullable subtotal result fields. |
 | `v1.0.61` | Complete typed `GROUPING(field)` for accumulated ROLLUP/CUBE fields in SELECT, HAVING, and ORDER BY, with exact `0 | 1` indicator output. |
 | `v1.0.62` | Add the complete typed calendar/fiscal date grouping-function family with exact expression membership across ordinary GROUP BY, SELECT, HAVING, and ORDER BY. |
+| `v1.0.63` | Restore the date-function node and parser source files that were omitted from the `v1.0.62` patch artifact. |
+| `v1.0.64` | Add typed ordering by row-producing aggregate-function expressions on grouped queries, preserving field capabilities and excluding scalar `COUNT()`. |
 
 ### Build/tooling state
 
@@ -220,6 +222,12 @@ Core currently has:
   `HOUR_IN_DAY` are datetime-only, aliased outputs preserve temporal and
   relationship nullability, and exact function membership is retained across
   ordinary GROUP BY, SELECT, HAVING, and ORDER BY; ROLLUP/CUBE remain field-only;
+- typed aggregate-expression ordering after grouping for unaliased
+  `COUNT(field)`, `COUNT_DISTINCT(field)`, `AVG(field)`, `MIN(field)`,
+  `MAX(field)`, and `SUM(field)` callbacks, including direction and explicit
+  null placement without requiring the expression to be selected; generated
+  aggregateability and numeric constraints remain intact, while scalar
+  `COUNT()` stays excluded;
 - bare `COUNT()` as a dedicated scalar `CountQueryBuilder` with scalar `WHERE`
   and `LIMIT`; it compiles independently from row-producing aggregates and uses
   the executor's optional `executeCountQuery` capability, implemented by the
@@ -236,7 +244,9 @@ Core currently has:
   and `N_*_AGO` calendar/fiscal families; parameter counts are validated as
   non-negative safe integers and all literals compile unquoted;
 - grouped `eb.or([...])`, grouped/nested `eb.and([...])`, and `eb.not(expr)`;
-- typed `.orderBy(field, direction?, nulls?)`, additive in call order;
+- typed additive `.orderBy(...)` for scalar fields, grouped fields, exact grouped
+  date functions, advanced `GROUPING(field)`, and grouped row-producing
+  aggregate expressions;
 - `.limit(number)` with non-negative safe-integer validation and replacement on
   repeated calls;
 - `.offset(number)` with integer `0..2000` validation and replacement on repeated
@@ -260,23 +270,23 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.63` and should add documented ordering by the
-existing aggregate-function expressions.** Keep it focused on aggregate query
-ordering; leave aliases, broader SELECT functions, and `TYPEOF` for later slices.
+**The next patch should be `v1.0.65` and should begin the broader typed SELECT
+expression/function surface.** Keep it to one coherent Salesforce function
+family; leave polymorphic `TYPEOF` and specialist clauses for later slices.
 
 Recommended next unit:
 
-- confirm which row-producing aggregate expressions Salesforce documents in
-  `ORDER BY`, then expose only those existing typed function builders;
-- preserve each function's generated field capability and comparison/output
-  semantics without requiring the aggregate expression to be selected;
-- keep grouped field ordering, date-function ordering, and the focused
-  `GROUPING(field)` ordering path coherent; add compiler, runtime, and negative
-  type tests;
-- keep selection-alias ordering, `FIELDS(...)`, translation/format/currency
-  functions, geolocation, `TYPEOF`, and unrelated refactors out of this patch.
+- research the documented input fields, return shape, and incompatibilities for
+  the chosen SELECT function family before designing its public builder type;
+- prefer a dedicated immutable operation node and typed callback over a raw SOQL
+  escape hatch, preserving generated field capabilities and child-to-parent
+  relationship typing;
+- cover output inference, compiler emission, runtime validation, and negative
+  type cases without broadening aggregate or grouping behavior incidentally;
+- keep `TYPEOF`, selection-alias ordering, unrelated SELECT function families,
+  and specialist clauses out of the patch.
 
-If the supplied bundle already contains `v1.0.62` or later, inspect the code and
+If the supplied bundle already contains `v1.0.64` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
@@ -284,17 +294,14 @@ advance from the actual state instead of reimplementing this section.
 Group closely related syntax when it shares the same type/AST/compiler path, but
 keep major architecture changes independently reviewable:
 
-1. **Additional aggregate expression ordering.** Add documented ordering by the
-   existing aggregate functions and any output refinements that depend on those
-   expressions after the completed `GROUPING()` and date-grouping slices.
-2. **Broader SELECT expressions/functions.** `FIELDS(...)`, `toLabel()`,
+1. **Broader SELECT expressions/functions.** `FIELDS(...)`, `toLabel()`,
    `FORMAT()`, `convertCurrency()`, calendar/date functions,
    `convertTimezone()`, and geolocation expressions where safely modelable.
-3. **Polymorphic references / `TYPEOF`.** Dedicated AST and discriminated output
+2. **Polymorphic references / `TYPEOF`.** Dedicated AST and discriminated output
    typing.
-4. **Specialist top-level clauses.** `USING SCOPE`, `WITH DATA CATEGORY`, and
+3. **Specialist top-level clauses.** `USING SCOPE`, `WITH DATA CATEGORY`, and
    other REST/SOAP-relevant specialist clauses.
-5. **Execution-context-specific syntax.** Re-evaluate Apex-only semantics such as
+4. **Execution-context-specific syntax.** Re-evaluate Apex-only semantics such as
    `FOR UPDATE`, `WITH USER_MODE`, binds, etc. separately from the
    transport-neutral REST/JSforce core.
 
