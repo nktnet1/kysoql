@@ -86,6 +86,24 @@ describe("DefaultQueryCompiler", () => {
     );
   });
 
+  it("compiles grouped OR filters before top-level AND filters", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(["Id", "Name"])
+      .where((eb) =>
+        eb.or([
+          eb("Name", "=", "Acme"),
+          eb("AnnualRevenue", ">=", 100_000),
+        ]),
+      )
+      .where("Name", "!=", null)
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT Id, Name FROM Account WHERE (Name = 'Acme' OR AnnualRevenue >= 100000) AND Name != null",
+    );
+  });
+
   it("compiles additive ORDER BY fields with direction and null placement", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")

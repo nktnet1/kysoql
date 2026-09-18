@@ -13,9 +13,12 @@ import {
   type ComparisonOperator,
   type CompiledQuery,
   type EqualityComparisonOperator,
+  type ExpressionBuilder,
+  type ExpressionWrapper,
   type LikeComparisonOperator,
   type LimitNode,
   type OperationNode,
+  type OrNode,
   type OperatorNode,
   type OrderByDirection,
   type OrderByItemNode,
@@ -44,6 +47,7 @@ import {
   type SoqlTemporalLiteral,
   type SoqlTimeLiteral,
   type ValueNode,
+  type WhereExpressionFactory,
   type WhereNode,
 } from "#/index";
 
@@ -53,9 +57,12 @@ type PublicTypeSurface = {
   comparisonOperator: ComparisonOperator;
   compiledQuery: CompiledQuery;
   equalityComparisonOperator: EqualityComparisonOperator;
+  expressionBuilder: ExpressionBuilder<Record<string, never>, never>;
+  expressionWrapper: ExpressionWrapper<Record<string, never>, never>;
   likeComparisonOperator: LikeComparisonOperator;
   limitNode: LimitNode;
   operationNode: OperationNode;
+  orNode: OrNode;
   operatorNode: OperatorNode;
   orderByDirection: OrderByDirection;
   orderByItemNode: OrderByItemNode;
@@ -102,6 +109,7 @@ type PublicTypeSurface = {
   soqlTemporalLiteral: SoqlTemporalLiteral;
   soqlTimeLiteral: SoqlTimeLiteral;
   valueNode: ValueNode;
+  whereExpressionFactory: WhereExpressionFactory<Record<string, never>, never>;
   whereNode: WhereNode;
 };
 

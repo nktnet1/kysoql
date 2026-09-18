@@ -5,6 +5,7 @@ import type { BinaryOperationNode } from "#/operation-node/binary-operation-node
 import type { OperationNode } from "#/operation-node/operation-node";
 import type { LimitNode } from "#/operation-node/limit-node";
 import type { OffsetNode } from "#/operation-node/offset-node";
+import type { OrNode } from "#/operation-node/or-node";
 import type { OperatorNode } from "#/operation-node/operator-node";
 import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import type { OrderByNode } from "#/operation-node/order-by-node";
@@ -98,6 +99,8 @@ export class DefaultQueryCompiler implements QueryCompiler {
         return this.#compileAnd(node as AndNode);
       case "BinaryOperationNode":
         return this.#compileBinaryOperation(node as BinaryOperationNode);
+      case "OrNode":
+        return this.#compileOr(node as OrNode);
       case "ReferenceNode":
         return this.#compileReference(node as ReferenceNode);
       case "OperatorNode":
@@ -111,6 +114,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileAnd(node: AndNode): string {
     return `${this.#compileOperation(node.left)} AND ${this.#compileOperation(node.right)}`;
+  }
+
+  #compileOr(node: OrNode): string {
+    return `(${this.#compileOperation(node.left)} OR ${this.#compileOperation(node.right)})`;
   }
 
   #compileBinaryOperation(node: BinaryOperationNode): string {

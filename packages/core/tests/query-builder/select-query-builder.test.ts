@@ -345,6 +345,50 @@ describe("SelectQueryBuilder", () => {
     ).toBe(true);
   });
 
+  it("groups typed OR comparisons inside WHERE", () => {
+    const baseQuery = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(["Id", "Name"]);
+    const orQuery = baseQuery.where((eb) =>
+      eb.or([
+        eb("Name", "=", "Acme"),
+        eb("AnnualRevenue", ">=", 100_000),
+      ]),
+    );
+    const filteredQuery = orQuery.where("Name", "!=", null);
+
+    expect(baseQuery.toOperationNode().where).toBeUndefined();
+    expect(orQuery.toOperationNode().where).toEqual({
+      kind: "WhereNode",
+      where: {
+        kind: "OrNode",
+        left: {
+          kind: "BinaryOperationNode",
+          leftOperand: { kind: "ReferenceNode", name: "Name" },
+          operator: { kind: "OperatorNode", operator: "=" },
+          rightOperand: { kind: "ValueNode", value: "Acme" },
+        },
+        right: {
+          kind: "BinaryOperationNode",
+          leftOperand: { kind: "ReferenceNode", name: "AnnualRevenue" },
+          operator: { kind: "OperatorNode", operator: ">=" },
+          rightOperand: { kind: "ValueNode", value: 100_000 },
+        },
+      },
+    });
+    expect(filteredQuery.toOperationNode().where?.where).toEqual({
+      kind: "AndNode",
+      left: orQuery.toOperationNode().where?.where,
+      right: {
+        kind: "BinaryOperationNode",
+        leftOperand: { kind: "ReferenceNode", name: "Name" },
+        operator: { kind: "OperatorNode", operator: "!=" },
+        rightOperand: { kind: "ValueNode", value: null },
+      },
+    });
+    expect(Object.isFrozen(orQuery.toOperationNode().where?.where)).toBe(true);
+  });
+
   it("builds field-aware ordered and LIKE comparisons", () => {
     const db = new Kysoql<FixtureSchema>();
     const query = db
@@ -461,6 +505,18 @@ describe("SelectQueryBuilder", () => {
       soqlDateTime("2026-09-17T16:26:30Z"),
     );
     query.where("OpeningTime__c", "<", soqlTime("17:30:00.000Z"));
+
+    query.where((eb) =>
+      eb.or([eb("Name", "=", "Acme"), eb("AnnualRevenue", ">=", 100)]),
+    );
+
+    query.where((eb) =>
+      eb.or([
+        eb("Name", "=", "Acme"),
+        // @ts-expect-error Expression-builder comparisons preserve field-aware value types.
+        eb("AnnualRevenue", "=", "100"),
+      ]),
+    );
 
     // @ts-expect-error Number fields require numeric filter values.
     query.where("AnnualRevenue", "=", "100");

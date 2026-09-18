@@ -1,4 +1,8 @@
 import { QueryNode } from "#/operation-node/query-node";
+import {
+  createExpressionBuilder,
+  type WhereExpressionFactory,
+} from "#/expression/expression-builder";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { QueryExecutor } from "#/query-executor";
@@ -11,6 +15,7 @@ import {
   type FilterableFieldName,
   type OperandValueExpression,
 } from "#/parser/binary-operation-parser";
+import type { ComparisonOperator } from "#/operation-node/operator-node";
 import {
   parseSelectArg,
   type SelectArg,
@@ -40,6 +45,10 @@ export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
     field: OE,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
+  ): SelectQueryBuilder<DB, TB, O>;
+
+  where(
+    expression: WhereExpressionFactory<DB, TB>,
   ): SelectQueryBuilder<DB, TB, O>;
 
   where<
@@ -118,20 +127,19 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     });
   }
 
-  where<
-    RE extends FilterableFieldName<DB, TB>,
-    OP extends ComparisonOperatorExpression<DB, TB, RE>,
-  >(
-    lhs: RE,
-    op: OP,
-    rhs: OperandValueExpression<DB, TB, RE, NoInfer<OP>>,
+  where(
+    lhsOrExpression: FilterableFieldName<DB, TB> | WhereExpressionFactory<DB, TB>,
+    op?: ComparisonOperator,
+    rhs?: unknown,
   ): SelectQueryBuilder<DB, TB, O> {
+    const operation =
+      typeof lhsOrExpression === "function"
+        ? lhsOrExpression(createExpressionBuilder<DB, TB>()).toOperationNode()
+        : parseValueBinaryOperation(lhsOrExpression, op as ComparisonOperator, rhs);
+
     return new SelectQueryBuilderImpl<DB, TB, O>({
       ...this.#props,
-      queryNode: QueryNode.cloneWithWhere(
-        this.#props.queryNode,
-        parseValueBinaryOperation(lhs, op, rhs),
-      ),
+      queryNode: QueryNode.cloneWithWhere(this.#props.queryNode, operation),
     });
   }
 

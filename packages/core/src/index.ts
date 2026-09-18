@@ -8,7 +8,13 @@ export type {
   OrderedComparisonOperator,
 } from "#/operation-node/operator-node";
 export type { OperationNode } from "#/operation-node/operation-node";
+export type { OrNode } from "#/operation-node/or-node";
 export { Kysoql } from "#/kysoql";
+export type {
+  ExpressionBuilder,
+  ExpressionWrapper,
+  WhereExpressionFactory,
+} from "#/expression/expression-builder";
 export type { LimitNode } from "#/operation-node/limit-node";
 export type { OffsetNode } from "#/operation-node/offset-node";
 export type {

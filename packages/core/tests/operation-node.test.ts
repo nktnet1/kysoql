@@ -6,6 +6,7 @@ import {
 } from "#/operation-node/binary-operation-node";
 import { LimitNode } from "#/operation-node/limit-node";
 import { OffsetNode } from "#/operation-node/offset-node";
+import { OrNode } from "#/operation-node/or-node";
 import { OperatorNode } from "#/operation-node/operator-node";
 import { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import { OrderByNode } from "#/operation-node/order-by-node";
@@ -39,12 +40,13 @@ describe("operation nodes", () => {
     }
   });
 
-  it("creates frozen binary and AND operation nodes", () => {
+  it("creates frozen binary, AND, and OR operation nodes", () => {
     const left = ReferenceNode.create("Name");
     const operator = OperatorNode.create("=");
     const right = ValueNode.create("Acme");
     const binary = BinaryOperationNode.create(left, operator, right);
     const and = AndNode.create(binary, binary);
+    const or = OrNode.create(binary, binary);
 
     expect(binary).toEqual({
       kind: "BinaryOperationNode",
@@ -53,8 +55,10 @@ describe("operation nodes", () => {
       rightOperand: right,
     });
     expect(and).toEqual({ kind: "AndNode", left: binary, right: binary });
+    expect(or).toEqual({ kind: "OrNode", left: binary, right: binary });
     expectFrozen(binary);
     expectFrozen(and);
+    expectFrozen(or);
   });
 
   it("creates frozen LIMIT and OFFSET nodes", () => {
