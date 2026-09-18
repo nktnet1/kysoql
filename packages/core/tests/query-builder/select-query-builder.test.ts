@@ -389,6 +389,47 @@ describe("SelectQueryBuilder", () => {
     expect(Object.isFrozen(orQuery.toOperationNode().where?.where)).toBe(true);
   });
 
+  it("groups nested AND expressions inside WHERE", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(["Id", "Name"])
+      .where((eb) =>
+        eb.and([
+          eb("Name", "!=", null),
+          eb.or([
+            eb("Name", "=", "Acme"),
+            eb("AnnualRevenue", ">=", 100_000),
+          ]),
+        ]),
+      );
+
+    expect(query.toOperationNode().where?.where).toEqual({
+      kind: "AndNode",
+      left: {
+        kind: "BinaryOperationNode",
+        leftOperand: { kind: "ReferenceNode", name: "Name" },
+        operator: { kind: "OperatorNode", operator: "!=" },
+        rightOperand: { kind: "ValueNode", value: null },
+      },
+      right: {
+        kind: "OrNode",
+        left: {
+          kind: "BinaryOperationNode",
+          leftOperand: { kind: "ReferenceNode", name: "Name" },
+          operator: { kind: "OperatorNode", operator: "=" },
+          rightOperand: { kind: "ValueNode", value: "Acme" },
+        },
+        right: {
+          kind: "BinaryOperationNode",
+          leftOperand: { kind: "ReferenceNode", name: "AnnualRevenue" },
+          operator: { kind: "OperatorNode", operator: ">=" },
+          rightOperand: { kind: "ValueNode", value: 100_000 },
+        },
+      },
+    });
+    expect(Object.isFrozen(query.toOperationNode().where?.where)).toBe(true);
+  });
+
   it("builds field-aware ordered and LIKE comparisons", () => {
     const db = new Kysoql<FixtureSchema>();
     const query = db
@@ -511,9 +552,21 @@ describe("SelectQueryBuilder", () => {
     );
 
     query.where((eb) =>
+      eb.and([eb("Name", "=", "Acme"), eb("AnnualRevenue", ">=", 100)]),
+    );
+
+    query.where((eb) =>
       eb.or([
         eb("Name", "=", "Acme"),
         // @ts-expect-error Expression-builder comparisons preserve field-aware value types.
+        eb("AnnualRevenue", "=", "100"),
+      ]),
+    );
+
+    query.where((eb) =>
+      eb.and([
+        eb("Name", "=", "Acme"),
+        // @ts-expect-error Grouped AND comparisons preserve field-aware value types.
         eb("AnnualRevenue", "=", "100"),
       ]),
     );

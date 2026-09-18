@@ -1,3 +1,4 @@
+import { AndNode } from "#/operation-node/and-node";
 import { OrNode } from "#/operation-node/or-node";
 import type { OperationNode } from "#/operation-node/operation-node";
 import {
@@ -26,6 +27,14 @@ export interface ExpressionBuilder<DB, TB extends keyof DB> {
     lhs: RE,
     op: OP,
     rhs: OperandValueExpression<DB, TB, RE, NoInfer<OP>>,
+  ): ExpressionWrapper<DB, TB>;
+
+  and(
+    expressions: readonly [
+      ExpressionWrapper<DB, TB>,
+      ExpressionWrapper<DB, TB>,
+      ...ExpressionWrapper<DB, TB>[],
+    ],
   ): ExpressionWrapper<DB, TB>;
 
   or(
@@ -76,6 +85,26 @@ export function createExpressionBuilder<DB, TB extends keyof DB>(): ExpressionBu
       parseValueBinaryOperation(lhs, op, rhs),
     );
 
+  const and = (
+    expressions: readonly [
+      ExpressionWrapper<DB, TB>,
+      ExpressionWrapper<DB, TB>,
+      ...ExpressionWrapper<DB, TB>[],
+    ],
+  ): ExpressionWrapper<DB, TB> => {
+    const [first, second, ...rest] = expressions;
+    let operation = AndNode.create(
+      first.toOperationNode(),
+      second.toOperationNode(),
+    );
+
+    for (const item of rest) {
+      operation = AndNode.create(operation, item.toOperationNode());
+    }
+
+    return new ExpressionWrapperImpl<DB, TB>(operation);
+  };
+
   const or = (
     expressions: readonly [
       ExpressionWrapper<DB, TB>,
@@ -96,5 +125,5 @@ export function createExpressionBuilder<DB, TB extends keyof DB>(): ExpressionBu
     return new ExpressionWrapperImpl<DB, TB>(operation);
   };
 
-  return Object.assign(expression, { or });
+  return Object.assign(expression, { and, or });
 }
