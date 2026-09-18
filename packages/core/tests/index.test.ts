@@ -26,6 +26,7 @@ import {
   type OrderByNulls,
   type OrderByNode,
   type OrderedComparisonOperator,
+  type SetComparisonOperator,
   type QueryCompiler,
   type QueryCreatorConfig,
   type QueryExecutor,
@@ -47,6 +48,7 @@ import {
   type SoqlDateTimeLiteral,
   type SoqlTemporalLiteral,
   type SoqlTimeLiteral,
+  type ValueListNode,
   type ValueNode,
   type WhereExpressionFactory,
   type WhereNode,
@@ -71,6 +73,7 @@ type PublicTypeSurface = {
   orderByNulls: OrderByNulls;
   orderByNode: OrderByNode;
   orderedComparisonOperator: OrderedComparisonOperator;
+  setComparisonOperator: SetComparisonOperator;
   queryCompiler: QueryCompiler;
   queryCreatorConfig: QueryCreatorConfig;
   queryExecutor: QueryExecutor;
@@ -110,6 +113,7 @@ type PublicTypeSurface = {
   soqlDateTimeLiteral: SoqlDateTimeLiteral;
   soqlTemporalLiteral: SoqlTemporalLiteral;
   soqlTimeLiteral: SoqlTimeLiteral;
+  valueListNode: ValueListNode;
   valueNode: ValueNode;
   whereExpressionFactory: WhereExpressionFactory<Record<string, never>, never>;
   whereNode: WhereNode;

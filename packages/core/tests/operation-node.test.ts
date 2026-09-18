@@ -16,6 +16,7 @@ import { ReferenceNode } from "#/operation-node/reference-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
 import { SelectionNode } from "#/operation-node/selection-node";
 import { SObjectNode } from "#/operation-node/sobject-node";
+import { ValueListNode } from "#/operation-node/value-list-node";
 import { ValueNode } from "#/operation-node/value-node";
 import { WhereNode } from "#/operation-node/where-node";
 
@@ -38,6 +39,23 @@ describe("operation nodes", () => {
     expect(selection).toEqual({ kind: "SelectionNode", selection: reference });
     for (const node of [reference, operator, value, sobject, selection]) {
       expectFrozen(node);
+    }
+  });
+
+  it("creates frozen value-list nodes and members", () => {
+    const list = ValueListNode.create(["Acme", 100]);
+
+    expect(list).toEqual({
+      kind: "ValueListNode",
+      values: [
+        { kind: "ValueNode", value: "Acme" },
+        { kind: "ValueNode", value: 100 },
+      ],
+    });
+    expectFrozen(list);
+    expectFrozen(list.values);
+    for (const value of list.values) {
+      expectFrozen(value);
     }
   });
 

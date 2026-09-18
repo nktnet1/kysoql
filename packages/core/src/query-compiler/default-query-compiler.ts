@@ -13,6 +13,7 @@ import type { OrderByNode } from "#/operation-node/order-by-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { SelectQueryNode } from "#/operation-node/select-query-node";
 import type { SelectionNode } from "#/operation-node/selection-node";
+import type { ValueListNode } from "#/operation-node/value-list-node";
 import type { ValueNode } from "#/operation-node/value-node";
 import type { WhereNode } from "#/operation-node/where-node";
 import { isSoqlTemporalLiteral } from "#/soql-temporal-literal";
@@ -108,6 +109,8 @@ export class DefaultQueryCompiler implements QueryCompiler {
         return this.#compileReference(node as ReferenceNode);
       case "OperatorNode":
         return this.#compileOperator(node as OperatorNode);
+      case "ValueListNode":
+        return this.#compileValueList(node as ValueListNode);
       case "ValueNode":
         return this.#compileValue(node as ValueNode);
       default:
@@ -147,7 +150,22 @@ export class DefaultQueryCompiler implements QueryCompiler {
   }
 
   #compileOperator(node: OperatorNode): string {
-    return node.operator === "like" ? "LIKE" : node.operator;
+    switch (node.operator) {
+      case "in":
+        return "IN";
+      case "like":
+        return "LIKE";
+      case "not in":
+        return "NOT IN";
+      default:
+        return node.operator;
+    }
+  }
+
+  #compileValueList(node: ValueListNode): string {
+    return `(${node.values
+      .map((value) => this.#compileValue(value))
+      .join(", ")})`;
   }
 
   #compileValue(node: ValueNode, likePattern = false): string {

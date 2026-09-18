@@ -6,6 +6,7 @@ export type {
   LikeComparisonOperator,
   OperatorNode,
   OrderedComparisonOperator,
+  SetComparisonOperator,
 } from "#/operation-node/operator-node";
 export type { OperationNode } from "#/operation-node/operation-node";
 export type { OrNode } from "#/operation-node/or-node";
@@ -28,6 +29,7 @@ export type { ReferenceNode } from "#/operation-node/reference-node";
 export type { SelectQueryNode } from "#/operation-node/select-query-node";
 export type { SelectionNode } from "#/operation-node/selection-node";
 export type { SObjectNode } from "#/operation-node/sobject-node";
+export type { ValueListNode } from "#/operation-node/value-list-node";
 export type { ValueNode } from "#/operation-node/value-node";
 export type { WhereNode } from "#/operation-node/where-node";
 export type {
