@@ -6,6 +6,7 @@ export type { AliasNode } from "#/operation-node/alias-node";
 export type { AndNode } from "#/operation-node/and-node";
 export type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 export type { GroupByNode } from "#/operation-node/group-by-node";
+export type { HavingNode } from "#/operation-node/having-node";
 export type {
   ComparisonOperator,
   EqualityComparisonOperator,
@@ -20,6 +21,7 @@ export type { OrNode } from "#/operation-node/or-node";
 export { Kysoql } from "#/kysoql";
 export type {
   AggregateFunctionBuilder,
+  AggregateFunctionExpression,
   AggregateFunctionModule,
   AggregatableFieldReference,
   AliasedAggregateFunctionBuilder,
@@ -32,6 +34,12 @@ export type {
   ExpressionWrapper,
   WhereExpressionFactory,
 } from "#/expression/expression-builder";
+export type {
+  GroupedHavingFieldName,
+  HavingExpressionBuilder,
+  HavingExpressionFactory,
+  HavingExpressionWrapper,
+} from "#/expression/having-expression-builder";
 export type { LimitNode } from "#/operation-node/limit-node";
 export type { OffsetNode } from "#/operation-node/offset-node";
 export type { NotNode } from "#/operation-node/not-node";

@@ -167,6 +167,107 @@ describe("aggregate queries", () => {
     expect(Object.isFrozen(node.groupBy?.items)).toBe(true);
   });
 
+  it("adds immutable typed HAVING conditions after grouping", () => {
+    const grouped = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => [
+        fn.count("Id").as("rowCount"),
+        fn.sum("AnnualRevenue").as("totalRevenue"),
+      ])
+      .groupBy("Name")
+      .select("Name");
+    const query = grouped
+      .having((eb) =>
+        eb.and([
+          eb(eb.fn.count("Id"), ">", 1),
+          eb.or([
+            eb("Name", "like", "Acme%"),
+            eb.not(eb(eb.fn.sum("AnnualRevenue"), "<=", 10_000)),
+          ]),
+        ]),
+      )
+      .having("Name", "!=", null);
+
+    expect(grouped.toOperationNode().having).toBeUndefined();
+    expect(query.toOperationNode().having).toEqual({
+      kind: "HavingNode",
+      having: {
+        kind: "AndNode",
+        left: {
+          kind: "AndNode",
+          left: {
+            kind: "BinaryOperationNode",
+            leftOperand: {
+              kind: "AggregateFunctionNode",
+              function: "count",
+              reference: { kind: "ReferenceNode", name: "Id" },
+            },
+            operator: { kind: "OperatorNode", operator: ">" },
+            rightOperand: { kind: "ValueNode", value: 1 },
+          },
+          right: {
+            kind: "OrNode",
+            left: {
+              kind: "BinaryOperationNode",
+              leftOperand: { kind: "ReferenceNode", name: "Name" },
+              operator: { kind: "OperatorNode", operator: "like" },
+              rightOperand: { kind: "ValueNode", value: "Acme%" },
+            },
+            right: {
+              kind: "NotNode",
+              operand: {
+                kind: "BinaryOperationNode",
+                leftOperand: {
+                  kind: "AggregateFunctionNode",
+                  function: "sum",
+                  reference: {
+                    kind: "ReferenceNode",
+                    name: "AnnualRevenue",
+                  },
+                },
+                operator: { kind: "OperatorNode", operator: "<=" },
+                rightOperand: { kind: "ValueNode", value: 10_000 },
+              },
+            },
+          },
+        },
+        right: {
+          kind: "BinaryOperationNode",
+          leftOperand: { kind: "ReferenceNode", name: "Name" },
+          operator: { kind: "OperatorNode", operator: "!=" },
+          rightOperand: { kind: "ValueNode", value: null },
+        },
+      },
+    });
+    expect(Object.isFrozen(query.toOperationNode().having)).toBe(true);
+    expect(Object.isFrozen(query.toOperationNode().having?.having)).toBe(true);
+  });
+
+  it("rejects HAVING before grouping and semi-join operands at runtime", () => {
+    const aggregate = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"));
+
+    expect(() =>
+      (
+        aggregate as unknown as {
+          having(field: string, op: string, value: unknown): unknown;
+        }
+      ).having("Name", "=", "Acme"),
+    ).toThrow("SOQL aggregate queries must use GROUP BY before this clause.");
+
+    const grouped = aggregate.groupBy("OwnerId");
+    expect(() =>
+      (
+        grouped as unknown as {
+          having(field: string, op: string, value: unknown): unknown;
+        }
+      ).having("OwnerId", "in", () => undefined),
+    ).toThrow(
+      "SOQL semi-joins and anti-joins are only supported in the top-level WHERE clause.",
+    );
+  });
+
   it("rejects grouped field selections that are not present in GROUP BY at runtime", () => {
     const query = new Kysoql<FixtureSchema>()
       .selectFrom("Account")
@@ -314,11 +415,30 @@ describe("aggregate queries", () => {
       // @ts-expect-error ORDER BY is available only after GROUP BY.
       aggregateQuery.orderBy("Name");
 
+      // @ts-expect-error HAVING is available only after GROUP BY.
+      aggregateQuery.having((eb) => eb(eb.fn.count("Id"), ">", 1));
+
       const groupedQuery = aggregateQuery.groupBy("Name");
+      groupedQuery.having("Name", "like", "Acme%");
+      groupedQuery.having((eb) => eb(eb.fn.count("Id"), ">", 1));
       // @ts-expect-error Non-aggregate selected fields must be grouped.
       groupedQuery.select("AnnualRevenue");
       // @ts-expect-error Aggregate ORDER BY fields must be grouped in this slice.
       groupedQuery.orderBy("AnnualRevenue");
+      // @ts-expect-error HAVING field references must be grouped.
+      groupedQuery.having("AnnualRevenue", ">", 1);
+      groupedQuery.having((eb) => {
+        // @ts-expect-error COUNT() HAVING comparisons require numeric values.
+        return eb(eb.fn.count("Id"), ">", "1");
+      });
+      groupedQuery.having((eb) => {
+        // @ts-expect-error MAX(date) does not support LIKE comparisons.
+        return eb(eb.fn.max("CloseDate"), "like", "2026%");
+      });
+
+      const ownerGroupedQuery = aggregateQuery.groupBy("OwnerId");
+      // @ts-expect-error HAVING IN operands cannot be semi-join callbacks.
+      ownerGroupedQuery.having("OwnerId", "in", () => undefined);
 
       const relationshipGroupedQuery = aggregateQuery.groupBy("Owner.Name");
       relationshipGroupedQuery.select("Owner.Name");

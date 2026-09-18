@@ -7,6 +7,7 @@ import {
   BinaryOperationNode,
 } from "#/operation-node/binary-operation-node";
 import { GroupByNode } from "#/operation-node/group-by-node";
+import { HavingNode } from "#/operation-node/having-node";
 import { LimitNode } from "#/operation-node/limit-node";
 import { OffsetNode } from "#/operation-node/offset-node";
 import { NotNode } from "#/operation-node/not-node";
@@ -151,6 +152,28 @@ describe("operation nodes", () => {
     expectFrozen(initial.items);
     expectFrozen(extended);
     expectFrozen(extended.items);
+  });
+
+  it("creates and extends immutable HAVING trees", () => {
+    const first = BinaryOperationNode.create(
+      AggregateFunctionNode.create("count", ReferenceNode.create("Id")),
+      OperatorNode.create(">"),
+      ValueNode.create(1),
+    );
+    const second = BinaryOperationNode.create(
+      ReferenceNode.create("Name"),
+      OperatorNode.create("!="),
+      ValueNode.create(null),
+    );
+    const initial = HavingNode.create(first);
+    const extended = HavingNode.cloneWithOperation(initial, second);
+
+    expect(initial.having).toBe(first);
+    expect(extended.having).toEqual(AndNode.create(first, second));
+    expect(initial).not.toBe(extended);
+    expectFrozen(initial);
+    expectFrozen(extended);
+    expectFrozen(extended.having);
   });
 
   it("creates and extends immutable ORDER BY lists", () => {

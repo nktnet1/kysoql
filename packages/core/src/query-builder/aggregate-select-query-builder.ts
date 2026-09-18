@@ -6,6 +6,11 @@ import {
   createExpressionBuilder,
   type WhereExpressionFactory,
 } from "#/expression/expression-builder";
+import {
+  createHavingExpressionBuilder,
+  type GroupedHavingFieldName,
+  type HavingExpressionFactory,
+} from "#/expression/having-expression-builder";
 import type { ComparisonOperator } from "#/operation-node/operator-node";
 import type {
   OrderByDirection,
@@ -84,6 +89,27 @@ export interface AggregateSelectQueryBuilder<
   groupBy<GE extends string>(
     fields: ReadonlyArray<GE & GroupableFieldName<DB, TB, GE>>,
   ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy | GE>;
+
+  having(
+    expression: GroupedOnly<
+      GroupedBy,
+      HavingExpressionFactory<DB, TB, GroupedBy>
+    >,
+  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy>;
+
+  having<
+    RE extends string,
+    OP extends ComparisonOperatorExpression<DB, TB, RE>,
+    RHS extends OperandValueExpression<DB, TB, RE, NoInfer<OP>, false>,
+  >(
+    lhs: RE &
+      GroupedOnly<
+        GroupedBy,
+        GroupedHavingFieldName<DB, TB, GroupedBy, RE>
+      >,
+    op: OP,
+    rhs: RHS,
+  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy>;
 
   limit(
     limit: GroupedOnly<GroupedBy, number>,
@@ -184,6 +210,57 @@ class AggregateSelectQueryBuilderImpl<
       queryNode: SelectQueryNode.cloneWithGroupByItems(
         this.#props.queryNode,
         parseGroupBy(groupBy),
+      ),
+    });
+  }
+
+  having(
+    expression: GroupedOnly<
+      GroupedBy,
+      HavingExpressionFactory<DB, TB, GroupedBy>
+    >,
+  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy>;
+  having<
+    RE extends string,
+    OP extends ComparisonOperatorExpression<DB, TB, RE>,
+    RHS extends OperandValueExpression<DB, TB, RE, NoInfer<OP>, false>,
+  >(
+    lhs: RE &
+      GroupedOnly<
+        GroupedBy,
+        GroupedHavingFieldName<DB, TB, GroupedBy, RE>
+      >,
+    op: OP,
+    rhs: RHS,
+  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy>;
+  having(
+    lhsOrExpression:
+      | string
+      | HavingExpressionFactory<DB, TB, GroupedBy>,
+    op?: ComparisonOperator,
+    rhs?: unknown,
+  ): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy> {
+    assertGroupedQuery(this.#props.queryNode);
+
+    const groupedBy = this.#props.queryNode.groupBy?.items.map(
+      (item) => item.name,
+    ) ?? [];
+    const operation =
+      typeof lhsOrExpression === "function"
+        ? lhsOrExpression(
+            createHavingExpressionBuilder<DB, TB, GroupedBy>({ groupedBy }),
+          ).toOperationNode()
+        : createHavingExpressionBuilder<DB, TB, GroupedBy>({ groupedBy })(
+            lhsOrExpression as never,
+            op as never,
+            rhs as never,
+          ).toOperationNode();
+
+    return new AggregateSelectQueryBuilderImpl<DB, TB, O, GroupedBy>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithHaving(
+        this.#props.queryNode,
+        operation,
       ),
     });
   }

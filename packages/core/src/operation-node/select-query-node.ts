@@ -1,8 +1,10 @@
 import { freeze } from "#/util/object-utils";
 import { GroupByNode } from "#/operation-node/group-by-node";
+import { HavingNode } from "#/operation-node/having-node";
 import type { LimitNode } from "#/operation-node/limit-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { OffsetNode } from "#/operation-node/offset-node";
+import type { OperationNode } from "#/operation-node/operation-node";
 import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import { OrderByNode } from "#/operation-node/order-by-node";
 import type { SelectionNode } from "#/operation-node/selection-node";
@@ -15,6 +17,7 @@ export interface SelectQueryNode {
   readonly selections?: ReadonlyArray<SelectionNode>;
   readonly where?: WhereNode;
   readonly groupBy?: GroupByNode;
+  readonly having?: HavingNode;
   readonly orderBy?: OrderByNode;
   readonly limit?: LimitNode;
   readonly offset?: OffsetNode;
@@ -49,6 +52,18 @@ export const SelectQueryNode = {
       groupBy: select.groupBy
         ? GroupByNode.cloneWithItems(select.groupBy, items)
         : GroupByNode.create(items),
+    });
+  },
+
+  cloneWithHaving(
+    select: SelectQueryNode,
+    operation: OperationNode,
+  ): SelectQueryNode {
+    return freeze({
+      ...select,
+      having: select.having
+        ? HavingNode.cloneWithOperation(select.having, operation)
+        : HavingNode.create(operation),
     });
   },
 

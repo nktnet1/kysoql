@@ -416,8 +416,36 @@ After grouping, ordinary `.select(...)` fields must be members of the accumulate
 grouping set and contribute their normal nested selection shape to the aggregate
 result type. Grouped aggregate queries can order by grouped sortable fields and
 use `LIMIT`. The immutable `GroupByNode` compiles between `WHERE` and `ORDER BY`.
-`HAVING`, `ROLLUP`, `CUBE`, `GROUPING()`, date grouping functions, and ordering
-by aggregate expressions remain separate follow-up work.
+
+### HAVING
+
+Sources re-checked on 2026-09-18:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-having.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-examples.html
+
+Useful findings:
+
+- `HAVING` filters grouped aggregate results and therefore requires `GROUP BY`.
+  It compiles after `GROUP BY` and before `ORDER BY`.
+- `HAVING` conditional expressions can compare aggregate functions and grouped
+  field references. A non-aggregate field referenced by `HAVING` must be present
+  in the `GROUP BY` list.
+- The clause supports comparison conditions combined with logical `AND`, `OR`,
+  and `NOT`, similarly to `WHERE`.
+- Salesforce explicitly disallows semi-join and anti-join subqueries inside
+  `HAVING`.
+
+Implemented consequence in `v1.0.59`: grouped aggregate builders expose additive
+typed `.having(...)`. Direct field operands are restricted to the accumulated
+`GROUP BY` set. The callback form exposes the existing aggregate `fn` module for
+unaliased aggregate operands and typed logical `and` / `or` / `not` composition.
+Aggregate comparison values/operators retain the originating field semantics for
+`MIN` / `MAX`, while numeric aggregate functions use numeric comparisons. A
+dedicated immutable `HavingNode` compiles in SOQL clause order, and HAVING field
+parsing disables semi/anti-join operands at both the type and runtime boundaries.
+`ROLLUP`, `CUBE`, `GROUPING()`, date grouping functions, and ordering by aggregate
+expressions remain separate follow-up work.
 
 ### Remaining SOQL surface / roadmap references
 

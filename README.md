@@ -205,6 +205,29 @@ const byStage = await db
   .execute();
 ```
 
+Grouped aggregate queries also expose typed `HAVING`. Direct field operands must
+already be grouped; aggregate operands use the same `fn` module without aliases.
+The callback form supports `AND`, `OR`, and `NOT`, while semi/anti-join
+subqueries remain unavailable in `HAVING`.
+
+```ts
+const significantStages = await db
+  .selectFrom("Opportunity")
+  .select(({ fn }) => [
+    fn.count("Id").as("opportunityCount"),
+    fn.sum("Amount").as("totalAmount"),
+  ])
+  .groupBy("StageName")
+  .select("StageName")
+  .having((eb) =>
+    eb.and([
+      eb(eb.fn.count("Id"), ">", 5),
+      eb(eb.fn.sum("Amount"), ">=", 100_000),
+    ]),
+  )
+  .execute();
+```
+
 Bare `COUNT()` uses a dedicated scalar result builder because Salesforce returns
 the count through the query-result count rather than an aggregate record. It
 supports scalar `WHERE` filters and `LIMIT`, and the JSforce executor maps the

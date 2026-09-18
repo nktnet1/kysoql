@@ -10,6 +10,7 @@ import {
   type OrderedComparisonOperator,
   type SetComparisonOperator,
 } from "#/operation-node/operator-node";
+import type { OperationNode } from "#/operation-node/operation-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
 import { ValueListNode } from "#/operation-node/value-list-node";
 import { ValueNode } from "#/operation-node/value-node";
@@ -172,6 +173,18 @@ export function parseValueBinaryOperation(
   operator: ComparisonOperator,
   right: unknown,
 ): BinaryOperationNode {
+  return parseOperationValueBinaryOperation(
+    ReferenceNode.create(left),
+    operator,
+    right,
+  );
+}
+
+export function parseOperationValueBinaryOperation(
+  leftOperand: OperationNode,
+  operator: ComparisonOperator,
+  right: unknown,
+): BinaryOperationNode {
   const rightOperand =
     operator === "in" ||
     operator === "not in" ||
@@ -181,7 +194,7 @@ export function parseValueBinaryOperation(
       : ValueNode.create(right);
 
   return BinaryOperationNode.create(
-    ReferenceNode.create(left),
+    leftOperand,
     OperatorNode.create(operator),
     rightOperand,
   );

@@ -11,6 +11,7 @@ import {
   soqlTime,
   type AggregateFunction,
   type AggregateFunctionBuilder,
+  type AggregateFunctionExpression,
   type AggregateFunctionModule,
   type AggregateFunctionNode,
   type AggregateSelectQueryBuilder,
@@ -27,6 +28,11 @@ import {
   type ExpressionBuilder,
   type ExpressionWrapper,
   type GroupByNode,
+  type GroupedHavingFieldName,
+  type HavingExpressionBuilder,
+  type HavingExpressionFactory,
+  type HavingExpressionWrapper,
+  type HavingNode,
   type LikeComparisonOperator,
   type LimitNode,
   type MultiSelectComparisonOperator,
@@ -84,6 +90,7 @@ import {
 type PublicTypeSurface = {
   aggregateFunction: AggregateFunction;
   aggregateFunctionBuilder: AggregateFunctionBuilder<number>;
+  aggregateFunctionExpression: AggregateFunctionExpression<number>;
   aggregateFunctionModule: AggregateFunctionModule<Record<string, never>, never>;
   aggregateFunctionNode: AggregateFunctionNode;
   aggregateSelectQueryBuilder: AggregateSelectQueryBuilder<
@@ -111,6 +118,28 @@ type PublicTypeSurface = {
   expressionBuilder: ExpressionBuilder<Record<string, never>, never>;
   expressionWrapper: ExpressionWrapper<Record<string, never>, never>;
   groupByNode: GroupByNode;
+  groupedHavingFieldName: GroupedHavingFieldName<
+    Record<string, never>,
+    never,
+    "Name",
+    "Name"
+  >;
+  havingExpressionBuilder: HavingExpressionBuilder<
+    Record<string, never>,
+    never,
+    "Name"
+  >;
+  havingExpressionFactory: HavingExpressionFactory<
+    Record<string, never>,
+    never,
+    "Name"
+  >;
+  havingExpressionWrapper: HavingExpressionWrapper<
+    Record<string, never>,
+    never,
+    "Name"
+  >;
+  havingNode: HavingNode;
   likeComparisonOperator: LikeComparisonOperator;
   limitNode: LimitNode;
   multiSelectComparisonOperator: MultiSelectComparisonOperator;

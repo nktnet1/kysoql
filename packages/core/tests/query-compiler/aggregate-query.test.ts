@@ -76,6 +76,49 @@ describe("aggregate query compilation", () => {
     );
   });
 
+  it("compiles HAVING after GROUP BY with aggregate and grouped-field conditions", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => [
+        fn.count("Id").as("rowCount"),
+        fn.sum("AnnualRevenue").as("totalRevenue"),
+      ])
+      .where("Name", "!=", null)
+      .groupBy("Name")
+      .select("Name")
+      .having((eb) =>
+        eb.and([
+          eb(eb.fn.count("Id"), ">", 1),
+          eb.or([
+            eb("Name", "like", "Acme%"),
+            eb.not(eb(eb.fn.sum("AnnualRevenue"), ">=", 1_000)),
+          ]),
+        ]),
+      )
+      .orderBy("Name")
+      .limit(10)
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT COUNT(Id) rowCount, SUM(AnnualRevenue) totalRevenue, Name FROM Account WHERE Name != null GROUP BY Name HAVING COUNT(Id) > 1 AND (Name LIKE 'Acme%' OR NOT (SUM(AnnualRevenue) >= 1000)) ORDER BY Name LIMIT 10",
+    );
+  });
+
+  it("accumulates repeated HAVING calls with AND", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupBy("Name")
+      .select("Name")
+      .having("Name", "!=", null)
+      .having((eb) => eb(eb.fn.count("Id"), ">", 1))
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT COUNT(Id) rowCount, Name FROM Account GROUP BY Name HAVING Name != null AND COUNT(Id) > 1",
+    );
+  });
+
   it("compiles bare COUNT() without a generated result alias", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")

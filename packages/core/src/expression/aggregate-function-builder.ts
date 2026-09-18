@@ -1,9 +1,21 @@
 import { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
 import { AliasNode } from "#/operation-node/alias-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
+import type {
+  ComparisonOperator,
+  EqualityComparisonOperator,
+  OrderedComparisonOperator,
+  SetComparisonOperator,
+} from "#/operation-node/operator-node";
+import type {
+  ComparisonOperatorExpression,
+} from "#/parser/binary-operation-parser";
 import type { FieldReferenceDefinition } from "#/parser/reference-parser";
 import { parseSelectionAlias } from "#/parser/selection-alias-parser";
-import type { SalesforceFieldValue } from "#/schema";
+import type {
+  SalesforceFieldFilterValue,
+  SalesforceFieldValue,
+} from "#/schema";
 import { freeze } from "#/util/object-utils";
 
 export type AggregatableFieldReference<
@@ -54,20 +66,52 @@ type AggregateFieldValue<
   SalesforceFieldValue<FieldReferenceDefinition<DB, TB, Reference>>
 > | null;
 
-export interface CountAllFunctionBuilder {
-  readonly expressionType: number | undefined;
+type AggregateFieldComparisonValue<
+  DB,
+  TB extends keyof DB,
+  Reference extends string,
+> = SalesforceFieldFilterValue<FieldReferenceDefinition<DB, TB, Reference>>;
+
+type AggregateFieldComparisonOperator<
+  DB,
+  TB extends keyof DB,
+  Reference extends string,
+> = ComparisonOperatorExpression<DB, TB, Reference>;
+
+type NumericAggregateOperator =
+  | EqualityComparisonOperator
+  | OrderedComparisonOperator
+  | SetComparisonOperator;
+
+export interface AggregateFunctionExpression<
+  Output,
+  ComparisonValue = unknown,
+  Operator extends ComparisonOperator = ComparisonOperator,
+> {
+  readonly expressionType: Output | undefined;
+  readonly comparisonValueType?: ComparisonValue;
+  readonly comparisonOperatorType?: Operator;
 
   toOperationNode(): AggregateFunctionNode;
 }
 
-export interface AggregateFunctionBuilder<Output> {
-  readonly expressionType: Output | undefined;
+export interface CountAllFunctionBuilder
+  extends AggregateFunctionExpression<
+    number,
+    number,
+    | EqualityComparisonOperator
+    | OrderedComparisonOperator
+    | SetComparisonOperator
+  > {}
 
+export interface AggregateFunctionBuilder<
+  Output,
+  ComparisonValue = unknown,
+  Operator extends ComparisonOperator = ComparisonOperator,
+> extends AggregateFunctionExpression<Output, ComparisonValue, Operator> {
   as<Alias extends string>(
     alias: Alias,
   ): AliasedAggregateFunctionBuilder<Output, Alias>;
-
-  toOperationNode(): AggregateFunctionNode;
 }
 
 export interface AliasedAggregateFunctionBuilder<
@@ -92,8 +136,11 @@ class CountAllFunctionBuilderImpl implements CountAllFunctionBuilder {
   }
 }
 
-class AggregateFunctionBuilderImpl<Output>
-  implements AggregateFunctionBuilder<Output>
+class AggregateFunctionBuilderImpl<
+  Output,
+  ComparisonValue,
+  Operator extends ComparisonOperator,
+> implements AggregateFunctionBuilder<Output, ComparisonValue, Operator>
 {
   readonly #node: AggregateFunctionNode;
 
@@ -150,27 +197,43 @@ export interface AggregateFunctionModule<DB, TB extends keyof DB> {
 
   count<Reference extends string>(
     field: Reference & AggregatableFieldReference<DB, TB, Reference>,
-  ): AggregateFunctionBuilder<number>;
+  ): AggregateFunctionBuilder<number, number, NumericAggregateOperator>;
 
   countDistinct<Reference extends string>(
     field: Reference & AggregatableFieldReference<DB, TB, Reference>,
-  ): AggregateFunctionBuilder<number>;
+  ): AggregateFunctionBuilder<number, number, NumericAggregateOperator>;
 
   avg<Reference extends string>(
     field: Reference & NumericAggregatableFieldReference<DB, TB, Reference>,
-  ): AggregateFunctionBuilder<number | null>;
+  ): AggregateFunctionBuilder<
+    number | null,
+    number | null,
+    NumericAggregateOperator
+  >;
 
   max<Reference extends string>(
     field: Reference & AggregatableFieldReference<DB, TB, Reference>,
-  ): AggregateFunctionBuilder<AggregateFieldValue<DB, TB, Reference>>;
+  ): AggregateFunctionBuilder<
+    AggregateFieldValue<DB, TB, Reference>,
+    AggregateFieldComparisonValue<DB, TB, Reference>,
+    AggregateFieldComparisonOperator<DB, TB, Reference>
+  >;
 
   min<Reference extends string>(
     field: Reference & AggregatableFieldReference<DB, TB, Reference>,
-  ): AggregateFunctionBuilder<AggregateFieldValue<DB, TB, Reference>>;
+  ): AggregateFunctionBuilder<
+    AggregateFieldValue<DB, TB, Reference>,
+    AggregateFieldComparisonValue<DB, TB, Reference>,
+    AggregateFieldComparisonOperator<DB, TB, Reference>
+  >;
 
   sum<Reference extends string>(
     field: Reference & NumericAggregatableFieldReference<DB, TB, Reference>,
-  ): AggregateFunctionBuilder<number | null>;
+  ): AggregateFunctionBuilder<
+    number | null,
+    number | null,
+    NumericAggregateOperator
+  >;
 }
 
 class AggregateFunctionModuleImpl<DB, TB extends keyof DB>
@@ -179,53 +242,94 @@ class AggregateFunctionModuleImpl<DB, TB extends keyof DB>
   count(): CountAllFunctionBuilder;
   count<Reference extends string>(
     field: Reference & AggregatableFieldReference<DB, TB, Reference>,
-  ): AggregateFunctionBuilder<number>;
+  ): AggregateFunctionBuilder<number, number, NumericAggregateOperator>;
   count(
     field?: string,
-  ): CountAllFunctionBuilder | AggregateFunctionBuilder<number> {
+  ):
+    | CountAllFunctionBuilder
+    | AggregateFunctionBuilder<number, number, NumericAggregateOperator> {
     return field === undefined
       ? new CountAllFunctionBuilderImpl()
-      : new AggregateFunctionBuilderImpl<number>(
+      : new AggregateFunctionBuilderImpl<
+          number,
+          number,
+          NumericAggregateOperator
+        >(
           AggregateFunctionNode.create("count", ReferenceNode.create(field)),
         );
   }
 
   countDistinct<Reference extends string>(
     field: Reference & AggregatableFieldReference<DB, TB, Reference>,
-  ): AggregateFunctionBuilder<number> {
-    return new AggregateFunctionBuilderImpl<number>(
-      AggregateFunctionNode.create("countDistinct", ReferenceNode.create(field)),
+  ): AggregateFunctionBuilder<number, number, NumericAggregateOperator> {
+    return new AggregateFunctionBuilderImpl<
+      number,
+      number,
+      NumericAggregateOperator
+    >(
+      AggregateFunctionNode.create(
+        "countDistinct",
+        ReferenceNode.create(field),
+      ),
     );
   }
 
   avg<Reference extends string>(
     field: Reference & NumericAggregatableFieldReference<DB, TB, Reference>,
-  ): AggregateFunctionBuilder<number | null> {
-    return new AggregateFunctionBuilderImpl<number | null>(
+  ): AggregateFunctionBuilder<
+    number | null,
+    number | null,
+    NumericAggregateOperator
+  > {
+    return new AggregateFunctionBuilderImpl<
+      number | null,
+      number | null,
+      NumericAggregateOperator
+    >(
       AggregateFunctionNode.create("avg", ReferenceNode.create(field)),
     );
   }
 
   max<Reference extends string>(
     field: Reference & AggregatableFieldReference<DB, TB, Reference>,
-  ): AggregateFunctionBuilder<AggregateFieldValue<DB, TB, Reference>> {
+  ): AggregateFunctionBuilder<
+    AggregateFieldValue<DB, TB, Reference>,
+    AggregateFieldComparisonValue<DB, TB, Reference>,
+    AggregateFieldComparisonOperator<DB, TB, Reference>
+  > {
     return new AggregateFunctionBuilderImpl<
-      AggregateFieldValue<DB, TB, Reference>
+      AggregateFieldValue<DB, TB, Reference>,
+      AggregateFieldComparisonValue<DB, TB, Reference>,
+      AggregateFieldComparisonOperator<DB, TB, Reference>
     >(AggregateFunctionNode.create("max", ReferenceNode.create(field)));
   }
 
   min<Reference extends string>(
     field: Reference & AggregatableFieldReference<DB, TB, Reference>,
-  ): AggregateFunctionBuilder<AggregateFieldValue<DB, TB, Reference>> {
+  ): AggregateFunctionBuilder<
+    AggregateFieldValue<DB, TB, Reference>,
+    AggregateFieldComparisonValue<DB, TB, Reference>,
+    AggregateFieldComparisonOperator<DB, TB, Reference>
+  > {
     return new AggregateFunctionBuilderImpl<
-      AggregateFieldValue<DB, TB, Reference>
+      AggregateFieldValue<DB, TB, Reference>,
+      AggregateFieldComparisonValue<DB, TB, Reference>,
+      AggregateFieldComparisonOperator<DB, TB, Reference>
     >(AggregateFunctionNode.create("min", ReferenceNode.create(field)));
   }
 
   sum<Reference extends string>(
     field: Reference & NumericAggregatableFieldReference<DB, TB, Reference>,
-  ): AggregateFunctionBuilder<number | null> {
-    return new AggregateFunctionBuilderImpl<number | null>(
+  ): AggregateFunctionBuilder<
+    number | null,
+    number | null,
+    NumericAggregateOperator
+  > {
+    return new AggregateFunctionBuilderImpl<
+      number | null,
+      number | null,
+      NumericAggregateOperator
+    >(
       AggregateFunctionNode.create("sum", ReferenceNode.create(field)),
     );
   }
