@@ -24,8 +24,8 @@ Kysely findings that support the architecture below.
    coherent unit of work with focused tests. Do not bundle the next roadmap item,
    cleanup, or unrelated refactors into it.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.49`, the next patch
-   is `v1.0.50`.
+   reuse or rewrite a version already handed off. After `v1.0.50`, the next patch
+   is `v1.0.51`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -35,12 +35,14 @@ Kysely findings that support the architecture below.
 
    Also run the narrowest available type/test command. Do not repeatedly tell the
    user that pnpm or dependencies are unavailable in the execution environment;
-   they already know. Report the checks that were actually completed and let the
+   they already know. Report substantive checks such as tests/typechecks when useful,
+   but keep routine patch-integrity checks internal unless the user asks. Let the
    user run `pnpm validate` locally.
 8. The user prefers the current workflow: implement a small slice, provide the
    patch, wait for their `validate` result, then continue. Do not spend a long
    time exploring future features. When handing off a patch, link it and summarize
-   its contents/checks; do not explain how to apply patches unless the user asks.
+   its contents. Do not explain how to apply patches, or report `git diff --check` /
+   `git apply --check`, unless the user asks.
 9. Update this handoff whenever the current milestone or patch sequence changes,
    so the next no-context session does not need the conversation history.
 
@@ -67,7 +69,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.49`
+## Current state after `v1.0.50`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -97,6 +99,7 @@ recent patch sequence:
 | `v1.0.47` | Add fixed `LAST_FISCAL_YEAR`, `THIS_FISCAL_YEAR`, and `NEXT_FISCAL_YEAR` relative-date literals. |
 | `v1.0.48` | Add fixed `LAST_FISCAL_QUARTER`, `THIS_FISCAL_QUARTER`, and `NEXT_FISCAL_QUARTER` relative-date literals. |
 | `v1.0.49` | Add parameterized `LAST_N_FISCAL_QUARTERS:n` and `NEXT_N_FISCAL_QUARTERS:n` relative-date literals. |
+| `v1.0.50` | Add parameterized `LAST_N_FISCAL_YEARS:n` and `NEXT_N_FISCAL_YEARS:n` relative-date literals. |
 
 ### Build/tooling state
 
@@ -157,8 +160,9 @@ Core currently has:
   `LAST_FISCAL_YEAR`, `THIS_FISCAL_YEAR`, `NEXT_FISCAL_YEAR`,
   `LAST_FISCAL_QUARTER`, `THIS_FISCAL_QUARTER`, and `NEXT_FISCAL_QUARTER` plus
   validated `LAST_N_DAYS:n`, `NEXT_N_DAYS:n`, `LAST_N_MONTHS:n`,
-  `NEXT_N_MONTHS:n`, `LAST_N_FISCAL_QUARTERS:n`, and
-  `NEXT_N_FISCAL_QUARTERS:n` forms on `date` / `datetime` filters;
+  `NEXT_N_MONTHS:n`, `LAST_N_FISCAL_QUARTERS:n`,
+  `NEXT_N_FISCAL_QUARTERS:n`, `LAST_N_FISCAL_YEARS:n`, and
+  `NEXT_N_FISCAL_YEARS:n` forms on `date` / `datetime` filters;
 - grouped `eb.or([...])`, grouped/nested `eb.and([...])`, and `eb.not(expr)`;
 - typed `.orderBy(field, direction?, nulls?)`, additive in call order;
 - `.limit(number)` with non-negative safe-integer validation and replacement on
@@ -182,31 +186,30 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.50` and should add only the parameterized
-fiscal-year relative-date literals.** Keep them in the existing branded
-representation.
+**The next patch should be `v1.0.51` and should add only the fixed week
+relative-date literals.** Keep them in the existing branded representation.
 
 Recommended next unit:
 
-- add `LAST_N_FISCAL_YEARS` and `NEXT_N_FISCAL_YEARS` through the existing
-  two-argument `soqlRelativeDate(family, count)` factory;
-- reuse the existing non-negative safe-integer count validation and compile the
-  resulting `LAST_N_FISCAL_YEARS:n` / `NEXT_N_FISCAL_YEARS:n` values unquoted;
+- add `LAST_WEEK`, `THIS_WEEK`, and `NEXT_WEEK` through the existing one-argument
+  `soqlRelativeDate(value)` factory;
+- compile them unquoted through the existing relative-date literal path;
 - add focused factory/type/compiler tests;
-- do **not** add other relative-date families, relationship traversal, or
-  subqueries in the same patch.
+- do **not** add `LAST_N_WEEKS:n`, `NEXT_N_WEEKS:n`, `N_WEEKS_AGO:n`, other
+  relative-date literals, relationship traversal, or subqueries in the same
+  patch.
 
-If the supplied bundle already contains `v1.0.50` or later, inspect the code and
+If the supplied bundle already contains `v1.0.51` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
 
 Keep these as separate incremental patches or short patch series:
 
-1. **Finish relative date literals after the parameterized fiscal-year
-   slice.** Add the remaining documented relative-date families in separate small
-   slices with explicit validation. They must not be ordinary strings or be
-   smuggled through `soqlDate(...)`.
+1. **Finish relative date literals after the fixed-week slice.** Add the
+   remaining documented fixed and parameterized relative-date literals in
+   separate small slices with explicit validation. They must not be ordinary
+   strings or be smuggled through `soqlDate(...)`.
 2. **Relationship paths and relationship queries.** First child-to-parent dotted
    field paths in selection/filter/order, then parent-to-child subqueries. Use
    generated relationship metadata; no arbitrary SQL joins.

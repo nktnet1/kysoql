@@ -206,6 +206,11 @@ Implemented consequence in `v1.0.49`: the parameterized factory path also suppor
 `soqlRelativeDate("NEXT_N_FISCAL_QUARTERS", n)`, reusing the same non-negative
 safe-integer count validation and branded unquoted literal representation.
 
+Implemented consequence in `v1.0.50`: the parameterized factory path also supports
+`soqlRelativeDate("LAST_N_FISCAL_YEARS", n)` and
+`soqlRelativeDate("NEXT_N_FISCAL_YEARS", n)`, reusing the same non-negative
+safe-integer count validation and branded unquoted literal representation.
+
 ### ORDER BY
 
 Sources:
