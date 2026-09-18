@@ -4,6 +4,7 @@ import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { QueryExecutor } from "#/query-executor";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
 import { parseLimit } from "#/parser/limit-parser";
+import { parseOffset } from "#/parser/offset-parser";
 import {
   parseValueBinaryOperation,
   type ComparisonOperatorExpression,
@@ -29,6 +30,8 @@ export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
   execute(): Promise<readonly O[]>;
 
   limit(limit: number): SelectQueryBuilder<DB, TB, O>;
+
+  offset(offset: number): SelectQueryBuilder<DB, TB, O>;
 
   orderBy<OE extends SortableFieldName<DB, TB>>(
     field: OE,
@@ -84,6 +87,16 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
       queryNode: SelectQueryNode.cloneWithLimit(
         this.#props.queryNode,
         parseLimit(limit),
+      ),
+    });
+  }
+
+  offset(offset: number): SelectQueryBuilder<DB, TB, O> {
+    return new SelectQueryBuilderImpl<DB, TB, O>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithOffset(
+        this.#props.queryNode,
+        parseOffset(offset),
       ),
     });
   }

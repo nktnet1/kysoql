@@ -5,6 +5,7 @@ import {
   BinaryOperationNode,
 } from "#/operation-node/binary-operation-node";
 import { LimitNode } from "#/operation-node/limit-node";
+import { OffsetNode } from "#/operation-node/offset-node";
 import { OperatorNode } from "#/operation-node/operator-node";
 import { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import { OrderByNode } from "#/operation-node/order-by-node";
@@ -56,11 +57,14 @@ describe("operation nodes", () => {
     expectFrozen(and);
   });
 
-  it("creates frozen LIMIT nodes", () => {
+  it("creates frozen LIMIT and OFFSET nodes", () => {
     const limit = LimitNode.create(25);
+    const offset = OffsetNode.create(10);
 
     expect(limit).toEqual({ kind: "LimitNode", limit: 25 });
+    expect(offset).toEqual({ kind: "OffsetNode", offset: 10 });
     expectFrozen(limit);
+    expectFrozen(offset);
   });
 
   it("creates order items with and without explicit directions", () => {

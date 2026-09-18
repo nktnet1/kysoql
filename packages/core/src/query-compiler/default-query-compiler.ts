@@ -4,6 +4,7 @@ import type { AndNode } from "#/operation-node/and-node";
 import type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 import type { OperationNode } from "#/operation-node/operation-node";
 import type { LimitNode } from "#/operation-node/limit-node";
+import type { OffsetNode } from "#/operation-node/offset-node";
 import type { OperatorNode } from "#/operation-node/operator-node";
 import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import type { OrderByNode } from "#/operation-node/order-by-node";
@@ -50,6 +51,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
       soql += ` LIMIT ${this.#compileLimit(query.limit)}`;
     }
 
+    if (query.offset) {
+      soql += ` OFFSET ${this.#compileOffset(query.offset)}`;
+    }
+
     return soql;
   }
 
@@ -63,6 +68,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileLimit(limit: LimitNode): string {
     return String(limit.limit);
+  }
+
+  #compileOffset(offset: OffsetNode): string {
+    return String(offset.offset);
   }
 
   #compileOrderBy(orderBy: OrderByNode): string {

@@ -226,6 +226,54 @@ describe("SelectQueryBuilder", () => {
     }>();
   });
 
+  it("sets and replaces OFFSET without mutating earlier builders", () => {
+    const baseQuery = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(["Id", "Name"]);
+    const offsetQuery = baseQuery.offset(25);
+    const reoffsetQuery = offsetQuery.offset(0);
+
+    expect(baseQuery.toOperationNode().offset).toBeUndefined();
+    expect(offsetQuery.toOperationNode().offset).toEqual({
+      kind: "OffsetNode",
+      offset: 25,
+    });
+    expect(reoffsetQuery.toOperationNode().offset).toEqual({
+      kind: "OffsetNode",
+      offset: 0,
+    });
+    expect(Object.isFrozen(offsetQuery.toOperationNode().offset)).toBe(true);
+    expect(Object.isFrozen(reoffsetQuery.toOperationNode().offset)).toBe(true);
+  });
+
+  it("preserves the selected output type after offsetting", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(["Id", "Name"])
+      .offset(25);
+
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly Id: string;
+      readonly Name: string | null;
+    }>();
+  });
+
+  it("rejects invalid OFFSET values at runtime", () => {
+    const query = new Kysoql<FixtureSchema>().selectFrom("Account");
+
+    for (const invalidOffset of [
+      -1,
+      1.5,
+      2001,
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+    ]) {
+      expect(() => query.offset(invalidOffset)).toThrow(
+        "SOQL OFFSET must be a safe integer between 0 and 2000.",
+      );
+    }
+  });
+
   it("rejects invalid LIMIT values at runtime", () => {
     const query = new Kysoql<FixtureSchema>().selectFrom("Account");
 
@@ -466,6 +514,12 @@ describe("SelectQueryBuilder", () => {
     const query = new Kysoql<FixtureSchema>().selectFrom("Account");
 
     expectTypeOf(query.limit).parameter(0).toEqualTypeOf<number>();
+  });
+
+  it("requires numeric OFFSET values at compile time", () => {
+    const query = new Kysoql<FixtureSchema>().selectFrom("Account");
+
+    expectTypeOf(query.offset).parameter(0).toEqualTypeOf<number>();
   });
 
   it("rejects invalid ordering at compile time", () => {

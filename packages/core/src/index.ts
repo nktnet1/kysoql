@@ -10,6 +10,7 @@ export type {
 export type { OperationNode } from "#/operation-node/operation-node";
 export { Kysoql } from "#/kysoql";
 export type { LimitNode } from "#/operation-node/limit-node";
+export type { OffsetNode } from "#/operation-node/offset-node";
 export type {
   OrderByDirection,
   OrderByItemNode,

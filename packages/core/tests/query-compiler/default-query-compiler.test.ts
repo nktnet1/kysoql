@@ -125,6 +125,28 @@ describe("DefaultQueryCompiler", () => {
     expect(compiled.soql).toBe("SELECT Id FROM Account LIMIT 0");
   });
 
+  it("compiles OFFSET after LIMIT and only the latest chained offset", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .offset(100)
+      .limit(25)
+      .offset(10)
+      .compile();
+
+    expect(compiled.soql).toBe("SELECT Id FROM Account LIMIT 25 OFFSET 10");
+  });
+
+  it("compiles OFFSET 0 without requiring LIMIT", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .offset(0)
+      .compile();
+
+    expect(compiled.soql).toBe("SELECT Id FROM Account OFFSET 0");
+  });
+
   it("uses Salesforce's default ascending order when direction is omitted", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")

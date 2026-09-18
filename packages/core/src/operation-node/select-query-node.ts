@@ -1,5 +1,6 @@
 import { freeze } from "#/util/object-utils";
 import type { LimitNode } from "#/operation-node/limit-node";
+import type { OffsetNode } from "#/operation-node/offset-node";
 import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import { OrderByNode } from "#/operation-node/order-by-node";
 import type { SelectionNode } from "#/operation-node/selection-node";
@@ -13,6 +14,7 @@ export interface SelectQueryNode {
   readonly where?: WhereNode;
   readonly orderBy?: OrderByNode;
   readonly limit?: LimitNode;
+  readonly offset?: OffsetNode;
 }
 
 export const SelectQueryNode = {
@@ -39,6 +41,13 @@ export const SelectQueryNode = {
     return freeze({
       ...select,
       limit,
+    });
+  },
+
+  cloneWithOffset(select: SelectQueryNode, offset: OffsetNode): SelectQueryNode {
+    return freeze({
+      ...select,
+      offset,
     });
   },
 
