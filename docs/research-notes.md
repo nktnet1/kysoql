@@ -1135,3 +1135,35 @@ boolean expressions but only counts direct root-field predicates, so unrelated
 relationship references do not satisfy the invariant. The validation applies to
 record, aggregate, and scalar `COUNT()` root queries without changing their
 public builder APIs.
+
+### Vote required-filter shapes
+
+Source re-checked on 2026-09-19:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-limits.html
+
+Useful findings:
+
+- Salesforce restricts `Vote` queries to four documented root-WHERE predicate
+  shapes: `ParentId = [single ID]`, `Parent.Type = [single type]`, `Id =
+  [single ID]`, or `Id IN [list of IDs]`.
+- This is stricter than the `ContentDocumentLink` / `ContentHubItem` rules:
+  merely mentioning an allowed field is insufficient because the operator and
+  right-hand value shape are part of the restriction.
+- `Id IN (...)` must be a literal value list for this rule. A semi-join
+  subquery on `Id` is a different SOQL shape and must not satisfy the Vote
+  invariant.
+- The object-limit reference does not specify additional boolean-expression
+  placement rules around the qualifying predicate. Keep Kysoql's existing
+  recursive root-WHERE inspection rather than inventing stricter `AND` / `OR`
+  semantics.
+- `Parent.Type` is Salesforce's polymorphic relationship type qualifier. The
+  compiler validator must recognize that documented reference even though the
+  current generated ordinary-field reference surface does not synthesize a
+  `.Type` field.
+
+Kysoql consequence in `v1.0.81`: extend the shared object-query-limit compiler
+validator with a Vote-specific predicate matcher. Accept only non-empty scalar
+strings for the three equality forms and a non-empty literal string list for
+`Id IN (...)`; reject wrong operators and semi-join RHS nodes. Keep this as a
+compiler-boundary slice without broadening the ordinary filter API.

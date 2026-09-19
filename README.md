@@ -416,7 +416,9 @@ Relationship subqueries intentionally omit `.withUserId()`.
 Salesforce also imposes required root filters on a small number of objects.
 `ContentDocumentLink` queries must filter on `Id`,
 `ContentDocumentId`, or `LinkedEntityId`; `ContentHubItem` queries must filter
-on `Id`, `ExternalId`, or `ContentHubRepositoryId`. Kysoql validates those
+on `Id`, `ExternalId`, or `ContentHubRepositoryId`. `Vote` is narrower: its
+root `WHERE` must contain `ParentId = <single ID>`, `Parent.Type = <single
+type>`, `Id = <single ID>`, or `Id IN (<ID list>)`. Kysoql validates those
 requirements when compiling root queries, including aggregate and scalar
 `COUNT()` forms. The normal field/operator type system remains unchanged.
 

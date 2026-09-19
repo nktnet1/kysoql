@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.79`, the next patch
-   is `v1.0.80`.
+   reuse or rewrite a version already handed off. After `v1.0.81`, the next patch
+   is `v1.0.82`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.79`
+## Current state after `v1.0.81`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -133,6 +133,7 @@ recent patch sequence:
 | `v1.0.78` | Add Knowledge-article-only root `UPDATE TRACKING` / `UPDATE VIEWSTAT` with immutable accumulation, canonical combined compilation, and compiler/type gates. |
 | `v1.0.79` | Add root-only typed `UserProfileFeed WITH UserId = ...`, immutable replacement, escaped scalar compilation, and the required-query compiler invariant. |
 | `v1.0.80` | Enforce the documented root-WHERE filter prerequisites for `ContentDocumentLink` and `ContentHubItem` at the compiler boundary. |
+| `v1.0.81` | Enforce the documented `Vote` root-WHERE predicate shapes, including operator/value-shape validation and literal-list-only `Id IN`. |
 
 ### Build/tooling state
 
@@ -365,13 +366,13 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.81` and should handle the `Vote` object query
-restriction as its own compiler-boundary slice.** Salesforce allows `Vote`
-queries only when the root `WHERE` contains one of these documented shapes:
-`ParentId = <single ID>`, `Parent.Type = <single type>`, `Id = <single ID>`, or
-`Id IN (<ID list>)`. Unlike `v1.0.80`, this requires checking operator and
-right-hand value shape as well as field presence, so keep it separate. Do not
-pull `UserRecordAccess` into the same patch.
+**The next patch should be `v1.0.82` and should evaluate `UserRecordAccess` as
+its own object-specific query-limit slice.** Salesforce requires the query
+formats documented by the SOAP API, caps results at 200 records, and couples
+selected `HasAccess` / `MaxAccessLevel` fields to matching `ORDER BY` fields.
+Research the exact accepted query shapes before deciding what belongs in static
+types versus compiler-boundary validation. Do not combine permission-dependent
+`NewsFeed`, `UserProfileFeed`, or `TopicAssignment` row caps into that patch.
 
 Automatic `Question` data-category taxonomy discovery remains deferred: Salesforce
 exposes the required SOAP describe calls, but JSforce 3.10.x does not expose them
@@ -379,7 +380,7 @@ on its public `SoapApi`; the only generic invoke path is private. Keep using the
 existing optional normalized codegen hook until a stable public transport path is
 available rather than coupling the CLI to JSforce internals.
 
-If the supplied bundle already contains `v1.0.80` or later, inspect the code and
+If the supplied bundle already contains `v1.0.81` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
@@ -388,9 +389,9 @@ The large general-purpose SOQL surface is substantially complete. The remaining
 work is narrower and should stay incremental:
 
 1. **REST/SOAP object-specific query invariants.** `ContentDocumentLink` and
-   `ContentHubItem` are covered by `v1.0.80`. Handle `Vote` next, then evaluate
-   `UserRecordAccess` separately because its accepted query and ORDER BY shapes
-   are specialized. Permission-dependent limits such as `NewsFeed` /
+   `ContentHubItem` are covered by `v1.0.80`, and `Vote` is covered by
+   `v1.0.81`. Evaluate `UserRecordAccess` next because its accepted query and
+   ORDER BY shapes are specialized. Permission-dependent limits such as `NewsFeed` /
    `UserProfileFeed` row caps and `TopicAssignment` limits cannot be enforced
    unconditionally without execution-context/permission information, so prefer
    documentation or an explicit capability hook over false static guarantees.
@@ -407,8 +408,8 @@ work is narrower and should stay incremental:
 
 The aggregate-selection, grouping/HAVING, relationship traversal, polymorphic
 selection, function-expression, pagination, scope/category, MRU, Knowledge,
-UserProfileFeed, ContentDocumentLink, and ContentHubItem foundations are now in
-place.
+UserProfileFeed, ContentDocumentLink, ContentHubItem, and Vote foundations are
+now in place.
 
 ## Validation and runtime-boundary conventions
 
