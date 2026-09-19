@@ -983,6 +983,35 @@ relationship-query and aggregate-query output typing treated as major architectu
 milestones. Do not equate "all SOQL" with blindly exposing Apex-only execution
 semantics in the transport-neutral core API.
 
+### QueryAll execution
+
+Sources re-checked on 2026-09-20:
+
+- https://developer.salesforce.com/docs/platform/api-rest/guide/resources-queryall.html
+- https://developer.salesforce.com/docs/platform/api-rest/guide/resources-queryall-more-results.html
+- https://developer.salesforce.com/docs/platform/api/guide/sforce-api-calls-queryall.html
+- https://github.com/jsforce/jsforce/blob/main/MIGRATING_V1-V3.md
+
+Useful findings:
+
+- Salesforce REST `QueryAll` executes SOQL through a separate `/queryAll`
+  resource and can include soft-deleted records plus archived Task/Event rows.
+- A paginated QueryAll response can return a `nextRecordsUrl` containing
+  `/query/`; Salesforce explicitly states that following that locator still
+  returns the remaining rows from the original QueryAll result set.
+- Salesforce SOAP describes `queryAll()` as otherwise equivalent to `query()`
+  apart from deleted/archived visibility, so the execution distinction belongs at
+  the transport/executor boundary rather than in the query AST or compiler.
+- JSforce v3 removed the old `Connection.queryAll()` convenience method. Its
+  documented replacement is `connection.query(soql, { scanAll: true })`.
+
+Kysoql consequence for `v1.0.90`: keep compiled SOQL unchanged and add
+`.executeAll()` to root record, aggregate-result, and bare-`COUNT()` builders.
+The transport-neutral executor contract exposes optional QueryAll hooks so custom
+executors are not forced to implement the Salesforce-specific capability. The
+first-party JSforce executor implements them with `scanAll: true` on the initial
+request and the existing validated `queryMore` pagination loop thereafter.
+
 ## Codegen CLI framework
 
 Sources re-checked on 2026-09-18:

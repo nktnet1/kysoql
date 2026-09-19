@@ -28,6 +28,12 @@ const compiledCountQuery = {
 describe("createJsforceExecutor", () => {
   it("exports the executor contract and accepts the JSforce connection surface", () => {
     expectTypeOf<JsforceExecutor>().toMatchTypeOf<{
+      executeAllQuery<O>(
+        compiledQuery: CompiledQuery<O>,
+      ): Promise<readonly O[]>;
+      executeAllCountQuery(
+        compiledQuery: CompiledQuery<number>,
+      ): Promise<number>;
       executeCountQuery(compiledQuery: CompiledQuery<number>): Promise<number>;
     }>();
     expectTypeOf<Connection>().toMatchTypeOf<JsforceConnection>();
@@ -57,6 +63,38 @@ describe("createJsforceExecutor", () => {
     expect(queryMore).not.toHaveBeenCalled();
   });
 
+  it("executes Salesforce QueryAll through JSforce scanAll and preserves pagination", async () => {
+    const query = vi.fn(
+      async (
+        _soql: string,
+        _options?: { readonly scanAll?: boolean },
+      ): Promise<JsforceQueryResult> => ({
+        done: false,
+        nextRecordsUrl: "/services/data/v68.0/query/01g-query-all",
+        records: [{ Id: "001000000000001", Name: "Deleted Acme" }],
+      }),
+    );
+    const queryMore = vi.fn(
+      async (_locator: string): Promise<JsforceQueryResult> => ({
+        done: true,
+        records: [{ Id: "001000000000002", Name: null }],
+      }),
+    );
+
+    const executor = createJsforceExecutor({ query, queryMore });
+
+    await expect(executor.executeAllQuery(compiledQuery)).resolves.toEqual([
+      { Id: "001000000000001", Name: "Deleted Acme" },
+      { Id: "001000000000002", Name: null },
+    ]);
+    expect(query).toHaveBeenCalledWith("SELECT Id, Name FROM Account", {
+      scanAll: true,
+    });
+    expect(queryMore).toHaveBeenCalledWith(
+      "/services/data/v68.0/query/01g-query-all",
+    );
+  });
+
   it("executes bare COUNT() queries through totalSize without pagination", async () => {
     const query = vi.fn(
       async (_soql: string): Promise<JsforceCountQueryResult> => ({
@@ -76,6 +114,33 @@ describe("createJsforceExecutor", () => {
       42,
     );
     expect(query).toHaveBeenCalledWith("SELECT COUNT() FROM Account");
+    expect(queryMore).not.toHaveBeenCalled();
+  });
+
+  it("executes QueryAll bare COUNT() through JSforce scanAll", async () => {
+    const query = vi.fn(
+      async (
+        _soql: string,
+        _options?: { readonly scanAll?: boolean },
+      ): Promise<JsforceCountQueryResult> => ({
+        done: true,
+        records: null,
+        totalSize: 7,
+      }),
+    );
+    const queryMore = vi.fn(async (_locator: string) => ({
+      done: true,
+      records: [],
+    }));
+
+    const executor = createJsforceExecutor({ query, queryMore });
+
+    await expect(
+      executor.executeAllCountQuery(compiledCountQuery),
+    ).resolves.toBe(7);
+    expect(query).toHaveBeenCalledWith("SELECT COUNT() FROM Account", {
+      scanAll: true,
+    });
     expect(queryMore).not.toHaveBeenCalled();
   });
 

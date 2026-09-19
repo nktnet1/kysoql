@@ -269,6 +269,8 @@ export interface AggregateSelectQueryBuilder<
 
   execute(): Promise<readonly O[]>;
 
+  executeAll(): Promise<readonly O[]>;
+
   forView(
     ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
       ? readonly [mruDisabled: never]
@@ -676,6 +678,22 @@ class AggregateSelectQueryBuilderImpl<
     }
 
     return this.#props.queryExecutor.executeQuery(this.compile());
+  }
+
+  async executeAll(): Promise<readonly O[]> {
+    if (!this.#props.queryExecutor) {
+      throw new Error(
+        "No query executor configured. Pass an executor when creating Kysoql.",
+      );
+    }
+
+    if (!this.#props.queryExecutor.executeAllQuery) {
+      throw new Error(
+        "The configured query executor does not support Salesforce QueryAll execution.",
+      );
+    }
+
+    return this.#props.queryExecutor.executeAllQuery(this.compile());
   }
 
   forView(

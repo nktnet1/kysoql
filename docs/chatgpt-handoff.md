@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.89`, the next patch
-   is `v1.0.90`.
+   reuse or rewrite a version already handed off. After `v1.0.91`, the next patch
+   is `v1.0.92`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.89`
+## Current state after `v1.0.91`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -142,6 +142,8 @@ recent patch sequence:
 | `v1.0.87` | Complete the final public-API/tooling/docs/codegen consistency audit: forward root `pnpm check` arguments through Turbo, remove the scaffold-only `kysoql()` export, complete package-entrypoint contract coverage, and make generated schema imports/empty metadata maps lint-friendly. |
 | `v1.0.88` | Begin release hardening: standardize generated/schema empty maps on `Record<string, never>` without poisoning selection intersections, add typed publish-shape verification for built exports/declarations/binaries, and run it from `pnpm validate`. |
 | `v1.0.89` | Add release metadata hardening: package-specific READMEs, explicit Node/public-access/tree-shaking/keyword metadata, an Unreleased changelog, and a typed verifier that keeps publishable package versions/metadata aligned. |
+| `v1.0.90` | Add Salesforce QueryAll execution through root `.executeAll()` for record, aggregate-result, and bare-`COUNT()` queries, with optional transport-neutral executor hooks and JSforce v3 `scanAll` pagination. |
+| `v1.0.91` | Fix the aggregate QueryAll executor test so its mock preserves the generic `QueryExecutor.executeAllQuery<O>()` contract under TypeScript 7/Vitest 5 instead of collapsing the return type to `unknown[]`. |
 
 ### Build/tooling state
 
@@ -368,8 +370,10 @@ Core currently has:
 - `.offset(number)` with integer `0..2000` validation and replacement on repeated
   calls;
 - `CompiledQuery<O>`, compiler output, transport-neutral execution, and the
-  JSforce adapter with full explicit pagination plus scalar bare-`COUNT()`
-  execution;
+  JSforce adapter with full explicit pagination, scalar bare-`COUNT()` execution,
+  and QueryAll execution for soft-deleted/archived records through root
+  `.executeAll()`; JSforce v3 uses `query(soql, { scanAll: true })` for the first
+  page and ordinary `queryMore` locators thereafter;
 - generated field metadata for filterable/sortable/groupable/aggregatable/custom
   flags, polymorphic-reference detection (`namePointing`,
   `polymorphicForeignKey`, and `referenceTo`), active picklist values, and
@@ -389,11 +393,18 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.90` and should continue release hardening.**
-Publish-shape and release-metadata verification are now part of `pnpm validate`,
-so do not reimplement either slice. Prefer a focused real-org fixture expansion
-that exercises already-supported capability metadata (rather than speculative
-syntax), or another concrete packaging defect surfaced by validation/publishing.
+**The next patch should be `v1.0.92` and should continue feature work rather than
+defaulting back to release hardening.** The user explicitly asked to resume real
+feature slices after `v1.0.89`. QueryAll is now complete across root record,
+aggregate-result, and bare-`COUNT()` execution, so do not split out another
+near-identical QueryAll patch.
+
+Before choosing `v1.0.92`, inspect the remaining follow-on tracks below and pick
+one coherent feature whose Salesforce semantics can be supported soundly from
+public documentation and the current package boundaries. In particular, keep
+Apex-only execution-context syntax out of the default REST/JSforce surface unless
+the patch introduces an explicit execution-context boundary rather than silently
+changing the meaning of ordinary compiled queries.
 
 The `v1.0.84` object-limit audit still defines the boundary for specialist-object
 work: do not infer big-object index rules from the `__b` suffix, do not encode
@@ -421,10 +432,11 @@ consistency audit:
    object rules, external-adapter-specific limits, and permission/cardinality
    dependent caps need authoritative metadata or execution-context hooks before
    they can become sound static/compiler guarantees.
-4. **Release hardening.** This is the immediate `v1.0.90+` track: release
-   metadata and publish-shape verification are in place; continue with broader
-   Salesforce-org fixtures and API/package defects discovered through real-world
-   validation.
+4. **Release hardening.** Release metadata and publish-shape verification are in
+   place. Continue with broader Salesforce-org fixtures and concrete
+   API/package defects when validation or publishing exposes them, but do not use
+   this track as the default next slice while the user is asking for feature
+   development.
 
 The aggregate-selection, grouping/HAVING, relationship traversal, polymorphic
 selection, function-expression, pagination, scope/category, MRU, Knowledge,

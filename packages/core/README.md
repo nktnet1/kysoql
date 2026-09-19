@@ -31,4 +31,8 @@ const compiled = query.compile();
 ```
 
 Pass a `QueryExecutor` to `Kysoql` when queries should execute rather than only
-compile. `@kysoql/jsforce` provides the first-party JSforce adapter.
+compile. Normal `.execute()` delegates to `QueryExecutor.executeQuery()` (or the
+dedicated count hook for bare `COUNT()`). Root query builders also expose
+`.executeAll()` for Salesforce QueryAll semantics; executors can opt into that
+capability with `executeAllQuery()` and `executeAllCountQuery()`.
+`@kysoql/jsforce` provides the first-party adapter with both execution modes.

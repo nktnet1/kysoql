@@ -43,6 +43,8 @@ export interface CountQueryBuilder<DB, TB extends keyof DB> {
 
   execute(): Promise<number>;
 
+  executeAll(): Promise<number>;
+
   limit(limit: number): CountQueryBuilder<DB, TB>;
 
   forView(
@@ -124,6 +126,22 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
     }
 
     return this.#props.queryExecutor.executeCountQuery(this.compile());
+  }
+
+  async executeAll(): Promise<number> {
+    if (!this.#props.queryExecutor) {
+      throw new Error(
+        "No query executor configured. Pass an executor when creating Kysoql.",
+      );
+    }
+
+    if (!this.#props.queryExecutor.executeAllCountQuery) {
+      throw new Error(
+        "The configured query executor does not support Salesforce QueryAll COUNT() execution.",
+      );
+    }
+
+    return this.#props.queryExecutor.executeAllCountQuery(this.compile());
   }
 
   limit(limit: number): CountQueryBuilder<DB, TB> {

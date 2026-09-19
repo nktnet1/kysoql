@@ -701,11 +701,20 @@ const accounts = await db
   .select(["Id", "Name"])
   .where("Name", "like", "Acme%")
   .execute();
+
+const accountsIncludingDeleted = await db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .executeAll();
 ```
 
 The JSforce executor follows Salesforce pagination until the query result reports
 `done`, so `.execute()` returns all fetched pages instead of silently stopping at
-the first response.
+the first response. `.executeAll()` uses Salesforce QueryAll semantics instead:
+the first JSforce request sets `scanAll: true`, so soft-deleted records and
+archived activities can be returned while subsequent `queryMore` pages preserve
+the same QueryAll result set. The same execution mode is available on aggregate
+queries and bare `COUNT()` queries.
 
 ## Salesforce test org
 

@@ -26,11 +26,16 @@ export interface JsforceCountQueryResult {
 }
 
 export interface JsforceConnection {
-  query(soql: string): PromiseLike<unknown>;
+  query(
+    soql: string,
+    options?: { readonly scanAll?: boolean },
+  ): PromiseLike<unknown>;
   queryMore(locator: string): PromiseLike<unknown>;
 }
 
 export interface JsforceExecutor extends QueryExecutor {
+  executeAllQuery<O>(compiledQuery: CompiledQuery<O>): Promise<readonly O[]>;
+  executeAllCountQuery(compiledQuery: CompiledQuery<number>): Promise<number>;
   executeCountQuery(compiledQuery: CompiledQuery<number>): Promise<number>;
 }
 
@@ -77,9 +82,24 @@ class JsforceQueryExecutor implements JsforceExecutor {
   async executeQuery<O>(
     compiledQuery: CompiledQuery<O>,
   ): Promise<readonly O[]> {
+    return this.#executePagedQuery(compiledQuery, false);
+  }
+
+  async executeAllQuery<O>(
+    compiledQuery: CompiledQuery<O>,
+  ): Promise<readonly O[]> {
+    return this.#executePagedQuery(compiledQuery, true);
+  }
+
+  async #executePagedQuery<O>(
+    compiledQuery: CompiledQuery<O>,
+    scanAll: boolean,
+  ): Promise<readonly O[]> {
     const records: Record<string, unknown>[] = [];
     let result = parseJsforceQueryResult(
-      await this.#connection.query(compiledQuery.soql),
+      scanAll
+        ? await this.#connection.query(compiledQuery.soql, { scanAll: true })
+        : await this.#connection.query(compiledQuery.soql),
     );
 
     records.push(...result.records);
@@ -103,8 +123,23 @@ class JsforceQueryExecutor implements JsforceExecutor {
   async executeCountQuery(
     compiledQuery: CompiledQuery<number>,
   ): Promise<number> {
+    return this.#executeCountQuery(compiledQuery, false);
+  }
+
+  async executeAllCountQuery(
+    compiledQuery: CompiledQuery<number>,
+  ): Promise<number> {
+    return this.#executeCountQuery(compiledQuery, true);
+  }
+
+  async #executeCountQuery(
+    compiledQuery: CompiledQuery<number>,
+    scanAll: boolean,
+  ): Promise<number> {
     const result = parseJsforceCountQueryResult(
-      await this.#connection.query(compiledQuery.soql),
+      scanAll
+        ? await this.#connection.query(compiledQuery.soql, { scanAll: true })
+        : await this.#connection.query(compiledQuery.soql),
     );
 
     if (!result.done) {

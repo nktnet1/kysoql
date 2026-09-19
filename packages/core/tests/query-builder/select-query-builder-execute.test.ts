@@ -18,8 +18,16 @@ type ExecutedRow<Query> = Query extends {
   ? Output
   : never;
 
+type ExecutedAllRow<Query> = Query extends {
+  executeAll(): Promise<readonly (infer Output)[]>;
+}
+  ? Output
+  : never;
+
 class RecordingExecutor implements QueryExecutor {
   readonly calls: Array<{ readonly soql: string; readonly query: unknown }> =
+    [];
+  readonly allCalls: Array<{ readonly soql: string; readonly query: unknown }> =
     [];
 
   async executeQuery<O>(
@@ -34,6 +42,22 @@ class RecordingExecutor implements QueryExecutor {
       {
         Id: "001000000000001",
         Name: "Acme",
+      },
+    ] as unknown as readonly O[];
+  }
+
+  async executeAllQuery<O>(
+    compiledQuery: CompiledQuery<O>,
+  ): Promise<readonly O[]> {
+    this.allCalls.push({
+      query: compiledQuery.query,
+      soql: compiledQuery.soql,
+    });
+
+    return [
+      {
+        Id: "001000000000002",
+        Name: "Deleted Acme",
       },
     ] as unknown as readonly O[];
   }
@@ -75,6 +99,50 @@ describe("SelectQueryBuilder.execute", () => {
     expect(query.compile().soql).toBe("SELECT Id FROM Account");
     await expect(query.execute()).rejects.toThrow(
       "No query executor configured. Pass an executor when creating Kysoql.",
+    );
+    await expect(query.executeAll()).rejects.toThrow(
+      "No query executor configured. Pass an executor when creating Kysoql.",
+    );
+  });
+
+  it("delegates Salesforce QueryAll execution without losing the selected output type", async () => {
+    const executor = new RecordingExecutor();
+    const query = new Kysoql<FixtureSchema>({ executor })
+      .selectFrom("Account")
+      .select(["Id", "Name"])
+      .where("Name", "like", "Acme%");
+
+    await expect(query.executeAll()).resolves.toEqual([
+      {
+        Id: "001000000000002",
+        Name: "Deleted Acme",
+      },
+    ]);
+
+    expect(executor.allCalls).toEqual([
+      {
+        query: query.toOperationNode(),
+        soql: "SELECT Id, Name FROM Account WHERE Name LIKE 'Acme%'",
+      },
+    ]);
+    expect(executor.calls).toEqual([]);
+
+    expectTypeOf<Simplify<ExecutedAllRow<typeof query>>>().toEqualTypeOf<{
+      readonly Id: string;
+      readonly Name: string | null;
+    }>();
+  });
+
+  it("reports executors that do not implement Salesforce QueryAll execution", async () => {
+    const executor: QueryExecutor = {
+      executeQuery: async () => [],
+    };
+    const query = new Kysoql<FixtureSchema>({ executor })
+      .selectFrom("Account")
+      .select("Id");
+
+    await expect(query.executeAll()).rejects.toThrow(
+      "The configured query executor does not support Salesforce QueryAll execution.",
     );
   });
 });

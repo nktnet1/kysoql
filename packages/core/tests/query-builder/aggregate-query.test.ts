@@ -2,6 +2,8 @@ import { describe, expect, expectTypeOf, it, vi } from "vitest";
 
 import { Kysoql } from "#/kysoql";
 import type { AggregateSelectQueryBuilder } from "#/query-builder/aggregate-select-query-builder";
+import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import type { QueryExecutor } from "#/query-executor";
 import type {
   SalesforceField,
   SalesforceObject,
@@ -771,9 +773,10 @@ describe("aggregate queries", () => {
 
   it("models bare COUNT() as a scalar query with WHERE and LIMIT", async () => {
     const executeCountQuery = vi.fn(async () => 42);
+    const executeAllCountQuery = vi.fn(async () => 43);
     const executeQuery = vi.fn(async () => []);
     const db = new Kysoql<FixtureSchema>({
-      executor: { executeCountQuery, executeQuery },
+      executor: { executeAllCountQuery, executeCountQuery, executeQuery },
     });
     const query = db
       .selectFrom("Account")
@@ -788,8 +791,37 @@ describe("aggregate queries", () => {
       readonly soql: string;
     }>();
     await expect(query.execute()).resolves.toBe(42);
+    await expect(query.executeAll()).resolves.toBe(43);
     expect(executeCountQuery).toHaveBeenCalledOnce();
+    expect(executeAllCountQuery).toHaveBeenCalledOnce();
     expect(executeQuery).not.toHaveBeenCalled();
+  });
+
+  it("supports Salesforce QueryAll execution for aggregate result rows", async () => {
+    const allCalls: string[] = [];
+    const queryCalls: string[] = [];
+    const executor: QueryExecutor = {
+      async executeAllQuery<O>(
+        compiledQuery: CompiledQuery<O>,
+      ): Promise<readonly O[]> {
+        allCalls.push(compiledQuery.soql);
+        return [];
+      },
+      async executeQuery<O>(
+        compiledQuery: CompiledQuery<O>,
+      ): Promise<readonly O[]> {
+        queryCalls.push(compiledQuery.soql);
+        return [];
+      },
+    };
+    const db = new Kysoql<FixtureSchema>({ executor });
+    const query = db
+      .selectFrom("Account")
+      .select(({ fn }) => fn.sum("AnnualRevenue").as("totalRevenue"));
+
+    await expect(query.executeAll()).resolves.toEqual([]);
+    expect(allCalls).toEqual([query.compile().soql]);
+    expect(queryCalls).toEqual([]);
   });
 
   it("reports executors that do not implement bare COUNT() execution", async () => {
@@ -800,6 +832,9 @@ describe("aggregate queries", () => {
 
     await expect(query.execute()).rejects.toThrow(
       "The configured query executor does not support SOQL COUNT() queries.",
+    );
+    await expect(query.executeAll()).rejects.toThrow(
+      "The configured query executor does not support Salesforce QueryAll COUNT() execution.",
     );
   });
 

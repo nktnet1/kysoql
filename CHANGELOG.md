@@ -16,8 +16,15 @@ version is cut.
   data-category metadata, plus the `kysoql generate` CLI.
 - `@kysoql/jsforce`: JSforce execution adapter with validated paginated query
   results and scalar `COUNT()` execution.
+- Salesforce QueryAll execution through `.executeAll()` for record, aggregate,
+  and bare `COUNT()` root queries, including JSforce `scanAll` transport and
+  paginated deleted/archived results.
 - Release validation for built package exports, declaration files, CLI binaries,
   package metadata, package documentation, and changelog presence.
+
+### Fixed
+
+- Preserve the generic aggregate QueryAll executor contract in its regression test under TypeScript 7 and Vitest 5.
 
 ### Changed
 
