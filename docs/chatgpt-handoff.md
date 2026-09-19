@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.85`, the next patch
-   is `v1.0.86`.
+   reuse or rewrite a version already handed off. After `v1.0.86`, the next patch
+   is `v1.0.87`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.85`
+## Current state after `v1.0.86`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -138,6 +138,7 @@ recent patch sequence:
 | `v1.0.83` | Reject relationship-field `ORDER BY` expressions on `NewsFeed` and `UserProfileFeed` while leaving permission-dependent feed row caps to execution context. |
 | `v1.0.84` | Enforce unconditional custom-metadata (`__mdt`) and external-object (`__x`) SOQL restrictions while leaving adapter-specific external-object behavior to execution context. |
 | `v1.0.85` | Fix the supplied Biome check failures by applying formatter/import-order output, making the relationship `ORDER BY` scan return explicitly on every callback path, and excluding generated `*.generated.ts` fixtures from Biome checks. |
+| `v1.0.86` | Fix the supplied TypeScript and Biome diagnostics by aligning the geolocation negative assertion with TypeScript 7's diagnostic location, removing stale/unused type plumbing, replacing banned empty-object spellings, and keeping TYPEOF runtime-boundary tests free of explicit `any`. |
 
 ### Build/tooling state
 
@@ -370,7 +371,7 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.86` and should perform the final public-API,
+**The next patch should be `v1.0.87` and should perform the final public-API,
 diagnostics, documentation, and fixture-consistency audit.** The broad
 transport-neutral SOQL surface and the stable unconditional object-limit rules are
 now covered. Prefer concrete inconsistencies found by the audit over adding new
@@ -396,7 +397,7 @@ on its public `SoapApi`; the only generic invoke path is private. Keep using the
 existing optional normalized codegen hook until a stable public transport path is
 available rather than coupling the CLI to JSforce internals.
 
-If the supplied bundle already contains `v1.0.85` or later, inspect the code and
+If the supplied bundle already contains `v1.0.86` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
@@ -415,7 +416,7 @@ consistency audit:
    object rules, external-adapter-specific limits, and permission/cardinality
    dependent caps need authoritative metadata or execution-context hooks before
    they can become sound static/compiler guarantees.
-4. **Release hardening after the consistency audit.** Once `v1.0.86` is clean,
+4. **Release hardening after the consistency audit.** Once `v1.0.87` is clean,
    consider changelog/release packaging, broader Salesforce-org fixtures, and any
    API naming cleanup discovered through real-world use.
 

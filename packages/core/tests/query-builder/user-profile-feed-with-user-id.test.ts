@@ -47,7 +47,7 @@ interface FixtureSchema {
     {
       readonly Id: Field<string, "id">;
     },
-    {},
+    Record<never, never>,
     {
       readonly FeedItems: SalesforceChildRelationship<
         "UserProfileFeed",

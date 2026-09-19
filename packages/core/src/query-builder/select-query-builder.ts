@@ -198,7 +198,7 @@ export interface SelectQueryBuilder<
   DB,
   TB extends keyof DB,
   O,
-  Mode extends SelectQueryMode = any,
+  Mode extends SelectQueryMode = SelectQueryMode,
 > {
   compile(): CompiledQuery<O>;
 

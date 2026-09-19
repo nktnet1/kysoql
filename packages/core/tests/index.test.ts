@@ -361,9 +361,9 @@ type PublicTypeSurface = {
   }>;
   salesforceObjectDataCategory: SalesforceObjectDataCategory<
     SalesforceObject<
-      {},
-      {},
-      {},
+      Record<never, never>,
+      Record<never, never>,
+      Record<never, never>,
       never,
       { readonly Geography__c: "All" | "usa__c" }
     >,
@@ -371,15 +371,21 @@ type PublicTypeSurface = {
   >;
   salesforceObjectMruEnabled: SalesforceObjectMruEnabled<unknown>;
   salesforceObjectDataCategoryGroup: SalesforceObjectDataCategoryGroup<
-    SalesforceObject<{}, {}, {}, never, { readonly Geography__c: "All" }>
+    SalesforceObject<
+      Record<never, never>,
+      Record<never, never>,
+      Record<never, never>,
+      never,
+      { readonly Geography__c: "All" }
+    >
   >;
   salesforceObjectSupportedScope: SalesforceObjectSupportedScope<
     SalesforceObject<
       {
         readonly Id: SalesforceField<string, "id", false, true, true, true>;
       },
-      {},
-      {},
+      Record<never, never>,
+      Record<never, never>,
       "mine" | "team"
     >
   >;

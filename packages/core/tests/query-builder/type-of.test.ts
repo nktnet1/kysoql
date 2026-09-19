@@ -3,6 +3,7 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 import { Kysoql } from "#/kysoql";
 import { ReferenceNode } from "#/operation-node/reference-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
+import type { TypeOfNode } from "#/operation-node/type-of-node";
 import type { SelectQueryBuilder } from "#/query-builder/select-query-builder";
 import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
 import type {
@@ -207,6 +208,25 @@ type OutputOf<Query> =
   Query extends SelectQueryBuilder<infer _DB, infer _TB, infer Output>
     ? Output
     : never;
+
+type RuntimeEventSelectQueryBuilder = SelectQueryBuilder<
+  TypeOfSchema,
+  "Event",
+  Record<never, never>,
+  "plain"
+>;
+
+interface RuntimeTypeOfBuilder {
+  when(object: string, selections: readonly string[]): RuntimeTypeOfBuilder;
+
+  toOperationNode(): TypeOfNode;
+}
+
+const bypassSelectMode = (query: object): RuntimeEventSelectQueryBuilder =>
+  query as RuntimeEventSelectQueryBuilder;
+
+const bypassTypeOfConstraints = (builder: object): RuntimeTypeOfBuilder =>
+  builder as RuntimeTypeOfBuilder;
 
 type AccountWhat = {
   readonly attributes: SalesforceRecordAttributes<"Account">;
@@ -487,7 +507,7 @@ describe("polymorphic TYPEOF selection", () => {
     );
 
     expect(() =>
-      (typeOfQuery as any).select(({ fn }: any) =>
+      bypassSelectMode(typeOfQuery).select(({ fn }) =>
         fn.toLabel("Status__c").as("status"),
       ),
     ).toThrow(
@@ -498,32 +518,34 @@ describe("polymorphic TYPEOF selection", () => {
       fn.toLabel("Status__c").as("status"),
     );
     expect(() =>
-      (functionQuery as any).selectTypeOf("What", (typeOf: any) =>
+      bypassSelectMode(functionQuery).selectTypeOf("What", (typeOf) =>
         typeOf.when("Account", ["Name"]),
       ),
     ).toThrow(
       "SOQL TYPEOF cannot be combined with SELECT function expressions.",
     );
 
-    expect(() => (typeOfQuery as any).select("What.Name")).toThrow(
+    expect(() => bypassSelectMode(typeOfQuery).select("What.Name")).toThrow(
       "SOQL TYPEOF relationship What cannot also be referenced in the SELECT field list.",
     );
 
     expect(() =>
-      (base as any).selectTypeOf("What", (typeOf: any) =>
-        typeOf.when("Account", ["Name"]).when("Account", ["Phone"]),
+      base.selectTypeOf("What", (typeOf) =>
+        bypassTypeOfConstraints(typeOf)
+          .when("Account", ["Name"])
+          .when("Account", ["Phone"]),
       ),
     ).toThrow("SOQL TYPEOF cannot contain duplicate WHEN object branches.");
 
     expect(() =>
-      (base as any).selectTypeOf("What", (typeOf: any) =>
-        typeOf.when("Account", []),
+      base.selectTypeOf("What", (typeOf) =>
+        bypassTypeOfConstraints(typeOf).when("Account", []),
       ),
     ).toThrow("SOQL TYPEOF branches must select at least one field.");
 
     expect(() =>
-      (typeOfQuery as any).selectSubquery("Contacts", (subquery: any) =>
-        subquery.select(({ fn }: any) => fn.toLabel("Status__c").as("status")),
+      bypassSelectMode(typeOfQuery).selectSubquery("Contacts", (subquery) =>
+        subquery.select(({ fn }) => fn.toLabel("Status__c").as("status")),
       ),
     ).toThrow(
       "SOQL TYPEOF cannot be combined with SELECT functions, GROUP BY, or HAVING.",
@@ -533,7 +555,7 @@ describe("polymorphic TYPEOF selection", () => {
       subquery.select(({ fn }) => fn.toLabel("Status__c").as("status")),
     );
     expect(() =>
-      (subqueryFunctionQuery as any).selectTypeOf("What", (typeOf: any) =>
+      bypassSelectMode(subqueryFunctionQuery).selectTypeOf("What", (typeOf) =>
         typeOf.when("Account", ["Name"]),
       ),
     ).toThrow(

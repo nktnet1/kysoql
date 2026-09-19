@@ -37,7 +37,14 @@ type KnowledgeFields = {
 
 interface FixtureSchema {
   readonly KnowledgeArticleVersion: SalesforceObject<KnowledgeFields>;
-  readonly FAQ__kav: SalesforceObject<KnowledgeFields, {}, {}, never, {}, true>;
+  readonly FAQ__kav: SalesforceObject<
+    KnowledgeFields,
+    Record<never, never>,
+    Record<never, never>,
+    never,
+    Record<never, never>,
+    true
+  >;
   readonly Account: SalesforceObject<{
     readonly Id: Field<string, "id">;
     readonly Name: Field;
@@ -50,7 +57,7 @@ interface FixtureSchema {
     {
       readonly Id: Field<string, "id">;
     },
-    {},
+    Record<never, never>,
     {
       readonly Articles: SalesforceChildRelationship<
         "FAQ__kav",

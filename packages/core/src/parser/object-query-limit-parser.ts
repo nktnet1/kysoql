@@ -9,7 +9,6 @@ import type { OperatorNode } from "#/operation-node/operator-node";
 import type { OrNode } from "#/operation-node/or-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { SelectQueryNode } from "#/operation-node/select-query-node";
-import type { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
 import type { ValueListNode } from "#/operation-node/value-list-node";
 import type { ValueNode } from "#/operation-node/value-node";
 

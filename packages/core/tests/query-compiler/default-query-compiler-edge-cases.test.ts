@@ -82,7 +82,7 @@ describe("DefaultQueryCompiler edge cases", () => {
       .compile();
 
     expect(compiled.soql).toBe(
-      String.raw`SELECT Id FROM Account WHERE Name = ` +
+      "SELECT Id FROM Account WHERE Name = " +
         String.raw`'quote\' slash\\ line\ncarriage\r tab\t back\b form\f'`,
     );
   });

@@ -227,14 +227,15 @@ describe("typed geolocation expressions", () => {
         // @ts-expect-error DISTANCE filters only support < and >.
         eb(eb.fn.distance("Office__c", eb.fn.geolocation(0, 0), "km"), "<=", 5),
       );
-      query.where((eb) =>
+      query.where((eb) => {
+        const distance = eb.fn.distance(
+          "Office__c",
+          eb.fn.geolocation(0, 0),
+          "km",
+        );
         // @ts-expect-error DISTANCE filter distances must be numeric.
-        eb(
-          eb.fn.distance("Office__c", eb.fn.geolocation(0, 0), "km"),
-          "<",
-          "5",
-        ),
-      );
+        return eb(distance, "<", "5");
+      });
       query.where((eb) =>
         eb(
           eb.fn.distance(

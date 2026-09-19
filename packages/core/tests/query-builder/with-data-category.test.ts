@@ -41,7 +41,7 @@ interface FixtureSchema {
       readonly Title: Field;
       readonly PublishStatus: Field<string, "picklist">;
     },
-    {},
+    Record<never, never>,
     {
       readonly Children__r: SalesforceChildRelationship<
         "ArticleChild__c",
@@ -57,8 +57,8 @@ interface FixtureSchema {
       readonly Title: Field;
       readonly PublishStatus: Field<string, "picklist">;
     },
-    {},
-    {},
+    Record<never, never>,
+    Record<never, never>,
     never,
     DataCategoryFixture
   >;
@@ -67,8 +67,8 @@ interface FixtureSchema {
       readonly Id: Field<string, "id">;
       readonly Title: Field;
     },
-    {},
-    {},
+    Record<never, never>,
+    Record<never, never>,
     never,
     DataCategoryFixture
   >;

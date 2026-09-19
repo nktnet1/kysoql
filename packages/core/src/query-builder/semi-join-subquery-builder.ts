@@ -121,13 +121,7 @@ export interface SemiJoinSubqueryExpression<
   toOperationNode(): SemiJoinSubqueryNode;
 }
 
-interface SemiJoinWhereBuilder<
-  DB,
-  OuterTB extends keyof DB,
-  OuterReference extends string,
-  TB extends keyof DB,
-  Result,
-> {
+interface SemiJoinWhereBuilder<DB, TB extends keyof DB, Result> {
   where(expression: WhereExpressionFactory<DB, TB, false>): Result;
 
   where<
@@ -144,8 +138,6 @@ export interface SemiJoinSubqueryBuilder<
   TB extends keyof DB,
 > extends SemiJoinWhereBuilder<
     DB,
-    OuterTB,
-    OuterReference,
     TB,
     SemiJoinSubqueryBuilder<DB, OuterTB, OuterReference, TB>
   > {
@@ -163,8 +155,6 @@ export interface SelectedSemiJoinSubqueryBuilder<
 > extends SemiJoinSubqueryExpression<DB, OuterTB, OuterReference>,
     SemiJoinWhereBuilder<
       DB,
-      OuterTB,
-      OuterReference,
       TB,
       SelectedSemiJoinSubqueryBuilder<DB, OuterTB, OuterReference, TB>
     > {}

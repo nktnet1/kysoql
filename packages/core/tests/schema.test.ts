@@ -143,8 +143,8 @@ it("preserves object-specific supported scope metadata", () => {
     {
       readonly Id: SalesforceField<string, "id", false, true, true, true>;
     },
-    {},
-    {},
+    Record<never, never>,
+    Record<never, never>,
     "everything" | "mine"
   >;
 
@@ -164,20 +164,20 @@ it("preserves object-specific MRU capability metadata", () => {
     {
       readonly Id: SalesforceField<string, "id", false, true, true, true>;
     },
-    {},
-    {},
+    Record<never, never>,
+    Record<never, never>,
     never,
-    {},
+    Record<never, never>,
     true
   >;
   type NonMruObject = SalesforceObject<
     {
       readonly Id: SalesforceField<string, "id", false, true, true, true>;
     },
-    {},
-    {},
+    Record<never, never>,
+    Record<never, never>,
     never,
-    {},
+    Record<never, never>,
     false
   >;
 
@@ -197,8 +197,8 @@ it("preserves object-specific data-category metadata", () => {
     {
       readonly Id: SalesforceField<string, "id", false, true, true, true>;
     },
-    {},
-    {},
+    Record<never, never>,
+    Record<never, never>,
     never,
     {
       readonly Geography__c: "All" | "usa__c";
