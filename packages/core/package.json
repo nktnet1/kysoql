@@ -2,6 +2,17 @@
   "name": "@kysoql/core",
   "version": "0.0.0",
   "description": "Type-safe SOQL query builder and compiler",
+  "keywords": [
+    "salesforce",
+    "soql",
+    "typescript",
+    "query-builder",
+    "type-safe"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=26.0.0 <27"
+  },
   "type": "module",
   "imports": {
     "#/*": {
@@ -30,6 +41,7 @@
     "valibot": "1.4.2"
   },
   "publishConfig": {
+    "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
       "./package.json": "./package.json"

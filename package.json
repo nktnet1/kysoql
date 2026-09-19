@@ -20,7 +20,8 @@
     "salesforce:setup": "bash scripts/setup-salesforce-test-org.sh",
     "salesforce:schema": "bash scripts/generate-salesforce-schema.sh",
     "debug": "pnpm --filter @kysoql/core build && pnpm --filter @kysoql/debug debug",
-    "verify:publish": "node scripts/verify-publish-shape.ts"
+    "verify:publish": "node scripts/verify-publish-shape.ts",
+    "verify:release": "node scripts/verify-release-metadata.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13",

@@ -4,9 +4,12 @@ A type-safe, Kysely-inspired SOQL query builder for TypeScript.
 
 ## Workspace
 
-- `@kysoql/core` — typed SOQL AST, query builder, compiler, executor contract, and result inference.
-- `@kysoql/jsforce` — JSforce authentication/execution adapter.
-- `@kysoql/codegen` — CLI for generating strongly typed Salesforce schemas from Describe metadata.
+- [`@kysoql/core`](packages/core/README.md) — typed SOQL AST, query builder,
+  compiler, executor contract, and result inference.
+- [`@kysoql/jsforce`](packages/jsforce/README.md) — JSforce
+  authentication/execution adapter.
+- [`@kysoql/codegen`](packages/codegen/README.md) — CLI for generating strongly
+  typed Salesforce schemas from Describe metadata.
 - `@kysoql/debug` — minimal TypeScript runtime playground that logs query-builder ASTs.
 
 ## Requirements
@@ -31,8 +34,10 @@ pnpm validate
 
 It runs TypeScript typechecking, Vitest, all package builds, and publish-shape
 verification in fail-fast order. The publish check confirms that every declared
-package export, declaration file, and CLI binary exists in the built output.
-Biome is intentionally separate so formatting can be run manually when needed:
+package export, declaration file, and CLI binary exists in the built output. The
+validation gate also verifies release metadata, package-specific README files,
+version alignment, and the root changelog. Biome is intentionally separate so
+formatting can be run manually when needed:
 
 ```bash
 pnpm check
@@ -42,13 +47,15 @@ pnpm test
 pnpm test:coverage
 pnpm build
 pnpm verify:publish
+pnpm verify:release
 ```
 
 Additional arguments passed to `pnpm check` are forwarded through Turborepo to
 each package's Biome task, so `pnpm check --write` applies safe formatter, lint,
 and import-organization fixes across the workspace. `pnpm verify:publish` expects
 the packages to be built first; `pnpm validate` handles that ordering
-automatically.
+automatically. `pnpm verify:release` can run independently because it checks
+manifest/documentation metadata rather than build artifacts.
 
 Vitest is configured at the workspace root and discovers tests under
 `packages/**/tests/**/*.test.ts`. V8 coverage output is written to `coverage/`.
