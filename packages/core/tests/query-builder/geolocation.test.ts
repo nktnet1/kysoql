@@ -99,9 +99,7 @@ describe("typed geolocation expressions", () => {
         fn
           .distance("Office__c", fn.geolocation(-33.8688, 151.2093), "km")
           .as("distanceFromSydney"),
-        fn
-          .distance("Office__c", "Backup_Office__c", "mi")
-          .as("backupDistance"),
+        fn.distance("Office__c", "Backup_Office__c", "mi").as("backupDistance"),
         fn
           .distance("Owner.Home__c", fn.geolocation(-37.8136, 144.9631), "km")
           .as("ownerDistanceFromMelbourne"),
@@ -133,11 +131,7 @@ describe("typed geolocation expressions", () => {
     );
     const ordered = filtered.orderBy(
       ({ fn }) =>
-        fn.distance(
-          "Office__c",
-          fn.geolocation(-33.8688, 151.2093),
-          "km",
-        ),
+        fn.distance("Office__c", fn.geolocation(-33.8688, 151.2093), "km"),
       "asc",
       "last",
     );
@@ -151,7 +145,9 @@ describe("typed geolocation expressions", () => {
       "DistanceFunctionNode",
     );
     expect(Object.isFrozen(ordered.toOperationNode())).toBe(true);
-    expect(Object.isFrozen(ordered.toOperationNode().orderBy?.items)).toBe(true);
+    expect(Object.isFrozen(ordered.toOperationNode().orderBy?.items)).toBe(
+      true,
+    );
   });
 
   it("supports geolocation expressions inside relationship subqueries", () => {
@@ -233,7 +229,11 @@ describe("typed geolocation expressions", () => {
       );
       query.where((eb) =>
         // @ts-expect-error DISTANCE filter distances must be numeric.
-        eb(eb.fn.distance("Office__c", eb.fn.geolocation(0, 0), "km"), "<", "5"),
+        eb(
+          eb.fn.distance("Office__c", eb.fn.geolocation(0, 0), "km"),
+          "<",
+          "5",
+        ),
       );
       query.where((eb) =>
         eb(

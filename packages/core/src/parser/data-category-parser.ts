@@ -1,7 +1,5 @@
 import type { AndNode } from "#/operation-node/and-node";
-import type {
-  BinaryOperationNode,
-} from "#/operation-node/binary-operation-node";
+import type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 import type { NotNode } from "#/operation-node/not-node";
 import type { OperationNode } from "#/operation-node/operation-node";
 import type { OrNode } from "#/operation-node/or-node";
@@ -56,9 +54,7 @@ const validateCategories = (
     );
   }
 
-  return categories.map((category) =>
-    validateIdentifier(category, "category"),
-  );
+  return categories.map((category) => validateIdentifier(category, "category"));
 };
 
 export const parseDataCategorySelection = (

@@ -8,10 +8,18 @@ import type {
   SalesforceObject,
 } from "#/schema";
 
-type Field<
-  Value = string,
-  Type extends string = "string",
-> = SalesforceField<Value, Type, false, true, true, true, never, never, never, true>;
+type Field<Value = string, Type extends string = "string"> = SalesforceField<
+  Value,
+  Type,
+  false,
+  true,
+  true,
+  true,
+  never,
+  never,
+  never,
+  true
+>;
 
 type DataCategoryFixture = {
   readonly Geography__c:
@@ -114,10 +122,7 @@ describe("WITH DATA CATEGORY", () => {
     );
 
     const nested = article.where((eb) =>
-      eb.or([
-        eb("Title", "=", "Example"),
-        eb("PublishStatus", "=", "Online"),
-      ]),
+      eb.or([eb("Title", "=", "Example"), eb("PublishStatus", "=", "Online")]),
     );
 
     expect(nested.compile().soql).toBe(
@@ -218,8 +223,12 @@ describe("WITH DATA CATEGORY", () => {
     expect(base.toOperationNode().withDataCategory).toBeUndefined();
     expect(one.toOperationNode().withDataCategory?.selections).toHaveLength(1);
     expect(two.toOperationNode().withDataCategory?.selections).toHaveLength(2);
-    expect(three.toOperationNode().withDataCategory?.selections).toHaveLength(3);
-    expect(Object.isFrozen(three.toOperationNode().withDataCategory)).toBe(true);
+    expect(three.toOperationNode().withDataCategory?.selections).toHaveLength(
+      3,
+    );
+    expect(Object.isFrozen(three.toOperationNode().withDataCategory)).toBe(
+      true,
+    );
     expect(
       Object.isFrozen(three.toOperationNode().withDataCategory?.selections),
     ).toBe(true);
@@ -241,29 +250,17 @@ describe("WITH DATA CATEGORY", () => {
 
     expect(() =>
       query.withDataCategory("not valid" as never, "at", "usa__c" as never),
-    ).toThrow(
-      "SOQL WITH DATA CATEGORY group must be a Salesforce API name.",
-    );
+    ).toThrow("SOQL WITH DATA CATEGORY group must be a Salesforce API name.");
     expect(() =>
-      query.withDataCategory(
-        "Geography__c",
-        "sideways" as never,
-        "usa__c",
-      ),
+      query.withDataCategory("Geography__c", "sideways" as never, "usa__c"),
     ).toThrow(
       "SOQL WITH DATA CATEGORY selector must be at, above, below, or above_or_below.",
     );
     expect(() =>
       query.withDataCategory("Geography__c", "at", [] as never),
-    ).toThrow(
-      "SOQL WITH DATA CATEGORY requires at least one category name.",
-    );
+    ).toThrow("SOQL WITH DATA CATEGORY requires at least one category name.");
     expect(() =>
-      query.withDataCategory(
-        "Geography__c",
-        "at",
-        ["not valid"] as never,
-      ),
+      query.withDataCategory("Geography__c", "at", ["not valid"] as never),
     ).toThrow(
       "SOQL WITH DATA CATEGORY category must be a Salesforce API name.",
     );
@@ -321,10 +318,7 @@ describe("WITH DATA CATEGORY", () => {
 
     void (() => {
       article.withDataCategory("Geography__c", "at", "usa__c");
-      article.withDataCategory("Geography__c", "at", [
-        "usa__c",
-        "france__c",
-      ]);
+      article.withDataCategory("Geography__c", "at", ["usa__c", "france__c"]);
 
       // @ts-expect-error Category groups are object-specific generated metadata.
       article.withDataCategory("Unknown__c", "at", "usa__c");

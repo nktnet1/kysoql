@@ -1,12 +1,12 @@
 import { ReferenceNode } from "#/operation-node/reference-node";
 import { TypeOfNode } from "#/operation-node/type-of-node";
+import type { SelectExpression } from "#/parser/select-parser";
 import type {
   KnownPolymorphicTarget,
   TypeOfBranchSelection,
   TypeOfElseSelectExpression,
   TypeOfElseSelection,
 } from "#/parser/type-of-parser";
-import type { SelectExpression } from "#/parser/select-parser";
 import { freeze } from "#/util/object-utils";
 
 declare const typeOfBuilderType: unique symbol;
@@ -59,10 +59,7 @@ export interface TypeOfWhenBuilder<
   };
 
   when<
-    ObjectName extends Exclude<
-      KnownPolymorphicTarget<DB, Targets>,
-      Handled
-    >,
+    ObjectName extends Exclude<KnownPolymorphicTarget<DB, Targets>, Handled>,
     SE extends string,
   >(
     object: ObjectName,
@@ -109,11 +106,12 @@ type TypeOfBuilderMetadata<Builder> = Builder extends {
   ? Metadata
   : never;
 
-export type TypeOfBuilderOutput<Builder> = TypeOfBuilderMetadata<Builder> extends {
-  readonly output: infer Output;
-}
-  ? Output
-  : never;
+export type TypeOfBuilderOutput<Builder> =
+  TypeOfBuilderMetadata<Builder> extends {
+    readonly output: infer Output;
+  }
+    ? Output
+    : never;
 
 export type TypeOfBuilderHandled<Builder> =
   TypeOfBuilderMetadata<Builder> extends {

@@ -8,7 +8,7 @@ import type {
   ParentRelationshipName,
   ParentRelationshipNullable,
 } from "#/parser/reference-parser";
-import type { Selection, SelectExpression } from "#/parser/select-parser";
+import type { SelectExpression, Selection } from "#/parser/select-parser";
 import type { SalesforceRecordAttributes } from "#/schema";
 import type { Simplify } from "#/util/type-utils";
 
@@ -21,17 +21,21 @@ type DirectPolymorphicRelationshipTargets<
   DB,
   TB extends keyof DB,
   Relationship extends string,
-> = Relationship extends ParentRelationshipName<DB, TB>
-  ? ParentRelationshipFieldName<DB, TB, Relationship> extends infer SourceField extends
-      FieldName<DB, TB>
-    ? FieldDefinition<DB, TB, SourceField> extends {
-        readonly polymorphic: true;
-        readonly referenceTo: infer Targets extends string;
-      }
-      ? Targets
+> =
+  Relationship extends ParentRelationshipName<DB, TB>
+    ? ParentRelationshipFieldName<
+        DB,
+        TB,
+        Relationship
+      > extends infer SourceField extends FieldName<DB, TB>
+      ? FieldDefinition<DB, TB, SourceField> extends {
+          readonly polymorphic: true;
+          readonly referenceTo: infer Targets extends string;
+        }
+        ? Targets
+        : never
       : never
-    : never
-  : never;
+    : never;
 
 export type PolymorphicRelationshipTargets<
   DB,
@@ -64,10 +68,10 @@ export type PolymorphicRelationshipReference<
     : Reference
   : never;
 
-export type KnownPolymorphicTarget<
-  DB,
-  Targets extends string,
-> = Extract<Targets, keyof DB & string>;
+export type KnownPolymorphicTarget<DB, Targets extends string> = Extract<
+  Targets,
+  keyof DB & string
+>;
 
 export type TypeOfBranchSelection<
   DB,
@@ -83,28 +87,34 @@ export type TypeOfElseSelectExpression<
   DB,
   Targets extends string,
   SE extends string,
-> = Exclude<Targets, keyof DB & string> extends never
-  ? [Targets] extends [keyof DB]
-    ? SelectExpression<DB, Targets, SE>
-    : never
-  : never;
-
-export type TypeOfElseSelection<DB, Targets extends string, SE> =
-  Targets extends keyof DB & string
-    ? TypeOfBranchSelection<DB, Targets, SE>
+> =
+  Exclude<Targets, keyof DB & string> extends never
+    ? [Targets] extends [keyof DB]
+      ? SelectExpression<DB, Targets, SE>
+      : never
     : never;
 
-type RelationshipPathAlreadySelected<O, Reference extends string> =
-  Reference extends `${infer Relationship}.${infer ParentReference}`
-    ? Relationship extends keyof O
-      ? RelationshipPathAlreadySelected<
-          NonNullable<O[Relationship]>,
-          ParentReference
-        >
-      : false
-    : Reference extends keyof O
-      ? true
-      : false;
+export type TypeOfElseSelection<
+  DB,
+  Targets extends string,
+  SE,
+> = Targets extends keyof DB & string
+  ? TypeOfBranchSelection<DB, Targets, SE>
+  : never;
+
+type RelationshipPathAlreadySelected<
+  O,
+  Reference extends string,
+> = Reference extends `${infer Relationship}.${infer ParentReference}`
+  ? Relationship extends keyof O
+    ? RelationshipPathAlreadySelected<
+        NonNullable<O[Relationship]>,
+        ParentReference
+      >
+    : false
+  : Reference extends keyof O
+    ? true
+    : false;
 
 type IsTypeOfRelationshipValue<Value> = [NonNullable<Value>] extends [
   { readonly attributes: SalesforceRecordAttributes<string> },
@@ -112,17 +122,19 @@ type IsTypeOfRelationshipValue<Value> = [NonNullable<Value>] extends [
   ? true
   : false;
 
-export type TraversesTypeOfRelationship<O, Reference extends string> =
-  Reference extends `${infer Relationship}.${infer ParentReference}`
-    ? Relationship extends keyof O
-      ? IsTypeOfRelationshipValue<O[Relationship]> extends true
-        ? true
-        : TraversesTypeOfRelationship<
-            NonNullable<O[Relationship]>,
-            ParentReference
-          >
-      : false
-    : false;
+export type TraversesTypeOfRelationship<
+  O,
+  Reference extends string,
+> = Reference extends `${infer Relationship}.${infer ParentReference}`
+  ? Relationship extends keyof O
+    ? IsTypeOfRelationshipValue<O[Relationship]> extends true
+      ? true
+      : TraversesTypeOfRelationship<
+          NonNullable<O[Relationship]>,
+          ParentReference
+        >
+    : false
+  : false;
 
 export type AvailableTypeOfReference<O, Reference extends string> =
   RelationshipPathAlreadySelected<O, Reference> extends true

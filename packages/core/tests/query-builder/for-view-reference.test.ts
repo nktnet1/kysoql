@@ -7,10 +7,18 @@ import type {
   SalesforceObject,
 } from "#/schema";
 
-type Field<
-  Value = string,
-  Type extends string = "string",
-> = SalesforceField<Value, Type, false, true, true, true, never, never, never, true>;
+type Field<Value = string, Type extends string = "string"> = SalesforceField<
+  Value,
+  Type,
+  false,
+  true,
+  true,
+  true,
+  never,
+  never,
+  never,
+  true
+>;
 
 interface FixtureSchema {
   readonly Account: SalesforceObject<

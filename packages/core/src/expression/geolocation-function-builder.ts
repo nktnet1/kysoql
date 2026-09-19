@@ -33,23 +33,21 @@ export type FilterableLocationFieldReference<
   DB,
   TB extends keyof DB,
   Reference extends string,
-> = Reference extends LocationFieldReference<DB, TB, Reference>
-  ? FieldReferenceDefinition<DB, TB, Reference> extends {
-      readonly filterable: true;
-    }
-    ? Reference
-    : never
-  : never;
+> =
+  Reference extends LocationFieldReference<DB, TB, Reference>
+    ? FieldReferenceDefinition<DB, TB, Reference> extends {
+        readonly filterable: true;
+      }
+      ? Reference
+      : never
+    : never;
 
-type ReferenceFilterable<
-  DB,
-  TB extends keyof DB,
-  Reference extends string,
-> = FieldReferenceDefinition<DB, TB, Reference> extends {
-  readonly filterable: infer Filterable extends boolean;
-}
-  ? Filterable
-  : false;
+type ReferenceFilterable<DB, TB extends keyof DB, Reference extends string> =
+  FieldReferenceDefinition<DB, TB, Reference> extends {
+    readonly filterable: infer Filterable extends boolean;
+  }
+    ? Filterable
+    : false;
 
 type ReferenceSortable<DB, TB extends keyof DB, Reference extends string> =
   FieldReferenceDefinition<DB, TB, Reference> extends {
@@ -75,11 +73,8 @@ type DistanceFieldOutput<
   ? number | null
   : number;
 
-type DistanceLiteralOutput<
-  DB,
-  TB extends keyof DB,
-  First extends string,
-> = true extends FieldReferenceNullable<DB, TB, First> ? number | null : number;
+type DistanceLiteralOutput<DB, TB extends keyof DB, First extends string> =
+  true extends FieldReferenceNullable<DB, TB, First> ? number | null : number;
 
 export interface GeolocationFunctionBuilder {
   toOperationNode(): GeolocationFunctionNode;
@@ -109,10 +104,7 @@ export interface DistanceFunctionBuilder<
   ): AliasedDistanceFunctionBuilder<Output, Alias>;
 }
 
-export interface AliasedDistanceFunctionBuilder<
-  Output,
-  Alias extends string,
-> {
+export interface AliasedDistanceFunctionBuilder<Output, Alias extends string> {
   readonly expressionType: Output | undefined;
   readonly alias: Alias | undefined;
   readonly [distanceFunctionSelectionType]: true;
@@ -316,10 +308,10 @@ export function createGeolocationFilterExpressionBuilder<
   TB extends keyof DB,
 >(): GeolocationFilterExpressionBuilder<DB, TB> {
   return freeze({
-    fn: new GeolocationFunctionModuleImpl<DB, TB>() as unknown as GeolocationFilterFunctionModule<
+    fn: new GeolocationFunctionModuleImpl<
       DB,
       TB
-    >,
+    >() as unknown as GeolocationFilterFunctionModule<DB, TB>,
   });
 }
 
@@ -327,10 +319,10 @@ export interface GeolocationExpressionBuilder<DB, TB extends keyof DB> {
   readonly fn: GeolocationFunctionModule<DB, TB>;
 }
 
-export function createGeolocationExpressionBuilder<DB, TB extends keyof DB>(): GeolocationExpressionBuilder<
+export function createGeolocationExpressionBuilder<
   DB,
-  TB
-> {
+  TB extends keyof DB,
+>(): GeolocationExpressionBuilder<DB, TB> {
   return freeze({
     fn: new GeolocationFunctionModuleImpl<DB, TB>(),
   });

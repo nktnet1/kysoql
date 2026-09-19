@@ -15,10 +15,18 @@ import type {
   SalesforceObject,
 } from "#/schema";
 
-type Field<
-  Value = string,
-  Type extends string = "string",
-> = SalesforceField<Value, Type, false, true, true, true, never, never, never, true>;
+type Field<Value = string, Type extends string = "string"> = SalesforceField<
+  Value,
+  Type,
+  false,
+  true,
+  true,
+  true,
+  never,
+  never,
+  never,
+  true
+>;
 
 interface FixtureSchema {
   readonly UserProfileFeed: SalesforceObject<{
@@ -103,9 +111,7 @@ describe("UserProfileFeed WITH UserId", () => {
         .select("Id")
         .withUserId("005D0000001AamRABC")
         .compile().soql,
-    ).toBe(
-      "SELECT Id FROM UserProfileFeed WITH UserId = '005D0000001AamRABC'",
-    );
+    ).toBe("SELECT Id FROM UserProfileFeed WITH UserId = '005D0000001AamRABC'");
 
     expect(() => db.selectFrom("UserProfileFeed").withUserId("")).toThrow(
       "SOQL UserProfileFeed WITH UserId requires a non-empty User ID string.",
@@ -145,9 +151,8 @@ describe("UserProfileFeed WITH UserId", () => {
     void allowed;
 
     // @ts-expect-error A mixed UserProfileFeed/non-feed table union must stay rejected.
-    const mixed: UserProfileFeedWithUserIdCheck<
-      "UserProfileFeed" | "Account"
-    > = [];
+    const mixed: UserProfileFeedWithUserIdCheck<"UserProfileFeed" | "Account"> =
+      [];
     void mixed;
   });
 

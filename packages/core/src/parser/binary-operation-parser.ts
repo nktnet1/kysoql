@@ -126,9 +126,10 @@ export type ComparisonOperatorExpression<
   DB,
   TB extends keyof DB,
   RE extends string,
-> = SalesforceTypeOfField<DB, TB, RE> extends "location"
-  ? never
-  : ScalarComparisonOperatorExpression<DB, TB, RE>;
+> =
+  SalesforceTypeOfField<DB, TB, RE> extends "location"
+    ? never
+    : ScalarComparisonOperatorExpression<DB, TB, RE>;
 
 type FieldValueExpression<
   DB,

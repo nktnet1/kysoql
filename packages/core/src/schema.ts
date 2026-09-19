@@ -119,12 +119,11 @@ export type SalesforceSchema = Record<
   >
 >;
 
-export type SalesforceObjectDataCategoryGroup<ObjectType> =
-  ObjectType extends {
-    readonly dataCategoryGroups: infer Groups;
-  }
-    ? keyof Groups & string
-    : never;
+export type SalesforceObjectDataCategoryGroup<ObjectType> = ObjectType extends {
+  readonly dataCategoryGroups: infer Groups;
+}
+  ? keyof Groups & string
+  : never;
 
 export type SalesforceObjectDataCategory<
   ObjectType,
@@ -145,12 +144,11 @@ export type SalesforceObjectMruEnabled<ObjectType> = ObjectType extends {
   ? MruEnabled
   : boolean;
 
-export type SalesforceObjectSupportedScope<ObjectType> =
-  ObjectType extends {
-    readonly supportedScopes: infer SupportedScope extends string;
-  }
-    ? SupportedScope
-    : never;
+export type SalesforceObjectSupportedScope<ObjectType> = ObjectType extends {
+  readonly supportedScopes: infer SupportedScope extends string;
+}
+  ? SupportedScope
+  : never;
 
 export type SalesforceFieldValue<Field> =
   Field extends SalesforceField<

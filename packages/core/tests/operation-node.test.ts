@@ -9,8 +9,8 @@ import { ConvertTimezoneFunctionNode } from "#/operation-node/convert-timezone-f
 import { DateFunctionNode } from "#/operation-node/date-function-node";
 import { DistanceFunctionNode } from "#/operation-node/distance-function-node";
 import { FieldsFunctionNode } from "#/operation-node/fields-function-node";
-import { FormatFunctionNode } from "#/operation-node/format-function-node";
 import { ForViewReferenceNode } from "#/operation-node/for-view-reference-node";
+import { FormatFunctionNode } from "#/operation-node/format-function-node";
 import { GeolocationFunctionNode } from "#/operation-node/geolocation-function-node";
 import { GroupByNode } from "#/operation-node/group-by-node";
 import { HavingNode } from "#/operation-node/having-node";
@@ -472,11 +472,10 @@ describe("operation nodes", () => {
   });
 
   it("creates and extends immutable WITH DATA CATEGORY selections", () => {
-    const geography = DataCategorySelectionNode.create(
-      "Geography__c",
-      "at",
-      ["usa__c", "france__c"],
-    );
+    const geography = DataCategorySelectionNode.create("Geography__c", "at", [
+      "usa__c",
+      "france__c",
+    ]);
     const product = DataCategorySelectionNode.create("Product__c", "below", [
       "mobile__c",
     ]);

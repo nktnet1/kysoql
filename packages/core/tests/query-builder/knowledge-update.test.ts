@@ -13,10 +13,18 @@ import type {
   SalesforceObject,
 } from "#/schema";
 
-type Field<
-  Value = string,
-  Type extends string = "string",
-> = SalesforceField<Value, Type, false, true, true, true, never, never, never, true>;
+type Field<Value = string, Type extends string = "string"> = SalesforceField<
+  Value,
+  Type,
+  false,
+  true,
+  true,
+  true,
+  never,
+  never,
+  never,
+  true
+>;
 
 type KnowledgeFields = {
   readonly Id: Field<string, "id">;
@@ -44,7 +52,10 @@ interface FixtureSchema {
     },
     {},
     {
-      readonly Articles: SalesforceChildRelationship<"FAQ__kav", "Container__c">;
+      readonly Articles: SalesforceChildRelationship<
+        "FAQ__kav",
+        "Container__c"
+      >;
     }
   >;
 }
@@ -133,11 +144,7 @@ describe("Knowledge UPDATE TRACKING and UPDATE VIEWSTAT", () => {
         .compile().soql,
     ).toBe("SELECT Id FROM KnowledgeArticleVersion UPDATE TRACKING");
     expect(
-      db
-        .selectFrom("FAQ__kav")
-        .select("Id")
-        .updateViewstat()
-        .compile().soql,
+      db.selectFrom("FAQ__kav").select("Id").updateViewstat().compile().soql,
     ).toBe("SELECT Id FROM FAQ__kav UPDATE VIEWSTAT");
   });
 

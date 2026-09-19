@@ -9,13 +9,8 @@ export type KnowledgeArticleUpdateCheck<ObjectName> = [
 const isKnowledgeArticleObjectName = (objectName: string): boolean =>
   objectName === "KnowledgeArticleVersion" || objectName.endsWith("__kav");
 
-export const validateKnowledgeUpdateQuery = (
-  query: SelectQueryNode,
-): void => {
-  if (
-    query.knowledgeUpdate &&
-    !isKnowledgeArticleObjectName(query.from.name)
-  ) {
+export const validateKnowledgeUpdateQuery = (query: SelectQueryNode): void => {
+  if (query.knowledgeUpdate && !isKnowledgeArticleObjectName(query.from.name)) {
     throw new Error(
       "UPDATE TRACKING and UPDATE VIEWSTAT can only be used with Salesforce Knowledge article queries.",
     );

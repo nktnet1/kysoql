@@ -362,6 +362,8 @@ const orderByUsesRelationship = (query: SelectQueryNode): boolean =>
       case "ReferenceNode":
         return isRelationshipReference(item.orderBy);
     }
+
+    return false;
   }) ?? false;
 
 const validateUserRecordAccessQuery = (query: SelectQueryNode): void => {

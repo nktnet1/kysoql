@@ -129,8 +129,22 @@ interface TypeOfSchema {
   readonly Opportunity: SalesforceObject<{
     readonly Id: SalesforceField<string, "id", false, true, true, true>;
     readonly Name: SalesforceField<string, "string", false, true, true, true>;
-    readonly Amount: SalesforceField<number, "currency", true, true, true, true>;
-    readonly CloseDate: SalesforceField<string, "date", false, true, true, true>;
+    readonly Amount: SalesforceField<
+      number,
+      "currency",
+      true,
+      true,
+      true,
+      true
+    >;
+    readonly CloseDate: SalesforceField<
+      string,
+      "date",
+      false,
+      true,
+      true,
+      true
+    >;
   }>;
   readonly Campaign: SalesforceObject<{
     readonly Id: SalesforceField<string, "id", false, true, true, true>;
@@ -283,12 +297,10 @@ describe("polymorphic TYPEOF selection", () => {
 
     expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
       readonly Id: string;
-      readonly What:
-        | {
-            readonly attributes: SalesforceRecordAttributes<"Account">;
-            readonly Phone: string | null;
-          }
-        | null;
+      readonly What: {
+        readonly attributes: SalesforceRecordAttributes<"Account">;
+        readonly Phone: string | null;
+      } | null;
     }>();
   });
 
@@ -452,9 +464,7 @@ describe("polymorphic TYPEOF selection", () => {
       const subqueryFunctionQuery = base.selectSubquery(
         "Contacts",
         (subquery) =>
-          subquery.select(({ fn }) =>
-            fn.toLabel("Status__c").as("status"),
-          ),
+          subquery.select(({ fn }) => fn.toLabel("Status__c").as("status")),
       );
       // @ts-expect-error TYPEOF cannot be added after a SELECT function in a relationship subquery.
       subqueryFunctionQuery.selectTypeOf("What", (typeOf) =>
@@ -480,7 +490,9 @@ describe("polymorphic TYPEOF selection", () => {
       (typeOfQuery as any).select(({ fn }: any) =>
         fn.toLabel("Status__c").as("status"),
       ),
-    ).toThrow("SOQL TYPEOF cannot be combined with SELECT function expressions.");
+    ).toThrow(
+      "SOQL TYPEOF cannot be combined with SELECT function expressions.",
+    );
 
     const functionQuery = base.select(({ fn }) =>
       fn.toLabel("Status__c").as("status"),
@@ -489,11 +501,11 @@ describe("polymorphic TYPEOF selection", () => {
       (functionQuery as any).selectTypeOf("What", (typeOf: any) =>
         typeOf.when("Account", ["Name"]),
       ),
-    ).toThrow("SOQL TYPEOF cannot be combined with SELECT function expressions.");
-
-    expect(() =>
-      (typeOfQuery as any).select("What.Name"),
     ).toThrow(
+      "SOQL TYPEOF cannot be combined with SELECT function expressions.",
+    );
+
+    expect(() => (typeOfQuery as any).select("What.Name")).toThrow(
       "SOQL TYPEOF relationship What cannot also be referenced in the SELECT field list.",
     );
 
@@ -511,25 +523,18 @@ describe("polymorphic TYPEOF selection", () => {
 
     expect(() =>
       (typeOfQuery as any).selectSubquery("Contacts", (subquery: any) =>
-        subquery.select(({ fn }: any) =>
-          fn.toLabel("Status__c").as("status"),
-        ),
+        subquery.select(({ fn }: any) => fn.toLabel("Status__c").as("status")),
       ),
     ).toThrow(
       "SOQL TYPEOF cannot be combined with SELECT functions, GROUP BY, or HAVING.",
     );
 
-    const subqueryFunctionQuery = base.selectSubquery(
-      "Contacts",
-      (subquery) =>
-        subquery.select(({ fn }) =>
-          fn.toLabel("Status__c").as("status"),
-        ),
+    const subqueryFunctionQuery = base.selectSubquery("Contacts", (subquery) =>
+      subquery.select(({ fn }) => fn.toLabel("Status__c").as("status")),
     );
     expect(() =>
-      (subqueryFunctionQuery as any).selectTypeOf(
-        "What",
-        (typeOf: any) => typeOf.when("Account", ["Name"]),
+      (subqueryFunctionQuery as any).selectTypeOf("What", (typeOf: any) =>
+        typeOf.when("Account", ["Name"]),
       ),
     ).toThrow(
       "SOQL TYPEOF cannot be combined with SELECT functions, GROUP BY, or HAVING.",

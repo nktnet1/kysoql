@@ -13,12 +13,11 @@ export type SelectFunctionSelectionArg =
   | SelectFunctionSelectionExpression
   | readonly SelectFunctionSelectionExpression[];
 
-type SelectFunctionSelectionOutput<Selection> =
-  Selection extends
-    | AliasedSelectFunctionBuilder<infer Output, infer Alias extends string>
-    | AliasedDistanceFunctionBuilder<infer Output, infer Alias extends string>
-    ? { readonly [Key in Alias]: Output }
-    : never;
+type SelectFunctionSelectionOutput<Selection> = Selection extends
+  | AliasedSelectFunctionBuilder<infer Output, infer Alias extends string>
+  | AliasedDistanceFunctionBuilder<infer Output, infer Alias extends string>
+  ? { readonly [Key in Alias]: Output }
+  : never;
 
 type UnionToIntersection<Union> = (
   Union extends unknown

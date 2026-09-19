@@ -70,9 +70,7 @@ describe("codegen validation", () => {
           categoryGroups: [
             {
               name: "Geography__c",
-              topCategories: [
-                { name: "All", childCategories: [{ name: 42 }] },
-              ],
+              topCategories: [{ name: "All", childCategories: [{ name: 42 }] }],
             },
           ],
         },

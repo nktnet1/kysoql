@@ -15,10 +15,18 @@ import type {
   SalesforceParentRelationship,
 } from "#/schema";
 
-type Field<
-  Value = string,
-  Type extends string = "string",
-> = SalesforceField<Value, Type, false, true, true, true, never, never, never, true>;
+type Field<Value = string, Type extends string = "string"> = SalesforceField<
+  Value,
+  Type,
+  false,
+  true,
+  true,
+  true,
+  never,
+  never,
+  never,
+  true
+>;
 
 type ReferenceField<Target extends string> = SalesforceField<
   string,
@@ -215,9 +223,8 @@ describe("object-specific SOQL query limits", () => {
       "SELECT Id, Name FROM ContentHubItem WHERE ExternalId = 'external-1'",
     );
     expect(
-      base
-        .where("ContentHubRepositoryId", "=", "0XC000000000001")
-        .compile().soql,
+      base.where("ContentHubRepositoryId", "=", "0XC000000000001").compile()
+        .soql,
     ).toBe(
       "SELECT Id, Name FROM ContentHubItem WHERE ContentHubRepositoryId = '0XC000000000001'",
     );
@@ -293,9 +300,8 @@ describe("object-specific SOQL query limits", () => {
       "SELECT Id FROM Vote WHERE Id = '0D6000000000001'",
     );
     expect(
-      base
-        .where("Id", "in", ["0D6000000000001", "0D6000000000002"])
-        .compile().soql,
+      base.where("Id", "in", ["0D6000000000001", "0D6000000000002"]).compile()
+        .soql,
     ).toBe(
       "SELECT Id FROM Vote WHERE Id IN ('0D6000000000001', '0D6000000000002')",
     );
@@ -317,9 +323,9 @@ describe("object-specific SOQL query limits", () => {
     ).toBe(
       "SELECT COUNT(Id) voteCount FROM Vote WHERE ParentId = '0D5000000000001'",
     );
-    expect(
-      count.where("Id", "in", ["0D6000000000001"]).compile().soql,
-    ).toBe("SELECT COUNT() FROM Vote WHERE Id IN ('0D6000000000001')");
+    expect(count.where("Id", "in", ["0D6000000000001"]).compile().soql).toBe(
+      "SELECT COUNT() FROM Vote WHERE Id IN ('0D6000000000001')",
+    );
   });
 
   it("accepts the Vote Parent.Type relationship filter shape", () => {
@@ -395,10 +401,7 @@ describe("object-specific SOQL query limits", () => {
     expect(
       base
         .where("UserId", "=", "005000000000001")
-        .where("RecordId", "in", [
-          "001000000000001",
-          "001000000000002",
-        ])
+        .where("RecordId", "in", ["001000000000001", "001000000000002"])
         .compile().soql,
     ).toBe(
       "SELECT RecordId FROM UserRecordAccess WHERE UserId = '005000000000001' AND RecordId IN ('001000000000001', '001000000000002')",
@@ -421,12 +424,7 @@ describe("object-specific SOQL query limits", () => {
     );
 
     expect(() =>
-      base
-        .where("RecordId", "in", [
-          ...recordIds,
-          "001000000000200",
-        ])
-        .compile(),
+      base.where("RecordId", "in", [...recordIds, "001000000000200"]).compile(),
     ).toThrow(
       "SOQL UserRecordAccess queries require UserId = <single ID> and either RecordId = <single ID> or RecordId IN (<up to 200 IDs>), with at most one optional Has*Access = true predicate.",
     );
@@ -506,15 +504,15 @@ describe("object-specific SOQL query limits", () => {
     expect(() => base.select("HasReadAccess").compile()).toThrow(
       selectionError,
     );
-    expect(() =>
-      base.select(["RecordId", "HasReadAccess"]).compile(),
-    ).toThrow(orderError);
-    expect(() =>
-      base.select(["RecordId", "MaxAccessLevel"]).compile(),
-    ).toThrow(orderError);
-    expect(() =>
-      base.select("RecordId").orderBy("UserId").compile(),
-    ).toThrow(orderError);
+    expect(() => base.select(["RecordId", "HasReadAccess"]).compile()).toThrow(
+      orderError,
+    );
+    expect(() => base.select(["RecordId", "MaxAccessLevel"]).compile()).toThrow(
+      orderError,
+    );
+    expect(() => base.select("RecordId").orderBy("UserId").compile()).toThrow(
+      orderError,
+    );
 
     expect(
       base
@@ -582,11 +580,7 @@ describe("object-specific SOQL query limits", () => {
         .compile().soql,
     ).toBe("SELECT Id FROM NewsFeed ORDER BY CreatedDate DESC");
     expect(() =>
-      db
-        .selectFrom("NewsFeed")
-        .select("Id")
-        .orderBy("Parent.Name")
-        .compile(),
+      db.selectFrom("NewsFeed").select("Id").orderBy("Parent.Name").compile(),
     ).toThrow(error);
 
     expect(
@@ -655,10 +649,7 @@ describe("object-specific SOQL query limits", () => {
     expect(() =>
       base
         .where((eb) =>
-          eb.or([
-            eb("Priority__c", ">", 10),
-            eb("Priority__c", "=", 20),
-          ]),
+          eb.or([eb("Priority__c", ">", 10), eb("Priority__c", "=", 20)]),
         )
         .compile(),
     ).toThrow(error);
@@ -721,7 +712,10 @@ describe("object-specific SOQL query limits", () => {
       "SELECT Id, Name FROM Invoice__x WHERE Status__c = 'Open' ORDER BY Name LIMIT 25",
     );
     expect(
-      db.selectFrom("Invoice__x").select(({ fn }) => fn.count()).compile().soql,
+      db
+        .selectFrom("Invoice__x")
+        .select(({ fn }) => fn.count())
+        .compile().soql,
     ).toBe("SELECT COUNT() FROM Invoice__x");
   });
 
@@ -738,9 +732,7 @@ describe("object-specific SOQL query limits", () => {
       base.select("Id").where("Tags__c", "includes", ["Alpha"]).compile(),
     ).toThrow(error);
     expect(() =>
-      base
-        .select(({ fn }) => fn.count("Id").as("invoiceCount"))
-        .compile(),
+      base.select(({ fn }) => fn.count("Id").as("invoiceCount")).compile(),
     ).toThrow(error);
     expect(() =>
       base.select(({ fn }) => fn.sum("Amount__c").as("total")).compile(),
@@ -772,9 +764,7 @@ describe("object-specific SOQL query limits", () => {
         .selectFrom("Invoice__x")
         .select("Id")
         .selectTypeOf("What", (typeOf) =>
-          typeOf
-            .when("Account", ["Name"])
-            .when("Opportunity", ["Name"]),
+          typeOf.when("Account", ["Name"]).when("Opportunity", ["Name"]),
         )
         .compile(),
     ).toThrow(error);

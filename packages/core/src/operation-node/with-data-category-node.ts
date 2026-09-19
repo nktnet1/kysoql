@@ -1,10 +1,6 @@
 import { freeze } from "#/util/object-utils";
 
-export type DataCategorySelector =
-  | "at"
-  | "above"
-  | "below"
-  | "above_or_below";
+export type DataCategorySelector = "at" | "above" | "below" | "above_or_below";
 
 export interface DataCategorySelectionNode {
   readonly kind: "DataCategorySelectionNode";

@@ -74,14 +74,10 @@ export interface CountQueryBuilder<DB, TB extends keyof DB> {
     ..._userProfileFeedCheck: UserProfileFeedWithUserIdCheck<TB>
   ): CountQueryBuilder<DB, TB>;
 
-  withDataCategory<
-    Group extends SalesforceObjectDataCategoryGroup<DB[TB]>,
-  >(
+  withDataCategory<Group extends SalesforceObjectDataCategoryGroup<DB[TB]>>(
     group: Group,
     selector: DataCategorySelector,
-    categories: DataCategoryInput<
-      SalesforceObjectDataCategory<DB[TB], Group>
-    >,
+    categories: DataCategoryInput<SalesforceObjectDataCategory<DB[TB], Group>>,
   ): CountQueryBuilder<DB, TB>;
 
   where(expression: WhereExpressionFactory<DB, TB>): CountQueryBuilder<DB, TB>;
@@ -217,14 +213,10 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
     });
   }
 
-  withDataCategory<
-    Group extends SalesforceObjectDataCategoryGroup<DB[TB]>,
-  >(
+  withDataCategory<Group extends SalesforceObjectDataCategoryGroup<DB[TB]>>(
     group: Group,
     selector: DataCategorySelector,
-    categories: DataCategoryInput<
-      SalesforceObjectDataCategory<DB[TB], Group>
-    >,
+    categories: DataCategoryInput<SalesforceObjectDataCategory<DB[TB], Group>>,
   ): CountQueryBuilder<DB, TB> {
     return new CountQueryBuilderImpl<DB, TB>({
       ...this.#props,

@@ -17,8 +17,8 @@ import { OrderByNode } from "#/operation-node/order-by-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { SelectionNode } from "#/operation-node/selection-node";
 import type { SObjectNode } from "#/operation-node/sobject-node";
-import type { UsingScopeNode } from "#/operation-node/using-scope-node";
 import type { UserProfileFeedWithNode } from "#/operation-node/user-profile-feed-with-node";
+import type { UsingScopeNode } from "#/operation-node/using-scope-node";
 import type { WhereNode } from "#/operation-node/where-node";
 import {
   type DataCategorySelectionNode,

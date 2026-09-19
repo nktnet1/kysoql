@@ -89,10 +89,14 @@ export type ParentRelationshipFieldName<
   DB,
   TB extends keyof DB,
   Relationship extends ParentRelationshipName<DB, TB>,
-> = ParentRelationshipDefinition<DB, TB, Relationship> extends
-  SalesforceParentRelationship<string, infer FieldName, boolean>
-  ? FieldName
-  : never;
+> =
+  ParentRelationshipDefinition<
+    DB,
+    TB,
+    Relationship
+  > extends SalesforceParentRelationship<string, infer FieldName, boolean>
+    ? FieldName
+    : never;
 
 export type ParentObjectName<
   DB,

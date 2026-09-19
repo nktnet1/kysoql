@@ -58,9 +58,7 @@ describe("geolocation compiler", () => {
         fn
           .distance("Office__c", fn.geolocation(-33.8688, 151.2093), "km")
           .as("distanceFromSydney"),
-        fn
-          .distance("Office__c", "Backup_Office__c", "mi")
-          .as("backupDistance"),
+        fn.distance("Office__c", "Backup_Office__c", "mi").as("backupDistance"),
       ])
       .where((eb) =>
         eb(
@@ -75,11 +73,7 @@ describe("geolocation compiler", () => {
       )
       .orderBy(
         ({ fn }) =>
-          fn.distance(
-            "Office__c",
-            fn.geolocation(-33.8688, 151.2093),
-            "km",
-          ),
+          fn.distance("Office__c", fn.geolocation(-33.8688, 151.2093), "km"),
         "desc",
         "last",
       )

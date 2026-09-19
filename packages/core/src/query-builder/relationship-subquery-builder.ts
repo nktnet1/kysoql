@@ -251,13 +251,7 @@ class RelationshipSubqueryBuilderImpl<
   limit(
     limit: number,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode> {
-    return new RelationshipSubqueryBuilderImpl<
-      DB,
-      TB,
-      O,
-      Depth,
-      FunctionMode
-    >({
+    return new RelationshipSubqueryBuilderImpl<DB, TB, O, Depth, FunctionMode>({
       ...this.#props,
       queryNode: RelationshipSubqueryNode.cloneWithLimit(
         this.#props.queryNode,
@@ -290,13 +284,7 @@ class RelationshipSubqueryBuilderImpl<
           )
         : parseOrderBy(fieldOrExpression, direction, nulls);
 
-    return new RelationshipSubqueryBuilderImpl<
-      DB,
-      TB,
-      O,
-      Depth,
-      FunctionMode
-    >({
+    return new RelationshipSubqueryBuilderImpl<DB, TB, O, Depth, FunctionMode>({
       ...this.#props,
       queryNode: RelationshipSubqueryNode.cloneWithOrderByItems(
         this.#props.queryNode,
@@ -321,13 +309,7 @@ class RelationshipSubqueryBuilderImpl<
             rhs,
           );
 
-    return new RelationshipSubqueryBuilderImpl<
-      DB,
-      TB,
-      O,
-      Depth,
-      FunctionMode
-    >({
+    return new RelationshipSubqueryBuilderImpl<DB, TB, O, Depth, FunctionMode>({
       ...this.#props,
       queryNode: QueryNode.cloneWithWhere(this.#props.queryNode, operation),
     });
@@ -517,11 +499,7 @@ export function createRelationshipSubqueryBuilder<
 >(
   props: RelationshipSubqueryBuilderProps,
 ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode> {
-  return new RelationshipSubqueryBuilderImpl<
-    DB,
-    TB,
-    O,
-    Depth,
-    FunctionMode
-  >(props);
+  return new RelationshipSubqueryBuilderImpl<DB, TB, O, Depth, FunctionMode>(
+    props,
+  );
 }

@@ -16,8 +16,8 @@ import {
   type GroupedHavingFieldName,
   type HavingExpressionFactory,
 } from "#/expression/having-expression-builder";
-import type { AdvancedGroupByMode } from "#/operation-node/group-by-node";
 import { ForViewReferenceNode } from "#/operation-node/for-view-reference-node";
+import type { AdvancedGroupByMode } from "#/operation-node/group-by-node";
 import type { ComparisonOperator } from "#/operation-node/operator-node";
 import type {
   OrderByDirection,
@@ -63,10 +63,6 @@ import { validateGroupingSelections } from "#/parser/grouping-expression-parser"
 import type { KnowledgeArticleUpdateCheck } from "#/parser/knowledge-update-parser";
 import { parseLimit } from "#/parser/limit-parser";
 import {
-  parseUserProfileFeedWithUserId,
-  type UserProfileFeedWithUserIdCheck,
-} from "#/parser/user-profile-feed-parser";
-import {
   parseAggregateOrderBy,
   parseGroupingOrderBy,
   parseOrderBy,
@@ -77,6 +73,10 @@ import {
   type SelectExpression,
   type Selection,
 } from "#/parser/select-parser";
+import {
+  parseUserProfileFeedWithUserId,
+  type UserProfileFeedWithUserIdCheck,
+} from "#/parser/user-profile-feed-parser";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { QueryExecutor } from "#/query-executor";
@@ -340,14 +340,10 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
-  withDataCategory<
-    Group extends SalesforceObjectDataCategoryGroup<DB[TB]>,
-  >(
+  withDataCategory<Group extends SalesforceObjectDataCategoryGroup<DB[TB]>>(
     group: Group,
     selector: DataCategorySelector,
-    categories: DataCategoryInput<
-      SalesforceObjectDataCategory<DB[TB], Group>
-    >,
+    categories: DataCategoryInput<SalesforceObjectDataCategory<DB[TB], Group>>,
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -843,14 +839,10 @@ class AggregateSelectQueryBuilderImpl<
     });
   }
 
-  withDataCategory<
-    Group extends SalesforceObjectDataCategoryGroup<DB[TB]>,
-  >(
+  withDataCategory<Group extends SalesforceObjectDataCategoryGroup<DB[TB]>>(
     group: Group,
     selector: DataCategorySelector,
-    categories: DataCategoryInput<
-      SalesforceObjectDataCategory<DB[TB], Group>
-    >,
+    categories: DataCategoryInput<SalesforceObjectDataCategory<DB[TB], Group>>,
   ): AggregateSelectQueryBuilder<
     DB,
     TB,

@@ -4,9 +4,9 @@ import {
   type GeolocationFilterFunctionModule,
 } from "#/expression/geolocation-function-builder";
 import { AndNode } from "#/operation-node/and-node";
-import type { ComparisonOperator } from "#/operation-node/operator-node";
 import { NotNode } from "#/operation-node/not-node";
 import type { OperationNode } from "#/operation-node/operation-node";
+import type { ComparisonOperator } from "#/operation-node/operator-node";
 import { OrNode } from "#/operation-node/or-node";
 import type {
   ComparisonOperatorExpression,
@@ -148,7 +148,9 @@ export function createExpressionBuilder<
       typeof lhs === "string"
         ? parseFilterBinaryOperation(lhs, op, rhs, {
             allowSemiJoin: options.allowSemiJoin ?? true,
-            ...(options.outerObject ? { outerObject: options.outerObject } : {}),
+            ...(options.outerObject
+              ? { outerObject: options.outerObject }
+              : {}),
           })
         : parseDistanceFilterBinaryOperation(
             lhs,

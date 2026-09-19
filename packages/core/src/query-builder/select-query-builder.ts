@@ -22,9 +22,9 @@ import type {
 import { QueryNode } from "#/operation-node/query-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
 import { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
-import type { TypeOfNode } from "#/operation-node/type-of-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
 import { SelectionNode } from "#/operation-node/selection-node";
+import type { TypeOfNode } from "#/operation-node/type-of-node";
 import { UsingScopeNode } from "#/operation-node/using-scope-node";
 import {
   type AggregateSelection,
@@ -159,8 +159,9 @@ export type SelectQueryMode = "plain" | "function" | "typeof";
 type AfterSelectFunctionMode<Mode extends SelectQueryMode> =
   Mode extends "plain" ? "function" : Mode;
 
-type AfterTypeOfMode<Mode extends SelectQueryMode> =
-  Mode extends "plain" ? "typeof" : Mode;
+type AfterTypeOfMode<Mode extends SelectQueryMode> = Mode extends "plain"
+  ? "typeof"
+  : Mode;
 
 type AfterSubqueryMode<
   Mode extends SelectQueryMode,
@@ -172,8 +173,10 @@ type AfterSubqueryMode<
 type InitialSubqueryFunctionMode<Mode extends SelectQueryMode> =
   Mode extends "typeof" ? "forbidden" : "none";
 
-type SelectFunctionFactoryForMode<Mode extends SelectQueryMode, Factory> =
-  Mode extends "typeof" ? never : Factory;
+type SelectFunctionFactoryForMode<
+  Mode extends SelectQueryMode,
+  Factory,
+> = Mode extends "typeof" ? never : Factory;
 
 type TypeOfModeCheck<Mode extends SelectQueryMode> = Mode extends "function"
   ? readonly [incompatibleQueryMode: never]
@@ -234,14 +237,10 @@ export interface SelectQueryBuilder<
     ..._userProfileFeedCheck: UserProfileFeedWithUserIdCheck<TB>
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
-  withDataCategory<
-    Group extends SalesforceObjectDataCategoryGroup<DB[TB]>,
-  >(
+  withDataCategory<Group extends SalesforceObjectDataCategoryGroup<DB[TB]>>(
     group: Group,
     selector: DataCategorySelector,
-    categories: DataCategoryInput<
-      SalesforceObjectDataCategory<DB[TB], Group>
-    >,
+    categories: DataCategoryInput<SalesforceObjectDataCategory<DB[TB], Group>>,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
   orderBy(
@@ -309,7 +308,10 @@ export interface SelectQueryBuilder<
     ...check: FieldsSelectionCheck<DB, TB, O, Selector>
   ): SelectQueryBuilder<DB, TB, O & FieldsSelection<DB, TB, Selector>, Mode>;
 
-  selectTypeOf<Reference extends string, Builder extends CompletedTypeOfBuilder>(
+  selectTypeOf<
+    Reference extends string,
+    Builder extends CompletedTypeOfBuilder,
+  >(
     reference: Reference &
       PolymorphicRelationshipReference<DB, TB, Reference> &
       AvailableTypeOfReference<O, Reference>,
@@ -328,10 +330,7 @@ export interface SelectQueryBuilder<
         DB,
         TB,
         Reference,
-        TypeOfValue<
-          PolymorphicRelationshipTargets<DB, TB, Reference>,
-          Builder
-        >
+        TypeOfValue<PolymorphicRelationshipTargets<DB, TB, Reference>, Builder>
       >,
     AfterTypeOfMode<Mode>
   >;
@@ -496,14 +495,10 @@ class SelectQueryBuilderImpl<
     });
   }
 
-  withDataCategory<
-    Group extends SalesforceObjectDataCategoryGroup<DB[TB]>,
-  >(
+  withDataCategory<Group extends SalesforceObjectDataCategoryGroup<DB[TB]>>(
     group: Group,
     selector: DataCategorySelector,
-    categories: DataCategoryInput<
-      SalesforceObjectDataCategory<DB[TB], Group>
-    >,
+    categories: DataCategoryInput<SalesforceObjectDataCategory<DB[TB], Group>>,
   ): SelectQueryBuilder<DB, TB, O, Mode> {
     return new SelectQueryBuilderImpl<DB, TB, O, Mode>({
       ...this.#props,
@@ -702,12 +697,7 @@ class SelectQueryBuilderImpl<
   selectFields<Selector extends FieldsSelector>(
     selector: Selector,
     ..._check: FieldsSelectionCheck<DB, TB, O, Selector>
-  ): SelectQueryBuilder<
-    DB,
-    TB,
-    O & FieldsSelection<DB, TB, Selector>,
-    Mode
-  > {
+  ): SelectQueryBuilder<DB, TB, O & FieldsSelection<DB, TB, Selector>, Mode> {
     return new SelectQueryBuilderImpl<
       DB,
       TB,
@@ -721,7 +711,10 @@ class SelectQueryBuilderImpl<
     });
   }
 
-  selectTypeOf<Reference extends string, Builder extends CompletedTypeOfBuilder>(
+  selectTypeOf<
+    Reference extends string,
+    Builder extends CompletedTypeOfBuilder,
+  >(
     reference: Reference &
       PolymorphicRelationshipReference<DB, TB, Reference> &
       AvailableTypeOfReference<O, Reference>,
@@ -740,10 +733,7 @@ class SelectQueryBuilderImpl<
         DB,
         TB,
         Reference,
-        TypeOfValue<
-          PolymorphicRelationshipTargets<DB, TB, Reference>,
-          Builder
-        >
+        TypeOfValue<PolymorphicRelationshipTargets<DB, TB, Reference>, Builder>
       >,
     AfterTypeOfMode<Mode>
   > {
@@ -879,9 +869,7 @@ export function createSelectQueryBuilder<
   TB extends keyof DB,
   O,
   Mode extends SelectQueryMode = "plain",
->(
-  props: SelectQueryBuilderProps,
-): SelectQueryBuilder<DB, TB, O, Mode> {
+>(props: SelectQueryBuilderProps): SelectQueryBuilder<DB, TB, O, Mode> {
   return new SelectQueryBuilderImpl<DB, TB, O, Mode>(props);
 }
 

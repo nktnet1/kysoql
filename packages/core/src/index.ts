@@ -72,11 +72,11 @@ export type {
   FieldsFunctionNode,
   FieldsSelector,
 } from "#/operation-node/fields-function-node";
-export type { FormatFunctionNode } from "#/operation-node/format-function-node";
 export type {
   ForViewReferenceMode,
   ForViewReferenceNode,
 } from "#/operation-node/for-view-reference-node";
+export type { FormatFunctionNode } from "#/operation-node/format-function-node";
 export type { GeolocationFunctionNode } from "#/operation-node/geolocation-function-node";
 export type {
   AdvancedGroupByMode,
@@ -109,32 +109,27 @@ export type {
 export type { OrderByNode } from "#/operation-node/order-by-node";
 export type { ReferenceNode } from "#/operation-node/reference-node";
 export type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
-export type { TypeOfNode, TypeOfWhenNode } from "#/operation-node/type-of-node";
-export type { UsingScopeNode } from "#/operation-node/using-scope-node";
-export type { UserProfileFeedWithNode } from "#/operation-node/user-profile-feed-with-node";
-export type {
-  DataCategorySelectionNode,
-  DataCategorySelector,
-  WithDataCategoryNode,
-} from "#/operation-node/with-data-category-node";
 export type { SelectQueryNode } from "#/operation-node/select-query-node";
 export type { SelectionNode } from "#/operation-node/selection-node";
 export type { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
 export type { SObjectNode } from "#/operation-node/sobject-node";
 export type { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
+export type { TypeOfNode, TypeOfWhenNode } from "#/operation-node/type-of-node";
+export type { UserProfileFeedWithNode } from "#/operation-node/user-profile-feed-with-node";
+export type { UsingScopeNode } from "#/operation-node/using-scope-node";
 export type { ValueListNode } from "#/operation-node/value-list-node";
 export type { ValueNode } from "#/operation-node/value-node";
 export type { WhereNode } from "#/operation-node/where-node";
+export type {
+  DataCategorySelectionNode,
+  DataCategorySelector,
+  WithDataCategoryNode,
+} from "#/operation-node/with-data-category-node";
+export type { DataCategoryInput } from "#/parser/data-category-parser";
+export type { DistanceComparisonOperator } from "#/parser/geolocation-expression-parser";
 export type { AggregateSelectQueryBuilder } from "#/query-builder/aggregate-select-query-builder";
 export type { CountQueryBuilder } from "#/query-builder/count-query-builder";
 export type { RelationshipSubqueryBuilder } from "#/query-builder/relationship-subquery-builder";
-export type {
-  TypeOfBuilder,
-  TypeOfElseBuilder,
-  TypeOfElseFieldList,
-  TypeOfFieldList,
-  TypeOfWhenBuilder,
-} from "#/query-builder/type-of-builder";
 export type {
   SelectQueryBuilder,
   SelectQueryBuilderProps,
@@ -147,8 +142,13 @@ export type {
   SemiJoinSubqueryExpression,
   SemiJoinSubqueryFactory,
 } from "#/query-builder/semi-join-subquery-builder";
-export type { DataCategoryInput } from "#/parser/data-category-parser";
-export type { DistanceComparisonOperator } from "#/parser/geolocation-expression-parser";
+export type {
+  TypeOfBuilder,
+  TypeOfElseBuilder,
+  TypeOfElseFieldList,
+  TypeOfFieldList,
+  TypeOfWhenBuilder,
+} from "#/query-builder/type-of-builder";
 export type { CompiledQuery } from "#/query-compiler/compiled-query";
 export { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
 export type { QueryCompiler } from "#/query-compiler/query-compiler";

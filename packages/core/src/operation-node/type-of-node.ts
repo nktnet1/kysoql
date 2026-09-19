@@ -54,7 +54,9 @@ export const TypeOfNode = {
     }
 
     if (typeOf.whens.some((when) => when.object === object)) {
-      throw new TypeError(`${DUPLICATE_WHEN_ERROR} Duplicate object: ${object}.`);
+      throw new TypeError(
+        `${DUPLICATE_WHEN_ERROR} Duplicate object: ${object}.`,
+      );
     }
 
     return freeze({

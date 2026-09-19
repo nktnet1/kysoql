@@ -1,6 +1,6 @@
 import {
-  GeolocationFunctionModuleImpl,
   type GeolocationFunctionModule,
+  GeolocationFunctionModuleImpl,
 } from "#/expression/geolocation-function-builder";
 import { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
 import { AliasNode } from "#/operation-node/alias-node";
@@ -859,8 +859,7 @@ export interface SelectFunctionModule<
   DB,
   TB extends keyof DB,
   GroupingFields extends string = never,
->
-  extends AggregateFunctionModule<DB, TB, GroupingFields>,
+> extends AggregateFunctionModule<DB, TB, GroupingFields>,
     GeolocationFunctionModule<DB, TB> {
   convertCurrency<Reference extends string>(
     field: Reference & CurrencyFieldReference<DB, TB, Reference>,

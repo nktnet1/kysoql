@@ -217,19 +217,15 @@ describe("renderSchema", () => {
       return source.slice(start, end).trimEnd();
     };
 
-    expect(fieldBlock("WhatId")).toMatch(/\n        true$/);
-    expect(fieldBlock("OwnerId")).toMatch(/\n        false$/);
-    expect(fieldBlock("DuplicateTarget__c")).toMatch(/\n        false$/);
+    expect(fieldBlock("WhatId")).toMatch(/\n {8}true$/);
+    expect(fieldBlock("OwnerId")).toMatch(/\n {8}false$/);
+    expect(fieldBlock("DuplicateTarget__c")).toMatch(/\n {8}false$/);
   });
 
   it("renders supported scopes as a sorted unique string-literal union", () => {
     const source = renderSchema([
       objectWith([], {
-        supportedScopes: [
-          { name: "team" },
-          { name: "mine" },
-          { name: "team" },
-        ],
+        supportedScopes: [{ name: "team" }, { name: "mine" }, { name: "team" }],
       }),
     ]);
 

@@ -27,15 +27,15 @@ import {
   type CountAllFunctionBuilder,
   type CountQueryBuilder,
   type CurrencyFieldReference,
+  type DataCategoryInput,
+  type DataCategorySelectionNode,
+  type DataCategorySelector,
   type DateFunction,
   type DateFunctionArgumentNode,
   type DateFunctionBuilder,
   type DateFunctionExpression,
   type DateFunctionIdentity,
   type DateFunctionNode,
-  type DataCategoryInput,
-  type DataCategorySelectionNode,
-  type DataCategorySelector,
   type DateGroupableFieldReference,
   DefaultQueryCompiler,
   type DistanceComparisonOperator,
@@ -47,14 +47,14 @@ import {
   type EqualityComparisonOperator,
   type ExpressionBuilder,
   type ExpressionWrapper,
-  type FilterableLocationFieldReference,
   type FieldsFunctionNode,
   type FieldsSelector,
+  type FilterableLocationFieldReference,
   type FormatFunctionBuilder,
   type FormatFunctionNode,
+  type FormattableFieldReference,
   type ForViewReferenceMode,
   type ForViewReferenceNode,
-  type FormattableFieldReference,
   type GeolocationExpressionBuilder,
   type GeolocationFilterExpressionBuilder,
   type GeolocationFilterFunctionModule,
@@ -114,8 +114,8 @@ import {
   type SelectFunctionModule,
   type SelectionNode,
   type SelectQueryBuilder,
-  type SelectQueryMode,
   type SelectQueryBuilderProps,
+  type SelectQueryMode,
   type SelectQueryNode,
   type SemiJoinQueryCreator,
   type SemiJoinSubqueryBuilder,
@@ -145,8 +145,8 @@ import {
   type TypeOfNode,
   type TypeOfWhenBuilder,
   type TypeOfWhenNode,
-  type UsingScopeNode,
   type UserProfileFeedWithNode,
+  type UsingScopeNode,
   type ValueListNode,
   type ValueNode,
   type WhereExpressionFactory,
@@ -460,11 +460,7 @@ type PublicTypeSurface = {
     "Account",
     Record<never, never>
   >;
-  typeOfElseFieldList: TypeOfElseFieldList<
-    Record<string, never>,
-    never,
-    "Id"
-  >;
+  typeOfElseFieldList: TypeOfElseFieldList<Record<string, never>, never, "Id">;
   typeOfFieldList: TypeOfFieldList<Record<string, never>, never, "Id">;
   typeOfNode: TypeOfNode;
   typeOfWhenBuilder: TypeOfWhenBuilder<

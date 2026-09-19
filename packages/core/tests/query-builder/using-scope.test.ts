@@ -22,14 +22,7 @@ interface FixtureSchema {
         never,
         true
       >;
-      readonly Name: SalesforceField<
-        string,
-        "string",
-        true,
-        true,
-        true,
-        true
-      >;
+      readonly Name: SalesforceField<string, "string", true, true, true, true>;
     },
     {},
     {
