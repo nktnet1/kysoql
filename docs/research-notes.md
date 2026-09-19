@@ -897,9 +897,11 @@ The bundled JSforce CLI uses the REST resource for `KnowledgeArticleVersion` and
 article targets. Because Salesforce's REST resource does not support `Question`,
 the generic codegen client exposes optional data-category discovery so another
 adapter can supply the same normalized REST-shaped metadata; automatic
-SOAP-backed Question discovery remains a follow-up. A later slice should also
-enforce the Knowledge-specific `WHERE PublishStatus` / `WHERE Id` prerequisite at
-the compiler boundary rather than conflating it with the taxonomy/type foundation.
+SOAP-backed Question discovery remains a follow-up. `v1.0.76` enforces the
+Knowledge-specific `WHERE PublishStatus` / `WHERE Id` prerequisite at the compiler
+boundary for `KnowledgeArticleVersion` and `__kav` article types. The guard walks
+nested boolean WHERE expressions but only accepts direct root references named
+`PublishStatus` or `Id`; `Question` queries are intentionally unaffected.
 
 ### Remaining SOQL surface / roadmap references
 

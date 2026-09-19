@@ -325,7 +325,10 @@ Generated data-category metadata enables typed root `WITH DATA CATEGORY` filters
 The category group and category names are constrained to the generated metadata for
 the selected object, including non-empty multi-category lists. Each clause supports
 Salesforce's `AT`, `ABOVE`, `BELOW`, and `ABOVE_OR_BELOW` selectors; a query can
-have at most three conditions and cannot reuse the same category group.
+have at most three conditions and cannot reuse the same category group. Knowledge
+article queries (`KnowledgeArticleVersion` and `__kav` article types) are also
+validated at compile time to require a root `WHERE` predicate on `PublishStatus` or
+`Id`, as required by Salesforce.
 
 ```ts
 const articles = await db

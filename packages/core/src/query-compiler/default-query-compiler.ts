@@ -36,7 +36,7 @@ import type {
   DataCategorySelectionNode,
   WithDataCategoryNode,
 } from "#/operation-node/with-data-category-node";
-import { validateWithDataCategory } from "#/parser/data-category-parser";
+import { validateDataCategoryQuery } from "#/parser/data-category-parser";
 import { validateFieldsSelections } from "#/parser/fields-selection-parser";
 import { validateTypeOfSelections } from "#/parser/type-of-parser";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
@@ -78,7 +78,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
     }
 
     if (query.withDataCategory) {
-      validateWithDataCategory(query.withDataCategory);
+      validateDataCategoryQuery(query);
       soql += ` WITH DATA CATEGORY ${this.#compileWithDataCategory(query.withDataCategory)}`;
     }
 

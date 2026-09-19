@@ -1,3 +1,12 @@
+import type { AndNode } from "#/operation-node/and-node";
+import type {
+  BinaryOperationNode,
+} from "#/operation-node/binary-operation-node";
+import type { NotNode } from "#/operation-node/not-node";
+import type { OperationNode } from "#/operation-node/operation-node";
+import type { OrNode } from "#/operation-node/or-node";
+import type { ReferenceNode } from "#/operation-node/reference-node";
+import type { SelectQueryNode } from "#/operation-node/select-query-node";
 import {
   DataCategorySelectionNode,
   type DataCategorySelector,
@@ -87,5 +96,67 @@ export const validateWithDataCategory = (node: WithDataCategoryNode): void => {
       );
     }
     groups.add(group);
+  }
+};
+
+const isKnowledgeArticleObject = (objectName: string): boolean => {
+  const normalized = objectName.toLowerCase();
+
+  return (
+    normalized === "knowledgearticleversion" || normalized.endsWith("__kav")
+  );
+};
+
+const isKnowledgeArticleRequiredReference = (node: OperationNode): boolean => {
+  if (node.kind !== "ReferenceNode") {
+    return false;
+  }
+
+  const name = (node as ReferenceNode).name.toLowerCase();
+
+  return name === "id" || name === "publishstatus";
+};
+
+const hasKnowledgeArticleRequiredPredicate = (node: OperationNode): boolean => {
+  switch (node.kind) {
+    case "AndNode": {
+      const and = node as AndNode;
+      return (
+        hasKnowledgeArticleRequiredPredicate(and.left) ||
+        hasKnowledgeArticleRequiredPredicate(and.right)
+      );
+    }
+    case "BinaryOperationNode":
+      return isKnowledgeArticleRequiredReference(
+        (node as BinaryOperationNode).leftOperand,
+      );
+    case "NotNode":
+      return hasKnowledgeArticleRequiredPredicate((node as NotNode).operand);
+    case "OrNode": {
+      const or = node as OrNode;
+      return (
+        hasKnowledgeArticleRequiredPredicate(or.left) ||
+        hasKnowledgeArticleRequiredPredicate(or.right)
+      );
+    }
+    default:
+      return false;
+  }
+};
+
+export const validateDataCategoryQuery = (query: SelectQueryNode): void => {
+  if (!query.withDataCategory) {
+    return;
+  }
+
+  validateWithDataCategory(query.withDataCategory);
+
+  if (
+    isKnowledgeArticleObject(query.from.name) &&
+    (!query.where || !hasKnowledgeArticleRequiredPredicate(query.where.where))
+  ) {
+    throw new TypeError(
+      "SOQL WITH DATA CATEGORY queries on Knowledge articles require a WHERE predicate on PublishStatus or Id.",
+    );
   }
 };

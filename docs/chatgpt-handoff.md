@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.73`, the next patch
-   is `v1.0.74`.
+   reuse or rewrite a version already handed off. After `v1.0.76`, the next patch
+   is `v1.0.77`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.74`
+## Current state after `v1.0.76`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -128,6 +128,7 @@ recent patch sequence:
 | `v1.0.73` | Add Describe-driven typed polymorphic `TYPEOF` selection with branch-specific output unions, parent-path/nullability preservation, and function/grouping compatibility guards. |
 | `v1.0.74` | Add Describe-driven typed top-level `USING SCOPE` with object-specific scope unions, immutable replacement semantics, and root compiler ordering. |
 | `v1.0.75` | Add typed root `WITH DATA CATEGORY` filters with generated visible taxonomy unions, immutable multi-condition AST/compiler support, and Knowledge REST category discovery. |
+| `v1.0.76` | Enforce Salesforce's Knowledge article `WITH DATA CATEGORY` prerequisite by requiring a root `WHERE` predicate on `PublishStatus` or `Id` for `KnowledgeArticleVersion` and `__kav` article types. |
 
 ### Build/tooling state
 
@@ -347,18 +348,18 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.76` and should close the Knowledge-specific
-`WITH DATA CATEGORY` query-validity gap.** Salesforce requires
-`KnowledgeArticleVersion` and article-type (`__kav`) queries using this clause to
-have a `WHERE` predicate on `PublishStatus` or `Id`. Add a focused compiler/runtime
-guard for that prerequisite without introducing Apex-only syntax or pretending the
-REST category endpoint can discover `Question` taxonomy.
+**The next patch should be `v1.0.77` and should evaluate automatic `Question`
+data-category taxonomy discovery as a separate codegen/transport concern.**
+Salesforce's REST data-category resource accepts `KnowledgeArticleVersion` but not
+`Question`; SOAP
+exposes `describeDataCategoryGroups()` / `describeDataCategoryGroupStructures()` for
+Question. Prefer a stable JSforce-supported SOAP path if one exists, feeding the
+existing optional normalized category-discovery hook rather than widening core's
+query grammar or ordinary sObject Describe model. If JSforce does not expose a
+reliable path, document that boundary and advance to the next specialist top-level
+REST/SOAP clause instead of adding brittle private transport code.
 
-Automatic Question taxonomy discovery can follow separately if a stable SOAP path
-is added to the JSforce/codegen boundary; the generic codegen client already has an
-optional category-discovery hook.
-
-If the supplied bundle already contains `v1.0.75` or later, inspect the code and
+If the supplied bundle already contains `v1.0.76` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
@@ -366,9 +367,9 @@ advance from the actual state instead of reimplementing this section.
 Group closely related syntax when it shares the same type/AST/compiler path, but
 keep major architecture changes independently reviewable:
 
-1. **Complete data-category support.** Enforce Knowledge article WHERE
-   prerequisites, then evaluate SOAP-backed automatic `Question` taxonomy
-   discovery independently from the core query grammar.
+1. **Complete data-category support.** Evaluate SOAP-backed automatic `Question`
+   taxonomy discovery independently from the core query grammar; the Knowledge
+   article WHERE prerequisite is enforced as of `v1.0.76`.
 2. **Remaining specialist top-level clauses.** Add other REST/SOAP-relevant
    specialist clauses in focused slices.
 3. **Execution-context-specific syntax.** Re-evaluate Apex-only semantics such as

@@ -13,6 +13,19 @@ type Field<
   Type extends string = "string",
 > = SalesforceField<Value, Type, false, true, true, true, never, never, never, true>;
 
+type DataCategoryFixture = {
+  readonly Geography__c:
+    | "All"
+    | "asia__c"
+    | "europe__c"
+    | "france__c"
+    | "uk__c"
+    | "usa__c";
+  readonly Product__c: "All" | "dsl__c" | "mobile_phones__c";
+  readonly Audience__c: "All" | "internal__c";
+  readonly Language__c: "All" | "english__c";
+};
+
 interface FixtureSchema {
   readonly KnowledgeArticleVersion: SalesforceObject<
     {
@@ -28,18 +41,28 @@ interface FixtureSchema {
       >;
     },
     never,
+    DataCategoryFixture
+  >;
+  readonly FAQ__kav: SalesforceObject<
     {
-      readonly Geography__c:
-        | "All"
-        | "asia__c"
-        | "europe__c"
-        | "france__c"
-        | "uk__c"
-        | "usa__c";
-      readonly Product__c: "All" | "dsl__c" | "mobile_phones__c";
-      readonly Audience__c: "All" | "internal__c";
-      readonly Language__c: "All" | "english__c";
-    }
+      readonly Id: Field<string, "id">;
+      readonly Title: Field;
+      readonly PublishStatus: Field<string, "picklist">;
+    },
+    {},
+    {},
+    never,
+    DataCategoryFixture
+  >;
+  readonly Question: SalesforceObject<
+    {
+      readonly Id: Field<string, "id">;
+      readonly Title: Field;
+    },
+    {},
+    {},
+    never,
+    DataCategoryFixture
   >;
   readonly ArticleChild__c: SalesforceObject<{
     readonly Id: Field<string, "id">;
@@ -69,6 +92,60 @@ describe("WITH DATA CATEGORY", () => {
 
     expect(query.compile().soql).toBe(
       "SELECT Id, Title FROM KnowledgeArticleVersion WHERE PublishStatus = 'Online' WITH DATA CATEGORY Geography__c ABOVE usa__c",
+    );
+  });
+
+  it("requires Knowledge article queries to filter by PublishStatus or Id", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const article = db
+      .selectFrom("KnowledgeArticleVersion")
+      .select("Id")
+      .withDataCategory("Geography__c", "at", "usa__c");
+
+    expect(() => article.compile()).toThrow(
+      "SOQL WITH DATA CATEGORY queries on Knowledge articles require a WHERE predicate on PublishStatus or Id.",
+    );
+    expect(() => article.where("Title", "=", "Example").compile()).toThrow(
+      "SOQL WITH DATA CATEGORY queries on Knowledge articles require a WHERE predicate on PublishStatus or Id.",
+    );
+
+    expect(article.where("Id", "=", "ka0000000000001").compile().soql).toBe(
+      "SELECT Id FROM KnowledgeArticleVersion WHERE Id = 'ka0000000000001' WITH DATA CATEGORY Geography__c AT usa__c",
+    );
+
+    const nested = article.where((eb) =>
+      eb.or([
+        eb("Title", "=", "Example"),
+        eb("PublishStatus", "=", "Online"),
+      ]),
+    );
+
+    expect(nested.compile().soql).toBe(
+      "SELECT Id FROM KnowledgeArticleVersion WHERE (Title = 'Example' OR PublishStatus = 'Online') WITH DATA CATEGORY Geography__c AT usa__c",
+    );
+  });
+
+  it("applies the WHERE prerequisite to article types but not Question", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const articleType = db
+      .selectFrom("FAQ__kav")
+      .select("Id")
+      .withDataCategory("Geography__c", "below", "europe__c");
+    const question = db
+      .selectFrom("Question")
+      .select("Id")
+      .withDataCategory("Geography__c", "above", "usa__c");
+
+    expect(() => articleType.compile()).toThrow(
+      "SOQL WITH DATA CATEGORY queries on Knowledge articles require a WHERE predicate on PublishStatus or Id.",
+    );
+    expect(
+      articleType.where("PublishStatus", "=", "Online").compile().soql,
+    ).toBe(
+      "SELECT Id FROM FAQ__kav WHERE PublishStatus = 'Online' WITH DATA CATEGORY Geography__c BELOW europe__c",
+    );
+    expect(question.compile().soql).toBe(
+      "SELECT Id FROM Question WITH DATA CATEGORY Geography__c ABOVE usa__c",
     );
   });
 
