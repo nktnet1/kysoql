@@ -228,8 +228,9 @@ pnpm salesforce:schema -- \
 Omit the `--object` flags to generate every queryable object visible to the
 connected user. Object and field order is deterministic so generated changes
 remain reviewable in git. The generated schema records Salesforce field types,
-nullability, filter/sort/group capabilities, active picklist values, parent
-references, and child relationships.
+nullability, filter/sort/group/aggregate capabilities, custom and polymorphic-reference
+metadata, active picklist values, parent references, child relationships,
+supported scopes, MRU capability, and data-category metadata when available.
 
 By default the command uses the `kysoql-test` org alias. Override it without
 changing your Salesforce CLI defaults:

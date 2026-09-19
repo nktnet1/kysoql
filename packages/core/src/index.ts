@@ -187,7 +187,3 @@ export {
   soqlDateTime,
   soqlTime,
 } from "#/soql-temporal-literal";
-
-export const kysoql = () => ({
-  version: "0.0.0",
-});

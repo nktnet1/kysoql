@@ -71,13 +71,13 @@ import {
   type KnowledgeUpdateMode,
   type KnowledgeUpdateNode,
   Kysoql,
-  kysoql,
   type LikeComparisonOperator,
   type LimitNode,
   type LocationFieldReference,
   type MultiSelectComparisonOperator,
   type NotNode,
   type NumericAggregatableFieldReference,
+  type OffsetNode,
   type OperationNode,
   type OperatorNode,
   type OrderByDirection,
@@ -313,6 +313,7 @@ type PublicTypeSurface = {
     never,
     "Amount"
   >;
+  offsetNode: OffsetNode;
   operationNode: OperationNode;
   orNode: OrNode;
   operatorNode: OperatorNode;
@@ -486,10 +487,6 @@ type PublicTypeSurface = {
 };
 
 describe("@kysoql/core public API", () => {
-  it("exposes the package version", () => {
-    expect(kysoql()).toEqual({ version: "0.0.0" });
-  });
-
   it("exports every runtime entrypoint through the package barrel", () => {
     expect(Kysoql).toBeTypeOf("function");
     expect(QueryCreator).toBeTypeOf("function");

@@ -1,5 +1,6 @@
 import { expectTypeOf, it } from "vitest";
 import type {
+  GenerateSchemaOptions,
   SalesforceChildRelationshipDescription,
   SalesforceDataCategoryGroupDescription,
   SalesforceDataCategoryGroupResponse,
@@ -13,10 +14,19 @@ import type {
   SalesforcePicklistValue,
   SalesforceSupportedScopeDescription,
 } from "#/index";
-import { renderSchema } from "#/index";
+import { generateSchema, loadSchema, renderSchema } from "#/index";
 
 it("exports the complete codegen public API from the package entrypoint", () => {
+  expectTypeOf(generateSchema).toBeFunction();
+  expectTypeOf(loadSchema).toBeFunction();
   expectTypeOf(renderSchema).toBeFunction();
+
+  expectTypeOf<GenerateSchemaOptions>().toMatchTypeOf<{
+    readonly client: SalesforceDescribeClient;
+    readonly output: string;
+    readonly objects?: readonly string[];
+    readonly schemaName?: string;
+  }>();
 
   expectTypeOf<SalesforcePicklistValue>().toMatchTypeOf<{
     readonly active?: boolean;
@@ -41,6 +51,7 @@ it("exports the complete codegen public API from the package entrypoint", () => 
     readonly name: string;
     readonly fields: readonly SalesforceFieldDescription[];
     readonly mruEnabled?: boolean;
+    readonly childRelationships?: readonly SalesforceChildRelationshipDescription[];
     readonly supportedScopes?: readonly SalesforceSupportedScopeDescription[];
     readonly dataCategoryGroups?: readonly SalesforceDataCategoryGroupDescription[];
   }>();

@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.86`
+## Current state after `v1.0.87`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -139,6 +139,7 @@ recent patch sequence:
 | `v1.0.84` | Enforce unconditional custom-metadata (`__mdt`) and external-object (`__x`) SOQL restrictions while leaving adapter-specific external-object behavior to execution context. |
 | `v1.0.85` | Fix the supplied Biome check failures by applying formatter/import-order output, making the relationship `ORDER BY` scan return explicitly on every callback path, and excluding generated `*.generated.ts` fixtures from Biome checks. |
 | `v1.0.86` | Fix the supplied TypeScript and Biome diagnostics by aligning the geolocation negative assertion with TypeScript 7's diagnostic location, removing stale/unused type plumbing, replacing banned empty-object spellings, and keeping TYPEOF runtime-boundary tests free of explicit `any`. |
+| `v1.0.87` | Complete the final public-API/tooling/docs/codegen consistency audit: forward root `pnpm check` arguments through Turbo, remove the scaffold-only `kysoql()` export, complete package-entrypoint contract coverage, and make generated schema imports/empty metadata maps lint-friendly. |
 
 ### Build/tooling state
 
@@ -153,6 +154,8 @@ recent patch sequence:
 - `@kysoql/debug` is private and intentionally remains a simple `tsc`-built
   playground.
 - Root `pnpm test` and `pnpm t` both run `vitest run`.
+- Root `pnpm check` forwards trailing arguments through Turbo, so
+  `pnpm check --write` reaches every package-level `biome check` task.
 - `pnpm validate` is the required validation gate: TypeScript typecheck, Vitest,
   then package builds. Biome is intentionally separate under `pnpm check`.
 
@@ -371,36 +374,23 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.87` and should perform the final public-API,
-diagnostics, documentation, and fixture-consistency audit.** The broad
-transport-neutral SOQL surface and the stable unconditional object-limit rules are
-now covered. Prefer concrete inconsistencies found by the audit over adding new
-syntax merely to consume a version.
+**The next patch should be `v1.0.88` and should begin release hardening.** The
+final consistency audit is complete, and the broad transport-neutral REST/SOAP
+SOQL surface is substantially covered. Prefer a concrete release-readiness slice
+such as package metadata/changelog preparation, publish-shape verification, or a
+focused real-org fixture expansion over adding speculative syntax.
 
-The `v1.0.84` object-limit audit uses Salesforce's official API-name families for
-the two cases that are stable without extra transport metadata: custom metadata
-types end in `__mdt`, and external custom objects end in `__x`. Custom metadata
-now validates its documented WHERE/OR/operator and relationship-ordering limits.
-External objects reject only Salesforce's universal unsupported function/operator/
-clause set; OData- and custom-adapter-specific restrictions remain intentionally
-unvalidated because the current generated schema does not encode adapter identity.
+The `v1.0.84` object-limit audit still defines the boundary for specialist-object
+work: do not infer big-object index rules from the `__b` suffix, do not encode
+external-adapter-specific limits without adapter metadata, and keep
+permission/cardinality-dependent feed/object caps as execution-context concerns.
+Automatic `Question` data-category taxonomy discovery also remains deferred until
+a stable public JSforce/Salesforce transport path exists.
 
-Big-object filtering is also not safe to infer from the normal Describe surface:
-correct validation depends on the configured big-object index and its field order.
-Do not add `__b` suffix-only filtering rules without first adding authoritative
-index metadata to codegen. Likewise, permission/cardinality-dependent limits for
-feeds, `TopicAssignment`, and `Attachment` remain execution-context concerns.
-
-Automatic `Question` data-category taxonomy discovery remains deferred: Salesforce
-exposes the required SOAP describe calls, but JSforce 3.10.x does not expose them
-on its public `SoapApi`; the only generic invoke path is private. Keep using the
-existing optional normalized codegen hook until a stable public transport path is
-available rather than coupling the CLI to JSforce internals.
-
-If the supplied bundle already contains `v1.0.86` or later, inspect the code and
+If the supplied bundle already contains `v1.0.87` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
-## Remaining roadmap after the next slice
+## Follow-on roadmap after the consistency audit
 
 The general REST/SOAP SOQL builder is now substantially complete. Remaining work
 should be treated as separate follow-on tracks rather than folded into the final
@@ -416,9 +406,9 @@ consistency audit:
    object rules, external-adapter-specific limits, and permission/cardinality
    dependent caps need authoritative metadata or execution-context hooks before
    they can become sound static/compiler guarantees.
-4. **Release hardening after the consistency audit.** Once `v1.0.87` is clean,
-   consider changelog/release packaging, broader Salesforce-org fixtures, and any
-   API naming cleanup discovered through real-world use.
+4. **Release hardening.** This is the immediate `v1.0.88+` track: consider
+   changelog/release packaging, publish-shape verification, broader Salesforce-org
+   fixtures, and API naming cleanup discovered through real-world use.
 
 The aggregate-selection, grouping/HAVING, relationship traversal, polymorphic
 selection, function-expression, pagination, scope/category, MRU, Knowledge,
@@ -438,6 +428,7 @@ Formatting/linting is separate:
 
 ```bash
 pnpm check
+pnpm check --write
 ```
 
 Salesforce fixture/schema commands require an authenticated org and remain

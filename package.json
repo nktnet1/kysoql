@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "turbo run build",
-    "check": "turbo run check",
+    "check": "turbo run check --",
     "test": "vitest run",
     "t": "vitest run",
     "test:watch": "vitest",

@@ -35,11 +35,16 @@ needed:
 
 ```bash
 pnpm check
+pnpm check --write
 pnpm typecheck
 pnpm test
 pnpm test:coverage
 pnpm build
 ```
+
+Additional arguments passed to `pnpm check` are forwarded through Turborepo to
+each package's Biome task, so `pnpm check --write` applies safe formatter, lint,
+and import-organization fixes across the workspace.
 
 Vitest is configured at the workspace root and discovers tests under
 `packages/**/tests/**/*.test.ts`. V8 coverage output is written to `coverage/`.
@@ -74,8 +79,12 @@ kysoql generate \
 ```
 
 `--object` is repeatable. If it is omitted, codegen includes every queryable
-object returned by Salesforce. Run `kysoql --help` or
-`kysoql generate --help` for the oclif-generated command reference.
+object returned by Salesforce. Generated schemas retain the Describe metadata
+used by the typed builder, including field capabilities, custom/polymorphic
+reference metadata, supported scopes, MRU capability, and data-category metadata
+when available. Generated imports and empty metadata maps are emitted in a
+lint-friendly form. Run `kysoql --help` or `kysoql generate --help` for the
+oclif-generated command reference.
 
 ## Current query surface
 

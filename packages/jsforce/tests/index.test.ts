@@ -6,6 +6,7 @@ import {
   createJsforceExecutor,
   type JsforceConnection,
   type JsforceCountQueryResult,
+  type JsforceExecutor,
   type JsforceQueryResult,
 } from "#/index";
 
@@ -25,7 +26,10 @@ const compiledCountQuery = {
 } satisfies CompiledQuery<number>;
 
 describe("createJsforceExecutor", () => {
-  it("accepts the query/queryMore surface of a JSforce Connection", () => {
+  it("exports the executor contract and accepts the JSforce connection surface", () => {
+    expectTypeOf<JsforceExecutor>().toMatchTypeOf<{
+      executeCountQuery(compiledQuery: CompiledQuery<number>): Promise<number>;
+    }>();
     expectTypeOf<Connection>().toMatchTypeOf<JsforceConnection>();
   });
 
