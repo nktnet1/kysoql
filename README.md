@@ -700,8 +700,29 @@ const lockedAccountQuery = db
 ```
 
 The Apex-context builder intentionally has no `.execute()` or `.executeAll()`
-method. `FOR UPDATE` is also rejected if the underlying query already contains
-`ORDER BY`.
+method. It also exposes explicit access modes without guessing the Apex API
+version's default security context:
+
+```ts
+const userModeQuery = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .apex()
+  .withUserMode()
+  .compile();
+
+const systemModeQuery = db
+  .selectFrom("Account")
+  .select("Id")
+  .apex()
+  .withSystemMode()
+  .compile();
+```
+
+Repeated access-mode calls replace the previous mode. `WITH USER_MODE` /
+`WITH SYSTEM_MODE` cannot be combined with another SOQL `WITH` filtering form
+such as `WITH DATA CATEGORY`. `FOR UPDATE` is also rejected if the underlying
+query already contains `ORDER BY`.
 
 Execution stays transport-neutral in core. Configure the JSforce adapter to run
 compiled SOQL through an existing JSforce connection:

@@ -1336,3 +1336,33 @@ represented by a frozen `ForUpdateNode`; the compiler emits `FOR UPDATE` at the
 end of the statement and rejects any query that also has `ORDER BY`. Aggregate
 and bare-`COUNT()` builders do not expose the Apex context because record locking
 has no sound aggregate result semantics.
+
+### Apex access-mode clauses
+
+Sources re-checked on 2026-09-20:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-with.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select.html
+- https://developer.salesforce.com/blogs/2026/06/the-salesforce-developers-guide-to-the-summer-26-release
+
+Useful findings:
+
+- The current SOQL reference exposes `WITH USER_MODE` and `WITH SYSTEM_MODE` as
+  Apex database-operation access modes and places the `WITH` filtering expression
+  before grouping/ordering/trailing query clauses.
+- The same grammar position is used by `WITH DATA CATEGORY` and other `WITH`
+  filtering forms. The SELECT reference describes access-mode filtering only when
+  `WITH DATA CATEGORY` is not specified, so kysoql rejects multiple competing
+  `WITH` filtering forms instead of emitting ambiguous syntax.
+- Salesforce's general SOQL reference still describes system mode as the Apex
+  default, while the Summer '26 / API 67 developer guidance says database
+  operations default to user mode for code compiled at API 67 and that
+  `WITH SECURITY_ENFORCED` is retired there. The default therefore cannot be
+  modeled as one timeless global rule.
+
+Kysoql consequence for `v1.0.93`: extend only the explicit compile-only
+`ApexSelectQueryBuilder` with `.withUserMode()` and `.withSystemMode()`. Store the
+choice in a frozen `ApexAccessModeNode`; repeated calls replace the prior mode.
+If neither method is called, compile no access-mode clause and leave the runtime
+default to the caller's Apex/API-version context. Do not expose
+`WITH SECURITY_ENFORCED` on the current API surface.

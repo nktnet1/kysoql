@@ -1,3 +1,7 @@
+import {
+  type ApexAccessMode,
+  ApexAccessModeNode,
+} from "#/operation-node/apex-access-mode-node";
 import { ForUpdateNode } from "#/operation-node/for-update-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
 import type { SelectQueryBuilderProps } from "#/query-builder/select-query-builder";
@@ -8,6 +12,10 @@ export interface ApexSelectQueryBuilder<DB, TB extends keyof DB, O> {
   compile(): CompiledQuery<O>;
 
   forUpdate(): ApexSelectQueryBuilder<DB, TB, O>;
+
+  withSystemMode(): ApexSelectQueryBuilder<DB, TB, O>;
+
+  withUserMode(): ApexSelectQueryBuilder<DB, TB, O>;
 
   toOperationNode(): SelectQueryNode;
 }
@@ -31,6 +39,24 @@ class ApexSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
       queryNode: SelectQueryNode.cloneWithForUpdate(
         this.#props.queryNode,
         ForUpdateNode.create(),
+      ),
+    });
+  }
+
+  withSystemMode(): ApexSelectQueryBuilder<DB, TB, O> {
+    return this.#withAccessMode("system");
+  }
+
+  withUserMode(): ApexSelectQueryBuilder<DB, TB, O> {
+    return this.#withAccessMode("user");
+  }
+
+  #withAccessMode(mode: ApexAccessMode): ApexSelectQueryBuilder<DB, TB, O> {
+    return new ApexSelectQueryBuilderImpl<DB, TB, O>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithApexAccessMode(
+        this.#props.queryNode,
+        ApexAccessModeNode.create(mode),
       ),
     });
   }

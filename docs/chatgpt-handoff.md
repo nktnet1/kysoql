@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.91`, the next patch
-   is `v1.0.92`.
+   reuse or rewrite a version already handed off. After `v1.0.93`, the next patch
+   is `v1.0.94`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.92`
+## Current state after `v1.0.93`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -145,6 +145,7 @@ recent patch sequence:
 | `v1.0.90` | Add Salesforce QueryAll execution through root `.executeAll()` for record, aggregate-result, and bare-`COUNT()` queries, with optional transport-neutral executor hooks and JSforce v3 `scanAll` pagination. |
 | `v1.0.91` | Fix the aggregate QueryAll executor test so its mock preserves the generic `QueryExecutor.executeAllQuery<O>()` contract under TypeScript 7/Vitest 5 instead of collapsing the return type to `unknown[]`. |
 | `v1.0.92` | Add an explicit compile-only Apex query context and typed root record `FOR UPDATE`, with immutable AST/compiler support and rejection of the Salesforce-invalid `ORDER BY` combination. |
+| `v1.0.93` | Add explicit Apex `WITH USER_MODE` / `WITH SYSTEM_MODE` access clauses with immutable replacement, competing-`WITH` rejection, and no inferred API-version default. |
 
 ### Build/tooling state
 
@@ -376,10 +377,11 @@ Core currently has:
   `.executeAll()`; JSforce v3 uses `query(soql, { scanAll: true })` for the first
   page and ordinary `queryMore` locators thereafter;
 - an explicit terminal `.apex()` context on row-producing root record queries;
-  the returned `ApexSelectQueryBuilder` is compile-only and currently adds typed
-  `.forUpdate()` locking syntax, while the ordinary REST/JSforce builder remains
-  executable and never exposes `FOR UPDATE`; the compiler rejects `ORDER BY` on
-  locking queries;
+  the returned `ApexSelectQueryBuilder` is compile-only and adds typed
+  `.forUpdate()` locking plus explicit `.withUserMode()` / `.withSystemMode()`
+  access clauses, while ordinary REST/JSforce builders expose none of those Apex
+  forms; the compiler rejects `ORDER BY` on locking queries and competing `WITH`
+  filtering forms alongside an Apex access mode;
 - generated field metadata for filterable/sortable/groupable/aggregatable/custom
   flags, polymorphic-reference detection (`namePointing`,
   `polymorphicForeignKey`, and `referenceTo`), active picklist values, and
@@ -399,19 +401,19 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.93` and should continue feature work.**
-`v1.0.92` established the explicit Apex compile-only boundary and added the first
-Apex-specific clause, `FOR UPDATE`; do not move that clause back onto the normal
-REST/JSforce-executable builders.
+**The next patch should be `v1.0.94` and should continue feature work.**
+`v1.0.93` adds explicit Apex `WITH USER_MODE` / `WITH SYSTEM_MODE` clauses without
+inferring the default mode for a caller's Apex API version. Do not add
+`WITH SECURITY_ENFORCED` as a compatibility alias: current API 67 guidance retires
+it, while explicit user/system modes already cover the supported access-mode
+surface.
 
-The strongest follow-on track is now additional Apex-context semantics. Re-check
-current Salesforce API-version behavior before adding access-mode clauses:
-Summer '26 / API 67 changes Apex security defaults and retires older
-`WITH SECURITY_ENFORCED` behavior, while current reference pages still describe
-`WITH USER_MODE` / `WITH SYSTEM_MODE`. Any such patch should model version/context
-semantics explicitly rather than baking in a stale global assumption. Bind
-expressions are also Apex-specific and should remain behind the same explicit
-context boundary.
+The strongest remaining Apex-context feature is bind-expression support. Keep it
+behind `.apex()` and model bind values as explicit AST nodes rather than raw SOQL
+fragments so ordinary REST/JSforce builders remain injection-safe and unchanged.
+Before implementing it, inspect how bind references interact with scalar values,
+`IN` lists, relative/temporal literals, and relationship filters; choose one
+coherent typed bind surface rather than accepting arbitrary strings.
 
 The `v1.0.84` object-limit audit still defines the boundary for specialist-object
 work: do not infer big-object index rules from the `__b` suffix, do not encode

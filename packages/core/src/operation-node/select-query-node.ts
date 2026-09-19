@@ -1,3 +1,4 @@
+import type { ApexAccessModeNode } from "#/operation-node/apex-access-mode-node";
 import type { DateFunctionNode } from "#/operation-node/date-function-node";
 import type { ForUpdateNode } from "#/operation-node/for-update-node";
 import type { ForViewReferenceNode } from "#/operation-node/for-view-reference-node";
@@ -35,6 +36,7 @@ export interface SelectQueryNode {
   readonly where?: WhereNode;
   readonly userProfileFeedWith?: UserProfileFeedWithNode;
   readonly withDataCategory?: WithDataCategoryNode;
+  readonly apexAccessMode?: ApexAccessModeNode;
   readonly groupBy?: GroupByNode;
   readonly having?: HavingNode;
   readonly orderBy?: OrderByNode;
@@ -97,6 +99,16 @@ export const SelectQueryNode = {
             selection,
           )
         : WithDataCategoryNode.create(selection),
+    });
+  },
+
+  cloneWithApexAccessMode(
+    select: SelectQueryNode,
+    apexAccessMode: ApexAccessModeNode,
+  ): SelectQueryNode {
+    return freeze({
+      ...select,
+      apexAccessMode,
     });
   },
 

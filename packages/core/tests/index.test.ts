@@ -10,6 +10,8 @@ import {
   type AggregateFunctionModule,
   type AggregateFunctionNode,
   type AggregateSelectQueryBuilder,
+  type ApexAccessMode,
+  type ApexAccessModeNode,
   type ApexSelectQueryBuilder,
   type AliasedAggregateFunctionBuilder,
   type AliasedDateFunctionBuilder,
@@ -172,6 +174,8 @@ type PublicTypeSurface = {
     never,
     Record<string, never>
   >;
+  apexAccessMode: ApexAccessMode;
+  apexAccessModeNode: ApexAccessModeNode;
   apexSelectQueryBuilder: ApexSelectQueryBuilder<
     Record<string, never>,
     never,

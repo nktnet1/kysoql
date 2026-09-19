@@ -39,6 +39,7 @@ import type {
   DataCategorySelectionNode,
   WithDataCategoryNode,
 } from "#/operation-node/with-data-category-node";
+import { validateApexAccessModeQuery } from "#/parser/apex-access-mode-parser";
 import { validateDataCategoryQuery } from "#/parser/data-category-parser";
 import { validateFieldsSelections } from "#/parser/fields-selection-parser";
 import { validateForUpdateQuery } from "#/parser/for-update-parser";
@@ -72,6 +73,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
     }
 
     validateFieldsSelections(query.selections, query.limit);
+    validateApexAccessModeQuery(query);
     validateForUpdateQuery(query);
     validateTypeOfSelections(query);
     validateKnowledgeUpdateQuery(query);
@@ -95,6 +97,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
     if (query.withDataCategory) {
       validateDataCategoryQuery(query);
       soql += ` WITH DATA CATEGORY ${this.#compileWithDataCategory(query.withDataCategory)}`;
+    }
+
+    if (query.apexAccessMode) {
+      soql += ` WITH ${query.apexAccessMode.mode.toUpperCase()}_MODE`;
     }
 
     if (query.groupBy) {

@@ -44,6 +44,11 @@ const lockedAccounts = db
   .compile();
 ```
 
+The same Apex-only surface supports explicit `.withUserMode()` and
+`.withSystemMode()` clauses. Kysoql leaves the mode unspecified unless one of
+those methods is called, so the generated SOQL does not assume an Apex API
+version's default access behavior.
+
 Pass a `QueryExecutor` to `Kysoql` when queries should execute rather than only
 compile. Normal `.execute()` delegates to `QueryExecutor.executeQuery()` (or the
 dedicated count hook for bare `COUNT()`). Root query builders also expose

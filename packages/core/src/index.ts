@@ -54,6 +54,10 @@ export type {
   AggregateFunctionNode,
 } from "#/operation-node/aggregate-function-node";
 export type { AliasNode } from "#/operation-node/alias-node";
+export type {
+  ApexAccessMode,
+  ApexAccessModeNode,
+} from "#/operation-node/apex-access-mode-node";
 export type { AndNode } from "#/operation-node/and-node";
 export type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 export type { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
