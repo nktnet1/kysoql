@@ -1210,3 +1210,27 @@ reject non-conjunctive/extra predicates, cap literal record IDs at 200, enforce
 or scalar `COUNT()` selections. The validator intentionally uses only the known
 access-result fields rather than treating arbitrary `Has*Access` spellings as
 valid compiler AST input.
+
+### Feed relationship `ORDER BY` restriction
+
+Source re-checked on 2026-09-19:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-limits.html
+
+Useful findings:
+
+- `NewsFeed` and `UserProfileFeed` have permission-dependent row caps when the
+  running user lacks `View All Data`; those caps cannot be enforced correctly by
+  the transport-neutral compiler without caller execution-context information.
+- Independently of that permission-dependent limit, Salesforce states that SOQL
+  `ORDER BY` on fields using relationships is unavailable for both feed objects.
+  Ordering must use fields on the root feed object.
+- The restriction applies to the field referenced by the ordering expression, not
+  just the simplest `ORDER BY Parent.Name` spelling. Compiler validation should
+  therefore inspect all currently supported order-expression node kinds for
+  relationship references.
+
+Kysoql consequence in `v1.0.83`: extend the shared object-query-limit compiler
+validator for root `NewsFeed` and `UserProfileFeed` queries. Reject any `ORDER BY`
+expression that references a dotted relationship path while preserving root-field
+ordering. Keep the permission-dependent 1,000-row caps unenforced.

@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.82`, the next patch
-   is `v1.0.83`.
+   reuse or rewrite a version already handed off. After `v1.0.83`, the next patch
+   is `v1.0.84`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.82`
+## Current state after `v1.0.83`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -135,6 +135,7 @@ recent patch sequence:
 | `v1.0.80` | Enforce the documented root-WHERE filter prerequisites for `ContentDocumentLink` and `ContentHubItem` at the compiler boundary. |
 | `v1.0.81` | Enforce the documented `Vote` root-WHERE predicate shapes, including operator/value-shape validation and literal-list-only `Id IN`. |
 | `v1.0.82` | Enforce the coupled `UserRecordAccess` WHERE/SELECT/ORDER BY query shape, including the 200-record-ID bound and access-filter result restriction. |
+| `v1.0.83` | Reject relationship-field `ORDER BY` expressions on `NewsFeed` and `UserProfileFeed` while leaving permission-dependent feed row caps to execution context. |
 
 ### Build/tooling state
 
@@ -367,15 +368,19 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.83` and should be a bounded final audit of
-Salesforce's remaining transport-neutral object-specific SOQL restrictions.**
-Re-check the current object-limit reference against the implemented validators
-and generated capability metadata. Add only unconditional restrictions that can
-be enforced correctly without caller permission/execution-context information.
-In particular, do not turn `NewsFeed`, `UserProfileFeed`, or `TopicAssignment`
-permission-dependent row caps into unconditional compiler errors. If the audit
-finds no concrete missing invariant, use the slice for error/test/documentation
-hardening rather than inventing a new syntax family.
+**The next patch should be `v1.0.84` and should continue the bounded object-limit
+audit with external objects and custom metadata types.** First determine whether
+Salesforce Describe metadata already available to codegen exposes a stable object
+capability that distinguishes external objects from ordinary custom objects. Prefer
+that capability over API-name suffix heuristics. Only encode restrictions that are
+unconditional and that can be represented correctly in the current schema/AST.
+
+The `v1.0.83` audit closed the unconditional feed-ordering gap: `NewsFeed` and
+`UserProfileFeed` now reject relationship-field `ORDER BY` while their 1,000-row
+limits remain intentionally unenforced because they depend on the running user's
+`View All Data` permission. `TopicAssignment` and `Attachment` also retain
+permission/data-cardinality-dependent limits that should not become unconditional
+compiler errors.
 
 Automatic `Question` data-category taxonomy discovery remains deferred: Salesforce
 exposes the required SOAP describe calls, but JSforce 3.10.x does not expose them
@@ -383,7 +388,7 @@ on its public `SoapApi`; the only generic invoke path is private. Keep using the
 existing optional normalized codegen hook until a stable public transport path is
 available rather than coupling the CLI to JSforce internals.
 
-If the supplied bundle already contains `v1.0.82` or later, inspect the code and
+If the supplied bundle already contains `v1.0.83` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
@@ -391,13 +396,13 @@ advance from the actual state instead of reimplementing this section.
 The large general-purpose SOQL surface is substantially complete. The remaining
 work is narrower and should stay incremental:
 
-1. **Final REST/SOAP object-limit audit and hardening.**
-   `ContentDocumentLink`, `ContentHubItem`, `Vote`, and `UserRecordAccess` now
-   have compiler-boundary validation. Re-check the remaining documented object
-   limits, but only encode unconditional invariants. Permission-dependent limits
-   such as `NewsFeed` / `UserProfileFeed` row caps and `TopicAssignment` limits
-   require execution-context information and should remain documentation or a
-   future explicit capability hook rather than false static guarantees.
+1. **Finish the remaining REST/SOAP object-limit audit.**
+   `ContentDocumentLink`, `ContentHubItem`, `Vote`, `UserRecordAccess`, and the
+   feed relationship-ordering rule now have compiler-boundary validation. Audit
+   external-object and custom-metadata restrictions next, but only when object
+   capability detection is stable. Permission-dependent limits such as feed row
+   caps and `TopicAssignment` limits remain documentation or a future explicit
+   execution-capability hook rather than false static guarantees.
 2. **Complete data-category transport support when a stable path exists.** The
    public codegen hook already accepts normalized `Question` taxonomy metadata;
    do not use JSforce's private SOAP invocation machinery solely to automate it.

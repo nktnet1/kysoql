@@ -426,8 +426,12 @@ requirements when compiling root queries, including aggregate and scalar
 selected access fields / `MaxAccessLevel` are limited to Salesforce's documented
 shape and must have matching `ORDER BY` entries, while an optional single
 `Has*Access = TRUE` filter restricts the selection to `RecordId` only. Aggregate
-and scalar `COUNT()` forms are rejected for this object. The normal field/operator
-type system remains unchanged.
+and scalar `COUNT()` forms are rejected for this object. `NewsFeed` and
+`UserProfileFeed` also reject `ORDER BY` references that traverse a parent
+relationship; Salesforce allows ordering those feed queries only by root-object
+fields. Permission-dependent feed row caps remain execution-context concerns rather
+than unconditional compiler errors. The normal field/operator type system remains
+unchanged.
 
 Generated child-relationship metadata enables typed parent-to-child subqueries
 without accepting arbitrary subquery `FROM` strings. `.selectSubquery()` takes a

@@ -41,6 +41,8 @@ const USER_RECORD_ACCESS_SELECTION_ERROR =
   "SOQL UserRecordAccess queries must SELECT RecordId and may select only Has*Access fields and MaxAccessLevel; queries filtered by Has*Access = true must SELECT RecordId only.";
 const USER_RECORD_ACCESS_ORDER_BY_ERROR =
   "SOQL UserRecordAccess ORDER BY may reference only selected fields, and every selected Has*Access or MaxAccessLevel field must also be ordered.";
+const FEED_RELATIONSHIP_ORDER_BY_ERROR =
+  "SOQL NewsFeed and UserProfileFeed ORDER BY clauses can reference only fields on the root object.";
 
 const USER_RECORD_ACCESS_MAX_RECORD_IDS = 200;
 const USER_RECORD_ACCESS_FIELDS = new Set([
@@ -300,6 +302,34 @@ const validateUserRecordAccessOrderBy = (
   }
 };
 
+const isRelationshipReference = (reference: ReferenceNode): boolean =>
+  reference.name.includes(".");
+
+const orderByUsesRelationship = (query: SelectQueryNode): boolean =>
+  query.orderBy?.items.some((item) => {
+    switch (item.orderBy.kind) {
+      case "AggregateFunctionNode":
+        return (
+          item.orderBy.reference !== undefined &&
+          isRelationshipReference(item.orderBy.reference)
+        );
+      case "DateFunctionNode":
+        return isRelationshipReference(
+          item.orderBy.reference.kind === "ReferenceNode"
+            ? item.orderBy.reference
+            : item.orderBy.reference.reference,
+        );
+      case "DistanceFunctionNode":
+        return (
+          isRelationshipReference(item.orderBy.location) ||
+          (item.orderBy.destination.kind === "ReferenceNode" &&
+            isRelationshipReference(item.orderBy.destination))
+        );
+      case "ReferenceNode":
+        return isRelationshipReference(item.orderBy);
+    }
+  }) ?? false;
+
 const validateUserRecordAccessQuery = (query: SelectQueryNode): void => {
   const whereShape = validateUserRecordAccessWhere(query);
   const selectedFields = validateUserRecordAccessSelections(query, whereShape);
@@ -327,5 +357,12 @@ export const validateObjectQueryLimits = (query: SelectQueryNode): void => {
 
   if (objectName === "userrecordaccess") {
     validateUserRecordAccessQuery(query);
+  }
+
+  if (
+    (objectName === "newsfeed" || objectName === "userprofilefeed") &&
+    orderByUsesRelationship(query)
+  ) {
+    throw new TypeError(FEED_RELATIONSHIP_ORDER_BY_ERROR);
   }
 };

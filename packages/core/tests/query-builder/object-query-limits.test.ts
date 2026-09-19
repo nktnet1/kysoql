@@ -9,7 +9,11 @@ import { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
 import { SObjectNode } from "#/operation-node/sobject-node";
 import { ValueNode } from "#/operation-node/value-node";
 import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
-import type { SalesforceField, SalesforceObject } from "#/schema";
+import type {
+  SalesforceField,
+  SalesforceObject,
+  SalesforceParentRelationship,
+} from "#/schema";
 
 type Field<
   Value = string,
@@ -59,7 +63,32 @@ interface FixtureSchema {
   }>;
   readonly User: SalesforceObject<{
     readonly Id: Field<string, "id">;
+    readonly Name: Field;
   }>;
+  readonly NewsFeed: SalesforceObject<
+    {
+      readonly Id: Field<string, "id">;
+      readonly ParentId: ReferenceField<"Account">;
+      readonly CreatedDate: Field<string, "datetime">;
+    },
+    {
+      readonly Parent: SalesforceParentRelationship<
+        "Account",
+        "ParentId",
+        false
+      >;
+    }
+  >;
+  readonly UserProfileFeed: SalesforceObject<
+    {
+      readonly Id: Field<string, "id">;
+      readonly UserId: ReferenceField<"User">;
+      readonly CreatedDate: Field<string, "datetime">;
+    },
+    {
+      readonly User: SalesforceParentRelationship<"User", "UserId", false>;
+    }
+  >;
   readonly Account: SalesforceObject<{
     readonly Id: Field<string, "id">;
     readonly Name: Field;
@@ -465,6 +494,46 @@ describe("object-specific SOQL query limits", () => {
     expect(() => new DefaultQueryCompiler().compileQuery(queryNode)).toThrow(
       "SOQL UserRecordAccess queries require UserId = <single ID> and either RecordId = <single ID> or RecordId IN (<up to 200 IDs>), with at most one optional Has*Access = true predicate.",
     );
+  });
+
+  it("rejects relationship-field ORDER BY on NewsFeed and UserProfileFeed", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const error =
+      "SOQL NewsFeed and UserProfileFeed ORDER BY clauses can reference only fields on the root object.";
+
+    expect(
+      db
+        .selectFrom("NewsFeed")
+        .select("Id")
+        .orderBy("CreatedDate", "desc")
+        .compile().soql,
+    ).toBe("SELECT Id FROM NewsFeed ORDER BY CreatedDate DESC");
+    expect(() =>
+      db
+        .selectFrom("NewsFeed")
+        .select("Id")
+        .orderBy("Parent.Name")
+        .compile(),
+    ).toThrow(error);
+
+    expect(
+      db
+        .selectFrom("UserProfileFeed")
+        .select("Id")
+        .withUserId("005000000000001")
+        .orderBy("CreatedDate")
+        .compile().soql,
+    ).toBe(
+      "SELECT Id FROM UserProfileFeed WITH UserId = '005000000000001' ORDER BY CreatedDate",
+    );
+    expect(() =>
+      db
+        .selectFrom("UserProfileFeed")
+        .select("Id")
+        .withUserId("005000000000001")
+        .orderBy("User.Name")
+        .compile(),
+    ).toThrow(error);
   });
 
   it("does not impose the specialist limits on ordinary objects", () => {
