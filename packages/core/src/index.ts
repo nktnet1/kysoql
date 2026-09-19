@@ -83,6 +83,10 @@ export type {
   GroupByNode,
 } from "#/operation-node/group-by-node";
 export type { HavingNode } from "#/operation-node/having-node";
+export type {
+  KnowledgeUpdateMode,
+  KnowledgeUpdateNode,
+} from "#/operation-node/knowledge-update-node";
 export type { LimitNode } from "#/operation-node/limit-node";
 export type { NotNode } from "#/operation-node/not-node";
 export type { OffsetNode } from "#/operation-node/offset-node";

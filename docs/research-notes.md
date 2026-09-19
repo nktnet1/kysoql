@@ -1037,3 +1037,64 @@ Useful findings:
 - Scripts needing a token should call `sf org auth show-access-token --target-org <alias> --json` explicitly.
 
 Kysoql consequence: schema-generation tooling obtains the instance URL from org display and the access token from the dedicated auth command. Never log the token.
+
+### Knowledge `UPDATE TRACKING` / `UPDATE VIEWSTAT` notes
+
+Sources re-checked on 2026-09-19:
+
+- https://developer.salesforce.com/docs/service/salesforce-knowledge-dev-guide/guide/sforce-api-calls-soql-select-update-tracking-update-viewstat.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-typos.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select.html
+- https://help.salesforce.com/s/articleView?id=000386899&language=en_US&type=1
+
+Useful findings:
+
+- `UPDATE TRACKING` and `UPDATE VIEWSTAT` are optional SOQL SELECT clauses for
+  Salesforce Knowledge article search/view tracking. The former records Knowledge
+  search keywords; the latter increments article view statistics.
+- Salesforce's SELECT grammar places the `UPDATE` clause after the optional
+  `FOR VIEW` / `FOR REFERENCE` position. The typographical-conventions reference
+  explicitly states that `TRACKING`, `VIEWSTAT`, or both can be supplied, with the
+  combined form comma-separated.
+- The Knowledge guide and current Salesforce Help examples use concrete Knowledge
+  article-version objects ending in `__kav`. Kysoql treats both
+  `KnowledgeArticleVersion` and specific `__kav` article types as the Knowledge
+  article query family, matching the existing Knowledge/data-category boundary.
+  `Question` is not part of this article-specific UPDATE family even though it
+  supports `WITH DATA CATEGORY`.
+- The documented SOQL examples include predicates such as `Keyword`, `Language`,
+  `PublishStatus`, and a specific article version, but Salesforce does not state
+  those example predicates as a generic syntactic prerequisite for the UPDATE
+  clause itself. Do not invent additional WHERE-shape validation from examples.
+- The generic SELECT grammar positions the UPDATE clause after normal selection,
+  grouping/order/limit/offset syntax. Keep it a top-level query capability and do
+  not expose it on relationship-subquery builders.
+
+Kysoql consequence for `v1.0.78`: add immutable `.updateTracking()` and
+`.updateViewstat()` methods to root record, aggregate, and scalar `COUNT()`
+builders, statically gate them to `KnowledgeArticleVersion` / `__kav` object
+names, and retain a compiler-boundary object-family validation for unsafe/manual
+ASTs. A dedicated frozen node accumulates the two modes without duplicates and
+normalizes the combined compiler output to `UPDATE TRACKING, VIEWSTAT`. Emit the
+clause after any `FOR VIEW` / `FOR REFERENCE` clause.
+
+### UserProfileFeed `WITH UserId` follow-up
+
+Sources re-checked on 2026-09-19:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-with.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-limits.html
+
+Useful findings:
+
+- Salesforce documents `WITH filteringExpression` for user-profile-feed change
+  tracking separately from `WITH DATA CATEGORY` and Apex execution-context forms.
+- The documented SOQL example is `SELECT Id FROM UserProfileFeed WITH
+  UserId='005D0000001AamR' ORDER BY CreatedDate DESC, Id DESC LIMIT 20`.
+- Salesforce's object-limit reference says a `UserProfileFeed` query must include
+  `WITH UserId = ...`.
+
+Kysoql consequence for the next slice: evaluate a narrowly object-specific typed
+`UserProfileFeed WITH UserId = ...` API and its required-query invariant. Keep
+Apex-only `WITH SECURITY_ENFORCED`, `WITH USER_MODE` / `SYSTEM_MODE`, and `FOR
+UPDATE` out of that REST/SOAP-focused patch.

@@ -21,6 +21,7 @@ import {
   parseFilterBinaryOperation,
   validateSemiJoinWhere,
 } from "#/parser/filter-parser";
+import type { KnowledgeArticleUpdateCheck } from "#/parser/knowledge-update-parser";
 import { parseLimit } from "#/parser/limit-parser";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
@@ -50,6 +51,14 @@ export interface CountQueryBuilder<DB, TB extends keyof DB> {
     ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
       ? readonly [mruDisabled: never]
       : readonly []
+  ): CountQueryBuilder<DB, TB>;
+
+  updateTracking(
+    ..._knowledgeArticleCheck: KnowledgeArticleUpdateCheck<TB>
+  ): CountQueryBuilder<DB, TB>;
+
+  updateViewstat(
+    ..._knowledgeArticleCheck: KnowledgeArticleUpdateCheck<TB>
   ): CountQueryBuilder<DB, TB>;
 
   usingScope(
@@ -146,6 +155,30 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
       queryNode: SelectQueryNode.cloneWithForViewReference(
         this.#props.queryNode,
         ForViewReferenceNode.create("reference"),
+      ),
+    });
+  }
+
+  updateTracking(
+    ..._knowledgeArticleCheck: KnowledgeArticleUpdateCheck<TB>
+  ): CountQueryBuilder<DB, TB> {
+    return new CountQueryBuilderImpl<DB, TB>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithKnowledgeUpdateMode(
+        this.#props.queryNode,
+        "tracking",
+      ),
+    });
+  }
+
+  updateViewstat(
+    ..._knowledgeArticleCheck: KnowledgeArticleUpdateCheck<TB>
+  ): CountQueryBuilder<DB, TB> {
+    return new CountQueryBuilderImpl<DB, TB>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithKnowledgeUpdateMode(
+        this.#props.queryNode,
+        "viewstat",
       ),
     });
   }

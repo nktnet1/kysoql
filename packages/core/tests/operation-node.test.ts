@@ -14,6 +14,7 @@ import { ForViewReferenceNode } from "#/operation-node/for-view-reference-node";
 import { GeolocationFunctionNode } from "#/operation-node/geolocation-function-node";
 import { GroupByNode } from "#/operation-node/group-by-node";
 import { HavingNode } from "#/operation-node/having-node";
+import { KnowledgeUpdateNode } from "#/operation-node/knowledge-update-node";
 import { LimitNode } from "#/operation-node/limit-node";
 import { NotNode } from "#/operation-node/not-node";
 import { OffsetNode } from "#/operation-node/offset-node";
@@ -138,6 +139,26 @@ describe("operation nodes", () => {
     });
     expectFrozen(view);
     expectFrozen(reference);
+  });
+
+  it("creates and extends frozen Knowledge UPDATE modes", () => {
+    const tracking = KnowledgeUpdateNode.create("tracking");
+    const both = KnowledgeUpdateNode.cloneWithMode(tracking, "viewstat");
+    const repeated = KnowledgeUpdateNode.cloneWithMode(both, "tracking");
+
+    expect(tracking).toEqual({
+      kind: "KnowledgeUpdateNode",
+      modes: ["tracking"],
+    });
+    expect(both).toEqual({
+      kind: "KnowledgeUpdateNode",
+      modes: ["tracking", "viewstat"],
+    });
+    expect(repeated).toEqual(both);
+    expectFrozen(tracking);
+    expectFrozen(tracking.modes);
+    expectFrozen(both);
+    expectFrozen(both.modes);
   });
 
   it("creates frozen FIELDS function nodes", () => {

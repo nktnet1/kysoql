@@ -60,6 +60,7 @@ import {
   parseGroupBy,
 } from "#/parser/group-by-parser";
 import { validateGroupingSelections } from "#/parser/grouping-expression-parser";
+import type { KnowledgeArticleUpdateCheck } from "#/parser/knowledge-update-parser";
 import { parseLimit } from "#/parser/limit-parser";
 import {
   parseAggregateOrderBy,
@@ -281,6 +282,28 @@ export interface AggregateSelectQueryBuilder<
     ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
       ? readonly [mruDisabled: never]
       : readonly []
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
+  updateTracking(
+    ..._knowledgeArticleCheck: KnowledgeArticleUpdateCheck<TB>
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
+  updateViewstat(
+    ..._knowledgeArticleCheck: KnowledgeArticleUpdateCheck<TB>
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -695,6 +718,58 @@ class AggregateSelectQueryBuilderImpl<
       queryNode: SelectQueryNode.cloneWithForViewReference(
         this.#props.queryNode,
         ForViewReferenceNode.create("reference"),
+      ),
+    });
+  }
+
+  updateTracking(
+    ..._knowledgeArticleCheck: KnowledgeArticleUpdateCheck<TB>
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithKnowledgeUpdateMode(
+        this.#props.queryNode,
+        "tracking",
+      ),
+    });
+  }
+
+  updateViewstat(
+    ..._knowledgeArticleCheck: KnowledgeArticleUpdateCheck<TB>
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithKnowledgeUpdateMode(
+        this.#props.queryNode,
+        "viewstat",
       ),
     });
   }

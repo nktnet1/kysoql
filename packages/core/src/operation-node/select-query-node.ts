@@ -5,6 +5,10 @@ import {
   GroupByNode,
 } from "#/operation-node/group-by-node";
 import { HavingNode } from "#/operation-node/having-node";
+import {
+  type KnowledgeUpdateMode,
+  KnowledgeUpdateNode,
+} from "#/operation-node/knowledge-update-node";
 import type { LimitNode } from "#/operation-node/limit-node";
 import type { OffsetNode } from "#/operation-node/offset-node";
 import type { OperationNode } from "#/operation-node/operation-node";
@@ -34,6 +38,7 @@ export interface SelectQueryNode {
   readonly limit?: LimitNode;
   readonly offset?: OffsetNode;
   readonly forViewReference?: ForViewReferenceNode;
+  readonly knowledgeUpdate?: KnowledgeUpdateNode;
 }
 
 export const SelectQueryNode = {
@@ -130,6 +135,18 @@ export const SelectQueryNode = {
     return freeze({
       ...select,
       forViewReference,
+    });
+  },
+
+  cloneWithKnowledgeUpdateMode(
+    select: SelectQueryNode,
+    mode: KnowledgeUpdateMode,
+  ): SelectQueryNode {
+    return freeze({
+      ...select,
+      knowledgeUpdate: select.knowledgeUpdate
+        ? KnowledgeUpdateNode.cloneWithMode(select.knowledgeUpdate, mode)
+        : KnowledgeUpdateNode.create(mode),
     });
   },
 

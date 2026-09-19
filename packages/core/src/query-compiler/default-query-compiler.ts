@@ -14,6 +14,7 @@ import type { ForViewReferenceNode } from "#/operation-node/for-view-reference-n
 import type { GeolocationFunctionNode } from "#/operation-node/geolocation-function-node";
 import type { GroupByNode } from "#/operation-node/group-by-node";
 import type { HavingNode } from "#/operation-node/having-node";
+import type { KnowledgeUpdateNode } from "#/operation-node/knowledge-update-node";
 import type { LimitNode } from "#/operation-node/limit-node";
 import type { NotNode } from "#/operation-node/not-node";
 import type { OffsetNode } from "#/operation-node/offset-node";
@@ -39,6 +40,7 @@ import type {
 } from "#/operation-node/with-data-category-node";
 import { validateDataCategoryQuery } from "#/parser/data-category-parser";
 import { validateFieldsSelections } from "#/parser/fields-selection-parser";
+import { validateKnowledgeUpdateQuery } from "#/parser/knowledge-update-parser";
 import { validateTypeOfSelections } from "#/parser/type-of-parser";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
@@ -67,6 +69,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
     validateFieldsSelections(query.selections, query.limit);
     validateTypeOfSelections(query);
+    validateKnowledgeUpdateQuery(query);
 
     let soql = `SELECT ${query.selections.map((selection) => this.#compileSelection(selection)).join(", ")} FROM ${query.from.name}`;
 
@@ -105,6 +108,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
     if (query.forViewReference) {
       soql += ` FOR ${this.#compileForViewReference(query.forViewReference)}`;
+    }
+
+    if (query.knowledgeUpdate) {
+      soql += ` UPDATE ${this.#compileKnowledgeUpdate(query.knowledgeUpdate)}`;
     }
 
     return soql;
@@ -223,6 +230,12 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileForViewReference(node: ForViewReferenceNode): string {
     return node.mode === "view" ? "VIEW" : "REFERENCE";
+  }
+
+  #compileKnowledgeUpdate(node: KnowledgeUpdateNode): string {
+    return node.modes
+      .map((mode) => (mode === "tracking" ? "TRACKING" : "VIEWSTAT"))
+      .join(", ");
   }
 
   #compileGroupBy(groupBy: GroupByNode): string {

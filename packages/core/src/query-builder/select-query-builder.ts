@@ -54,6 +54,7 @@ import {
   validateSemiJoinWhere,
 } from "#/parser/filter-parser";
 import { validateGroupingSelections } from "#/parser/grouping-expression-parser";
+import type { KnowledgeArticleUpdateCheck } from "#/parser/knowledge-update-parser";
 import { parseLimit } from "#/parser/limit-parser";
 import { parseOffset } from "#/parser/offset-parser";
 import {
@@ -210,6 +211,14 @@ export interface SelectQueryBuilder<
     ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
       ? readonly [mruDisabled: never]
       : readonly []
+  ): SelectQueryBuilder<DB, TB, O, Mode>;
+
+  updateTracking(
+    ..._knowledgeArticleCheck: KnowledgeArticleUpdateCheck<TB>
+  ): SelectQueryBuilder<DB, TB, O, Mode>;
+
+  updateViewstat(
+    ..._knowledgeArticleCheck: KnowledgeArticleUpdateCheck<TB>
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
   usingScope(
@@ -425,6 +434,30 @@ class SelectQueryBuilderImpl<
       queryNode: SelectQueryNode.cloneWithForViewReference(
         this.#props.queryNode,
         ForViewReferenceNode.create("reference"),
+      ),
+    });
+  }
+
+  updateTracking(
+    ..._knowledgeArticleCheck: KnowledgeArticleUpdateCheck<TB>
+  ): SelectQueryBuilder<DB, TB, O, Mode> {
+    return new SelectQueryBuilderImpl<DB, TB, O, Mode>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithKnowledgeUpdateMode(
+        this.#props.queryNode,
+        "tracking",
+      ),
+    });
+  }
+
+  updateViewstat(
+    ..._knowledgeArticleCheck: KnowledgeArticleUpdateCheck<TB>
+  ): SelectQueryBuilder<DB, TB, O, Mode> {
+    return new SelectQueryBuilderImpl<DB, TB, O, Mode>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithKnowledgeUpdateMode(
+        this.#props.queryNode,
+        "viewstat",
       ),
     });
   }

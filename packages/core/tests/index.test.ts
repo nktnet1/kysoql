@@ -68,6 +68,8 @@ import {
   type HavingExpressionFactory,
   type HavingExpressionWrapper,
   type HavingNode,
+  type KnowledgeUpdateMode,
+  type KnowledgeUpdateNode,
   Kysoql,
   kysoql,
   type LikeComparisonOperator,
@@ -252,6 +254,8 @@ type PublicTypeSurface = {
   formatFunctionNode: FormatFunctionNode;
   forViewReferenceMode: ForViewReferenceMode;
   forViewReferenceNode: ForViewReferenceNode;
+  knowledgeUpdateMode: KnowledgeUpdateMode;
+  knowledgeUpdateNode: KnowledgeUpdateNode;
   geolocationExpressionBuilder: GeolocationExpressionBuilder<
     Record<string, never>,
     never

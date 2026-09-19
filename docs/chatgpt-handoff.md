@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.77`, the next patch
-   is `v1.0.78`.
+   reuse or rewrite a version already handed off. After `v1.0.78`, the next patch
+   is `v1.0.79`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.77`
+## Current state after `v1.0.78`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -130,6 +130,7 @@ recent patch sequence:
 | `v1.0.75` | Add typed root `WITH DATA CATEGORY` filters with generated visible taxonomy unions, immutable multi-condition AST/compiler support, and Knowledge REST category discovery. |
 | `v1.0.76` | Enforce Salesforce's Knowledge article `WITH DATA CATEGORY` prerequisite by requiring a root `WHERE` predicate on `PublishStatus` or `Id` for `KnowledgeArticleVersion` and `__kav` article types. |
 | `v1.0.77` | Add Describe-driven typed root `FOR VIEW` / `FOR REFERENCE`, preserve MRU capability metadata, and document the stable JSforce boundary for automatic `Question` data-category discovery. |
+| `v1.0.78` | Add Knowledge-article-only root `UPDATE TRACKING` / `UPDATE VIEWSTAT` with immutable accumulation, canonical combined compilation, and compiler/type gates. |
 
 ### Build/tooling state
 
@@ -209,6 +210,13 @@ Core currently has:
   prior mode, and the compiler emits it after `OFFSET`; older hand-written schemas
   whose MRU capability is unknown remain permissive, while relationship-subquery
   builders intentionally omit both methods;
+- typed root `.updateTracking()` / `.updateViewstat()` Knowledge usage clauses,
+  available only on `KnowledgeArticleVersion` and specific `__kav` article types;
+  record, aggregate, and scalar `COUNT()` root builders preserve the clause, repeated
+  calls accumulate without duplicates, the compiler normalizes the combined form to
+  `UPDATE TRACKING, VIEWSTAT` after any `FOR VIEW` / `FOR REFERENCE` clause, and a
+  compiler-boundary object-family check protects unsafe/manual ASTs; relationship
+  subqueries intentionally omit both methods;
 - typed root `.withDataCategory(group, selector, categoryOrCategories)` from
   generated object-specific data-category maps; category groups/categories are
   constrained to the visible generated taxonomy, category lists are non-empty,
@@ -355,22 +363,20 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.78` and should evaluate the Salesforce Knowledge
-`UPDATE TRACKING` / `UPDATE VIEWSTAT` pair as the next specialist REST/SOAP-safe
-top-level clause family.** Salesforce documents both as Knowledge search/view
-tracking clauses and permits `TRACKING`, `VIEWSTAT`, or both after the `FOR
-VIEW` / `FOR REFERENCE` position in SELECT grammar. Keep the slice focused on
-their actual object/query prerequisites and clause composition; do not widen into
-SOSL or Apex-only syntax.
+**The next patch should be `v1.0.79` and should evaluate the object-specific
+`UserProfileFeed WITH UserId = ...` form as the next REST/SOAP-safe specialist
+SOQL clause.** Salesforce's `WITH` reference documents this as the filtering form
+for user-profile feed change tracking. Keep it narrowly scoped to the object and
+its documented value shape; do not widen the slice into Apex-only
+`WITH SECURITY_ENFORCED`, `WITH USER_MODE` / `SYSTEM_MODE`, or `FOR UPDATE`.
 
-Automatic `Question` data-category taxonomy discovery is intentionally not the
-next code change: Salesforce exposes the required SOAP describe calls, but
-JSforce 3.10.x does not expose them on its public `SoapApi`; the only generic
-invoke path is private. Keep using the existing optional normalized codegen hook
-until a stable public transport path is available rather than coupling the CLI to
-JSforce internals.
+Automatic `Question` data-category taxonomy discovery remains deferred: Salesforce
+exposes the required SOAP describe calls, but JSforce 3.10.x does not expose them
+on its public `SoapApi`; the only generic invoke path is private. Keep using the
+existing optional normalized codegen hook until a stable public transport path is
+available rather than coupling the CLI to JSforce internals.
 
-If the supplied bundle already contains `v1.0.77` or later, inspect the code and
+If the supplied bundle already contains `v1.0.78` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
@@ -378,9 +384,8 @@ advance from the actual state instead of reimplementing this section.
 Group closely related syntax when it shares the same type/AST/compiler path, but
 keep major architecture changes independently reviewable:
 
-1. **Remaining specialist top-level clauses.** Add REST/SOAP-relevant specialist
-   clauses in focused slices, starting with Knowledge `UPDATE TRACKING` /
-   `UPDATE VIEWSTAT`.
+1. **Remaining specialist top-level clauses.** Continue REST/SOAP-safe clauses in
+   focused slices, starting with `UserProfileFeed WITH UserId = ...`.
 2. **Complete data-category transport support when a stable path exists.** The
    public codegen hook already accepts normalized Question taxonomy metadata; do
    not use JSforce's private SOAP invocation machinery solely to automate it.

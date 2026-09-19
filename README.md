@@ -370,6 +370,28 @@ const viewedAccounts = await db
 // SELECT Id, Name FROM Account WHERE Name LIKE 'Acme%' LIMIT 20 FOR VIEW
 ```
 
+Salesforce Knowledge article queries can also opt into search-keyword tracking
+and article view statistics with `.updateTracking()` and `.updateViewstat()`.
+These methods are only available for `KnowledgeArticleVersion` and specific
+Knowledge article types ending in `__kav`; `Question` and ordinary sObjects are
+excluded. The two modes accumulate rather than replace one another, and the
+compiler emits the canonical `UPDATE TRACKING, VIEWSTAT` form after any
+`FOR VIEW` / `FOR REFERENCE` clause. Relationship subqueries intentionally omit
+both methods.
+
+```ts
+const article = await db
+  .selectFrom("FAQ__kav")
+  .select(["Id", "Title"])
+  .where("PublishStatus", "=", "Online")
+  .forView()
+  .updateTracking()
+  .updateViewstat()
+  .execute();
+// SELECT Id, Title FROM FAQ__kav WHERE PublishStatus = 'Online'
+// FOR VIEW UPDATE TRACKING, VIEWSTAT
+```
+
 Generated child-relationship metadata enables typed parent-to-child subqueries
 without accepting arbitrary subquery `FROM` strings. `.selectSubquery()` takes a
 generated child relationship name and a dedicated child-query builder with the
