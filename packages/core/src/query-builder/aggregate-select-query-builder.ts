@@ -63,6 +63,10 @@ import { validateGroupingSelections } from "#/parser/grouping-expression-parser"
 import type { KnowledgeArticleUpdateCheck } from "#/parser/knowledge-update-parser";
 import { parseLimit } from "#/parser/limit-parser";
 import {
+  parseUserProfileFeedWithUserId,
+  type UserProfileFeedWithUserIdCheck,
+} from "#/parser/user-profile-feed-parser";
+import {
   parseAggregateOrderBy,
   parseGroupingOrderBy,
   parseOrderBy,
@@ -315,6 +319,18 @@ export interface AggregateSelectQueryBuilder<
 
   usingScope(
     scope: SalesforceObjectSupportedScope<DB[TB]>,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
+  withUserId(
+    userId: string,
+    ..._userProfileFeedCheck: UserProfileFeedWithUserIdCheck<TB>
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -796,6 +812,33 @@ class AggregateSelectQueryBuilderImpl<
       queryNode: SelectQueryNode.cloneWithUsingScope(
         this.#props.queryNode,
         UsingScopeNode.create(scope),
+      ),
+    });
+  }
+
+  withUserId(
+    userId: string,
+    ..._userProfileFeedCheck: UserProfileFeedWithUserIdCheck<TB>
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithUserProfileFeedWith(
+        this.#props.queryNode,
+        parseUserProfileFeedWithUserId(userId),
       ),
     });
   }

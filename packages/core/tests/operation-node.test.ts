@@ -30,6 +30,7 @@ import { SelectionNode } from "#/operation-node/selection-node";
 import { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
 import { SObjectNode } from "#/operation-node/sobject-node";
 import { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
+import { UserProfileFeedWithNode } from "#/operation-node/user-profile-feed-with-node";
 import { ValueListNode } from "#/operation-node/value-list-node";
 import { ValueNode } from "#/operation-node/value-node";
 import { WhereNode } from "#/operation-node/where-node";
@@ -139,6 +140,20 @@ describe("operation nodes", () => {
     });
     expectFrozen(view);
     expectFrozen(reference);
+  });
+
+  it("creates frozen UserProfileFeed WITH UserId nodes", () => {
+    const withUserId = UserProfileFeedWithNode.create("005D0000001AamR");
+
+    expect(withUserId).toEqual({
+      kind: "UserProfileFeedWithNode",
+      userId: {
+        kind: "ValueNode",
+        value: "005D0000001AamR",
+      },
+    });
+    expectFrozen(withUserId);
+    expectFrozen(withUserId.userId);
   });
 
   it("creates and extends frozen Knowledge UPDATE modes", () => {

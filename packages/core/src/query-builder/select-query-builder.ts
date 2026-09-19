@@ -87,6 +87,10 @@ import {
   validateTypeOfSelections,
 } from "#/parser/type-of-parser";
 import {
+  parseUserProfileFeedWithUserId,
+  type UserProfileFeedWithUserIdCheck,
+} from "#/parser/user-profile-feed-parser";
+import {
   type AggregateSelectQueryBuilder,
   createAggregateSelectQueryBuilder,
 } from "#/query-builder/aggregate-select-query-builder";
@@ -223,6 +227,11 @@ export interface SelectQueryBuilder<
 
   usingScope(
     scope: SalesforceObjectSupportedScope<DB[TB]>,
+  ): SelectQueryBuilder<DB, TB, O, Mode>;
+
+  withUserId(
+    userId: string,
+    ..._userProfileFeedCheck: UserProfileFeedWithUserIdCheck<TB>
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
   withDataCategory<
@@ -470,6 +479,19 @@ class SelectQueryBuilderImpl<
       queryNode: SelectQueryNode.cloneWithUsingScope(
         this.#props.queryNode,
         UsingScopeNode.create(scope),
+      ),
+    });
+  }
+
+  withUserId(
+    userId: string,
+    ..._userProfileFeedCheck: UserProfileFeedWithUserIdCheck<TB>
+  ): SelectQueryBuilder<DB, TB, O, Mode> {
+    return new SelectQueryBuilderImpl<DB, TB, O, Mode>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithUserProfileFeedWith(
+        this.#props.queryNode,
+        parseUserProfileFeedWithUserId(userId),
       ),
     });
   }

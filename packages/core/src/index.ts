@@ -111,6 +111,7 @@ export type { ReferenceNode } from "#/operation-node/reference-node";
 export type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 export type { TypeOfNode, TypeOfWhenNode } from "#/operation-node/type-of-node";
 export type { UsingScopeNode } from "#/operation-node/using-scope-node";
+export type { UserProfileFeedWithNode } from "#/operation-node/user-profile-feed-with-node";
 export type {
   DataCategorySelectionNode,
   DataCategorySelector,

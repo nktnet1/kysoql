@@ -31,6 +31,7 @@ import type { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-n
 import type { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
 import type { TypeOfNode } from "#/operation-node/type-of-node";
 import type { UsingScopeNode } from "#/operation-node/using-scope-node";
+import type { UserProfileFeedWithNode } from "#/operation-node/user-profile-feed-with-node";
 import type { ValueListNode } from "#/operation-node/value-list-node";
 import type { ValueNode } from "#/operation-node/value-node";
 import type { WhereNode } from "#/operation-node/where-node";
@@ -42,6 +43,7 @@ import { validateDataCategoryQuery } from "#/parser/data-category-parser";
 import { validateFieldsSelections } from "#/parser/fields-selection-parser";
 import { validateKnowledgeUpdateQuery } from "#/parser/knowledge-update-parser";
 import { validateTypeOfSelections } from "#/parser/type-of-parser";
+import { validateUserProfileFeedQuery } from "#/parser/user-profile-feed-parser";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import { isSoqlRelativeDateLiteral } from "#/soql-relative-date-literal";
@@ -70,6 +72,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
     validateFieldsSelections(query.selections, query.limit);
     validateTypeOfSelections(query);
     validateKnowledgeUpdateQuery(query);
+    validateUserProfileFeedQuery(query);
 
     let soql = `SELECT ${query.selections.map((selection) => this.#compileSelection(selection)).join(", ")} FROM ${query.from.name}`;
 
@@ -79,6 +82,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
     if (query.where) {
       soql += ` WHERE ${this.#compileWhere(query.where)}`;
+    }
+
+    if (query.userProfileFeedWith) {
+      soql += ` WITH ${this.#compileUserProfileFeedWith(query.userProfileFeedWith)}`;
     }
 
     if (query.withDataCategory) {
@@ -226,6 +233,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileUsingScope(usingScope: UsingScopeNode): string {
     return usingScope.scope;
+  }
+
+  #compileUserProfileFeedWith(node: UserProfileFeedWithNode): string {
+    return `UserId = ${this.#compileValue(node.userId)}`;
   }
 
   #compileForViewReference(node: ForViewReferenceNode): string {

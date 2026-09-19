@@ -392,6 +392,27 @@ const article = await db
 // FOR VIEW UPDATE TRACKING, VIEWSTAT
 ```
 
+`UserProfileFeed` has a separate Salesforce query invariant: every query must
+include `WITH UserId = ...`. Root builders expose `.withUserId(userId)` only for
+that object, validate that the value is a non-empty string, and the compiler also
+rejects unsafe/manual `UserProfileFeed` ASTs that omit the clause. Repeated calls
+replace the previous user ID, and the clause is emitted after `WHERE` and before
+grouping/ordering clauses.
+
+```ts
+const profileFeed = await db
+  .selectFrom("UserProfileFeed")
+  .select(["Id", "CreatedDate"])
+  .withUserId("005D0000001AamR")
+  .orderBy("CreatedDate", "desc")
+  .limit(20)
+  .execute();
+// SELECT Id, CreatedDate FROM UserProfileFeed
+// WITH UserId = '005D0000001AamR' ORDER BY CreatedDate DESC LIMIT 20
+```
+
+Relationship subqueries intentionally omit `.withUserId()`.
+
 Generated child-relationship metadata enables typed parent-to-child subqueries
 without accepting arbitrary subquery `FROM` strings. `.selectSubquery()` takes a
 generated child relationship name and a dedicated child-query builder with the

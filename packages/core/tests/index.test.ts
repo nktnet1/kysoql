@@ -146,6 +146,7 @@ import {
   type TypeOfWhenBuilder,
   type TypeOfWhenNode,
   type UsingScopeNode,
+  type UserProfileFeedWithNode,
   type ValueListNode,
   type ValueNode,
   type WhereExpressionFactory,
@@ -474,6 +475,7 @@ type PublicTypeSurface = {
   >;
   typeOfWhenNode: TypeOfWhenNode;
   usingScopeNode: UsingScopeNode;
+  userProfileFeedWithNode: UserProfileFeedWithNode;
   valueListNode: ValueListNode;
   valueNode: ValueNode;
   whereExpressionFactory: WhereExpressionFactory<Record<string, never>, never>;

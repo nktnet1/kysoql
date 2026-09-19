@@ -18,6 +18,7 @@ import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { SelectionNode } from "#/operation-node/selection-node";
 import type { SObjectNode } from "#/operation-node/sobject-node";
 import type { UsingScopeNode } from "#/operation-node/using-scope-node";
+import type { UserProfileFeedWithNode } from "#/operation-node/user-profile-feed-with-node";
 import type { WhereNode } from "#/operation-node/where-node";
 import {
   type DataCategorySelectionNode,
@@ -31,6 +32,7 @@ export interface SelectQueryNode {
   readonly selections?: ReadonlyArray<SelectionNode>;
   readonly usingScope?: UsingScopeNode;
   readonly where?: WhereNode;
+  readonly userProfileFeedWith?: UserProfileFeedWithNode;
   readonly withDataCategory?: WithDataCategoryNode;
   readonly groupBy?: GroupByNode;
   readonly having?: HavingNode;
@@ -68,6 +70,16 @@ export const SelectQueryNode = {
     return freeze({
       ...select,
       usingScope,
+    });
+  },
+
+  cloneWithUserProfileFeedWith(
+    select: SelectQueryNode,
+    userProfileFeedWith: UserProfileFeedWithNode,
+  ): SelectQueryNode {
+    return freeze({
+      ...select,
+      userProfileFeedWith,
     });
   },
 

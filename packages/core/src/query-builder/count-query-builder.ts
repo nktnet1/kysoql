@@ -23,6 +23,10 @@ import {
 } from "#/parser/filter-parser";
 import type { KnowledgeArticleUpdateCheck } from "#/parser/knowledge-update-parser";
 import { parseLimit } from "#/parser/limit-parser";
+import {
+  parseUserProfileFeedWithUserId,
+  type UserProfileFeedWithUserIdCheck,
+} from "#/parser/user-profile-feed-parser";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { QueryExecutor } from "#/query-executor";
@@ -63,6 +67,11 @@ export interface CountQueryBuilder<DB, TB extends keyof DB> {
 
   usingScope(
     scope: SalesforceObjectSupportedScope<DB[TB]>,
+  ): CountQueryBuilder<DB, TB>;
+
+  withUserId(
+    userId: string,
+    ..._userProfileFeedCheck: UserProfileFeedWithUserIdCheck<TB>
   ): CountQueryBuilder<DB, TB>;
 
   withDataCategory<
@@ -191,6 +200,19 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
       queryNode: SelectQueryNode.cloneWithUsingScope(
         this.#props.queryNode,
         UsingScopeNode.create(scope),
+      ),
+    });
+  }
+
+  withUserId(
+    userId: string,
+    ..._userProfileFeedCheck: UserProfileFeedWithUserIdCheck<TB>
+  ): CountQueryBuilder<DB, TB> {
+    return new CountQueryBuilderImpl<DB, TB>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithUserProfileFeedWith(
+        this.#props.queryNode,
+        parseUserProfileFeedWithUserId(userId),
       ),
     });
   }

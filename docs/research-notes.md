@@ -1094,7 +1094,16 @@ Useful findings:
 - Salesforce's object-limit reference says a `UserProfileFeed` query must include
   `WITH UserId = ...`.
 
-Kysoql consequence for the next slice: evaluate a narrowly object-specific typed
-`UserProfileFeed WITH UserId = ...` API and its required-query invariant. Keep
+Kysoql consequence in `v1.0.79`: add a narrowly object-specific root
+`.withUserId(userId)` API for `UserProfileFeed`, represented by a frozen clause
+node whose scalar User ID value is compiled through the ordinary escaped SOQL
+literal path. The method is unavailable on other root object types and all
+relationship-subquery builders. Repeated calls replace the prior value. The
+compiler emits `WITH UserId = ...` after `WHERE` and before grouping/ordering,
+revalidates the clause for unsafe/manual ASTs, rejects the clause on other
+objects, and rejects every `UserProfileFeed` query that omits it. The builder
+accepts a non-empty string rather than inventing undocumented key-prefix or
+15/18-character checks in core.
+
 Apex-only `WITH SECURITY_ENFORCED`, `WITH USER_MODE` / `SYSTEM_MODE`, and `FOR
-UPDATE` out of that REST/SOAP-focused patch.
+UPDATE` remain outside this REST/SOAP-focused slice.

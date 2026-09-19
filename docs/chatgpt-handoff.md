@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.78`, the next patch
-   is `v1.0.79`.
+   reuse or rewrite a version already handed off. After `v1.0.79`, the next patch
+   is `v1.0.80`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.78`
+## Current state after `v1.0.79`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -131,6 +131,7 @@ recent patch sequence:
 | `v1.0.76` | Enforce Salesforce's Knowledge article `WITH DATA CATEGORY` prerequisite by requiring a root `WHERE` predicate on `PublishStatus` or `Id` for `KnowledgeArticleVersion` and `__kav` article types. |
 | `v1.0.77` | Add Describe-driven typed root `FOR VIEW` / `FOR REFERENCE`, preserve MRU capability metadata, and document the stable JSforce boundary for automatic `Question` data-category discovery. |
 | `v1.0.78` | Add Knowledge-article-only root `UPDATE TRACKING` / `UPDATE VIEWSTAT` with immutable accumulation, canonical combined compilation, and compiler/type gates. |
+| `v1.0.79` | Add root-only typed `UserProfileFeed WITH UserId = ...`, immutable replacement, escaped scalar compilation, and the required-query compiler invariant. |
 
 ### Build/tooling state
 
@@ -363,12 +364,15 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.79` and should evaluate the object-specific
-`UserProfileFeed WITH UserId = ...` form as the next REST/SOAP-safe specialist
-SOQL clause.** Salesforce's `WITH` reference documents this as the filtering form
-for user-profile feed change tracking. Keep it narrowly scoped to the object and
-its documented value shape; do not widen the slice into Apex-only
-`WITH SECURITY_ENFORCED`, `WITH USER_MODE` / `SYSTEM_MODE`, or `FOR UPDATE`.
+**The next patch should be `v1.0.80` and should group the two straightforward
+REST/SOAP object-specific required-filter invariants for `ContentDocumentLink`
+and `ContentHubItem`.** Salesforce requires `ContentDocumentLink` queries to
+filter on at least one of `Id`, `ContentDocumentId`, or `LinkedEntityId`, and
+`ContentHubItem` queries to filter on at least one of `Id`, `ExternalId`, or
+`ContentHubRepositoryId`. These share the same root-WHERE AST validation path and
+can be implemented as one coherent compiler-boundary slice without changing the
+normal field/operator type system. Do not pull the more complex `Vote` or
+`UserRecordAccess` rules into the same patch.
 
 Automatic `Question` data-category taxonomy discovery remains deferred: Salesforce
 exposes the required SOAP describe calls, but JSforce 3.10.x does not expose them
@@ -376,27 +380,35 @@ on its public `SoapApi`; the only generic invoke path is private. Keep using the
 existing optional normalized codegen hook until a stable public transport path is
 available rather than coupling the CLI to JSforce internals.
 
-If the supplied bundle already contains `v1.0.78` or later, inspect the code and
+If the supplied bundle already contains `v1.0.79` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
 
-Group closely related syntax when it shares the same type/AST/compiler path, but
-keep major architecture changes independently reviewable:
+The large general-purpose SOQL surface is substantially complete. The remaining
+work is narrower and should stay incremental:
 
-1. **Remaining specialist top-level clauses.** Continue REST/SOAP-safe clauses in
-   focused slices, starting with `UserProfileFeed WITH UserId = ...`.
+1. **REST/SOAP object-specific query invariants.** Start with
+   `ContentDocumentLink` / `ContentHubItem`, then evaluate `Vote` and
+   `UserRecordAccess` separately because their accepted filter/order shapes are
+   more specialized. Permission-dependent limits such as `NewsFeed` /
+   `UserProfileFeed` row caps and `TopicAssignment` limits cannot be enforced
+   unconditionally without execution-context/permission information, so prefer
+   documentation or an explicit capability hook over false static guarantees.
 2. **Complete data-category transport support when a stable path exists.** The
-   public codegen hook already accepts normalized Question taxonomy metadata; do
-   not use JSforce's private SOAP invocation machinery solely to automate it.
-3. **Execution-context-specific syntax.** Re-evaluate Apex-only semantics such as
-   `FOR UPDATE`, `WITH USER_MODE`, binds, etc. separately from the
-   transport-neutral REST/JSforce core.
+   public codegen hook already accepts normalized `Question` taxonomy metadata;
+   do not use JSforce's private SOAP invocation machinery solely to automate it.
+3. **Execution-context-specific syntax.** Re-evaluate `FOR UPDATE`,
+   `WITH USER_MODE`, `WITH SECURITY_ENFORCED`, bind expressions, and related
+   Apex-context behavior separately from the transport-neutral REST/JSforce core.
+4. **Final hardening/documentation pass.** Once the specialist constraints are
+   settled, review Salesforce object limitations against generated capabilities,
+   public exports, error consistency, and end-to-end fixture coverage rather than
+   opening another broad syntax family without a concrete gap.
 
-The aggregate-selection, ordinary grouping, typed `HAVING`, advanced ROLLUP/CUBE,
-and subtotal-identification foundations are now in place. Keep grouping
-expressions incremental so new function input/output types preserve capability
-checks without reopening the transport-neutral execution boundary.
+The aggregate-selection, grouping/HAVING, relationship traversal, polymorphic
+selection, function-expression, pagination, scope/category, MRU, Knowledge, and
+UserProfileFeed foundations are now in place.
 
 ## Validation and runtime-boundary conventions
 
