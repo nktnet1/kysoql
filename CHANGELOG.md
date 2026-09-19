@@ -19,6 +19,8 @@ version is cut.
 - Salesforce QueryAll execution through `.executeAll()` for record, aggregate,
   and bare `COUNT()` root queries, including JSforce `scanAll` transport and
   paginated deleted/archived results.
+- Explicit compile-only Apex query context with typed `FOR UPDATE` record locking,
+  including compiler rejection of the unsupported `ORDER BY` combination.
 - Release validation for built package exports, declaration files, CLI binaries,
   package metadata, package documentation, and changelog presence.
 

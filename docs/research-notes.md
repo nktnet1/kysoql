@@ -1305,3 +1305,34 @@ boundary and enforce only the documented universal restrictions that the current
 AST can represent accurately. Preserve metadata relationship SELECT/WHERE support,
 keep bare external-object `COUNT()`, and leave adapter-specific rules to future
 execution-capability metadata instead of guessing.
+
+### Apex `FOR UPDATE` execution-context boundary
+
+Sources re-checked on 2026-09-20:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-for-update.html
+- https://developer.salesforce.com/docs/platform/lwc/guide/apex-security
+- https://developer.salesforce.com/blogs/2026/06/the-salesforce-developers-guide-to-the-summer-26-release
+
+Useful findings:
+
+- Salesforce documents `FOR UPDATE` as Apex-only SOQL syntax for locking the
+  selected sObject records until the enclosing transaction completes.
+- A locking query cannot contain `ORDER BY`.
+- The existing REST/JSforce executor is therefore the wrong execution surface
+  for `FOR UPDATE`; exposing the clause directly on ordinary executable builders
+  would make a transport-neutral query compile into syntax its configured
+  executor cannot soundly run.
+- Apex access-mode syntax also remains execution-context-specific. Salesforce's
+  current API 67 guidance changes Apex security defaults and retires older
+  `WITH SECURITY_ENFORCED` behavior, so future access-mode support needs an
+  explicit API-version/context model rather than assuming one timeless default.
+
+Kysoql consequence for `v1.0.92`: add a terminal `.apex()` context switch only
+on row-producing root `SelectQueryBuilder`. The returned `ApexSelectQueryBuilder`
+is compile-only and deliberately exposes neither `.execute()` nor
+`.executeAll()`. Its first Apex-specific clause is immutable `.forUpdate()`,
+represented by a frozen `ForUpdateNode`; the compiler emits `FOR UPDATE` at the
+end of the statement and rejects any query that also has `ORDER BY`. Aggregate
+and bare-`COUNT()` builders do not expose the Apex context because record locking
+has no sound aggregate result semantics.

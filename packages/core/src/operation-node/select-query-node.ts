@@ -1,4 +1,5 @@
 import type { DateFunctionNode } from "#/operation-node/date-function-node";
+import type { ForUpdateNode } from "#/operation-node/for-update-node";
 import type { ForViewReferenceNode } from "#/operation-node/for-view-reference-node";
 import {
   type AdvancedGroupByMode,
@@ -41,6 +42,7 @@ export interface SelectQueryNode {
   readonly offset?: OffsetNode;
   readonly forViewReference?: ForViewReferenceNode;
   readonly knowledgeUpdate?: KnowledgeUpdateNode;
+  readonly forUpdate?: ForUpdateNode;
 }
 
 export const SelectQueryNode = {
@@ -159,6 +161,16 @@ export const SelectQueryNode = {
       knowledgeUpdate: select.knowledgeUpdate
         ? KnowledgeUpdateNode.cloneWithMode(select.knowledgeUpdate, mode)
         : KnowledgeUpdateNode.create(mode),
+    });
+  },
+
+  cloneWithForUpdate(
+    select: SelectQueryNode,
+    forUpdate: ForUpdateNode,
+  ): SelectQueryNode {
+    return freeze({
+      ...select,
+      forUpdate,
     });
   },
 

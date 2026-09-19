@@ -95,6 +95,10 @@ import {
   createAggregateSelectQueryBuilder,
 } from "#/query-builder/aggregate-select-query-builder";
 import {
+  type ApexSelectQueryBuilder,
+  createApexSelectQueryBuilder,
+} from "#/query-builder/apex-select-query-builder";
+import {
   type CountQueryBuilder,
   createCountQueryBuilder,
 } from "#/query-builder/count-query-builder";
@@ -205,6 +209,8 @@ export interface SelectQueryBuilder<
   execute(): Promise<readonly O[]>;
 
   executeAll(): Promise<readonly O[]>;
+
+  apex(): ApexSelectQueryBuilder<DB, TB, O>;
 
   limit(limit: number): SelectQueryBuilder<DB, TB, O, Mode>;
 
@@ -414,6 +420,10 @@ class SelectQueryBuilderImpl<
     }
 
     return this.#props.queryExecutor.executeAllQuery(this.compile());
+  }
+
+  apex(): ApexSelectQueryBuilder<DB, TB, O> {
+    return createApexSelectQueryBuilder<DB, TB, O>(this.#props);
   }
 
   limit(limit: number): SelectQueryBuilder<DB, TB, O, Mode> {

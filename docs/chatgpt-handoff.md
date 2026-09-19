@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.91`
+## Current state after `v1.0.92`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -144,6 +144,7 @@ recent patch sequence:
 | `v1.0.89` | Add release metadata hardening: package-specific READMEs, explicit Node/public-access/tree-shaking/keyword metadata, an Unreleased changelog, and a typed verifier that keeps publishable package versions/metadata aligned. |
 | `v1.0.90` | Add Salesforce QueryAll execution through root `.executeAll()` for record, aggregate-result, and bare-`COUNT()` queries, with optional transport-neutral executor hooks and JSforce v3 `scanAll` pagination. |
 | `v1.0.91` | Fix the aggregate QueryAll executor test so its mock preserves the generic `QueryExecutor.executeAllQuery<O>()` contract under TypeScript 7/Vitest 5 instead of collapsing the return type to `unknown[]`. |
+| `v1.0.92` | Add an explicit compile-only Apex query context and typed root record `FOR UPDATE`, with immutable AST/compiler support and rejection of the Salesforce-invalid `ORDER BY` combination. |
 
 ### Build/tooling state
 
@@ -374,6 +375,11 @@ Core currently has:
   and QueryAll execution for soft-deleted/archived records through root
   `.executeAll()`; JSforce v3 uses `query(soql, { scanAll: true })` for the first
   page and ordinary `queryMore` locators thereafter;
+- an explicit terminal `.apex()` context on row-producing root record queries;
+  the returned `ApexSelectQueryBuilder` is compile-only and currently adds typed
+  `.forUpdate()` locking syntax, while the ordinary REST/JSforce builder remains
+  executable and never exposes `FOR UPDATE`; the compiler rejects `ORDER BY` on
+  locking queries;
 - generated field metadata for filterable/sortable/groupable/aggregatable/custom
   flags, polymorphic-reference detection (`namePointing`,
   `polymorphicForeignKey`, and `referenceTo`), active picklist values, and
@@ -393,18 +399,19 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.92` and should continue feature work rather than
-defaulting back to release hardening.** The user explicitly asked to resume real
-feature slices after `v1.0.89`. QueryAll is now complete across root record,
-aggregate-result, and bare-`COUNT()` execution, so do not split out another
-near-identical QueryAll patch.
+**The next patch should be `v1.0.93` and should continue feature work.**
+`v1.0.92` established the explicit Apex compile-only boundary and added the first
+Apex-specific clause, `FOR UPDATE`; do not move that clause back onto the normal
+REST/JSforce-executable builders.
 
-Before choosing `v1.0.92`, inspect the remaining follow-on tracks below and pick
-one coherent feature whose Salesforce semantics can be supported soundly from
-public documentation and the current package boundaries. In particular, keep
-Apex-only execution-context syntax out of the default REST/JSforce surface unless
-the patch introduces an explicit execution-context boundary rather than silently
-changing the meaning of ordinary compiled queries.
+The strongest follow-on track is now additional Apex-context semantics. Re-check
+current Salesforce API-version behavior before adding access-mode clauses:
+Summer '26 / API 67 changes Apex security defaults and retires older
+`WITH SECURITY_ENFORCED` behavior, while current reference pages still describe
+`WITH USER_MODE` / `WITH SYSTEM_MODE`. Any such patch should model version/context
+semantics explicitly rather than baking in a stale global assumption. Bind
+expressions are also Apex-specific and should remain behind the same explicit
+context boundary.
 
 The `v1.0.84` object-limit audit still defines the boundary for specialist-object
 work: do not infer big-object index rules from the `__b` suffix, do not encode
@@ -413,7 +420,7 @@ permission/cardinality-dependent feed/object caps as execution-context concerns.
 Automatic `Question` data-category taxonomy discovery also remains deferred until
 a stable public JSforce/Salesforce transport path exists.
 
-If the supplied bundle already contains `v1.0.89` or later, inspect the code and
+If the supplied bundle already contains `v1.0.92` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Follow-on roadmap after the consistency audit

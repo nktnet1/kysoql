@@ -10,6 +10,7 @@ import {
   type AggregateFunctionModule,
   type AggregateFunctionNode,
   type AggregateSelectQueryBuilder,
+  type ApexSelectQueryBuilder,
   type AliasedAggregateFunctionBuilder,
   type AliasedDateFunctionBuilder,
   type AliasedDistanceFunctionBuilder,
@@ -53,6 +54,7 @@ import {
   type FormatFunctionBuilder,
   type FormatFunctionNode,
   type FormattableFieldReference,
+  type ForUpdateNode,
   type ForViewReferenceMode,
   type ForViewReferenceNode,
   type GeolocationExpressionBuilder,
@@ -170,6 +172,11 @@ type PublicTypeSurface = {
     never,
     Record<string, never>
   >;
+  apexSelectQueryBuilder: ApexSelectQueryBuilder<
+    Record<string, never>,
+    never,
+    Record<string, never>
+  >;
   aggregatableFieldReference: AggregatableFieldReference<
     Record<string, never>,
     never,
@@ -253,6 +260,7 @@ type PublicTypeSurface = {
   >;
   formatFunctionBuilder: FormatFunctionBuilder<string>;
   formatFunctionNode: FormatFunctionNode;
+  forUpdateNode: ForUpdateNode;
   forViewReferenceMode: ForViewReferenceMode;
   forViewReferenceNode: ForViewReferenceNode;
   knowledgeUpdateMode: KnowledgeUpdateMode;

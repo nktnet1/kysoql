@@ -30,6 +30,20 @@ const query = db
 const compiled = query.compile();
 ```
 
+Apex-only query syntax is isolated behind an explicit compile-only context. For
+example, `FOR UPDATE` is available only after switching a completed record query
+into `.apex()`, so it cannot be executed accidentally through an API executor:
+
+```ts
+const lockedAccounts = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where("Name", "=", "Acme")
+  .apex()
+  .forUpdate()
+  .compile();
+```
+
 Pass a `QueryExecutor` to `Kysoql` when queries should execute rather than only
 compile. Normal `.execute()` delegates to `QueryExecutor.executeQuery()` (or the
 dedicated count hook for bare `COUNT()`). Root query builders also expose

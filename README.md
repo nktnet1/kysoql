@@ -685,6 +685,24 @@ Filters deliberately require `soqlDate(...)`, `soqlDateTime(...)`, or
 Salesforce literal shape and the compiler emits those values unquoted, avoiding
 the ambiguity between an ordinary SOQL string and a temporal literal.
 
+Apex-only query syntax is separated from API execution. Build the normal record
+query first, then switch to the compile-only `.apex()` context for clauses such
+as `FOR UPDATE`:
+
+```ts
+const lockedAccountQuery = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where("Id", "=", accountId)
+  .apex()
+  .forUpdate()
+  .compile();
+```
+
+The Apex-context builder intentionally has no `.execute()` or `.executeAll()`
+method. `FOR UPDATE` is also rejected if the underlying query already contains
+`ORDER BY`.
+
 Execution stays transport-neutral in core. Configure the JSforce adapter to run
 compiled SOQL through an existing JSforce connection:
 

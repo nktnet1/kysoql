@@ -41,6 +41,7 @@ import type {
 } from "#/operation-node/with-data-category-node";
 import { validateDataCategoryQuery } from "#/parser/data-category-parser";
 import { validateFieldsSelections } from "#/parser/fields-selection-parser";
+import { validateForUpdateQuery } from "#/parser/for-update-parser";
 import { validateKnowledgeUpdateQuery } from "#/parser/knowledge-update-parser";
 import { validateObjectQueryLimits } from "#/parser/object-query-limit-parser";
 import { validateTypeOfSelections } from "#/parser/type-of-parser";
@@ -71,6 +72,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
     }
 
     validateFieldsSelections(query.selections, query.limit);
+    validateForUpdateQuery(query);
     validateTypeOfSelections(query);
     validateKnowledgeUpdateQuery(query);
     validateUserProfileFeedQuery(query);
@@ -121,6 +123,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
     if (query.knowledgeUpdate) {
       soql += ` UPDATE ${this.#compileKnowledgeUpdate(query.knowledgeUpdate)}`;
+    }
+
+    if (query.forUpdate) {
+      soql += " FOR UPDATE";
     }
 
     return soql;

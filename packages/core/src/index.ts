@@ -72,6 +72,7 @@ export type {
   FieldsFunctionNode,
   FieldsSelector,
 } from "#/operation-node/fields-function-node";
+export type { ForUpdateNode } from "#/operation-node/for-update-node";
 export type {
   ForViewReferenceMode,
   ForViewReferenceNode,
@@ -128,6 +129,7 @@ export type {
 export type { DataCategoryInput } from "#/parser/data-category-parser";
 export type { DistanceComparisonOperator } from "#/parser/geolocation-expression-parser";
 export type { AggregateSelectQueryBuilder } from "#/query-builder/aggregate-select-query-builder";
+export type { ApexSelectQueryBuilder } from "#/query-builder/apex-select-query-builder";
 export type { CountQueryBuilder } from "#/query-builder/count-query-builder";
 export type { RelationshipSubqueryBuilder } from "#/query-builder/relationship-subquery-builder";
 export type {
