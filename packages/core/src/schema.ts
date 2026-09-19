@@ -63,6 +63,11 @@ export interface SalesforceChildRelationship<
   readonly field: FieldName;
 }
 
+export interface SalesforceGeolocation {
+  readonly latitude: number;
+  readonly longitude: number;
+}
+
 export interface SalesforceQueryResult<Row> {
   readonly totalSize: number;
   readonly done: boolean;

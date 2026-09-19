@@ -7,8 +7,10 @@ import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 import { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
 import { ConvertTimezoneFunctionNode } from "#/operation-node/convert-timezone-function-node";
 import { DateFunctionNode } from "#/operation-node/date-function-node";
+import { DistanceFunctionNode } from "#/operation-node/distance-function-node";
 import { FieldsFunctionNode } from "#/operation-node/fields-function-node";
 import { FormatFunctionNode } from "#/operation-node/format-function-node";
+import { GeolocationFunctionNode } from "#/operation-node/geolocation-function-node";
 import { GroupByNode } from "#/operation-node/group-by-node";
 import { HavingNode } from "#/operation-node/having-node";
 import { LimitNode } from "#/operation-node/limit-node";
@@ -153,6 +155,48 @@ describe("operation nodes", () => {
       reference,
     });
     expectFrozen(convertCurrency);
+  });
+
+  it("creates frozen geolocation and distance function nodes", () => {
+    const location = ReferenceNode.create("Office__c");
+    const backup = ReferenceNode.create("Backup_Office__c");
+    const geolocation = GeolocationFunctionNode.create(-33.8688, 151.2093);
+    const literalDistance = DistanceFunctionNode.create(
+      location,
+      geolocation,
+      "km",
+    );
+    const fieldDistance = DistanceFunctionNode.create(location, backup, "mi");
+
+    expect(geolocation).toEqual({
+      kind: "GeolocationFunctionNode",
+      latitude: -33.8688,
+      longitude: 151.2093,
+    });
+    expect(literalDistance).toEqual({
+      kind: "DistanceFunctionNode",
+      location,
+      destination: geolocation,
+      unit: "km",
+    });
+    expect(fieldDistance).toEqual({
+      kind: "DistanceFunctionNode",
+      location,
+      destination: backup,
+      unit: "mi",
+    });
+    expectFrozen(geolocation);
+    expectFrozen(literalDistance);
+    expectFrozen(fieldDistance);
+    expect(() => GeolocationFunctionNode.create(90.1, 0)).toThrow(
+      "SOQL GEOLOCATION() latitude must be a finite number between -90 and 90.",
+    );
+    expect(() => GeolocationFunctionNode.create(0, -180.1)).toThrow(
+      "SOQL GEOLOCATION() longitude must be a finite number between -180 and 180.",
+    );
+    expect(() =>
+      DistanceFunctionNode.create(location, geolocation, "m" as never),
+    ).toThrow("SOQL DISTANCE() unit must be 'mi' or 'km'.");
   });
 
   it("creates frozen FORMAT function nodes", () => {

@@ -12,6 +12,7 @@ import {
   type AggregateSelectQueryBuilder,
   type AliasedAggregateFunctionBuilder,
   type AliasedDateFunctionBuilder,
+  type AliasedDistanceFunctionBuilder,
   type AliasedSelectFunctionBuilder,
   type AliasNode,
   type AndNode,
@@ -34,14 +35,27 @@ import {
   type DateFunctionNode,
   type DateGroupableFieldReference,
   DefaultQueryCompiler,
+  type DistanceComparisonOperator,
+  type DistanceDestinationNode,
+  type DistanceFunctionBuilder,
+  type DistanceFunctionExpression,
+  type DistanceFunctionNode,
+  type DistanceUnit,
   type EqualityComparisonOperator,
   type ExpressionBuilder,
   type ExpressionWrapper,
+  type FilterableLocationFieldReference,
   type FieldsFunctionNode,
   type FieldsSelector,
   type FormatFunctionBuilder,
   type FormatFunctionNode,
   type FormattableFieldReference,
+  type GeolocationExpressionBuilder,
+  type GeolocationFilterExpressionBuilder,
+  type GeolocationFilterFunctionModule,
+  type GeolocationFunctionBuilder,
+  type GeolocationFunctionModule,
+  type GeolocationFunctionNode,
   type GroupByNode,
   type GroupedHavingFieldName,
   type GroupingFunctionBuilder,
@@ -53,6 +67,7 @@ import {
   kysoql,
   type LikeComparisonOperator,
   type LimitNode,
+  type LocationFieldReference,
   type MultiSelectComparisonOperator,
   type NotNode,
   type NumericAggregatableFieldReference,
@@ -76,6 +91,7 @@ import {
   type SalesforceFieldCustom,
   type SalesforceFieldFilterValue,
   type SalesforceFieldValue,
+  type SalesforceGeolocation,
   type SalesforceObject,
   type SalesforceParentRelationship,
   type SalesforceQueryResult,
@@ -145,6 +161,10 @@ type PublicTypeSurface = {
     "year",
     "calendarYear(CreatedDate)"
   >;
+  aliasedDistanceFunctionBuilder: AliasedDistanceFunctionBuilder<
+    number,
+    "distance"
+  >;
   aliasedSelectFunctionBuilder: AliasedSelectFunctionBuilder<string, "label">;
   aliasNode: AliasNode;
   andNode: AndNode;
@@ -184,9 +204,20 @@ type PublicTypeSurface = {
     never,
     "CreatedDate"
   >;
+  distanceComparisonOperator: DistanceComparisonOperator;
+  distanceDestinationNode: DistanceDestinationNode;
+  distanceFunctionBuilder: DistanceFunctionBuilder<number, true, true>;
+  distanceFunctionExpression: DistanceFunctionExpression<number, true, true>;
+  distanceFunctionNode: DistanceFunctionNode;
+  distanceUnit: DistanceUnit;
   equalityComparisonOperator: EqualityComparisonOperator;
   expressionBuilder: ExpressionBuilder<Record<string, never>, never>;
   expressionWrapper: ExpressionWrapper<Record<string, never>, never>;
+  filterableLocationFieldReference: FilterableLocationFieldReference<
+    Record<string, never>,
+    never,
+    "Location__c"
+  >;
   fieldsFunctionNode: FieldsFunctionNode;
   fieldsSelector: FieldsSelector;
   formattableFieldReference: FormattableFieldReference<
@@ -196,6 +227,24 @@ type PublicTypeSurface = {
   >;
   formatFunctionBuilder: FormatFunctionBuilder<string>;
   formatFunctionNode: FormatFunctionNode;
+  geolocationExpressionBuilder: GeolocationExpressionBuilder<
+    Record<string, never>,
+    never
+  >;
+  geolocationFilterExpressionBuilder: GeolocationFilterExpressionBuilder<
+    Record<string, never>,
+    never
+  >;
+  geolocationFilterFunctionModule: GeolocationFilterFunctionModule<
+    Record<string, never>,
+    never
+  >;
+  geolocationFunctionBuilder: GeolocationFunctionBuilder;
+  geolocationFunctionModule: GeolocationFunctionModule<
+    Record<string, never>,
+    never
+  >;
+  geolocationFunctionNode: GeolocationFunctionNode;
   groupByNode: GroupByNode;
   groupedHavingFieldName: GroupedHavingFieldName<
     Record<string, never>,
@@ -222,6 +271,11 @@ type PublicTypeSurface = {
   havingNode: HavingNode;
   likeComparisonOperator: LikeComparisonOperator;
   limitNode: LimitNode;
+  locationFieldReference: LocationFieldReference<
+    Record<string, never>,
+    never,
+    "Location__c"
+  >;
   multiSelectComparisonOperator: MultiSelectComparisonOperator;
   notNode: NotNode;
   numericAggregatableFieldReference: NumericAggregatableFieldReference<
@@ -271,6 +325,7 @@ type PublicTypeSurface = {
   salesforceFieldValue: SalesforceFieldValue<
     SalesforceField<string, "string", false, true, true, true>
   >;
+  salesforceGeolocation: SalesforceGeolocation;
   salesforceObject: SalesforceObject<{
     readonly Id: SalesforceField<string, "id", false, true, true, true>;
   }>;

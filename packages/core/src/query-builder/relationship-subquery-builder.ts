@@ -6,6 +6,11 @@ import {
   createExpressionBuilder,
   type WhereExpressionFactory,
 } from "#/expression/expression-builder";
+import {
+  createGeolocationExpressionBuilder,
+  type DistanceFunctionExpression,
+  type GeolocationExpressionBuilder,
+} from "#/expression/geolocation-function-builder";
 import type { FieldsSelector } from "#/operation-node/fields-function-node";
 import type { ComparisonOperator } from "#/operation-node/operator-node";
 import type {
@@ -29,7 +34,11 @@ import {
   parseFieldsSelection,
 } from "#/parser/fields-selection-parser";
 import { parseLimit } from "#/parser/limit-parser";
-import { parseOrderBy, type SortableFieldName } from "#/parser/order-by-parser";
+import {
+  parseDistanceOrderBy,
+  parseOrderBy,
+  type SortableFieldName,
+} from "#/parser/order-by-parser";
 import type {
   ChildObjectName,
   ChildRelationshipName,
@@ -76,6 +85,10 @@ type SelectableChildRelationship<
   ? never
   : ChildRelationshipReference<DB, TB, Relationship>;
 
+type DistanceOrderByFactory<DB, TB extends keyof DB> = (
+  eb: GeolocationExpressionBuilder<DB, TB>,
+) => DistanceFunctionExpression<unknown, boolean, true>;
+
 export interface RelationshipSubqueryBuilder<
   DB,
   TB extends keyof DB,
@@ -83,6 +96,12 @@ export interface RelationshipSubqueryBuilder<
   Depth extends ParentToChildDepth = readonly [unknown],
 > {
   limit(limit: number): RelationshipSubqueryBuilder<DB, TB, O, Depth>;
+
+  orderBy(
+    expression: DistanceOrderByFactory<DB, TB>,
+    direction?: OrderByDirection,
+    nulls?: OrderByNulls,
+  ): RelationshipSubqueryBuilder<DB, TB, O, Depth>;
 
   orderBy<OE extends string>(
     field: OE & SortableFieldName<DB, TB, OE>,
@@ -190,16 +209,35 @@ class RelationshipSubqueryBuilderImpl<
     });
   }
 
+  orderBy(
+    expression: DistanceOrderByFactory<DB, TB>,
+    direction?: OrderByDirection,
+    nulls?: OrderByNulls,
+  ): RelationshipSubqueryBuilder<DB, TB, O, Depth>;
   orderBy<OE extends string>(
     field: OE & SortableFieldName<DB, TB, OE>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
+  ): RelationshipSubqueryBuilder<DB, TB, O, Depth>;
+  orderBy(
+    fieldOrExpression: string | DistanceOrderByFactory<DB, TB>,
+    direction?: OrderByDirection,
+    nulls?: OrderByNulls,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth> {
+    const item =
+      typeof fieldOrExpression === "function"
+        ? parseDistanceOrderBy(
+            fieldOrExpression(createGeolocationExpressionBuilder<DB, TB>()),
+            direction,
+            nulls,
+          )
+        : parseOrderBy(fieldOrExpression, direction, nulls);
+
     return new RelationshipSubqueryBuilderImpl<DB, TB, O, Depth>({
       ...this.#props,
       queryNode: RelationshipSubqueryNode.cloneWithOrderByItems(
         this.#props.queryNode,
-        [parseOrderBy(field, direction, nulls)],
+        [item],
       ),
     });
   }

@@ -736,6 +736,42 @@ explicit direct field selections in either call order. Compiler validation also
 rejects repeated/overlapping field groups and requires `LIMIT <= 200` whenever
 `CUSTOM` or `ALL` is selected.
 
+### Geolocation expressions
+
+Sources re-checked on 2026-09-19:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-geolocate.html
+
+Useful findings:
+
+- SOAP/REST SOQL can select a compound geolocation field directly, and the API
+  returns the compound location as structured latitude/longitude data rather
+  than a primitive scalar.
+- `DISTANCE(location1, location2, 'unit')` accepts two location fields or a
+  location field plus `GEOLOCATION(latitude, longitude)`. Supported units are
+  `mi` and `km`.
+- When `GEOLOCATION(...)` is used, the location field must be the first
+  `DISTANCE()` argument and the `GEOLOCATION()` expression must be second.
+  Reversing them produces a malformed query. `GEOLOCATION()` must be used with
+  `DISTANCE()`.
+- `DISTANCE()` is supported in `SELECT`, `WHERE`, and `ORDER BY`. Salesforce
+  explicitly excludes `DISTANCE()` / `GEOLOCATION()` from `GROUP BY`.
+- Distance filtering supports only `>` and `<`; Salesforce documents that
+  geolocations/distances do not have useful equality semantics.
+- Null or invalid compound geolocation values can produce null location/distance
+  results, so generated field and relationship nullability must be preserved in
+  inferred output.
+
+Implemented consequence in `v1.0.72`: codegen maps Describe `location` fields
+to a structured `SalesforceGeolocation` value, while ordinary scalar comparison,
+ordering, aggregation, and grouping remain closed for that field type. Dedicated
+frozen `GEOLOCATION` and `DISTANCE` nodes/builders validate coordinate literals
+and `mi` / `km` units, enforce field-first argument order for fixed locations,
+and support aliased distance selection, `<` / `>` filtering, and distance
+ordering. Root and child-to-parent location references retain generated
+filterable/sortable capabilities and relationship nullability; relationship
+subqueries expose the same distance filter/order/select surface.
+
 ### Remaining SOQL surface / roadmap references
 
 Sources re-checked on 2026-09-18:

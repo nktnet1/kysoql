@@ -30,6 +30,8 @@ const fieldValueType = (field: SalesforceFieldDescription): string => {
     case "int":
     case "percent":
       return "number";
+    case "location":
+      return "SalesforceGeolocation";
     case "base64":
     case "combobox":
     case "date":
@@ -165,6 +167,7 @@ export const renderSchema = (
     "import type {",
     "  SalesforceChildRelationship,",
     "  SalesforceField,",
+    "  SalesforceGeolocation,",
     "  SalesforceObject,",
     "  SalesforceParentRelationship,",
     '} from "@kysoql/core";',

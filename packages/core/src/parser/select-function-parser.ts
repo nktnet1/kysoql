@@ -1,23 +1,22 @@
 import type { AliasedSelectFunctionBuilder } from "#/expression/aggregate-function-builder";
+import type { AliasedDistanceFunctionBuilder } from "#/expression/geolocation-function-builder";
 import type { AliasNode } from "#/operation-node/alias-node";
 import type { FormatFunctionNode } from "#/operation-node/format-function-node";
 import type { OperationNode } from "#/operation-node/operation-node";
 import { SelectionNode } from "#/operation-node/selection-node";
 
-export type SelectFunctionSelectionExpression = AliasedSelectFunctionBuilder<
-  unknown,
-  string
->;
+export type SelectFunctionSelectionExpression =
+  | AliasedSelectFunctionBuilder<unknown, string>
+  | AliasedDistanceFunctionBuilder<unknown, string>;
 
 export type SelectFunctionSelectionArg =
   | SelectFunctionSelectionExpression
   | readonly SelectFunctionSelectionExpression[];
 
 type SelectFunctionSelectionOutput<Selection> =
-  Selection extends AliasedSelectFunctionBuilder<
-    infer Output,
-    infer Alias extends string
-  >
+  Selection extends
+    | AliasedSelectFunctionBuilder<infer Output, infer Alias extends string>
+    | AliasedDistanceFunctionBuilder<infer Output, infer Alias extends string>
     ? { readonly [Key in Alias]: Output }
     : never;
 
@@ -61,6 +60,7 @@ function isSelectFunctionNode(node: OperationNode | undefined): boolean {
 
   return (
     node?.kind === "ConvertCurrencyFunctionNode" ||
+    node?.kind === "DistanceFunctionNode" ||
     node?.kind === "ToLabelFunctionNode"
   );
 }

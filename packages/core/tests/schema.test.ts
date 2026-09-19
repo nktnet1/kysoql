@@ -5,6 +5,7 @@ import type {
   SalesforceField,
   SalesforceFieldFilterValue,
   SalesforceFieldValue,
+  SalesforceGeolocation,
   SalesforceObject,
   SalesforceParentRelationship,
   SalesforceRow,
@@ -29,6 +30,14 @@ type FixtureObject = SalesforceObject<{
     true
   >;
   readonly Time__c: SalesforceField<string, "time", true, true, true, true>;
+  readonly Location__c: SalesforceField<
+    SalesforceGeolocation,
+    "location",
+    true,
+    true,
+    true,
+    false
+  >;
 }>;
 
 it("derives nullable row values from generated field metadata", () => {
@@ -38,6 +47,7 @@ it("derives nullable row values from generated field metadata", () => {
     readonly Date__c: string | null;
     readonly DateTime__c: string | null;
     readonly Time__c: string | null;
+    readonly Location__c: SalesforceGeolocation | null;
   }>();
 });
 

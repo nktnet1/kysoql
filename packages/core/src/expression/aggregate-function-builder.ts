@@ -1,3 +1,7 @@
+import {
+  GeolocationFunctionModuleImpl,
+  type GeolocationFunctionModule,
+} from "#/expression/geolocation-function-builder";
 import { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
 import { AliasNode } from "#/operation-node/alias-node";
 import { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
@@ -40,8 +44,11 @@ export type AggregatableFieldReference<
     ? never
     : FieldReferenceDefinition<DB, TB, Reference> extends {
           readonly aggregatable: true;
+          readonly salesforceType: infer SalesforceType extends string;
         }
-      ? Reference
+      ? SalesforceType extends "location"
+        ? never
+        : Reference
       : never
   : never;
 
@@ -852,7 +859,9 @@ export interface SelectFunctionModule<
   DB,
   TB extends keyof DB,
   GroupingFields extends string = never,
-> extends AggregateFunctionModule<DB, TB, GroupingFields> {
+>
+  extends AggregateFunctionModule<DB, TB, GroupingFields>,
+    GeolocationFunctionModule<DB, TB> {
   convertCurrency<Reference extends string>(
     field: Reference & CurrencyFieldReference<DB, TB, Reference>,
   ): ConvertCurrencyFunctionBuilder<ConvertCurrencyOutput<DB, TB, Reference>>;
@@ -882,10 +891,11 @@ class AggregateFunctionModuleImpl<
   DB,
   TB extends keyof DB,
   GroupingFields extends string,
-> {
+> extends GeolocationFunctionModuleImpl<DB, TB> {
   readonly #groupingFields: readonly string[];
 
   constructor(groupingFields: readonly string[]) {
+    super();
     this.#groupingFields = freeze([...groupingFields]);
   }
 

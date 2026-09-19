@@ -2,6 +2,7 @@ import type {
   AggregateFunctionExpression,
   GroupingFunctionBuilder,
 } from "#/expression/aggregate-function-builder";
+import type { DistanceFunctionExpression } from "#/expression/geolocation-function-builder";
 import {
   type OrderByDirection,
   OrderByItemNode,
@@ -20,8 +21,11 @@ export type SortableFieldName<
     ? never
     : FieldReferenceDefinition<DB, TB, Reference> extends {
           readonly sortable: true;
+          readonly salesforceType: infer SalesforceType extends string;
         }
-      ? Reference
+      ? SalesforceType extends "location"
+        ? never
+        : Reference
       : never
   : never;
 
@@ -62,4 +66,20 @@ export function parseGroupingOrderBy(
     parseGroupingFunctionExpression(expression, groupingFields),
     direction,
   );
+}
+
+export function parseDistanceOrderBy(
+  expression: DistanceFunctionExpression<unknown, boolean, true>,
+  direction?: OrderByDirection,
+  nulls?: OrderByNulls,
+): OrderByItemNode {
+  const node = expression.toOperationNode();
+
+  if (node.kind !== "DistanceFunctionNode") {
+    throw new TypeError(
+      "SOQL geolocation ORDER BY callbacks must return an unaliased DISTANCE() expression.",
+    );
+  }
+
+  return OrderByItemNode.create(node, direction, nulls);
 }

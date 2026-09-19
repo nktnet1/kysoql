@@ -31,6 +31,18 @@ export type {
   WhereExpressionFactory,
 } from "#/expression/expression-builder";
 export type {
+  AliasedDistanceFunctionBuilder,
+  DistanceFunctionBuilder,
+  DistanceFunctionExpression,
+  FilterableLocationFieldReference,
+  GeolocationExpressionBuilder,
+  GeolocationFilterExpressionBuilder,
+  GeolocationFilterFunctionModule,
+  GeolocationFunctionBuilder,
+  GeolocationFunctionModule,
+  LocationFieldReference,
+} from "#/expression/geolocation-function-builder";
+export type {
   GroupedHavingFieldName,
   HavingExpressionBuilder,
   HavingExpressionFactory,
@@ -52,10 +64,16 @@ export type {
   DateFunctionNode,
 } from "#/operation-node/date-function-node";
 export type {
+  DistanceDestinationNode,
+  DistanceFunctionNode,
+  DistanceUnit,
+} from "#/operation-node/distance-function-node";
+export type {
   FieldsFunctionNode,
   FieldsSelector,
 } from "#/operation-node/fields-function-node";
 export type { FormatFunctionNode } from "#/operation-node/format-function-node";
+export type { GeolocationFunctionNode } from "#/operation-node/geolocation-function-node";
 export type {
   AdvancedGroupByMode,
   GroupByNode,
@@ -105,6 +123,7 @@ export type {
   SemiJoinSubqueryExpression,
   SemiJoinSubqueryFactory,
 } from "#/query-builder/semi-join-subquery-builder";
+export type { DistanceComparisonOperator } from "#/parser/geolocation-expression-parser";
 export type { CompiledQuery } from "#/query-compiler/compiled-query";
 export { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
 export type { QueryCompiler } from "#/query-compiler/query-compiler";
@@ -116,6 +135,7 @@ export type {
   SalesforceFieldCustom,
   SalesforceFieldFilterValue,
   SalesforceFieldValue,
+  SalesforceGeolocation,
   SalesforceObject,
   SalesforceParentRelationship,
   SalesforceQueryResult,

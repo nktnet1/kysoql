@@ -109,7 +109,7 @@ type MultiSelectOperatorForField<DB, TB extends keyof DB, RE extends string> =
     ? MultiSelectComparisonOperator
     : never;
 
-export type ComparisonOperatorExpression<
+type ScalarComparisonOperatorExpression<
   DB,
   TB extends keyof DB,
   RE extends string,
@@ -119,6 +119,14 @@ export type ComparisonOperatorExpression<
   | LikeOperatorForField<DB, TB, RE>
   | SetComparisonOperator
   | MultiSelectOperatorForField<DB, TB, RE>;
+
+export type ComparisonOperatorExpression<
+  DB,
+  TB extends keyof DB,
+  RE extends string,
+> = SalesforceTypeOfField<DB, TB, RE> extends "location"
+  ? never
+  : ScalarComparisonOperatorExpression<DB, TB, RE>;
 
 type FieldValueExpression<
   DB,

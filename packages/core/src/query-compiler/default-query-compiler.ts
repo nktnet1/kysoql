@@ -7,8 +7,10 @@ import type { BinaryOperationNode } from "#/operation-node/binary-operation-node
 import type { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
 import type { ConvertTimezoneFunctionNode } from "#/operation-node/convert-timezone-function-node";
 import type { DateFunctionNode } from "#/operation-node/date-function-node";
+import type { DistanceFunctionNode } from "#/operation-node/distance-function-node";
 import type { FieldsFunctionNode } from "#/operation-node/fields-function-node";
 import type { FormatFunctionNode } from "#/operation-node/format-function-node";
+import type { GeolocationFunctionNode } from "#/operation-node/geolocation-function-node";
 import type { GroupByNode } from "#/operation-node/group-by-node";
 import type { HavingNode } from "#/operation-node/having-node";
 import type { LimitNode } from "#/operation-node/limit-node";
@@ -204,8 +206,14 @@ export class DefaultQueryCompiler implements QueryCompiler {
         );
       case "DateFunctionNode":
         return this.#compileDateFunction(node as DateFunctionNode);
+      case "DistanceFunctionNode":
+        return this.#compileDistanceFunction(node as DistanceFunctionNode);
       case "FormatFunctionNode":
         return this.#compileFormatFunction(node as FormatFunctionNode);
+      case "GeolocationFunctionNode":
+        return this.#compileGeolocationFunction(
+          node as GeolocationFunctionNode,
+        );
       case "NotNode":
         return this.#compileNot(node as NotNode);
       case "OrNode":
@@ -277,6 +285,14 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileConvertTimezoneFunction(node: ConvertTimezoneFunctionNode): string {
     return `convertTimezone(${this.#compileReference(node.reference)})`;
+  }
+
+  #compileDistanceFunction(node: DistanceFunctionNode): string {
+    return `DISTANCE(${this.#compileReference(node.location)}, ${this.#compileOperation(node.destination)}, '${node.unit}')`;
+  }
+
+  #compileGeolocationFunction(node: GeolocationFunctionNode): string {
+    return `GEOLOCATION(${node.latitude}, ${node.longitude})`;
   }
 
   #compileFormatFunction(node: FormatFunctionNode): string {

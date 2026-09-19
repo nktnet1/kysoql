@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.71`, the next patch
-   is `v1.0.72`.
+   reuse or rewrite a version already handed off. After `v1.0.72`, the next patch
+   is `v1.0.73`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.71`
+## Current state after `v1.0.72`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -124,6 +124,7 @@ recent patch sequence:
 | `v1.0.69` | Complete typed `FORMAT()` aggregate composition for unaliased row-producing aggregate functions with field arguments. |
 | `v1.0.70` | Add typed `FIELDS(STANDARD\|CUSTOM\|ALL)` selections, generated custom-field metadata, direct-field output inference, overlap protection, and REST/SOAP bounds. |
 | `v1.0.71` | Add typed `convertTimezone()` composition inside date functions with datetime-only inputs and exact converted-expression grouping identity. |
+| `v1.0.72` | Add typed geolocation fields plus validated `GEOLOCATION()` / `DISTANCE()` selection, filtering, and ordering with relationship/nullability preservation. |
 
 ### Build/tooling state
 
@@ -267,6 +268,13 @@ Core currently has:
   currency builder; aggregate queries can also format unaliased row-producing
   field aggregates while preserving aggregate nullability, with bare `COUNT()`,
   aliased inputs, `GROUPING()` indicators, filtering, and ordering excluded;
+- generated `location` fields as structured `SalesforceGeolocation` values plus
+  typed `GEOLOCATION()` / `DISTANCE()` expressions on record and relationship
+  subqueries; fixed coordinates are validated, distance SELECT output is
+  aliased and nullability-aware, filters are restricted to `<` / `>`, and
+  distance ordering preserves generated filterable/sortable relationship-path
+  capabilities while direct scalar comparison, aggregation, grouping, and
+  ordinary field ordering remain closed;
 - bare `COUNT()` as a dedicated scalar `CountQueryBuilder` with scalar `WHERE`
   and `LIMIT`; it compiles independently from row-producing aggregates and uses
   the executor's optional `executeCountQuery` capability, implemented by the
@@ -309,24 +317,24 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.72` and should add typed geolocation
-expressions.** Keep this as a focused function slice so location-distance
-semantics do not weaken ordinary scalar expression typing.
+**The next patch should be `v1.0.73` and should add typed polymorphic `TYPEOF`
+selection.** Keep it isolated from specialist top-level clauses because its AST
+and output typing are a distinct architecture slice.
 
 Recommended next unit:
 
-- teach codegen/core metadata to identify Salesforce `location` fields without
-  opening them to unrelated scalar operators;
-- add dedicated immutable `GEOLOCATION` and `DISTANCE` nodes and typed builders,
-  with literal coordinate validation and the documented `mi` / `km` units;
-- support aliased distance selection, compatible distance filtering, and
-  distance ordering while preserving root and safe relationship field paths;
-- keep argument order, comparison operators, output nullability, and unsupported
-  grouping contexts explicit at both type and runtime boundaries;
-- add compiler, immutability, output-inference, and negative tests without
-  bundling polymorphic `TYPEOF` work.
+- model `TYPEOF` with a dedicated immutable selection node rather than raw SOQL;
+- constrain the target to generated polymorphic reference fields and derive
+  valid `WHEN <Object>` branches from generated `referenceTo` metadata;
+- type each branch's selected fields against the corresponding generated object
+  and infer a discriminated relationship result shape, including an optional
+  `ELSE` branch;
+- preserve Salesforce compatibility restrictions with aggregate/grouping/function
+  query forms at type and runtime boundaries;
+- add compiler, immutability, output-inference, relationship-path, and negative
+  tests without bundling `USING SCOPE` or other specialist clauses.
 
-If the supplied bundle already contains `v1.0.71` or later, inspect the code and
+If the supplied bundle already contains `v1.0.72` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
@@ -334,11 +342,9 @@ advance from the actual state instead of reimplementing this section.
 Group closely related syntax when it shares the same type/AST/compiler path, but
 keep major architecture changes independently reviewable:
 
-1. **Polymorphic references / `TYPEOF`.** Dedicated AST and discriminated output
-   typing.
-2. **Specialist top-level clauses.** `USING SCOPE`, `WITH DATA CATEGORY`, and
+1. **Specialist top-level clauses.** `USING SCOPE`, `WITH DATA CATEGORY`, and
    other REST/SOAP-relevant specialist clauses.
-3. **Execution-context-specific syntax.** Re-evaluate Apex-only semantics such as
+2. **Execution-context-specific syntax.** Re-evaluate Apex-only semantics such as
    `FOR UPDATE`, `WITH USER_MODE`, binds, etc. separately from the
    transport-neutral REST/JSforce core.
 

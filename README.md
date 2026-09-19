@@ -135,6 +135,53 @@ const accounts = await db
 // SELECT FIELDS(ALL) FROM Account LIMIT 200
 ```
 
+Generated Salesforce `location` fields use a structured `{ latitude, longitude }`
+value type and can participate in typed location-distance expressions without
+being opened to ordinary scalar comparisons. `fn.geolocation(latitude,
+longitude)` validates fixed coordinates, while `fn.distance(location, target,
+"mi" | "km")` supports an aliased SELECT value, `<` / `>` filtering, and
+distance ordering. When a fixed `GEOLOCATION()` is used, the location field is
+kept as the first `DISTANCE()` argument. Location and relationship nullability
+flow into the numeric distance result.
+
+```ts
+const nearbyAccounts = await db
+  .selectFrom("Account")
+  .select(["Id", "Office__c"])
+  .select(({ fn }) =>
+    fn
+      .distance(
+        "Office__c",
+        fn.geolocation(-33.8688, 151.2093),
+        "km",
+      )
+      .as("distanceFromSydney"),
+  )
+  .where((eb) =>
+    eb(
+      eb.fn.distance(
+        "Office__c",
+        eb.fn.geolocation(-33.8688, 151.2093),
+        "km",
+      ),
+      "<",
+      25,
+    ),
+  )
+  .orderBy(({ fn }) =>
+    fn.distance(
+      "Office__c",
+      fn.geolocation(-33.8688, 151.2093),
+      "km",
+    ),
+  )
+  .execute();
+```
+
+`GEOLOCATION()` is intentionally only exposed as a `DISTANCE()` argument. Direct
+location equality, ordinary location ordering, aggregate/grouping use, and
+non-`<`/`>` distance comparisons remain outside the typed query surface.
+
 Translated picklist labels can be selected through an aliased `toLabel()`
 callback. Inputs are restricted to generated `picklist` and `multipicklist`
 fields, including child-to-parent paths, and translated outputs are inferred as

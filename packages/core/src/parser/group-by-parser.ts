@@ -11,8 +11,11 @@ export type GroupableFieldName<
     ? never
     : FieldReferenceDefinition<DB, TB, Reference> extends {
           readonly groupable: true;
+          readonly salesforceType: infer SalesforceType extends string;
         }
-      ? Reference
+      ? SalesforceType extends "location"
+        ? never
+        : Reference
       : never
   : never;
 

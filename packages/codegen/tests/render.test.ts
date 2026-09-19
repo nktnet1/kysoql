@@ -51,7 +51,7 @@ describe("renderSchema", () => {
     ["textarea", "string"],
     ["time", "string"],
     ["url", "string"],
-    ["location", "unknown"],
+    ["location", "SalesforceGeolocation"],
   ] as const)("maps Salesforce %s fields to %s values", (type, valueType) => {
     const source = renderSchema([objectWith([field({ type })])]);
 
@@ -308,6 +308,7 @@ describe("renderSchema", () => {
         "import type {",
         "  SalesforceChildRelationship,",
         "  SalesforceField,",
+        "  SalesforceGeolocation,",
         "  SalesforceObject,",
         "  SalesforceParentRelationship,",
         '} from "@kysoql/core";',

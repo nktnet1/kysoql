@@ -7,6 +7,11 @@ import {
   createExpressionBuilder,
   type WhereExpressionFactory,
 } from "#/expression/expression-builder";
+import {
+  createGeolocationExpressionBuilder,
+  type DistanceFunctionExpression,
+  type GeolocationExpressionBuilder,
+} from "#/expression/geolocation-function-builder";
 import type { FieldsSelector } from "#/operation-node/fields-function-node";
 import type { ComparisonOperator } from "#/operation-node/operator-node";
 import type {
@@ -43,7 +48,11 @@ import {
 import { validateGroupingSelections } from "#/parser/grouping-expression-parser";
 import { parseLimit } from "#/parser/limit-parser";
 import { parseOffset } from "#/parser/offset-parser";
-import { parseOrderBy, type SortableFieldName } from "#/parser/order-by-parser";
+import {
+  parseDistanceOrderBy,
+  parseOrderBy,
+  type SortableFieldName,
+} from "#/parser/order-by-parser";
 import type {
   ChildObjectName,
   ChildRelationshipName,
@@ -108,6 +117,10 @@ type SelectFunctionSelectionFactory<
   FunctionSelection extends SelectFunctionSelectionArg,
 > = (eb: SelectExpressionBuilder<DB, TB>) => FunctionSelection;
 
+type DistanceOrderByFactory<DB, TB extends keyof DB> = (
+  eb: GeolocationExpressionBuilder<DB, TB>,
+) => DistanceFunctionExpression<unknown, boolean, true>;
+
 export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
   compile(): CompiledQuery<O>;
 
@@ -116,6 +129,12 @@ export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
   limit(limit: number): SelectQueryBuilder<DB, TB, O>;
 
   offset(offset: number): SelectQueryBuilder<DB, TB, O>;
+
+  orderBy(
+    expression: DistanceOrderByFactory<DB, TB>,
+    direction?: OrderByDirection,
+    nulls?: OrderByNulls,
+  ): SelectQueryBuilder<DB, TB, O>;
 
   orderBy<OE extends string>(
     field: OE & SortableFieldName<DB, TB, OE>,
@@ -240,15 +259,34 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     });
   }
 
+  orderBy(
+    expression: DistanceOrderByFactory<DB, TB>,
+    direction?: OrderByDirection,
+    nulls?: OrderByNulls,
+  ): SelectQueryBuilder<DB, TB, O>;
   orderBy<OE extends string>(
     field: OE & SortableFieldName<DB, TB, OE>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
+  ): SelectQueryBuilder<DB, TB, O>;
+  orderBy(
+    fieldOrExpression: string | DistanceOrderByFactory<DB, TB>,
+    direction?: OrderByDirection,
+    nulls?: OrderByNulls,
   ): SelectQueryBuilder<DB, TB, O> {
+    const item =
+      typeof fieldOrExpression === "function"
+        ? parseDistanceOrderBy(
+            fieldOrExpression(createGeolocationExpressionBuilder<DB, TB>()),
+            direction,
+            nulls,
+          )
+        : parseOrderBy(fieldOrExpression, direction, nulls);
+
     return new SelectQueryBuilderImpl<DB, TB, O>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithOrderByItems(this.#props.queryNode, [
-        parseOrderBy(field, direction, nulls),
+        item,
       ]),
     });
   }
