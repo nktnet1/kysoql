@@ -96,11 +96,13 @@ export interface SalesforceObject<
     SalesforceChildRelationship<string, string>
   > = Record<never, never>,
   SupportedScope extends string = never,
+  DataCategoryGroups extends Record<string, string> = Record<never, never>,
 > {
   readonly fields: Fields;
   readonly parents: Parents;
   readonly children: Children;
   readonly supportedScopes: SupportedScope;
+  readonly dataCategoryGroups: DataCategoryGroups;
 }
 
 export type SalesforceSchema = Record<
@@ -109,9 +111,30 @@ export type SalesforceSchema = Record<
     Record<string, AnySalesforceField>,
     Record<string, SalesforceParentRelationship<string, string, boolean>>,
     Record<string, SalesforceChildRelationship<string, string>>,
-    string
+    string,
+    Record<string, string>
   >
 >;
+
+export type SalesforceObjectDataCategoryGroup<ObjectType> =
+  ObjectType extends {
+    readonly dataCategoryGroups: infer Groups;
+  }
+    ? keyof Groups & string
+    : never;
+
+export type SalesforceObjectDataCategory<
+  ObjectType,
+  Group extends SalesforceObjectDataCategoryGroup<ObjectType>,
+> = ObjectType extends {
+  readonly dataCategoryGroups: infer Groups;
+}
+  ? Group extends keyof Groups
+    ? Groups[Group] extends string
+      ? Groups[Group]
+      : never
+    : never
+  : never;
 
 export type SalesforceObjectSupportedScope<ObjectType> =
   ObjectType extends {
@@ -194,7 +217,8 @@ export type SalesforceRow<ObjectType> =
     infer Fields,
     Record<string, SalesforceParentRelationship<string, string, boolean>>,
     Record<string, SalesforceChildRelationship<string, string>>,
-    string
+    string,
+    Record<string, string>
   >
     ? {
         readonly [FieldName in keyof Fields]: SalesforceFieldValue<

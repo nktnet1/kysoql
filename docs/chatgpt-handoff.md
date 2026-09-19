@@ -127,6 +127,7 @@ recent patch sequence:
 | `v1.0.72` | Add typed geolocation fields plus validated `GEOLOCATION()` / `DISTANCE()` selection, filtering, and ordering with relationship/nullability preservation. |
 | `v1.0.73` | Add Describe-driven typed polymorphic `TYPEOF` selection with branch-specific output unions, parent-path/nullability preservation, and function/grouping compatibility guards. |
 | `v1.0.74` | Add Describe-driven typed top-level `USING SCOPE` with object-specific scope unions, immutable replacement semantics, and root compiler ordering. |
+| `v1.0.75` | Add typed root `WITH DATA CATEGORY` filters with generated visible taxonomy unions, immutable multi-condition AST/compiler support, and Knowledge REST category discovery. |
 
 ### Build/tooling state
 
@@ -200,6 +201,15 @@ Core currently has:
   compiler emits the clause after `FROM` and before `WHERE` / grouping / ordering;
   relationship-subquery builders intentionally omit the method because Salesforce
   disallows `USING SCOPE` in parent-child relationship queries;
+- typed root `.withDataCategory(group, selector, categoryOrCategories)` from
+  generated object-specific data-category maps; category groups/categories are
+  constrained to the visible generated taxonomy, category lists are non-empty,
+  selectors cover `AT` / `ABOVE` / `BELOW` / `ABOVE_OR_BELOW`, and immutable
+  accumulation plus compiler validation enforce Salesforce's maximum-three and
+  unique-group rules; the CLI discovers the full visible Knowledge tree through
+  REST for `KnowledgeArticleVersion` / `__kav` targets, while Question discovery
+  remains an optional codegen-client integration because the REST resource only
+  accepts `KnowledgeArticleVersion`; relationship subqueries omit the method;
 - typed `.selectFields("standard" | "custom" | "all")` on record and
   relationship-subquery builders; generated `custom` metadata expands exact
   direct-field result shapes, compile-time guards reject overlap with explicit
@@ -321,7 +331,8 @@ Core currently has:
 - generated field metadata for filterable/sortable/groupable/aggregatable/custom
   flags, polymorphic-reference detection (`namePointing`,
   `polymorphicForeignKey`, and `referenceTo`), active picklist values, and
-  parent/child relationships, plus object-level `supportedScopes` unions.
+  parent/child relationships, plus object-level `supportedScopes` unions and
+  visible data-category group/category unions.
 
 Important current filter typing rules:
 
@@ -336,14 +347,18 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.75` and should take the first coherent typed
-`WITH DATA CATEGORY` slice.** Re-check the current Salesforce documentation and
-metadata inputs before fixing the public API: unlike `USING SCOPE`, this grammar
-combines category groups, category names, selectors such as `AT` / `ABOVE` /
-`BELOW` / `ABOVE_OR_BELOW`, and multiple conditions. Keep the work REST/SOAP
-focused and do not combine it with Apex-only execution modes.
+**The next patch should be `v1.0.76` and should close the Knowledge-specific
+`WITH DATA CATEGORY` query-validity gap.** Salesforce requires
+`KnowledgeArticleVersion` and article-type (`__kav`) queries using this clause to
+have a `WHERE` predicate on `PublishStatus` or `Id`. Add a focused compiler/runtime
+guard for that prerequisite without introducing Apex-only syntax or pretending the
+REST category endpoint can discover `Question` taxonomy.
 
-If the supplied bundle already contains `v1.0.74` or later, inspect the code and
+Automatic Question taxonomy discovery can follow separately if a stable SOAP path
+is added to the JSforce/codegen boundary; the generic codegen client already has an
+optional category-discovery hook.
+
+If the supplied bundle already contains `v1.0.75` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
@@ -351,9 +366,12 @@ advance from the actual state instead of reimplementing this section.
 Group closely related syntax when it shares the same type/AST/compiler path, but
 keep major architecture changes independently reviewable:
 
-1. **Remaining specialist top-level clauses.** Complete `WITH DATA CATEGORY` and
-   other REST/SOAP-relevant specialist clauses after the focused first slice.
-2. **Execution-context-specific syntax.** Re-evaluate Apex-only semantics such as
+1. **Complete data-category support.** Enforce Knowledge article WHERE
+   prerequisites, then evaluate SOAP-backed automatic `Question` taxonomy
+   discovery independently from the core query grammar.
+2. **Remaining specialist top-level clauses.** Add other REST/SOAP-relevant
+   specialist clauses in focused slices.
+3. **Execution-context-specific syntax.** Re-evaluate Apex-only semantics such as
    `FOR UPDATE`, `WITH USER_MODE`, binds, etc. separately from the
    transport-neutral REST/JSforce core.
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  parseSalesforceDataCategoryGroupsResponse,
   parseSalesforceObjectDescription,
   parseSchemaName,
 } from "#/validation";
@@ -21,6 +22,66 @@ describe("codegen validation", () => {
       );
     },
   );
+
+  it("parses recursive Salesforce data-category groups into sorted generated names", () => {
+    expect(
+      parseSalesforceDataCategoryGroupsResponse(
+        {
+          categoryGroups: [
+            {
+              name: "Geography__c",
+              label: "Geography",
+              topCategories: [
+                {
+                  name: "All",
+                  label: "All",
+                  childCategories: [
+                    {
+                      name: "usa__c",
+                      childCategories: null,
+                    },
+                    {
+                      name: "europe__c",
+                      childCategories: [
+                        { name: "france__c" },
+                        { name: "uk__c", childCategories: [] },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        "KnowledgeArticleVersion",
+      ),
+    ).toEqual([
+      {
+        name: "Geography__c",
+        categories: ["All", "europe__c", "france__c", "uk__c", "usa__c"],
+      },
+    ]);
+  });
+
+  it("rejects malformed nested Salesforce data-category responses with object context", () => {
+    expect(() =>
+      parseSalesforceDataCategoryGroupsResponse(
+        {
+          categoryGroups: [
+            {
+              name: "Geography__c",
+              topCategories: [
+                { name: "All", childCategories: [{ name: 42 }] },
+              ],
+            },
+          ],
+        },
+        "KnowledgeArticleVersion",
+      ),
+    ).toThrow(
+      /Invalid Salesforce data category response for KnowledgeArticleVersion/,
+    );
+  });
 
   it("preserves Salesforce polymorphic reference metadata", () => {
     expect(

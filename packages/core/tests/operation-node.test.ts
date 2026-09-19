@@ -31,6 +31,10 @@ import { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
 import { ValueListNode } from "#/operation-node/value-list-node";
 import { ValueNode } from "#/operation-node/value-node";
 import { WhereNode } from "#/operation-node/where-node";
+import {
+  DataCategorySelectionNode,
+  WithDataCategoryNode,
+} from "#/operation-node/with-data-category-node";
 
 const expectFrozen = (value: object): void => {
   expect(Object.isFrozen(value)).toBe(true);
@@ -415,6 +419,29 @@ describe("operation nodes", () => {
     expect(withAnd.where?.where).toEqual(AndNode.create(first, second));
     expectFrozen(withWhere);
     expectFrozen(withAnd);
+  });
+
+  it("creates and extends immutable WITH DATA CATEGORY selections", () => {
+    const geography = DataCategorySelectionNode.create(
+      "Geography__c",
+      "at",
+      ["usa__c", "france__c"],
+    );
+    const product = DataCategorySelectionNode.create("Product__c", "below", [
+      "mobile__c",
+    ]);
+    const initial = WithDataCategoryNode.create(geography);
+    const extended = WithDataCategoryNode.cloneWithSelection(initial, product);
+
+    expect(initial.selections).toEqual([geography]);
+    expect(extended.selections).toEqual([geography, product]);
+    expect(initial).not.toBe(extended);
+    expectFrozen(geography);
+    expectFrozen(geography.categories);
+    expectFrozen(initial);
+    expectFrozen(initial.selections);
+    expectFrozen(extended);
+    expectFrozen(extended.selections);
   });
 
   it("sets and replaces immutable SELECT limits", () => {

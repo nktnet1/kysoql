@@ -7,6 +7,7 @@ import type {
   SalesforceObjectDescription,
 } from "#/types";
 import {
+  parseSalesforceDataCategoryGroupsResponse,
   parseSalesforceGlobalDescription,
   parseSalesforceObjectDescription,
 } from "#/validation";
@@ -14,6 +15,10 @@ import {
 export { renderSchema } from "#/render";
 export type {
   SalesforceChildRelationshipDescription,
+  SalesforceDataCategoryGroupDescription,
+  SalesforceDataCategoryGroupResponse,
+  SalesforceDataCategoryGroupsResponse,
+  SalesforceDataCategorySummaryResponse,
   SalesforceDescribeClient,
   SalesforceFieldDescription,
   SalesforceGlobalDescription,
@@ -71,12 +76,26 @@ export const loadSchema = async (
 ): Promise<readonly SalesforceObjectDescription[]> => {
   const objectNames = await selectObjectNames(client, requestedObjects);
   return Promise.all(
-    objectNames.map(async (objectName) =>
-      parseSalesforceObjectDescription(
+    objectNames.map(async (objectName) => {
+      const object = parseSalesforceObjectDescription(
         await client.describe(objectName),
         objectName,
-      ),
-    ),
+      );
+      const dataCategoryResponse =
+        await client.describeDataCategoryGroups?.(objectName);
+
+      if (dataCategoryResponse === undefined) {
+        return object;
+      }
+
+      return {
+        ...object,
+        dataCategoryGroups: parseSalesforceDataCategoryGroupsResponse(
+          dataCategoryResponse,
+          objectName,
+        ),
+      };
+    }),
   );
 };
 

@@ -36,6 +36,11 @@ import type {
   FilterableFieldName,
   OperandValueExpression,
 } from "#/parser/binary-operation-parser";
+import {
+  type DataCategoryInput,
+  type DataCategorySelector,
+  parseDataCategorySelection,
+} from "#/parser/data-category-parser";
 import { validateDateFunctionSelections } from "#/parser/date-function-parser";
 import {
   type AvailableSelectExpression,
@@ -102,6 +107,8 @@ import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { QueryExecutor } from "#/query-executor";
 import type {
+  SalesforceObjectDataCategory,
+  SalesforceObjectDataCategoryGroup,
   SalesforceObjectSupportedScope,
   SalesforceQueryResult,
 } from "#/schema";
@@ -193,6 +200,16 @@ export interface SelectQueryBuilder<
 
   usingScope(
     scope: SalesforceObjectSupportedScope<DB[TB]>,
+  ): SelectQueryBuilder<DB, TB, O, Mode>;
+
+  withDataCategory<
+    Group extends SalesforceObjectDataCategoryGroup<DB[TB]>,
+  >(
+    group: Group,
+    selector: DataCategorySelector,
+    categories: DataCategoryInput<
+      SalesforceObjectDataCategory<DB[TB], Group>
+    >,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
   orderBy(
@@ -378,6 +395,24 @@ class SelectQueryBuilderImpl<
       queryNode: SelectQueryNode.cloneWithUsingScope(
         this.#props.queryNode,
         UsingScopeNode.create(scope),
+      ),
+    });
+  }
+
+  withDataCategory<
+    Group extends SalesforceObjectDataCategoryGroup<DB[TB]>,
+  >(
+    group: Group,
+    selector: DataCategorySelector,
+    categories: DataCategoryInput<
+      SalesforceObjectDataCategory<DB[TB], Group>
+    >,
+  ): SelectQueryBuilder<DB, TB, O, Mode> {
+    return new SelectQueryBuilderImpl<DB, TB, O, Mode>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithDataCategorySelection(
+        this.#props.queryNode,
+        parseDataCategorySelection(group, selector, categories),
       ),
     });
   }

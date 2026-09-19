@@ -7,6 +7,8 @@ import type {
   SalesforceFieldValue,
   SalesforceGeolocation,
   SalesforceObject,
+  SalesforceObjectDataCategory,
+  SalesforceObjectDataCategoryGroup,
   SalesforceObjectSupportedScope,
   SalesforceParentRelationship,
   SalesforceRow,
@@ -153,6 +155,31 @@ it("preserves object-specific supported scope metadata", () => {
   >();
   expectTypeOf<
     SalesforceObjectSupportedScope<FixtureObject>
+  >().toEqualTypeOf<never>();
+});
+
+it("preserves object-specific data-category metadata", () => {
+  type CategorizedObject = SalesforceObject<
+    {
+      readonly Id: SalesforceField<string, "id", false, true, true, true>;
+    },
+    {},
+    {},
+    never,
+    {
+      readonly Geography__c: "All" | "usa__c";
+      readonly Product__c: "All" | "mobile__c";
+    }
+  >;
+
+  expectTypeOf<
+    SalesforceObjectDataCategoryGroup<CategorizedObject>
+  >().toEqualTypeOf<"Geography__c" | "Product__c">();
+  expectTypeOf<
+    SalesforceObjectDataCategory<CategorizedObject, "Geography__c">
+  >().toEqualTypeOf<"All" | "usa__c">();
+  expectTypeOf<
+    SalesforceObjectDataCategoryGroup<FixtureObject>
   >().toEqualTypeOf<never>();
 });
 

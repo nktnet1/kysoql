@@ -38,14 +38,39 @@ export interface SalesforceSupportedScopeDescription {
   readonly name: string;
 }
 
+export interface SalesforceDataCategorySummaryResponse {
+  readonly name: string;
+  readonly childCategories?:
+    | readonly SalesforceDataCategorySummaryResponse[]
+    | null;
+}
+
+export interface SalesforceDataCategoryGroupResponse {
+  readonly name: string;
+  readonly topCategories: readonly SalesforceDataCategorySummaryResponse[];
+}
+
+export interface SalesforceDataCategoryGroupsResponse {
+  readonly categoryGroups: readonly SalesforceDataCategoryGroupResponse[];
+}
+
+export interface SalesforceDataCategoryGroupDescription {
+  readonly name: string;
+  readonly categories: readonly string[];
+}
+
 export interface SalesforceObjectDescription {
   readonly name: string;
   readonly fields: readonly SalesforceFieldDescription[];
   readonly childRelationships?: readonly SalesforceChildRelationshipDescription[];
   readonly supportedScopes?: readonly SalesforceSupportedScopeDescription[];
+  readonly dataCategoryGroups?: readonly SalesforceDataCategoryGroupDescription[];
 }
 
 export interface SalesforceDescribeClient {
   describeGlobal(): Promise<SalesforceGlobalDescription>;
   describe(objectName: string): Promise<SalesforceObjectDescription>;
+  describeDataCategoryGroups?(
+    objectName: string,
+  ): Promise<SalesforceDataCategoryGroupsResponse | undefined>;
 }

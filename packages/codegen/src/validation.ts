@@ -1,6 +1,8 @@
 import * as v from "valibot";
 
 import type {
+  SalesforceDataCategoryGroupDescription,
+  SalesforceDataCategorySummaryResponse,
   SalesforceGlobalDescription,
   SalesforceObjectDescription,
 } from "#/types";
@@ -45,6 +47,20 @@ const salesforceSupportedScopeDescriptionSchema = v.object({
   name: v.string(),
 });
 
+const salesforceDataCategorySummarySchema = v.object({
+  name: v.string(),
+  childCategories: v.optional(v.nullable(v.array(v.unknown()))),
+});
+
+const salesforceDataCategoryGroupSchema = v.object({
+  name: v.string(),
+  topCategories: v.array(v.unknown()),
+});
+
+const salesforceDataCategoryGroupsResponseSchema = v.object({
+  categoryGroups: v.array(v.unknown()),
+});
+
 const salesforceObjectDescriptionSchema = v.object({
   name: v.string(),
   fields: v.array(salesforceFieldDescriptionSchema),
@@ -55,6 +71,86 @@ const salesforceObjectDescriptionSchema = v.object({
     v.array(salesforceSupportedScopeDescriptionSchema),
   ),
 });
+
+const parseDataCategorySummary = (
+  input: unknown,
+  objectName: string,
+): SalesforceDataCategorySummaryResponse => {
+  const result = v.safeParse(salesforceDataCategorySummarySchema, input);
+  if (!result.success) {
+    throw new TypeError(
+      `Invalid Salesforce data category response for ${objectName}:\n${v.summarize(result.issues)}`,
+    );
+  }
+
+  return {
+    name: result.output.name,
+    ...(result.output.childCategories === undefined
+      ? {}
+      : {
+          childCategories:
+            result.output.childCategories === null
+              ? null
+              : result.output.childCategories.map((category) =>
+                  parseDataCategorySummary(category, objectName),
+                ),
+        }),
+  };
+};
+
+const collectDataCategoryNames = (
+  categories: readonly SalesforceDataCategorySummaryResponse[],
+  names: Set<string>,
+): void => {
+  for (const category of categories) {
+    names.add(category.name);
+    if (category.childCategories) {
+      collectDataCategoryNames(category.childCategories, names);
+    }
+  }
+};
+
+export const parseSalesforceDataCategoryGroupsResponse = (
+  input: unknown,
+  objectName: string,
+): readonly SalesforceDataCategoryGroupDescription[] => {
+  const response = v.safeParse(
+    salesforceDataCategoryGroupsResponseSchema,
+    input,
+  );
+  if (!response.success) {
+    throw new TypeError(
+      `Invalid Salesforce data category response for ${objectName}:\n${v.summarize(response.issues)}`,
+    );
+  }
+
+  const groups = new Map<string, Set<string>>();
+
+  for (const groupInput of response.output.categoryGroups) {
+    const group = v.safeParse(salesforceDataCategoryGroupSchema, groupInput);
+    if (!group.success) {
+      throw new TypeError(
+        `Invalid Salesforce data category response for ${objectName}:\n${v.summarize(group.issues)}`,
+      );
+    }
+
+    const categoryNames = groups.get(group.output.name) ?? new Set<string>();
+    const topCategories = group.output.topCategories.map((category) =>
+      parseDataCategorySummary(category, objectName),
+    );
+    collectDataCategoryNames(topCategories, categoryNames);
+    groups.set(group.output.name, categoryNames);
+  }
+
+  return [...groups.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([name, categories]) => ({
+      name,
+      categories: [...categories].sort((left, right) =>
+        left.localeCompare(right),
+      ),
+    }));
+};
 
 export const parseSchemaName = (input: unknown): string => {
   const result = v.safeParse(

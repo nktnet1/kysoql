@@ -14,6 +14,10 @@ import type { SelectionNode } from "#/operation-node/selection-node";
 import type { SObjectNode } from "#/operation-node/sobject-node";
 import type { UsingScopeNode } from "#/operation-node/using-scope-node";
 import type { WhereNode } from "#/operation-node/where-node";
+import {
+  type DataCategorySelectionNode,
+  WithDataCategoryNode,
+} from "#/operation-node/with-data-category-node";
 import { freeze } from "#/util/object-utils";
 
 export interface SelectQueryNode {
@@ -22,6 +26,7 @@ export interface SelectQueryNode {
   readonly selections?: ReadonlyArray<SelectionNode>;
   readonly usingScope?: UsingScopeNode;
   readonly where?: WhereNode;
+  readonly withDataCategory?: WithDataCategoryNode;
   readonly groupBy?: GroupByNode;
   readonly having?: HavingNode;
   readonly orderBy?: OrderByNode;
@@ -56,6 +61,21 @@ export const SelectQueryNode = {
     return freeze({
       ...select,
       usingScope,
+    });
+  },
+
+  cloneWithDataCategorySelection(
+    select: SelectQueryNode,
+    selection: DataCategorySelectionNode,
+  ): SelectQueryNode {
+    return freeze({
+      ...select,
+      withDataCategory: select.withDataCategory
+        ? WithDataCategoryNode.cloneWithSelection(
+            select.withDataCategory,
+            selection,
+          )
+        : WithDataCategoryNode.create(selection),
     });
   },
 

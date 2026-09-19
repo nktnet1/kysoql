@@ -129,6 +129,45 @@ describe("loadSchema", () => {
     expect(client.describe).toHaveBeenCalledTimes(2);
   });
 
+  it("loads and validates optional data-category metadata per object", async () => {
+    const client = createClient();
+    client.describeDataCategoryGroups = vi.fn(async (objectName: string) =>
+      objectName === "Account"
+        ? {
+            categoryGroups: [
+              {
+                name: "Geography__c",
+                topCategories: [
+                  {
+                    name: "All",
+                    childCategories: [{ name: "usa__c" }],
+                  },
+                ],
+              },
+            ],
+          }
+        : undefined,
+    );
+
+    await expect(loadSchema(client, ["Account"])).resolves.toEqual([
+      {
+        ...account,
+        dataCategoryGroups: [
+          { name: "Geography__c", categories: ["All", "usa__c"] },
+        ],
+      },
+    ]);
+    expect(client.describeDataCategoryGroups).toHaveBeenCalledOnce();
+    expect(client.describeDataCategoryGroups).toHaveBeenCalledWith("Account");
+  });
+
+  it("leaves object metadata unchanged when category discovery returns undefined", async () => {
+    const client = createClient();
+    client.describeDataCategoryGroups = vi.fn(async () => undefined);
+
+    await expect(loadSchema(client, ["Account"])).resolves.toEqual([account]);
+  });
+
   it("treats an empty object filter as all queryable objects", async () => {
     const client = createClient();
 

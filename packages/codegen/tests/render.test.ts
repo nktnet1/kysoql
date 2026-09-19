@@ -234,8 +234,47 @@ describe("renderSchema", () => {
     ]);
 
     expect(source).toContain(
-      'readonly "Fixture__c": SalesforceObject<\n    {},\n    {},\n    {},\n    "mine" | "team"\n  >;',
+      'readonly "Fixture__c": SalesforceObject<\n    {},\n    {},\n    {},\n    "mine" | "team",\n    {}\n  >;',
     );
+  });
+
+  it("renders data-category groups as sorted object-specific category unions", () => {
+    const source = renderSchema([
+      objectWith([], {
+        dataCategoryGroups: [
+          {
+            name: "Product__c",
+            categories: ["mobile__c", "All", "mobile__c"],
+          },
+          {
+            name: "Geography__c",
+            categories: ["usa__c", "All", "europe__c"],
+          },
+        ],
+      }),
+    ]);
+
+    expect(source).toContain(
+      [
+        "    {",
+        '      readonly "Geography__c": "All" | "europe__c" | "usa__c";',
+        '      readonly "Product__c": "All" | "mobile__c";',
+        "    }",
+      ].join("\n"),
+    );
+    expect(source.indexOf('readonly "Geography__c"')).toBeLessThan(
+      source.indexOf('readonly "Product__c"'),
+    );
+  });
+
+  it("renders a visible category group with no visible categories as never", () => {
+    const source = renderSchema([
+      objectWith([], {
+        dataCategoryGroups: [{ name: "Empty__c", categories: [] }],
+      }),
+    ]);
+
+    expect(source).toContain('readonly "Empty__c": never;');
   });
 
   it("JSON-quotes generated names and string-union members", () => {
@@ -384,7 +423,7 @@ describe("renderSchema", () => {
 
     expect(source).toContain("export interface CustomSchema {");
     expect(source).toContain(
-      'readonly "Fixture__c": SalesforceObject<\n    {},\n    {},\n    {},\n    never\n  >;',
+      'readonly "Fixture__c": SalesforceObject<\n    {},\n    {},\n    {},\n    never,\n    {}\n  >;',
     );
     expect(source.endsWith("\n")).toBe(true);
   });

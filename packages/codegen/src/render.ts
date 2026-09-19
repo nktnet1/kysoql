@@ -116,6 +116,15 @@ const renderParentRelationship = (
   ].join("\n");
 };
 
+const renderDataCategoryGroup = (
+  name: string,
+  categories: readonly string[],
+): string => {
+  const categoryType =
+    categories.length > 0 ? stringUnion(categories) : "never";
+  return `      readonly ${quote(name)}: ${categoryType};`;
+};
+
 const renderChildRelationship = (
   relationship: SalesforceChildRelationshipDescription,
 ): string | undefined => {
@@ -155,13 +164,17 @@ const renderObject = (object: SalesforceObjectDescription): string => {
   const supportedScopeType = object.supportedScopes?.length
     ? stringUnion(object.supportedScopes.map((scope) => scope.name))
     : "never";
+  const dataCategoryGroups = [...(object.dataCategoryGroups ?? [])]
+    .sort((left, right) => left.name.localeCompare(right.name))
+    .map((group) => renderDataCategoryGroup(group.name, group.categories));
 
   return [
     `  readonly ${quote(object.name)}: SalesforceObject<`,
     `${renderBlock(fields.map(renderField))},`,
     `${renderBlock(parents)},`,
     `${renderBlock(children)},`,
-    `    ${supportedScopeType}`,
+    `    ${supportedScopeType},`,
+    `${renderBlock(dataCategoryGroups)}`,
     "  >;",
   ].join("\n");
 };

@@ -3,6 +3,7 @@ import { Connection } from "jsforce";
 
 import { generateSchema } from "#/index";
 import type {
+  SalesforceDataCategoryGroupsResponse,
   SalesforceGlobalDescription,
   SalesforceObjectDescription,
 } from "#/types";
@@ -52,6 +53,18 @@ Authentication requires the SF_INSTANCE_URL and SF_ACCESS_TOKEN environment vari
       accessToken: requiredEnvironmentVariable("SF_ACCESS_TOKEN"),
       instanceUrl: requiredEnvironmentVariable("SF_INSTANCE_URL"),
     });
+    let knowledgeDataCategoryGroups:
+      | Promise<SalesforceDataCategoryGroupsResponse>
+      | undefined;
+    const loadKnowledgeDataCategoryGroups =
+      (): Promise<SalesforceDataCategoryGroupsResponse> => {
+        knowledgeDataCategoryGroups ??= Promise.resolve(
+          connection.request<SalesforceDataCategoryGroupsResponse>(
+            "/support/dataCategoryGroups?sObjectName=KnowledgeArticleVersion&topCategoriesOnly=false",
+          ),
+        );
+        return knowledgeDataCategoryGroups;
+      };
 
     await generateSchema({
       client: {
@@ -61,6 +74,16 @@ Authentication requires the SF_INSTANCE_URL and SF_ACCESS_TOKEN environment vari
           (await connection.describe(
             objectName,
           )) as unknown as SalesforceObjectDescription,
+        describeDataCategoryGroups: async (objectName) => {
+          if (
+            objectName !== "KnowledgeArticleVersion" &&
+            !objectName.endsWith("__kav")
+          ) {
+            return undefined;
+          }
+
+          return loadKnowledgeDataCategoryGroups();
+        },
       },
       objects: flags.object ?? [],
       output: flags.output,

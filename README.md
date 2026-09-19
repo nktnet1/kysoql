@@ -321,6 +321,33 @@ const myAccounts = await db
 // SELECT Id, Name FROM Account USING SCOPE mine WHERE Name LIKE 'Acme%'
 ```
 
+Generated data-category metadata enables typed root `WITH DATA CATEGORY` filters.
+The category group and category names are constrained to the generated metadata for
+the selected object, including non-empty multi-category lists. Each clause supports
+Salesforce's `AT`, `ABOVE`, `BELOW`, and `ABOVE_OR_BELOW` selectors; a query can
+have at most three conditions and cannot reuse the same category group.
+
+```ts
+const articles = await db
+  .selectFrom("KnowledgeArticleVersion")
+  .select(["Id", "Title"])
+  .where("PublishStatus", "=", "Online")
+  .withDataCategory("Geography__c", "at", ["usa__c", "france__c"])
+  .withDataCategory("Product__c", "below", "mobile_phones__c")
+  .execute();
+// SELECT Id, Title FROM KnowledgeArticleVersion WHERE PublishStatus = 'Online'
+// WITH DATA CATEGORY Geography__c AT (usa__c, france__c)
+// AND Product__c BELOW mobile_phones__c
+```
+
+The bundled codegen CLI loads the full visible Knowledge category tree through the
+REST data-category resource for `KnowledgeArticleVersion` and `__kav` article
+targets. Salesforce's REST resource exposes only categories visible to the
+connected user and does not accept `Question`; the codegen client therefore keeps
+category discovery optional so a SOAP-backed integration can supply Question
+metadata without widening ordinary sObject Describe metadata. `WITH DATA CATEGORY`
+is intentionally absent from relationship-subquery builders.
+
 Generated child-relationship metadata enables typed parent-to-child subqueries
 without accepting arbitrary subquery `FROM` strings. `.selectSubquery()` takes a
 generated child relationship name and a dedicated child-query builder with the

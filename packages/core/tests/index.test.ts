@@ -33,6 +33,9 @@ import {
   type DateFunctionExpression,
   type DateFunctionIdentity,
   type DateFunctionNode,
+  type DataCategoryInput,
+  type DataCategorySelectionNode,
+  type DataCategorySelector,
   type DateGroupableFieldReference,
   DefaultQueryCompiler,
   type DistanceComparisonOperator,
@@ -93,6 +96,8 @@ import {
   type SalesforceFieldValue,
   type SalesforceGeolocation,
   type SalesforceObject,
+  type SalesforceObjectDataCategory,
+  type SalesforceObjectDataCategoryGroup,
   type SalesforceObjectSupportedScope,
   type SalesforceParentRelationship,
   type SalesforceQueryResult,
@@ -140,6 +145,7 @@ import {
   type ValueNode,
   type WhereExpressionFactory,
   type WhereNode,
+  type WithDataCategoryNode,
 } from "#/index";
 
 type PublicTypeSurface = {
@@ -194,6 +200,9 @@ type PublicTypeSurface = {
     "Amount"
   >;
   countQueryBuilder: CountQueryBuilder<Record<string, never>, never>;
+  dataCategoryInput: DataCategoryInput<"All" | "usa__c">;
+  dataCategorySelectionNode: DataCategorySelectionNode;
+  dataCategorySelector: DataCategorySelector;
   dateFunction: DateFunction;
   dateFunctionArgumentNode: DateFunctionArgumentNode;
   dateFunctionBuilder: DateFunctionBuilder<
@@ -340,6 +349,19 @@ type PublicTypeSurface = {
   salesforceObject: SalesforceObject<{
     readonly Id: SalesforceField<string, "id", false, true, true, true>;
   }>;
+  salesforceObjectDataCategory: SalesforceObjectDataCategory<
+    SalesforceObject<
+      {},
+      {},
+      {},
+      never,
+      { readonly Geography__c: "All" | "usa__c" }
+    >,
+    "Geography__c"
+  >;
+  salesforceObjectDataCategoryGroup: SalesforceObjectDataCategoryGroup<
+    SalesforceObject<{}, {}, {}, never, { readonly Geography__c: "All" }>
+  >;
   salesforceObjectSupportedScope: SalesforceObjectSupportedScope<
     SalesforceObject<
       {
@@ -446,6 +468,7 @@ type PublicTypeSurface = {
   valueNode: ValueNode;
   whereExpressionFactory: WhereExpressionFactory<Record<string, never>, never>;
   whereNode: WhereNode;
+  withDataCategoryNode: WithDataCategoryNode;
 };
 
 describe("@kysoql/core public API", () => {

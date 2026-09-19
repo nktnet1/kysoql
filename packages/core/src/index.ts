@@ -103,6 +103,11 @@ export type { ReferenceNode } from "#/operation-node/reference-node";
 export type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 export type { TypeOfNode, TypeOfWhenNode } from "#/operation-node/type-of-node";
 export type { UsingScopeNode } from "#/operation-node/using-scope-node";
+export type {
+  DataCategorySelectionNode,
+  DataCategorySelector,
+  WithDataCategoryNode,
+} from "#/operation-node/with-data-category-node";
 export type { SelectQueryNode } from "#/operation-node/select-query-node";
 export type { SelectionNode } from "#/operation-node/selection-node";
 export type { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
@@ -133,6 +138,7 @@ export type {
   SemiJoinSubqueryExpression,
   SemiJoinSubqueryFactory,
 } from "#/query-builder/semi-join-subquery-builder";
+export type { DataCategoryInput } from "#/parser/data-category-parser";
 export type { DistanceComparisonOperator } from "#/parser/geolocation-expression-parser";
 export type { CompiledQuery } from "#/query-compiler/compiled-query";
 export { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
@@ -147,6 +153,8 @@ export type {
   SalesforceFieldValue,
   SalesforceGeolocation,
   SalesforceObject,
+  SalesforceObjectDataCategory,
+  SalesforceObjectDataCategoryGroup,
   SalesforceObjectSupportedScope,
   SalesforceParentRelationship,
   SalesforceQueryResult,

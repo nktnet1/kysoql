@@ -1,6 +1,10 @@
 import { expectTypeOf, it } from "vitest";
 import type {
   SalesforceChildRelationshipDescription,
+  SalesforceDataCategoryGroupDescription,
+  SalesforceDataCategoryGroupResponse,
+  SalesforceDataCategoryGroupsResponse,
+  SalesforceDataCategorySummaryResponse,
   SalesforceDescribeClient,
   SalesforceFieldDescription,
   SalesforceGlobalDescription,
@@ -37,12 +41,30 @@ it("exports the complete codegen public API from the package entrypoint", () => 
     readonly name: string;
     readonly fields: readonly SalesforceFieldDescription[];
     readonly supportedScopes?: readonly SalesforceSupportedScopeDescription[];
+    readonly dataCategoryGroups?: readonly SalesforceDataCategoryGroupDescription[];
   }>();
   expectTypeOf<SalesforceSupportedScopeDescription>().toEqualTypeOf<{
     readonly name: string;
   }>();
+  expectTypeOf<SalesforceDataCategorySummaryResponse>().toMatchTypeOf<{
+    readonly name: string;
+  }>();
+  expectTypeOf<SalesforceDataCategoryGroupResponse>().toMatchTypeOf<{
+    readonly name: string;
+    readonly topCategories: readonly SalesforceDataCategorySummaryResponse[];
+  }>();
+  expectTypeOf<SalesforceDataCategoryGroupsResponse>().toEqualTypeOf<{
+    readonly categoryGroups: readonly SalesforceDataCategoryGroupResponse[];
+  }>();
+  expectTypeOf<SalesforceDataCategoryGroupDescription>().toEqualTypeOf<{
+    readonly name: string;
+    readonly categories: readonly string[];
+  }>();
   expectTypeOf<SalesforceDescribeClient>().toMatchTypeOf<{
     describeGlobal(): Promise<SalesforceGlobalDescription>;
     describe(objectName: string): Promise<SalesforceObjectDescription>;
+    describeDataCategoryGroups?(
+      objectName: string,
+    ): Promise<SalesforceDataCategoryGroupsResponse | undefined>;
   }>();
 });

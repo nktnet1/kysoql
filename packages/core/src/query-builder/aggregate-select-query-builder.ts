@@ -39,6 +39,11 @@ import type {
   OperandValueExpression,
 } from "#/parser/binary-operation-parser";
 import {
+  type DataCategoryInput,
+  type DataCategorySelector,
+  parseDataCategorySelection,
+} from "#/parser/data-category-parser";
+import {
   dateFunctionIdentity,
   parseDateGroupByExpression,
   validateDateFunctionSelections,
@@ -69,7 +74,11 @@ import {
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { QueryExecutor } from "#/query-executor";
-import type { SalesforceObjectSupportedScope } from "#/schema";
+import type {
+  SalesforceObjectDataCategory,
+  SalesforceObjectDataCategoryGroup,
+  SalesforceObjectSupportedScope,
+} from "#/schema";
 import { freeze } from "#/util/object-utils";
 
 type AggregateGroupMode = "none" | "ordinary" | AdvancedGroupByMode;
@@ -255,6 +264,23 @@ export interface AggregateSelectQueryBuilder<
 
   usingScope(
     scope: SalesforceObjectSupportedScope<DB[TB]>,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
+  withDataCategory<
+    Group extends SalesforceObjectDataCategoryGroup<DB[TB]>,
+  >(
+    group: Group,
+    selector: DataCategorySelector,
+    categories: DataCategoryInput<
+      SalesforceObjectDataCategory<DB[TB], Group>
+    >,
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -611,6 +637,38 @@ class AggregateSelectQueryBuilderImpl<
       queryNode: SelectQueryNode.cloneWithUsingScope(
         this.#props.queryNode,
         UsingScopeNode.create(scope),
+      ),
+    });
+  }
+
+  withDataCategory<
+    Group extends SalesforceObjectDataCategoryGroup<DB[TB]>,
+  >(
+    group: Group,
+    selector: DataCategorySelector,
+    categories: DataCategoryInput<
+      SalesforceObjectDataCategory<DB[TB], Group>
+    >,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithDataCategorySelection(
+        this.#props.queryNode,
+        parseDataCategorySelection(group, selector, categories),
       ),
     });
   }

@@ -12,13 +12,14 @@ import Generate from "#/commands/generate";
 const mocks = vi.hoisted(() => {
   const describeGlobal = vi.fn();
   const describe = vi.fn();
-  const connection = { describeGlobal, describe };
+  const request = vi.fn();
+  const connection = { describeGlobal, describe, request };
   const Connection = vi.fn(function MockConnection() {
     return connection;
   });
   const execute = vi.fn();
 
-  return { Connection, describe, describeGlobal, execute };
+  return { Connection, describe, describeGlobal, execute, request };
 });
 
 vi.mock("@oclif/core", async (importOriginal) => ({
@@ -62,6 +63,7 @@ beforeEach(() => {
   mocks.describe.mockReset();
   mocks.describeGlobal.mockReset();
   mocks.execute.mockReset();
+  mocks.request.mockReset();
   process.exitCode = undefined;
   delete process.env.SF_ACCESS_TOKEN;
   delete process.env.SF_INSTANCE_URL;
@@ -210,11 +212,64 @@ describe("kysoql oclif CLI", () => {
       expect(mocks.describeGlobal).toHaveBeenCalledOnce();
       expect(mocks.describe).toHaveBeenNthCalledWith(1, "Account");
       expect(mocks.describe).toHaveBeenNthCalledWith(2, "Contact");
+      expect(mocks.request).not.toHaveBeenCalled();
       await expect(readFile(output, "utf8")).resolves.toContain(
         "export interface CliSchema",
       );
       expect(log).toHaveBeenCalledWith(`Generated ${output}`);
       expect(process.exitCode).toBeUndefined();
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("discovers the full Knowledge data-category tree once for Knowledge targets", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "kysoql-cli-categories-"));
+    const output = join(directory, "schema.ts");
+
+    process.env.SF_ACCESS_TOKEN = "token";
+    process.env.SF_INSTANCE_URL = "https://example.my.salesforce.com";
+    mocks.describeGlobal.mockResolvedValue({
+      sobjects: [
+        { name: "FAQ__kav", queryable: true },
+        { name: "KnowledgeArticleVersion", queryable: true },
+      ],
+    });
+    mocks.describe.mockImplementation(async (objectName: string) => ({
+      name: objectName,
+      fields: [],
+    }));
+    mocks.request.mockResolvedValue({
+      categoryGroups: [
+        {
+          name: "Geography__c",
+          topCategories: [
+            {
+              name: "All",
+              childCategories: [{ name: "usa__c" }],
+            },
+          ],
+        },
+      ],
+    });
+
+    try {
+      await runGenerate([
+        "--object",
+        "KnowledgeArticleVersion",
+        "--object",
+        "FAQ__kav",
+        "--output",
+        output,
+      ]);
+
+      expect(mocks.request).toHaveBeenCalledOnce();
+      expect(mocks.request).toHaveBeenCalledWith(
+        "/support/dataCategoryGroups?sObjectName=KnowledgeArticleVersion&topCategoriesOnly=false",
+      );
+      const source = await readFile(output, "utf8");
+      expect(source.match(/readonly "Geography__c"/g)).toHaveLength(2);
+      expect(source).toContain('"All" | "usa__c"');
     } finally {
       await rm(directory, { recursive: true, force: true });
     }

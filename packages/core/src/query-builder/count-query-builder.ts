@@ -12,6 +12,11 @@ import type {
   OperandValueExpression,
 } from "#/parser/binary-operation-parser";
 import {
+  type DataCategoryInput,
+  type DataCategorySelector,
+  parseDataCategorySelection,
+} from "#/parser/data-category-parser";
+import {
   parseFilterBinaryOperation,
   validateSemiJoinWhere,
 } from "#/parser/filter-parser";
@@ -19,7 +24,11 @@ import { parseLimit } from "#/parser/limit-parser";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { QueryExecutor } from "#/query-executor";
-import type { SalesforceObjectSupportedScope } from "#/schema";
+import type {
+  SalesforceObjectDataCategory,
+  SalesforceObjectDataCategoryGroup,
+  SalesforceObjectSupportedScope,
+} from "#/schema";
 import { freeze } from "#/util/object-utils";
 
 export interface CountQueryBuilder<DB, TB extends keyof DB> {
@@ -31,6 +40,16 @@ export interface CountQueryBuilder<DB, TB extends keyof DB> {
 
   usingScope(
     scope: SalesforceObjectSupportedScope<DB[TB]>,
+  ): CountQueryBuilder<DB, TB>;
+
+  withDataCategory<
+    Group extends SalesforceObjectDataCategoryGroup<DB[TB]>,
+  >(
+    group: Group,
+    selector: DataCategorySelector,
+    categories: DataCategoryInput<
+      SalesforceObjectDataCategory<DB[TB], Group>
+    >,
   ): CountQueryBuilder<DB, TB>;
 
   where(expression: WhereExpressionFactory<DB, TB>): CountQueryBuilder<DB, TB>;
@@ -97,6 +116,24 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
       queryNode: SelectQueryNode.cloneWithUsingScope(
         this.#props.queryNode,
         UsingScopeNode.create(scope),
+      ),
+    });
+  }
+
+  withDataCategory<
+    Group extends SalesforceObjectDataCategoryGroup<DB[TB]>,
+  >(
+    group: Group,
+    selector: DataCategorySelector,
+    categories: DataCategoryInput<
+      SalesforceObjectDataCategory<DB[TB], Group>
+    >,
+  ): CountQueryBuilder<DB, TB> {
+    return new CountQueryBuilderImpl<DB, TB>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithDataCategorySelection(
+        this.#props.queryNode,
+        parseDataCategorySelection(group, selector, categories),
       ),
     });
   }

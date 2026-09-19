@@ -851,6 +851,56 @@ the compiler emits `USING SCOPE` immediately after the root `FROM` clause. The
 relationship-subquery builder remains deliberately unchanged because Salesforce
 disallows the clause there.
 
+### `WITH DATA CATEGORY` first-slice notes
+
+Sources re-checked on 2026-09-19:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-with-datacategory.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-with-datacategory-catselection.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select.html
+- https://developer.salesforce.com/docs/platform/api-rest/guide/resources-knowledge-support-dcgroups.html
+- https://developer.salesforce.com/docs/platform/api/guide/sforce-api-calls-describedatacategorygroups.html
+- https://developer.salesforce.com/docs/platform/api/guide/sforce-api-calls-describedatacategorygroupstructures.html
+
+Useful findings:
+
+- SOQL `WITH DATA CATEGORY` is valid for `KnowledgeArticleVersion`, a specific
+  Knowledge article type API name, and `Question`. Knowledge article queries must
+  also include a `WHERE` predicate on `PublishStatus` or `Id`.
+- A condition is a category-group API name, one of `AT`, `ABOVE`, `BELOW`, or
+  `ABOVE_OR_BELOW`, and one or more category API names. Multiple categories for a
+  single condition use parentheses and commas; multiple conditions use only
+  `AND`.
+- A query supports at most three data-category conditions, and the same category
+  group cannot appear more than once. Bind variables are not supported in this
+  clause.
+- Data-category groups and their category trees do not come from ordinary sObject
+  Describe. SOAP exposes `describeDataCategoryGroups()` plus
+  `describeDataCategoryGroupStructures()` for `KnowledgeArticleVersion` and
+  `Question`.
+- REST exposes `/support/dataCategoryGroups`; `sObjectName` is required and only
+  accepts `KnowledgeArticleVersion`. `topCategoriesOnly=false` returns the entire
+  visible recursive category tree. The response is permission-contextual: only
+  category groups/categories visible to the connected user are returned.
+
+Kysoql consequence for `v1.0.75`: add a generated object-level map from category
+group API name to the visible category-name union, then expose root
+`.withDataCategory(group, selector, categoryOrCategories)` on record, aggregate,
+and scalar `COUNT()` builders. Keep category inputs typed and non-empty, preserve
+immutable accumulation, validate the maximum-three/unique-group rules at both the
+builder and compiler boundaries, and emit the clause after `WHERE` and before
+`GROUP BY` / ordering / limits. Relationship subqueries intentionally do not get
+the method.
+
+The bundled JSforce CLI uses the REST resource for `KnowledgeArticleVersion` and
+`__kav` article targets, requesting the full tree once and reusing it across
+article targets. Because Salesforce's REST resource does not support `Question`,
+the generic codegen client exposes optional data-category discovery so another
+adapter can supply the same normalized REST-shaped metadata; automatic
+SOAP-backed Question discovery remains a follow-up. A later slice should also
+enforce the Knowledge-specific `WHERE PublishStatus` / `WHERE Id` prerequisite at
+the compiler boundary rather than conflating it with the taxonomy/type foundation.
+
 ### Remaining SOQL surface / roadmap references
 
 Sources re-checked on 2026-09-18:

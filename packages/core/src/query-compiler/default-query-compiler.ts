@@ -32,6 +32,11 @@ import type { UsingScopeNode } from "#/operation-node/using-scope-node";
 import type { ValueListNode } from "#/operation-node/value-list-node";
 import type { ValueNode } from "#/operation-node/value-node";
 import type { WhereNode } from "#/operation-node/where-node";
+import type {
+  DataCategorySelectionNode,
+  WithDataCategoryNode,
+} from "#/operation-node/with-data-category-node";
+import { validateWithDataCategory } from "#/parser/data-category-parser";
 import { validateFieldsSelections } from "#/parser/fields-selection-parser";
 import { validateTypeOfSelections } from "#/parser/type-of-parser";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
@@ -70,6 +75,11 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
     if (query.where) {
       soql += ` WHERE ${this.#compileWhere(query.where)}`;
+    }
+
+    if (query.withDataCategory) {
+      validateWithDataCategory(query.withDataCategory);
+      soql += ` WITH DATA CATEGORY ${this.#compileWithDataCategory(query.withDataCategory)}`;
     }
 
     if (query.groupBy) {
@@ -172,6 +182,22 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileWhere(where: WhereNode): string {
     return this.#compileOperation(where.where);
+  }
+
+  #compileWithDataCategory(node: WithDataCategoryNode): string {
+    return node.selections
+      .map((selection) => this.#compileDataCategorySelection(selection))
+      .join(" AND ");
+  }
+
+  #compileDataCategorySelection(node: DataCategorySelectionNode): string {
+    const selector = node.selector.toUpperCase();
+    const categories =
+      node.categories.length === 1
+        ? node.categories[0]
+        : `(${node.categories.join(", ")})`;
+
+    return `${node.group} ${selector} ${categories}`;
   }
 
   #compileLimit(limit: LimitNode): string {
