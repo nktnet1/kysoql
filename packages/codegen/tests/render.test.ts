@@ -230,7 +230,7 @@ describe("renderSchema", () => {
     ]);
 
     expect(source).toContain(
-      'readonly "Fixture__c": SalesforceObject<\n    Record<never, never>,\n    Record<never, never>,\n    Record<never, never>,\n    "mine" | "team",\n    Record<never, never>,\n    boolean\n  >;',
+      'readonly "Fixture__c": SalesforceObject<\n    Record<string, never>,\n    Record<string, never>,\n    Record<string, never>,\n    "mine" | "team",\n    Record<string, never>,\n    boolean\n  >;',
     );
   });
 
@@ -239,9 +239,9 @@ describe("renderSchema", () => {
     const disabled = renderSchema([objectWith([], { mruEnabled: false })]);
     const unknown = renderSchema([objectWith([])]);
 
-    expect(enabled).toContain("    Record<never, never>,\n    true\n  >;");
-    expect(disabled).toContain("    Record<never, never>,\n    false\n  >;");
-    expect(unknown).toContain("    Record<never, never>,\n    boolean\n  >;");
+    expect(enabled).toContain("    Record<string, never>,\n    true\n  >;");
+    expect(disabled).toContain("    Record<string, never>,\n    false\n  >;");
+    expect(unknown).toContain("    Record<string, never>,\n    boolean\n  >;");
   });
 
   it("renders data-category groups as sorted object-specific category unions", () => {
@@ -464,7 +464,7 @@ describe("renderSchema", () => {
 
     expect(source).toContain("export interface CustomSchema {");
     expect(source).toContain(
-      'readonly "Fixture__c": SalesforceObject<\n    Record<never, never>,\n    Record<never, never>,\n    Record<never, never>,\n    never,\n    Record<never, never>,\n    boolean\n  >;',
+      'readonly "Fixture__c": SalesforceObject<\n    Record<string, never>,\n    Record<string, never>,\n    Record<string, never>,\n    never,\n    Record<string, never>,\n    boolean\n  >;',
     );
     expect(source.endsWith("\n")).toBe(true);
   });

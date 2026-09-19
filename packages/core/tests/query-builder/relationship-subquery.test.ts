@@ -42,7 +42,7 @@ interface RelationshipSubquerySchema {
       readonly Id: SalesforceField<string, "id", false, true, true, true>;
       readonly Name: SalesforceField<string, "string", true, true, true, true>;
     },
-    Record<never, never>,
+    Record<string, never>,
     {
       readonly Contacts: SalesforceChildRelationship<"Contact", "AccountId">;
     }

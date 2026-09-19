@@ -31,5 +31,6 @@ run_step() {
 run_step "TypeScript typecheck" pnpm typecheck
 run_step "Vitest" pnpm test
 run_step "Build" pnpm build
+run_step "Publish shape" pnpm verify:publish
 
 printf '\nAll local validation checks passed.\n'

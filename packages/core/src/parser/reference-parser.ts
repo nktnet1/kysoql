@@ -2,6 +2,7 @@ import type {
   SalesforceChildRelationship,
   SalesforceParentRelationship,
 } from "#/schema";
+import type { NonNeverStringKey } from "#/util/type-utils";
 
 export type FieldsOf<DB, TB extends keyof DB> = DB[TB] extends {
   readonly fields: infer Fields;
@@ -21,20 +22,16 @@ export type ChildrenOf<DB, TB extends keyof DB> = DB[TB] extends {
   ? Children
   : never;
 
-export type FieldName<DB, TB extends keyof DB> = keyof FieldsOf<DB, TB> &
-  string;
+export type FieldName<DB, TB extends keyof DB> = NonNeverStringKey<
+  FieldsOf<DB, TB>
+>;
 
-export type ParentRelationshipName<DB, TB extends keyof DB> = keyof ParentsOf<
-  DB,
-  TB
-> &
-  string;
+export type ParentRelationshipName<DB, TB extends keyof DB> =
+  NonNeverStringKey<ParentsOf<DB, TB>>;
 
-export type ChildRelationshipName<DB, TB extends keyof DB> = keyof ChildrenOf<
-  DB,
-  TB
-> &
-  string;
+export type ChildRelationshipName<DB, TB extends keyof DB> = NonNeverStringKey<
+  ChildrenOf<DB, TB>
+>;
 
 export type FieldDefinition<
   DB,

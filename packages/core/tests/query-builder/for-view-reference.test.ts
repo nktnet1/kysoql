@@ -26,12 +26,12 @@ interface FixtureSchema {
       readonly Id: Field<string, "id">;
       readonly Name: Field;
     },
-    Record<never, never>,
+    Record<string, never>,
     {
       readonly Contacts: SalesforceChildRelationship<"Contact", "AccountId">;
     },
     "mine",
-    Record<never, never>,
+    Record<string, never>,
     true
   >;
   readonly Contact: SalesforceObject<
@@ -48,20 +48,20 @@ interface FixtureSchema {
         "Account"
       >;
     },
-    Record<never, never>,
-    Record<never, never>,
+    Record<string, never>,
+    Record<string, never>,
     never,
-    Record<never, never>,
+    Record<string, never>,
     true
   >;
   readonly NonMru__c: SalesforceObject<
     {
       readonly Id: Field<string, "id">;
     },
-    Record<never, never>,
-    Record<never, never>,
+    Record<string, never>,
+    Record<string, never>,
     never,
-    Record<never, never>,
+    Record<string, never>,
     false
   >;
   readonly UnknownMru__c: SalesforceObject<{

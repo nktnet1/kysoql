@@ -24,7 +24,7 @@ interface FixtureSchema {
       >;
       readonly Name: SalesforceField<string, "string", true, true, true, true>;
     },
-    Record<never, never>,
+    Record<string, never>,
     {
       readonly Contacts: SalesforceChildRelationship<"Contact", "AccountId">;
     },
@@ -44,8 +44,8 @@ interface FixtureSchema {
         "Account"
       >;
     },
-    Record<never, never>,
-    Record<never, never>,
+    Record<string, never>,
+    Record<string, never>,
     "everything" | "mine"
   >;
   readonly NoScope__c: SalesforceObject<{

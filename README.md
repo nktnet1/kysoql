@@ -29,9 +29,10 @@ Run the local validation gate with one command:
 pnpm validate
 ```
 
-It runs TypeScript typechecking, Vitest, and all package builds in fail-fast
-order. Biome is intentionally separate so formatting can be run manually when
-needed:
+It runs TypeScript typechecking, Vitest, all package builds, and publish-shape
+verification in fail-fast order. The publish check confirms that every declared
+package export, declaration file, and CLI binary exists in the built output.
+Biome is intentionally separate so formatting can be run manually when needed:
 
 ```bash
 pnpm check
@@ -40,11 +41,14 @@ pnpm typecheck
 pnpm test
 pnpm test:coverage
 pnpm build
+pnpm verify:publish
 ```
 
 Additional arguments passed to `pnpm check` are forwarded through Turborepo to
 each package's Biome task, so `pnpm check --write` applies safe formatter, lint,
-and import-organization fixes across the workspace.
+and import-organization fixes across the workspace. `pnpm verify:publish` expects
+the packages to be built first; `pnpm validate` handles that ordering
+automatically.
 
 Vitest is configured at the workspace root and discovers tests under
 `packages/**/tests/**/*.test.ts`. V8 coverage output is written to `coverage/`.
@@ -82,9 +86,9 @@ kysoql generate \
 object returned by Salesforce. Generated schemas retain the Describe metadata
 used by the typed builder, including field capabilities, custom/polymorphic
 reference metadata, supported scopes, MRU capability, and data-category metadata
-when available. Generated imports and empty metadata maps are emitted in a
-lint-friendly form. Run `kysoql --help` or `kysoql generate --help` for the
-oclif-generated command reference.
+when available. Generated imports are minimal, and empty metadata maps are
+emitted as `Record<string, never>`. Run `kysoql --help` or
+`kysoql generate --help` for the oclif-generated command reference.
 
 ## Current query surface
 

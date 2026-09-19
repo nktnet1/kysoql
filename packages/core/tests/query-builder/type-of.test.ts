@@ -212,7 +212,7 @@ type OutputOf<Query> =
 type RuntimeEventSelectQueryBuilder = SelectQueryBuilder<
   TypeOfSchema,
   "Event",
-  Record<never, never>,
+  unknown,
   "plain"
 >;
 

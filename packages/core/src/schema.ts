@@ -4,6 +4,7 @@ import type {
   SoqlDateTimeLiteral,
   SoqlTimeLiteral,
 } from "#/soql-temporal-literal";
+import type { NonNeverStringKey } from "#/util/type-utils";
 
 export interface SalesforceField<
   Value,
@@ -90,13 +91,13 @@ export interface SalesforceObject<
   Parents extends Record<
     string,
     SalesforceParentRelationship<string, string, boolean>
-  > = Record<never, never>,
+  > = Record<string, never>,
   Children extends Record<
     string,
     SalesforceChildRelationship<string, string>
-  > = Record<never, never>,
+  > = Record<string, never>,
   SupportedScope extends string = never,
-  DataCategoryGroups extends Record<string, string> = Record<never, never>,
+  DataCategoryGroups extends Record<string, string> = Record<string, never>,
   MruEnabled extends boolean = boolean,
 > {
   readonly fields: Fields;
@@ -122,7 +123,7 @@ export type SalesforceSchema = Record<
 export type SalesforceObjectDataCategoryGroup<ObjectType> = ObjectType extends {
   readonly dataCategoryGroups: infer Groups;
 }
-  ? keyof Groups & string
+  ? NonNeverStringKey<Groups>
   : never;
 
 export type SalesforceObjectDataCategory<

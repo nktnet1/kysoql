@@ -39,10 +39,10 @@ interface FixtureSchema {
   readonly KnowledgeArticleVersion: SalesforceObject<KnowledgeFields>;
   readonly FAQ__kav: SalesforceObject<
     KnowledgeFields,
-    Record<never, never>,
-    Record<never, never>,
+    Record<string, never>,
+    Record<string, never>,
     never,
-    Record<never, never>,
+    Record<string, never>,
     true
   >;
   readonly Account: SalesforceObject<{
@@ -57,7 +57,7 @@ interface FixtureSchema {
     {
       readonly Id: Field<string, "id">;
     },
-    Record<never, never>,
+    Record<string, never>,
     {
       readonly Articles: SalesforceChildRelationship<
         "FAQ__kav",

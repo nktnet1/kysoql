@@ -1,6 +1,11 @@
 import { expectTypeOf, it } from "vitest";
 
 import type {
+  ChildRelationshipName,
+  FieldName,
+  ParentRelationshipName,
+} from "#/parser/reference-parser";
+import type {
   SalesforceChildRelationship,
   SalesforceField,
   SalesforceFieldFilterValue,
@@ -43,6 +48,23 @@ type FixtureObject = SalesforceObject<{
     false
   >;
 }>;
+
+it("treats Record<string, never> metadata maps as empty", () => {
+  interface EmptySchema {
+    readonly Empty__c: SalesforceObject<Record<string, never>>;
+  }
+
+  expectTypeOf<FieldName<EmptySchema, "Empty__c">>().toEqualTypeOf<never>();
+  expectTypeOf<
+    ParentRelationshipName<EmptySchema, "Empty__c">
+  >().toEqualTypeOf<never>();
+  expectTypeOf<
+    ChildRelationshipName<EmptySchema, "Empty__c">
+  >().toEqualTypeOf<never>();
+  expectTypeOf<
+    SalesforceObjectDataCategoryGroup<EmptySchema["Empty__c"]>
+  >().toEqualTypeOf<never>();
+});
 
 it("derives nullable row values from generated field metadata", () => {
   expectTypeOf<SalesforceRow<FixtureObject>>().toEqualTypeOf<{
@@ -143,8 +165,8 @@ it("preserves object-specific supported scope metadata", () => {
     {
       readonly Id: SalesforceField<string, "id", false, true, true, true>;
     },
-    Record<never, never>,
-    Record<never, never>,
+    Record<string, never>,
+    Record<string, never>,
     "everything" | "mine"
   >;
 
@@ -164,20 +186,20 @@ it("preserves object-specific MRU capability metadata", () => {
     {
       readonly Id: SalesforceField<string, "id", false, true, true, true>;
     },
-    Record<never, never>,
-    Record<never, never>,
+    Record<string, never>,
+    Record<string, never>,
     never,
-    Record<never, never>,
+    Record<string, never>,
     true
   >;
   type NonMruObject = SalesforceObject<
     {
       readonly Id: SalesforceField<string, "id", false, true, true, true>;
     },
-    Record<never, never>,
-    Record<never, never>,
+    Record<string, never>,
+    Record<string, never>,
     never,
-    Record<never, never>,
+    Record<string, never>,
     false
   >;
 
@@ -197,8 +219,8 @@ it("preserves object-specific data-category metadata", () => {
     {
       readonly Id: SalesforceField<string, "id", false, true, true, true>;
     },
-    Record<never, never>,
-    Record<never, never>,
+    Record<string, never>,
+    Record<string, never>,
     never,
     {
       readonly Geography__c: "All" | "usa__c";

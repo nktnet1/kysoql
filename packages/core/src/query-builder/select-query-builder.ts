@@ -346,7 +346,7 @@ export interface SelectQueryBuilder<
       query: RelationshipSubqueryBuilder<
         DB,
         ChildObjectForRelationship<DB, TB, Relationship>,
-        Record<never, never>,
+        unknown,
         readonly [unknown],
         InitialSubqueryFunctionMode<Mode>
       >,
@@ -797,7 +797,7 @@ class SelectQueryBuilderImpl<
       query: RelationshipSubqueryBuilder<
         DB,
         ChildObjectForRelationship<DB, TB, Relationship>,
-        Record<never, never>,
+        unknown,
         readonly [unknown],
         InitialSubqueryFunctionMode<Mode>
       >,
@@ -822,7 +822,7 @@ class SelectQueryBuilderImpl<
       createRelationshipSubqueryBuilder<
         DB,
         ChildObjectForRelationship<DB, TB, Relationship>,
-        Record<never, never>,
+        unknown,
         readonly [unknown],
         InitialSubqueryFunctionMode<Mode>
       >({

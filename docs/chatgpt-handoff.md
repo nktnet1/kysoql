@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.86`, the next patch
-   is `v1.0.87`.
+   reuse or rewrite a version already handed off. After `v1.0.88`, the next patch
+   is `v1.0.89`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.87`
+## Current state after `v1.0.88`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -140,6 +140,7 @@ recent patch sequence:
 | `v1.0.85` | Fix the supplied Biome check failures by applying formatter/import-order output, making the relationship `ORDER BY` scan return explicitly on every callback path, and excluding generated `*.generated.ts` fixtures from Biome checks. |
 | `v1.0.86` | Fix the supplied TypeScript and Biome diagnostics by aligning the geolocation negative assertion with TypeScript 7's diagnostic location, removing stale/unused type plumbing, replacing banned empty-object spellings, and keeping TYPEOF runtime-boundary tests free of explicit `any`. |
 | `v1.0.87` | Complete the final public-API/tooling/docs/codegen consistency audit: forward root `pnpm check` arguments through Turbo, remove the scaffold-only `kysoql()` export, complete package-entrypoint contract coverage, and make generated schema imports/empty metadata maps lint-friendly. |
+| `v1.0.88` | Begin release hardening: standardize generated/schema empty maps on `Record<string, never>` without poisoning selection intersections, add typed publish-shape verification for built exports/declarations/binaries, and run it from `pnpm validate`. |
 
 ### Build/tooling state
 
@@ -157,7 +158,10 @@ recent patch sequence:
 - Root `pnpm check` forwards trailing arguments through Turbo, so
   `pnpm check --write` reaches every package-level `biome check` task.
 - `pnpm validate` is the required validation gate: TypeScript typecheck, Vitest,
-  then package builds. Biome is intentionally separate under `pnpm check`.
+  package builds, then publish-shape verification. The publish verifier checks
+  `@kysoql/core`, `@kysoql/codegen`, and `@kysoql/jsforce` built exports, matching
+  declaration files, and any declared CLI binaries. Biome is intentionally
+  separate under `pnpm check`.
 
 ### Package import/export convention
 
@@ -188,6 +192,13 @@ exports: {
 command-registry entries and keeps the CLI-only entries out of package exports.
 Cross-package imports always use workspace package names such as
 `@kysoql/core`; never reach into another package's `src` or `dist`.
+
+Generated/schema metadata uses `Record<string, never>` for genuinely empty maps.
+Because that type is not a neutral intersection identity, query-selection
+accumulators start from `unknown` instead; do not replace those accumulator
+identities with `Record<string, never>`. `NonNeverStringKey<T>` normalizes the
+empty-map convention so generated empty fields/relationships/categories do not
+become arbitrary string keys.
 
 ### Core query surface currently implemented
 
@@ -374,11 +385,11 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.88` and should begin release hardening.** The
-final consistency audit is complete, and the broad transport-neutral REST/SOAP
-SOQL surface is substantially covered. Prefer a concrete release-readiness slice
-such as package metadata/changelog preparation, publish-shape verification, or a
-focused real-org fixture expansion over adding speculative syntax.
+**The next patch should be `v1.0.89` and should continue release hardening.**
+Publish-shape verification is now part of `pnpm validate`, so do not reimplement
+that slice. Prefer the next concrete release-readiness item, such as
+package-metadata/changelog preparation or a focused real-org fixture expansion,
+over adding speculative syntax.
 
 The `v1.0.84` object-limit audit still defines the boundary for specialist-object
 work: do not infer big-object index rules from the `__b` suffix, do not encode
@@ -387,7 +398,7 @@ permission/cardinality-dependent feed/object caps as execution-context concerns.
 Automatic `Question` data-category taxonomy discovery also remains deferred until
 a stable public JSforce/Salesforce transport path exists.
 
-If the supplied bundle already contains `v1.0.87` or later, inspect the code and
+If the supplied bundle already contains `v1.0.88` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Follow-on roadmap after the consistency audit
@@ -406,7 +417,7 @@ consistency audit:
    object rules, external-adapter-specific limits, and permission/cardinality
    dependent caps need authoritative metadata or execution-context hooks before
    they can become sound static/compiler guarantees.
-4. **Release hardening.** This is the immediate `v1.0.88+` track: consider
+4. **Release hardening.** This is the immediate `v1.0.89+` track: consider
    changelog/release packaging, publish-shape verification, broader Salesforce-org
    fixtures, and API naming cleanup discovered through real-world use.
 

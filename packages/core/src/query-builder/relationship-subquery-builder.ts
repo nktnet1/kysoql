@@ -208,7 +208,7 @@ export interface RelationshipSubqueryBuilder<
       query: RelationshipSubqueryBuilder<
         DB,
         ChildObjectForRelationship<DB, TB, Relationship>,
-        Record<never, never>,
+        unknown,
         NextParentToChildDepth<Depth>,
         ChildFunctionMode<FunctionMode>
       >,
@@ -426,7 +426,7 @@ class RelationshipSubqueryBuilderImpl<
       query: RelationshipSubqueryBuilder<
         DB,
         ChildObjectForRelationship<DB, TB, Relationship>,
-        Record<never, never>,
+        unknown,
         NextParentToChildDepth<Depth>,
         ChildFunctionMode<FunctionMode>
       >,
@@ -452,7 +452,7 @@ class RelationshipSubqueryBuilderImpl<
       createRelationshipSubqueryBuilder<
         DB,
         ChildObjectForRelationship<DB, TB, Relationship>,
-        Record<never, never>,
+        unknown,
         NextParentToChildDepth<Depth>,
         ChildFunctionMode<FunctionMode>
       >({

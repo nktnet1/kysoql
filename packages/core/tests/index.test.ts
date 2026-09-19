@@ -168,7 +168,7 @@ type PublicTypeSurface = {
   aggregateSelectQueryBuilder: AggregateSelectQueryBuilder<
     Record<string, never>,
     never,
-    Record<never, never>
+    Record<string, never>
   >;
   aggregatableFieldReference: AggregatableFieldReference<
     Record<string, never>,
@@ -330,7 +330,7 @@ type PublicTypeSurface = {
   relationshipSubqueryBuilder: RelationshipSubqueryBuilder<
     Record<string, never>,
     never,
-    Record<never, never>
+    Record<string, never>
   >;
   relationshipSubqueryNode: RelationshipSubqueryNode;
   salesforceChildRelationship: SalesforceChildRelationship<"Child", "Parent">;
@@ -362,9 +362,9 @@ type PublicTypeSurface = {
   }>;
   salesforceObjectDataCategory: SalesforceObjectDataCategory<
     SalesforceObject<
-      Record<never, never>,
-      Record<never, never>,
-      Record<never, never>,
+      Record<string, never>,
+      Record<string, never>,
+      Record<string, never>,
       never,
       { readonly Geography__c: "All" | "usa__c" }
     >,
@@ -373,9 +373,9 @@ type PublicTypeSurface = {
   salesforceObjectMruEnabled: SalesforceObjectMruEnabled<unknown>;
   salesforceObjectDataCategoryGroup: SalesforceObjectDataCategoryGroup<
     SalesforceObject<
-      Record<never, never>,
-      Record<never, never>,
-      Record<never, never>,
+      Record<string, never>,
+      Record<string, never>,
+      Record<string, never>,
       never,
       { readonly Geography__c: "All" }
     >
@@ -385,8 +385,8 @@ type PublicTypeSurface = {
       {
         readonly Id: SalesforceField<string, "id", false, true, true, true>;
       },
-      Record<never, never>,
-      Record<never, never>,
+      Record<string, never>,
+      Record<string, never>,
       "mine" | "team"
     >
   >;
@@ -406,7 +406,7 @@ type PublicTypeSurface = {
   selectQueryBuilder: SelectQueryBuilder<
     Record<string, never>,
     never,
-    Record<never, never>
+    Record<string, never>
   >;
   selectQueryMode: SelectQueryMode;
   selectQueryBuilderProps: SelectQueryBuilderProps;
@@ -465,7 +465,7 @@ type PublicTypeSurface = {
     Record<string, never>,
     "Account",
     "Account",
-    Record<never, never>
+    Record<string, never>
   >;
   typeOfElseFieldList: TypeOfElseFieldList<Record<string, never>, never, "Id">;
   typeOfFieldList: TypeOfFieldList<Record<string, never>, never, "Id">;
@@ -474,7 +474,7 @@ type PublicTypeSurface = {
     Record<string, never>,
     "Account",
     "Account",
-    Record<never, never>
+    Record<string, never>
   >;
   typeOfWhenNode: TypeOfWhenNode;
   usingScopeNode: UsingScopeNode;

@@ -201,7 +201,7 @@ const renderObject = (object: SalesforceObjectDescription): string => {
   const renderBlock = (entries: readonly string[]): string =>
     entries.length > 0
       ? `    {\n${entries.join("\n")}\n    }`
-      : "    Record<never, never>";
+      : "    Record<string, never>";
 
   const supportedScopeType = object.supportedScopes?.length
     ? stringUnion(object.supportedScopes.map((scope) => scope.name))
