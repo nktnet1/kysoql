@@ -2,6 +2,7 @@ import {
   createExpressionBuilder,
   type WhereExpressionFactory,
 } from "#/expression/expression-builder";
+import { ForViewReferenceNode } from "#/operation-node/for-view-reference-node";
 import type { ComparisonOperator } from "#/operation-node/operator-node";
 import { QueryNode } from "#/operation-node/query-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
@@ -27,6 +28,7 @@ import type { QueryExecutor } from "#/query-executor";
 import type {
   SalesforceObjectDataCategory,
   SalesforceObjectDataCategoryGroup,
+  SalesforceObjectMruEnabled,
   SalesforceObjectSupportedScope,
 } from "#/schema";
 import { freeze } from "#/util/object-utils";
@@ -37,6 +39,18 @@ export interface CountQueryBuilder<DB, TB extends keyof DB> {
   execute(): Promise<number>;
 
   limit(limit: number): CountQueryBuilder<DB, TB>;
+
+  forView(
+    ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
+      ? readonly [mruDisabled: never]
+      : readonly []
+  ): CountQueryBuilder<DB, TB>;
+
+  forReference(
+    ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
+      ? readonly [mruDisabled: never]
+      : readonly []
+  ): CountQueryBuilder<DB, TB>;
 
   usingScope(
     scope: SalesforceObjectSupportedScope<DB[TB]>,
@@ -104,6 +118,34 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
       queryNode: SelectQueryNode.cloneWithLimit(
         this.#props.queryNode,
         parseLimit(limit),
+      ),
+    });
+  }
+
+  forView(
+    ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
+      ? readonly [mruDisabled: never]
+      : readonly []
+  ): CountQueryBuilder<DB, TB> {
+    return new CountQueryBuilderImpl<DB, TB>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithForViewReference(
+        this.#props.queryNode,
+        ForViewReferenceNode.create("view"),
+      ),
+    });
+  }
+
+  forReference(
+    ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
+      ? readonly [mruDisabled: never]
+      : readonly []
+  ): CountQueryBuilder<DB, TB> {
+    return new CountQueryBuilderImpl<DB, TB>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithForViewReference(
+        this.#props.queryNode,
+        ForViewReferenceNode.create("reference"),
       ),
     });
   }

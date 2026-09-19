@@ -9,6 +9,7 @@ import type {
   SalesforceObject,
   SalesforceObjectDataCategory,
   SalesforceObjectDataCategoryGroup,
+  SalesforceObjectMruEnabled,
   SalesforceObjectSupportedScope,
   SalesforceParentRelationship,
   SalesforceRow,
@@ -156,6 +157,39 @@ it("preserves object-specific supported scope metadata", () => {
   expectTypeOf<
     SalesforceObjectSupportedScope<FixtureObject>
   >().toEqualTypeOf<never>();
+});
+
+it("preserves object-specific MRU capability metadata", () => {
+  type MruObject = SalesforceObject<
+    {
+      readonly Id: SalesforceField<string, "id", false, true, true, true>;
+    },
+    {},
+    {},
+    never,
+    {},
+    true
+  >;
+  type NonMruObject = SalesforceObject<
+    {
+      readonly Id: SalesforceField<string, "id", false, true, true, true>;
+    },
+    {},
+    {},
+    never,
+    {},
+    false
+  >;
+
+  expectTypeOf<MruObject["mruEnabled"]>().toEqualTypeOf<true>();
+  expectTypeOf<NonMruObject["mruEnabled"]>().toEqualTypeOf<false>();
+  expectTypeOf<SalesforceObjectMruEnabled<MruObject>>().toEqualTypeOf<true>();
+  expectTypeOf<
+    SalesforceObjectMruEnabled<NonMruObject>
+  >().toEqualTypeOf<false>();
+  expectTypeOf<
+    SalesforceObjectMruEnabled<FixtureObject>
+  >().toEqualTypeOf<boolean>();
 });
 
 it("preserves object-specific data-category metadata", () => {

@@ -64,6 +64,7 @@ const salesforceDataCategoryGroupsResponseSchema = v.object({
 const salesforceObjectDescriptionSchema = v.object({
   name: v.string(),
   fields: v.array(salesforceFieldDescriptionSchema),
+  mruEnabled: v.optional(v.boolean()),
   childRelationships: v.optional(
     v.array(salesforceChildRelationshipDescriptionSchema),
   ),
@@ -243,6 +244,9 @@ export const parseSalesforceObjectDescription = (
             })),
           }),
     })),
+    ...(result.output.mruEnabled === undefined
+      ? {}
+      : { mruEnabled: result.output.mruEnabled }),
     ...(result.output.childRelationships === undefined
       ? {}
       : {

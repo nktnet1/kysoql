@@ -97,12 +97,14 @@ export interface SalesforceObject<
   > = Record<never, never>,
   SupportedScope extends string = never,
   DataCategoryGroups extends Record<string, string> = Record<never, never>,
+  MruEnabled extends boolean = boolean,
 > {
   readonly fields: Fields;
   readonly parents: Parents;
   readonly children: Children;
   readonly supportedScopes: SupportedScope;
   readonly dataCategoryGroups: DataCategoryGroups;
+  readonly mruEnabled: MruEnabled;
 }
 
 export type SalesforceSchema = Record<
@@ -112,7 +114,8 @@ export type SalesforceSchema = Record<
     Record<string, SalesforceParentRelationship<string, string, boolean>>,
     Record<string, SalesforceChildRelationship<string, string>>,
     string,
-    Record<string, string>
+    Record<string, string>,
+    boolean
   >
 >;
 
@@ -135,6 +138,12 @@ export type SalesforceObjectDataCategory<
       : never
     : never
   : never;
+
+export type SalesforceObjectMruEnabled<ObjectType> = ObjectType extends {
+  readonly mruEnabled: infer MruEnabled extends boolean;
+}
+  ? MruEnabled
+  : boolean;
 
 export type SalesforceObjectSupportedScope<ObjectType> =
   ObjectType extends {
@@ -218,7 +227,8 @@ export type SalesforceRow<ObjectType> =
     Record<string, SalesforceParentRelationship<string, string, boolean>>,
     Record<string, SalesforceChildRelationship<string, string>>,
     string,
-    Record<string, string>
+    Record<string, string>,
+    boolean
   >
     ? {
         readonly [FieldName in keyof Fields]: SalesforceFieldValue<

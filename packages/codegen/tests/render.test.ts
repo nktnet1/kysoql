@@ -234,8 +234,18 @@ describe("renderSchema", () => {
     ]);
 
     expect(source).toContain(
-      'readonly "Fixture__c": SalesforceObject<\n    {},\n    {},\n    {},\n    "mine" | "team",\n    {}\n  >;',
+      'readonly "Fixture__c": SalesforceObject<\n    {},\n    {},\n    {},\n    "mine" | "team",\n    {},\n    boolean\n  >;',
     );
+  });
+
+  it("renders exact Describe MRU capability and preserves unknown metadata", () => {
+    const enabled = renderSchema([objectWith([], { mruEnabled: true })]);
+    const disabled = renderSchema([objectWith([], { mruEnabled: false })]);
+    const unknown = renderSchema([objectWith([])]);
+
+    expect(enabled).toContain("    {},\n    true\n  >;");
+    expect(disabled).toContain("    {},\n    false\n  >;");
+    expect(unknown).toContain("    {},\n    boolean\n  >;");
   });
 
   it("renders data-category groups as sorted object-specific category unions", () => {
@@ -423,7 +433,7 @@ describe("renderSchema", () => {
 
     expect(source).toContain("export interface CustomSchema {");
     expect(source).toContain(
-      'readonly "Fixture__c": SalesforceObject<\n    {},\n    {},\n    {},\n    never,\n    {}\n  >;',
+      'readonly "Fixture__c": SalesforceObject<\n    {},\n    {},\n    {},\n    never,\n    {},\n    boolean\n  >;',
     );
     expect(source.endsWith("\n")).toBe(true);
   });

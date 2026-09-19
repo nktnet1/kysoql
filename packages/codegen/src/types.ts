@@ -62,6 +62,7 @@ export interface SalesforceDataCategoryGroupDescription {
 export interface SalesforceObjectDescription {
   readonly name: string;
   readonly fields: readonly SalesforceFieldDescription[];
+  readonly mruEnabled?: boolean;
   readonly childRelationships?: readonly SalesforceChildRelationshipDescription[];
   readonly supportedScopes?: readonly SalesforceSupportedScopeDescription[];
   readonly dataCategoryGroups?: readonly SalesforceDataCategoryGroupDescription[];

@@ -10,6 +10,7 @@ import { DateFunctionNode } from "#/operation-node/date-function-node";
 import { DistanceFunctionNode } from "#/operation-node/distance-function-node";
 import { FieldsFunctionNode } from "#/operation-node/fields-function-node";
 import { FormatFunctionNode } from "#/operation-node/format-function-node";
+import { ForViewReferenceNode } from "#/operation-node/for-view-reference-node";
 import { GeolocationFunctionNode } from "#/operation-node/geolocation-function-node";
 import { GroupByNode } from "#/operation-node/group-by-node";
 import { HavingNode } from "#/operation-node/having-node";
@@ -124,6 +125,19 @@ describe("operation nodes", () => {
     ).toThrow(
       "SOQL date functions require a field reference or an unaliased convertTimezone() expression.",
     );
+  });
+
+  it("creates frozen FOR VIEW / FOR REFERENCE nodes", () => {
+    const view = ForViewReferenceNode.create("view");
+    const reference = ForViewReferenceNode.create("reference");
+
+    expect(view).toEqual({ kind: "ForViewReferenceNode", mode: "view" });
+    expect(reference).toEqual({
+      kind: "ForViewReferenceNode",
+      mode: "reference",
+    });
+    expectFrozen(view);
+    expectFrozen(reference);
   });
 
   it("creates frozen FIELDS function nodes", () => {

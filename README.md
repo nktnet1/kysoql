@@ -351,6 +351,25 @@ category discovery optional so a SOAP-backed integration can supply Question
 metadata without widening ordinary sObject Describe metadata. `WITH DATA CATEGORY`
 is intentionally absent from relationship-subquery builders.
 
+Salesforce Describe also exposes each object's `mruEnabled` capability. Generated
+schemas preserve that flag so root queries can use `.forView()` /
+`.forReference()` only when the object is known to participate in Most Recently
+Used tracking. Hand-written schemas that predate this metadata remain permissive.
+Repeated calls replace the previous mode, and the compiler emits the clause after
+`OFFSET`, matching Salesforce's top-level SELECT grammar. Relationship subqueries
+intentionally omit both methods.
+
+```ts
+const viewedAccounts = await db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where("Name", "like", "Acme%")
+  .limit(20)
+  .forView()
+  .execute();
+// SELECT Id, Name FROM Account WHERE Name LIKE 'Acme%' LIMIT 20 FOR VIEW
+```
+
 Generated child-relationship metadata enables typed parent-to-child subqueries
 without accepting arbitrary subquery `FROM` strings. `.selectSubquery()` takes a
 generated child relationship name and a dedicated child-query builder with the

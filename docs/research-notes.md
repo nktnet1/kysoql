@@ -903,6 +903,45 @@ boundary for `KnowledgeArticleVersion` and `__kav` article types. The guard walk
 nested boolean WHERE expressions but only accepts direct root references named
 `PublishStatus` or `Id`; `Question` queries are intentionally unaffected.
 
+### `FOR VIEW` / `FOR REFERENCE` and Question SOAP-discovery notes
+
+Sources re-checked on 2026-09-19:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-for-view-for-reference.html
+- https://developer.salesforce.com/docs/platform/api/guide/sforce-api-calls-describesobjects-describesobjectresult.html
+- https://developer.salesforce.com/docs/platform/api-rest/guide/dome-mark-records-as-recently-viewed.html
+- https://developer.salesforce.com/docs/platform/api/guide/sforce-api-calls-describedatacategorygroups.html
+- https://developer.salesforce.com/docs/platform/api/guide/sforce-api-calls-describedatacategorygroupstructures.html
+- https://jsforce.github.io/jsforce/classes/api_soap.SoapApi.html
+
+Useful findings:
+
+- Salesforce's SOAP category-describe calls support `Question`, but JSforce
+  3.10.x does not expose `describeDataCategoryGroups()` or
+  `describeDataCategoryGroupStructures()` on its public `SoapApi`. The generic
+  `_invoke` escape path is an internal/private implementation detail, so the CLI
+  should not couple itself to that transport internals solely to fill this gap.
+  The existing optional `describeDataCategoryGroups` codegen hook remains the
+  stable integration point for a caller that has a supported SOAP client.
+- `FOR VIEW` and `FOR REFERENCE` are REST/SOAP-safe top-level SELECT clauses used
+  to update recent-usage metadata. `FOR VIEW` updates `LastViewedDate` and recent
+  usage; `FOR REFERENCE` updates `LastReferencedDate` and recent usage. Salesforce
+  documents them after `OFFSET` in SELECT syntax and as alternatives, not a
+  combined query mode.
+- sObject Describe exposes `mruEnabled`, which tells clients whether MRU-list
+  functionality is enabled for that object. This is the relevant generated
+  object capability for recent-usage clauses; external objects are separately
+  documented as not supporting `FOR VIEW` or `FOR REFERENCE`.
+
+Kysoql consequence for `v1.0.77`: leave automatic `Question` category discovery
+on the public optional codegen-client hook rather than importing JSforce private
+SOAP internals. Preserve optional Describe `mruEnabled` in generated schemas and
+add immutable root `.forView()` / `.forReference()` clauses gated when Describe
+explicitly reports `false`. Missing metadata stays permissive for existing
+hand-written/custom codegen clients. Repeated calls replace the prior mode, the
+compiler emits the clause after `OFFSET`, and relationship-subquery builders stay
+unchanged.
+
 ### Remaining SOQL surface / roadmap references
 
 Sources re-checked on 2026-09-18:

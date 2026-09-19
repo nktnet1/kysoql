@@ -17,6 +17,7 @@ import {
   type HavingExpressionFactory,
 } from "#/expression/having-expression-builder";
 import type { AdvancedGroupByMode } from "#/operation-node/group-by-node";
+import { ForViewReferenceNode } from "#/operation-node/for-view-reference-node";
 import type { ComparisonOperator } from "#/operation-node/operator-node";
 import type {
   OrderByDirection,
@@ -77,6 +78,7 @@ import type { QueryExecutor } from "#/query-executor";
 import type {
   SalesforceObjectDataCategory,
   SalesforceObjectDataCategoryGroup,
+  SalesforceObjectMruEnabled,
   SalesforceObjectSupportedScope,
 } from "#/schema";
 import { freeze } from "#/util/object-utils";
@@ -261,6 +263,32 @@ export interface AggregateSelectQueryBuilder<
   compile(): CompiledQuery<O>;
 
   execute(): Promise<readonly O[]>;
+
+  forView(
+    ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
+      ? readonly [mruDisabled: never]
+      : readonly []
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
+  forReference(
+    ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
+      ? readonly [mruDisabled: never]
+      : readonly []
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
 
   usingScope(
     scope: SalesforceObjectSupportedScope<DB[TB]>,
@@ -613,6 +641,62 @@ class AggregateSelectQueryBuilderImpl<
     }
 
     return this.#props.queryExecutor.executeQuery(this.compile());
+  }
+
+  forView(
+    ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
+      ? readonly [mruDisabled: never]
+      : readonly []
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithForViewReference(
+        this.#props.queryNode,
+        ForViewReferenceNode.create("view"),
+      ),
+    });
+  }
+
+  forReference(
+    ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
+      ? readonly [mruDisabled: never]
+      : readonly []
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithForViewReference(
+        this.#props.queryNode,
+        ForViewReferenceNode.create("reference"),
+      ),
+    });
   }
 
   usingScope(

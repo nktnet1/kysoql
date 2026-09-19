@@ -73,6 +73,10 @@ export type {
   FieldsSelector,
 } from "#/operation-node/fields-function-node";
 export type { FormatFunctionNode } from "#/operation-node/format-function-node";
+export type {
+  ForViewReferenceMode,
+  ForViewReferenceNode,
+} from "#/operation-node/for-view-reference-node";
 export type { GeolocationFunctionNode } from "#/operation-node/geolocation-function-node";
 export type {
   AdvancedGroupByMode,
@@ -155,6 +159,7 @@ export type {
   SalesforceObject,
   SalesforceObjectDataCategory,
   SalesforceObjectDataCategoryGroup,
+  SalesforceObjectMruEnabled,
   SalesforceObjectSupportedScope,
   SalesforceParentRelationship,
   SalesforceQueryResult,

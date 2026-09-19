@@ -128,6 +128,38 @@ describe("codegen validation", () => {
     });
   });
 
+  it("preserves Salesforce MRU capability metadata", () => {
+    expect(
+      parseSalesforceObjectDescription(
+        {
+          name: "Account",
+          fields: [],
+          mruEnabled: true,
+        },
+        "Account",
+      ),
+    ).toEqual({
+      name: "Account",
+      fields: [],
+      mruEnabled: true,
+    });
+
+    expect(
+      parseSalesforceObjectDescription(
+        {
+          name: "AsyncApexJob",
+          fields: [],
+          mruEnabled: false,
+        },
+        "AsyncApexJob",
+      ),
+    ).toEqual({
+      name: "AsyncApexJob",
+      fields: [],
+      mruEnabled: false,
+    });
+  });
+
   it("preserves Salesforce supported scope names", () => {
     expect(
       parseSalesforceObjectDescription(

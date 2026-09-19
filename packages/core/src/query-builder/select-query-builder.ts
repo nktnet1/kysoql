@@ -13,6 +13,7 @@ import {
   type GeolocationExpressionBuilder,
 } from "#/expression/geolocation-function-builder";
 import type { FieldsSelector } from "#/operation-node/fields-function-node";
+import { ForViewReferenceNode } from "#/operation-node/for-view-reference-node";
 import type { ComparisonOperator } from "#/operation-node/operator-node";
 import type {
   OrderByDirection,
@@ -109,6 +110,7 @@ import type { QueryExecutor } from "#/query-executor";
 import type {
   SalesforceObjectDataCategory,
   SalesforceObjectDataCategoryGroup,
+  SalesforceObjectMruEnabled,
   SalesforceObjectSupportedScope,
   SalesforceQueryResult,
 } from "#/schema";
@@ -197,6 +199,18 @@ export interface SelectQueryBuilder<
   limit(limit: number): SelectQueryBuilder<DB, TB, O, Mode>;
 
   offset(offset: number): SelectQueryBuilder<DB, TB, O, Mode>;
+
+  forView(
+    ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
+      ? readonly [mruDisabled: never]
+      : readonly []
+  ): SelectQueryBuilder<DB, TB, O, Mode>;
+
+  forReference(
+    ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
+      ? readonly [mruDisabled: never]
+      : readonly []
+  ): SelectQueryBuilder<DB, TB, O, Mode>;
 
   usingScope(
     scope: SalesforceObjectSupportedScope<DB[TB]>,
@@ -383,6 +397,34 @@ class SelectQueryBuilderImpl<
       queryNode: SelectQueryNode.cloneWithOffset(
         this.#props.queryNode,
         parseOffset(offset),
+      ),
+    });
+  }
+
+  forView(
+    ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
+      ? readonly [mruDisabled: never]
+      : readonly []
+  ): SelectQueryBuilder<DB, TB, O, Mode> {
+    return new SelectQueryBuilderImpl<DB, TB, O, Mode>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithForViewReference(
+        this.#props.queryNode,
+        ForViewReferenceNode.create("view"),
+      ),
+    });
+  }
+
+  forReference(
+    ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
+      ? readonly [mruDisabled: never]
+      : readonly []
+  ): SelectQueryBuilder<DB, TB, O, Mode> {
+    return new SelectQueryBuilderImpl<DB, TB, O, Mode>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithForViewReference(
+        this.#props.queryNode,
+        ForViewReferenceNode.create("reference"),
       ),
     });
   }

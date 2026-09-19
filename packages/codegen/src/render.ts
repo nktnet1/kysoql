@@ -174,7 +174,8 @@ const renderObject = (object: SalesforceObjectDescription): string => {
     `${renderBlock(parents)},`,
     `${renderBlock(children)},`,
     `    ${supportedScopeType},`,
-    `${renderBlock(dataCategoryGroups)}`,
+    `${renderBlock(dataCategoryGroups)},`,
+    `    ${object.mruEnabled === undefined ? "boolean" : booleanLiteral(object.mruEnabled)}`,
     "  >;",
   ].join("\n");
 };

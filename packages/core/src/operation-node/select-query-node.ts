@@ -1,4 +1,5 @@
 import type { DateFunctionNode } from "#/operation-node/date-function-node";
+import type { ForViewReferenceNode } from "#/operation-node/for-view-reference-node";
 import {
   type AdvancedGroupByMode,
   GroupByNode,
@@ -32,6 +33,7 @@ export interface SelectQueryNode {
   readonly orderBy?: OrderByNode;
   readonly limit?: LimitNode;
   readonly offset?: OffsetNode;
+  readonly forViewReference?: ForViewReferenceNode;
 }
 
 export const SelectQueryNode = {
@@ -118,6 +120,16 @@ export const SelectQueryNode = {
     return freeze({
       ...select,
       offset,
+    });
+  },
+
+  cloneWithForViewReference(
+    select: SelectQueryNode,
+    forViewReference: ForViewReferenceNode,
+  ): SelectQueryNode {
+    return freeze({
+      ...select,
+      forViewReference,
     });
   },
 

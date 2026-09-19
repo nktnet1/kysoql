@@ -10,6 +10,7 @@ import type { DateFunctionNode } from "#/operation-node/date-function-node";
 import type { DistanceFunctionNode } from "#/operation-node/distance-function-node";
 import type { FieldsFunctionNode } from "#/operation-node/fields-function-node";
 import type { FormatFunctionNode } from "#/operation-node/format-function-node";
+import type { ForViewReferenceNode } from "#/operation-node/for-view-reference-node";
 import type { GeolocationFunctionNode } from "#/operation-node/geolocation-function-node";
 import type { GroupByNode } from "#/operation-node/group-by-node";
 import type { HavingNode } from "#/operation-node/having-node";
@@ -100,6 +101,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
     if (query.offset) {
       soql += ` OFFSET ${this.#compileOffset(query.offset)}`;
+    }
+
+    if (query.forViewReference) {
+      soql += ` FOR ${this.#compileForViewReference(query.forViewReference)}`;
     }
 
     return soql;
@@ -214,6 +219,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileUsingScope(usingScope: UsingScopeNode): string {
     return usingScope.scope;
+  }
+
+  #compileForViewReference(node: ForViewReferenceNode): string {
+    return node.mode === "view" ? "VIEW" : "REFERENCE";
   }
 
   #compileGroupBy(groupBy: GroupByNode): string {

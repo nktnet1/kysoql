@@ -40,6 +40,7 @@ it("exports the complete codegen public API from the package entrypoint", () => 
   expectTypeOf<SalesforceObjectDescription>().toMatchTypeOf<{
     readonly name: string;
     readonly fields: readonly SalesforceFieldDescription[];
+    readonly mruEnabled?: boolean;
     readonly supportedScopes?: readonly SalesforceSupportedScopeDescription[];
     readonly dataCategoryGroups?: readonly SalesforceDataCategoryGroupDescription[];
   }>();

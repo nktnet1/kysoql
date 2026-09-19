@@ -52,6 +52,8 @@ import {
   type FieldsSelector,
   type FormatFunctionBuilder,
   type FormatFunctionNode,
+  type ForViewReferenceMode,
+  type ForViewReferenceNode,
   type FormattableFieldReference,
   type GeolocationExpressionBuilder,
   type GeolocationFilterExpressionBuilder,
@@ -98,6 +100,7 @@ import {
   type SalesforceObject,
   type SalesforceObjectDataCategory,
   type SalesforceObjectDataCategoryGroup,
+  type SalesforceObjectMruEnabled,
   type SalesforceObjectSupportedScope,
   type SalesforceParentRelationship,
   type SalesforceQueryResult,
@@ -247,6 +250,8 @@ type PublicTypeSurface = {
   >;
   formatFunctionBuilder: FormatFunctionBuilder<string>;
   formatFunctionNode: FormatFunctionNode;
+  forViewReferenceMode: ForViewReferenceMode;
+  forViewReferenceNode: ForViewReferenceNode;
   geolocationExpressionBuilder: GeolocationExpressionBuilder<
     Record<string, never>,
     never
@@ -359,6 +364,7 @@ type PublicTypeSurface = {
     >,
     "Geography__c"
   >;
+  salesforceObjectMruEnabled: SalesforceObjectMruEnabled<unknown>;
   salesforceObjectDataCategoryGroup: SalesforceObjectDataCategoryGroup<
     SalesforceObject<{}, {}, {}, never, { readonly Geography__c: "All" }>
   >;
