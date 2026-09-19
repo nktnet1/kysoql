@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.81`, the next patch
-   is `v1.0.82`.
+   reuse or rewrite a version already handed off. After `v1.0.82`, the next patch
+   is `v1.0.83`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.81`
+## Current state after `v1.0.82`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -134,6 +134,7 @@ recent patch sequence:
 | `v1.0.79` | Add root-only typed `UserProfileFeed WITH UserId = ...`, immutable replacement, escaped scalar compilation, and the required-query compiler invariant. |
 | `v1.0.80` | Enforce the documented root-WHERE filter prerequisites for `ContentDocumentLink` and `ContentHubItem` at the compiler boundary. |
 | `v1.0.81` | Enforce the documented `Vote` root-WHERE predicate shapes, including operator/value-shape validation and literal-list-only `Id IN`. |
+| `v1.0.82` | Enforce the coupled `UserRecordAccess` WHERE/SELECT/ORDER BY query shape, including the 200-record-ID bound and access-filter result restriction. |
 
 ### Build/tooling state
 
@@ -366,13 +367,15 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.82` and should evaluate `UserRecordAccess` as
-its own object-specific query-limit slice.** Salesforce requires the query
-formats documented by the SOAP API, caps results at 200 records, and couples
-selected `HasAccess` / `MaxAccessLevel` fields to matching `ORDER BY` fields.
-Research the exact accepted query shapes before deciding what belongs in static
-types versus compiler-boundary validation. Do not combine permission-dependent
-`NewsFeed`, `UserProfileFeed`, or `TopicAssignment` row caps into that patch.
+**The next patch should be `v1.0.83` and should be a bounded final audit of
+Salesforce's remaining transport-neutral object-specific SOQL restrictions.**
+Re-check the current object-limit reference against the implemented validators
+and generated capability metadata. Add only unconditional restrictions that can
+be enforced correctly without caller permission/execution-context information.
+In particular, do not turn `NewsFeed`, `UserProfileFeed`, or `TopicAssignment`
+permission-dependent row caps into unconditional compiler errors. If the audit
+finds no concrete missing invariant, use the slice for error/test/documentation
+hardening rather than inventing a new syntax family.
 
 Automatic `Question` data-category taxonomy discovery remains deferred: Salesforce
 exposes the required SOAP describe calls, but JSforce 3.10.x does not expose them
@@ -380,7 +383,7 @@ on its public `SoapApi`; the only generic invoke path is private. Keep using the
 existing optional normalized codegen hook until a stable public transport path is
 available rather than coupling the CLI to JSforce internals.
 
-If the supplied bundle already contains `v1.0.81` or later, inspect the code and
+If the supplied bundle already contains `v1.0.82` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
@@ -388,28 +391,27 @@ advance from the actual state instead of reimplementing this section.
 The large general-purpose SOQL surface is substantially complete. The remaining
 work is narrower and should stay incremental:
 
-1. **REST/SOAP object-specific query invariants.** `ContentDocumentLink` and
-   `ContentHubItem` are covered by `v1.0.80`, and `Vote` is covered by
-   `v1.0.81`. Evaluate `UserRecordAccess` next because its accepted query and
-   ORDER BY shapes are specialized. Permission-dependent limits such as `NewsFeed` /
-   `UserProfileFeed` row caps and `TopicAssignment` limits cannot be enforced
-   unconditionally without execution-context/permission information, so prefer
-   documentation or an explicit capability hook over false static guarantees.
+1. **Final REST/SOAP object-limit audit and hardening.**
+   `ContentDocumentLink`, `ContentHubItem`, `Vote`, and `UserRecordAccess` now
+   have compiler-boundary validation. Re-check the remaining documented object
+   limits, but only encode unconditional invariants. Permission-dependent limits
+   such as `NewsFeed` / `UserProfileFeed` row caps and `TopicAssignment` limits
+   require execution-context information and should remain documentation or a
+   future explicit capability hook rather than false static guarantees.
 2. **Complete data-category transport support when a stable path exists.** The
    public codegen hook already accepts normalized `Question` taxonomy metadata;
    do not use JSforce's private SOAP invocation machinery solely to automate it.
 3. **Execution-context-specific syntax.** Re-evaluate `FOR UPDATE`,
    `WITH USER_MODE`, `WITH SECURITY_ENFORCED`, bind expressions, and related
    Apex-context behavior separately from the transport-neutral REST/JSforce core.
-4. **Final hardening/documentation pass.** Once the specialist constraints are
-   settled, review Salesforce object limitations against generated capabilities,
-   public exports, error consistency, and end-to-end fixture coverage rather than
-   opening another broad syntax family without a concrete gap.
+4. **Final API/documentation consistency.** Review public exports, diagnostics,
+   generated capabilities, examples, and end-to-end fixture coverage once the
+   remaining object-limit audit is closed.
 
 The aggregate-selection, grouping/HAVING, relationship traversal, polymorphic
 selection, function-expression, pagination, scope/category, MRU, Knowledge,
-UserProfileFeed, ContentDocumentLink, ContentHubItem, and Vote foundations are
-now in place.
+UserProfileFeed, ContentDocumentLink, ContentHubItem, Vote, and UserRecordAccess
+foundations are now in place.
 
 ## Validation and runtime-boundary conventions
 

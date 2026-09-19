@@ -1167,3 +1167,46 @@ validator with a Vote-specific predicate matcher. Accept only non-empty scalar
 strings for the three equality forms and a non-empty literal string list for
 `Id IN (...)`; reject wrong operators and semi-join RHS nodes. Keep this as a
 compiler-boundary slice without broadening the ordinary filter API.
+
+### UserRecordAccess query restrictions
+
+Sources re-checked on 2026-09-19:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-limits.html
+- https://help.salesforce.com/s/articleView?id=000386023&language=en_US&type=1
+- https://help.salesforce.com/s/articleView?id=000386187&language=en_US&type=1
+- https://help.salesforce.com/s/articleView?id=000383422&language=en_US&type=1
+- https://help.salesforce.com/s/articleView?id=platform.admin_troubleshoot_queries.htm&language=en_US&type=5
+
+Useful findings:
+
+- `UserRecordAccess` uses a specialized query shape rather than ordinary free-form
+  object filtering. The documented examples identify one user with `UserId =
+  <single ID>` and one record or record set with either `RecordId = <single ID>`
+  or `RecordId IN (<ID list>)`.
+- Salesforce enforces a maximum of 200 values in the `RecordId IN (...)` set for
+  this object. A trailing query `LIMIT 200` does not relax that restriction.
+- Salesforce examples allow one access predicate such as `HasReadAccess = true`
+  together with the user/record predicates. In that access-filter form the
+  documented selection is `RecordId` only. Without the access predicate,
+  `RecordId` can be selected alongside the concrete `HasReadAccess`,
+  `HasEditAccess`, `HasDeleteAccess`, `HasTransferAccess`, `HasAllAccess`, and
+  `MaxAccessLevel` result fields.
+- `RecordId` must be explicitly selected. Salesforce's current SOQL object-limit
+  reference also couples selected access-result fields to ordering: selected
+  `Has*Access` fields must be ordered by the corresponding field, and selected
+  `MaxAccessLevel` must be ordered by `MaxAccessLevel`.
+- This restriction couples WHERE structure, SELECT shape, ORDER BY, and runtime
+  list cardinality. Encoding the complete state machine in public builder
+  generics would add substantial complexity while still requiring runtime
+  validation for unsafe/manual ASTs and list lengths.
+
+Kysoql consequence in `v1.0.82`: keep the ordinary typed field/filter API intact
+and validate the complete `UserRecordAccess` shape at the compiler boundary.
+Require exactly one scalar `UserId` equality and one scalar-or-literal-list
+`RecordId` predicate, allow at most one concrete `Has*Access = TRUE` predicate,
+reject non-conjunctive/extra predicates, cap literal record IDs at 200, enforce
+`RecordId`-centred selections and matching ORDER BY fields, and reject aggregate
+or scalar `COUNT()` selections. The validator intentionally uses only the known
+access-result fields rather than treating arbitrary `Has*Access` spellings as
+valid compiler AST input.

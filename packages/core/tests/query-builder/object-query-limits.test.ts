@@ -44,6 +44,22 @@ interface FixtureSchema {
     readonly ParentId: ReferenceField<"FeedItem">;
     readonly Type: Field;
   }>;
+  readonly UserRecordAccess: SalesforceObject<{
+    readonly RecordId: ReferenceField<"Account">;
+    readonly UserId: ReferenceField<"User">;
+    readonly HasReadAccess: Field<boolean, "boolean">;
+    readonly HasEditAccess: Field<boolean, "boolean">;
+    readonly HasDeleteAccess: Field<boolean, "boolean">;
+    readonly HasTransferAccess: Field<boolean, "boolean">;
+    readonly HasAllAccess: Field<boolean, "boolean">;
+    readonly MaxAccessLevel: Field<
+      "None" | "Read" | "Edit" | "Delete" | "Transfer" | "All",
+      "picklist"
+    >;
+  }>;
+  readonly User: SalesforceObject<{
+    readonly Id: Field<string, "id">;
+  }>;
   readonly Account: SalesforceObject<{
     readonly Id: Field<string, "id">;
     readonly Name: Field;
@@ -237,6 +253,217 @@ describe("object-specific SOQL query limits", () => {
 
     expect(() => new DefaultQueryCompiler().compileQuery(queryNode)).toThrow(
       "SOQL Vote queries require a WHERE predicate using ParentId = <single ID>, Parent.Type = <single type>, Id = <single ID>, or Id IN (<ID list>).",
+    );
+  });
+
+  it("requires UserRecordAccess to filter one user and one record or record list", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const base = db.selectFrom("UserRecordAccess").select("RecordId");
+    const error =
+      "SOQL UserRecordAccess queries require UserId = <single ID> and either RecordId = <single ID> or RecordId IN (<up to 200 IDs>), with at most one optional Has*Access = true predicate.";
+
+    expect(() => base.compile()).toThrow(error);
+    expect(() =>
+      base.where("UserId", "=", "005000000000001").compile(),
+    ).toThrow(error);
+    expect(() =>
+      base.where("RecordId", "=", "001000000000001").compile(),
+    ).toThrow(error);
+    expect(() =>
+      base
+        .where("UserId", "in", ["005000000000001"])
+        .where("RecordId", "=", "001000000000001")
+        .compile(),
+    ).toThrow(error);
+    expect(() =>
+      base
+        .where("UserId", "=", "005000000000001")
+        .where("RecordId", "!=", "001000000000001")
+        .compile(),
+    ).toThrow(error);
+
+    expect(
+      base
+        .where("UserId", "=", "005000000000001")
+        .where("RecordId", "=", "001000000000001")
+        .compile().soql,
+    ).toBe(
+      "SELECT RecordId FROM UserRecordAccess WHERE UserId = '005000000000001' AND RecordId = '001000000000001'",
+    );
+    expect(
+      base
+        .where("UserId", "=", "005000000000001")
+        .where("RecordId", "in", [
+          "001000000000001",
+          "001000000000002",
+        ])
+        .compile().soql,
+    ).toBe(
+      "SELECT RecordId FROM UserRecordAccess WHERE UserId = '005000000000001' AND RecordId IN ('001000000000001', '001000000000002')",
+    );
+  });
+
+  it("caps UserRecordAccess RecordId IN filters at 200 literal IDs", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const recordIds = Array.from(
+      { length: 200 },
+      (_, index) => `001${String(index).padStart(12, "0")}`,
+    );
+    const base = db
+      .selectFrom("UserRecordAccess")
+      .select("RecordId")
+      .where("UserId", "=", "005000000000001");
+
+    expect(base.where("RecordId", "in", recordIds).compile().soql).toContain(
+      "RecordId IN (",
+    );
+
+    expect(() =>
+      base
+        .where("RecordId", "in", [
+          ...recordIds,
+          "001000000000200",
+        ])
+        .compile(),
+    ).toThrow(
+      "SOQL UserRecordAccess queries require UserId = <single ID> and either RecordId = <single ID> or RecordId IN (<up to 200 IDs>), with at most one optional Has*Access = true predicate.",
+    );
+  });
+
+  it("restricts UserRecordAccess filters to conjunctive documented predicates", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const base = db.selectFrom("UserRecordAccess").select("RecordId");
+    const error =
+      "SOQL UserRecordAccess queries require UserId = <single ID> and either RecordId = <single ID> or RecordId IN (<up to 200 IDs>), with at most one optional Has*Access = true predicate.";
+
+    expect(() =>
+      base
+        .where((eb) =>
+          eb.or([
+            eb("UserId", "=", "005000000000001"),
+            eb("RecordId", "=", "001000000000001"),
+          ]),
+        )
+        .compile(),
+    ).toThrow(error);
+    expect(() =>
+      base
+        .where("UserId", "=", "005000000000001")
+        .where("RecordId", "=", "001000000000001")
+        .where("MaxAccessLevel", "=", "Read")
+        .compile(),
+    ).toThrow(error);
+    expect(() =>
+      base
+        .where("UserId", "=", "005000000000001")
+        .where("RecordId", "=", "001000000000001")
+        .where("HasReadAccess", "=", false)
+        .compile(),
+    ).toThrow(error);
+    expect(() =>
+      base
+        .where("UserId", "=", "005000000000001")
+        .where("RecordId", "=", "001000000000001")
+        .where("HasReadAccess", "=", true)
+        .where("HasEditAccess", "=", true)
+        .compile(),
+    ).toThrow(error);
+  });
+
+  it("requires UserRecordAccess access-filter queries to SELECT RecordId only", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const error =
+      "SOQL UserRecordAccess queries must SELECT RecordId and may select only Has*Access fields and MaxAccessLevel; queries filtered by Has*Access = true must SELECT RecordId only.";
+    const filtered = db
+      .selectFrom("UserRecordAccess")
+      .where("UserId", "=", "005000000000001")
+      .where("RecordId", "=", "001000000000001")
+      .where("HasReadAccess", "=", true);
+
+    expect(filtered.select("RecordId").compile().soql).toBe(
+      "SELECT RecordId FROM UserRecordAccess WHERE UserId = '005000000000001' AND RecordId = '001000000000001' AND HasReadAccess = TRUE",
+    );
+    expect(() => filtered.select("HasReadAccess").compile()).toThrow(error);
+    expect(() =>
+      filtered.select(["RecordId", "HasReadAccess"]).compile(),
+    ).toThrow(error);
+  });
+
+  it("restricts UserRecordAccess SELECT fields and couples access selections to ORDER BY", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const base = db
+      .selectFrom("UserRecordAccess")
+      .where("UserId", "=", "005000000000001")
+      .where("RecordId", "=", "001000000000001");
+    const selectionError =
+      "SOQL UserRecordAccess queries must SELECT RecordId and may select only Has*Access fields and MaxAccessLevel; queries filtered by Has*Access = true must SELECT RecordId only.";
+    const orderError =
+      "SOQL UserRecordAccess ORDER BY may reference only selected fields, and every selected Has*Access or MaxAccessLevel field must also be ordered.";
+
+    expect(() => base.select("UserId").compile()).toThrow(selectionError);
+    expect(() => base.select("HasReadAccess").compile()).toThrow(
+      selectionError,
+    );
+    expect(() =>
+      base.select(["RecordId", "HasReadAccess"]).compile(),
+    ).toThrow(orderError);
+    expect(() =>
+      base.select(["RecordId", "MaxAccessLevel"]).compile(),
+    ).toThrow(orderError);
+    expect(() =>
+      base.select("RecordId").orderBy("UserId").compile(),
+    ).toThrow(orderError);
+
+    expect(
+      base
+        .select(["RecordId", "HasReadAccess", "MaxAccessLevel"])
+        .orderBy("HasReadAccess", "desc")
+        .orderBy("MaxAccessLevel")
+        .compile().soql,
+    ).toBe(
+      "SELECT RecordId, HasReadAccess, MaxAccessLevel FROM UserRecordAccess WHERE UserId = '005000000000001' AND RecordId = '001000000000001' ORDER BY HasReadAccess DESC, MaxAccessLevel",
+    );
+  });
+
+  it("rejects aggregate and scalar COUNT UserRecordAccess query shapes", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const selectionError =
+      "SOQL UserRecordAccess queries must SELECT RecordId and may select only Has*Access fields and MaxAccessLevel; queries filtered by Has*Access = true must SELECT RecordId only.";
+    const aggregate = db
+      .selectFrom("UserRecordAccess")
+      .select(({ fn }) => fn.count("HasReadAccess").as("accessCount"))
+      .where("UserId", "=", "005000000000001")
+      .where("RecordId", "=", "001000000000001");
+    const count = db
+      .selectFrom("UserRecordAccess")
+      .select(({ fn }) => fn.count())
+      .where("UserId", "=", "005000000000001")
+      .where("RecordId", "=", "001000000000001");
+
+    expect(() => aggregate.compile()).toThrow(selectionError);
+    expect(() => count.compile()).toThrow(selectionError);
+  });
+
+  it("does not let UserRecordAccess RecordId semi-joins satisfy the literal-list form", () => {
+    const base = new Kysoql<FixtureSchema>()
+      .selectFrom("UserRecordAccess")
+      .select("RecordId")
+      .where("UserId", "=", "005000000000001");
+    const subquery = SemiJoinSubqueryNode.cloneWithSelection(
+      SemiJoinSubqueryNode.createFrom(SObjectNode.create("Account")),
+      ReferenceNode.create("Id"),
+    );
+    const queryNode = QueryNode.cloneWithWhere(
+      base.toOperationNode(),
+      BinaryOperationNode.create(
+        ReferenceNode.create("RecordId"),
+        OperatorNode.create("in"),
+        subquery,
+      ),
+    );
+
+    expect(() => new DefaultQueryCompiler().compileQuery(queryNode)).toThrow(
+      "SOQL UserRecordAccess queries require UserId = <single ID> and either RecordId = <single ID> or RecordId IN (<up to 200 IDs>), with at most one optional Has*Access = true predicate.",
     );
   });
 

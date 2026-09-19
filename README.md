@@ -420,7 +420,14 @@ on `Id`, `ExternalId`, or `ContentHubRepositoryId`. `Vote` is narrower: its
 root `WHERE` must contain `ParentId = <single ID>`, `Parent.Type = <single
 type>`, `Id = <single ID>`, or `Id IN (<ID list>)`. Kysoql validates those
 requirements when compiling root queries, including aggregate and scalar
-`COUNT()` forms. The normal field/operator type system remains unchanged.
+`COUNT()` forms. `UserRecordAccess` has a stricter coupled shape: exactly one
+`UserId = ...` predicate plus either `RecordId = ...` or a literal `RecordId IN
+(...)` list of at most 200 IDs. Its normal result form must select `RecordId`;
+selected access fields / `MaxAccessLevel` are limited to Salesforce's documented
+shape and must have matching `ORDER BY` entries, while an optional single
+`Has*Access = TRUE` filter restricts the selection to `RecordId` only. Aggregate
+and scalar `COUNT()` forms are rejected for this object. The normal field/operator
+type system remains unchanged.
 
 Generated child-relationship metadata enables typed parent-to-child subqueries
 without accepting arbitrary subquery `FROM` strings. `.selectSubquery()` takes a
