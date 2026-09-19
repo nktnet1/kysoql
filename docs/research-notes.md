@@ -1107,3 +1107,31 @@ accepts a non-empty string rather than inventing undocumented key-prefix or
 
 Apex-only `WITH SECURITY_ENFORCED`, `WITH USER_MODE` / `SYSTEM_MODE`, and `FOR
 UPDATE` remain outside this REST/SOAP-focused slice.
+
+### Object-specific required-filter limits
+
+Source re-checked on 2026-09-19:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-limits.html
+
+Useful findings:
+
+- Salesforce requires every `ContentDocumentLink` SOQL query to filter on at
+  least one of `Id`, `ContentDocumentId`, or `LinkedEntityId`.
+- Salesforce requires every `ContentHubItem` SOQL query to filter on at least one
+  of `Id`, `ExternalId`, or `ContentHubRepositoryId`.
+- The current object-limit reference states these as required filter fields; it
+  does not add a narrower operator/value-shape rule for these two objects. Keep
+  the ordinary field/operator type system responsible for whether a specific
+  predicate itself is legal.
+- `Vote` is materially different: Salesforce documents four accepted predicate
+  shapes, including specific `=` versus `IN` forms. `UserRecordAccess` also has
+  specialized query/ORDER BY rules. Keep both out of the simple field-presence
+  validator.
+
+Kysoql consequence in `v1.0.80`: add a shared compiler-boundary validator for
+the two straightforward root-WHERE requirements. It recursively inspects nested
+boolean expressions but only counts direct root-field predicates, so unrelated
+relationship references do not satisfy the invariant. The validation applies to
+record, aggregate, and scalar `COUNT()` root queries without changing their
+public builder APIs.

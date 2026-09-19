@@ -132,6 +132,7 @@ recent patch sequence:
 | `v1.0.77` | Add Describe-driven typed root `FOR VIEW` / `FOR REFERENCE`, preserve MRU capability metadata, and document the stable JSforce boundary for automatic `Question` data-category discovery. |
 | `v1.0.78` | Add Knowledge-article-only root `UPDATE TRACKING` / `UPDATE VIEWSTAT` with immutable accumulation, canonical combined compilation, and compiler/type gates. |
 | `v1.0.79` | Add root-only typed `UserProfileFeed WITH UserId = ...`, immutable replacement, escaped scalar compilation, and the required-query compiler invariant. |
+| `v1.0.80` | Enforce the documented root-WHERE filter prerequisites for `ContentDocumentLink` and `ContentHubItem` at the compiler boundary. |
 
 ### Build/tooling state
 
@@ -364,15 +365,13 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.80` and should group the two straightforward
-REST/SOAP object-specific required-filter invariants for `ContentDocumentLink`
-and `ContentHubItem`.** Salesforce requires `ContentDocumentLink` queries to
-filter on at least one of `Id`, `ContentDocumentId`, or `LinkedEntityId`, and
-`ContentHubItem` queries to filter on at least one of `Id`, `ExternalId`, or
-`ContentHubRepositoryId`. These share the same root-WHERE AST validation path and
-can be implemented as one coherent compiler-boundary slice without changing the
-normal field/operator type system. Do not pull the more complex `Vote` or
-`UserRecordAccess` rules into the same patch.
+**The next patch should be `v1.0.81` and should handle the `Vote` object query
+restriction as its own compiler-boundary slice.** Salesforce allows `Vote`
+queries only when the root `WHERE` contains one of these documented shapes:
+`ParentId = <single ID>`, `Parent.Type = <single type>`, `Id = <single ID>`, or
+`Id IN (<ID list>)`. Unlike `v1.0.80`, this requires checking operator and
+right-hand value shape as well as field presence, so keep it separate. Do not
+pull `UserRecordAccess` into the same patch.
 
 Automatic `Question` data-category taxonomy discovery remains deferred: Salesforce
 exposes the required SOAP describe calls, but JSforce 3.10.x does not expose them
@@ -380,7 +379,7 @@ on its public `SoapApi`; the only generic invoke path is private. Keep using the
 existing optional normalized codegen hook until a stable public transport path is
 available rather than coupling the CLI to JSforce internals.
 
-If the supplied bundle already contains `v1.0.79` or later, inspect the code and
+If the supplied bundle already contains `v1.0.80` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
@@ -388,10 +387,10 @@ advance from the actual state instead of reimplementing this section.
 The large general-purpose SOQL surface is substantially complete. The remaining
 work is narrower and should stay incremental:
 
-1. **REST/SOAP object-specific query invariants.** Start with
-   `ContentDocumentLink` / `ContentHubItem`, then evaluate `Vote` and
-   `UserRecordAccess` separately because their accepted filter/order shapes are
-   more specialized. Permission-dependent limits such as `NewsFeed` /
+1. **REST/SOAP object-specific query invariants.** `ContentDocumentLink` and
+   `ContentHubItem` are covered by `v1.0.80`. Handle `Vote` next, then evaluate
+   `UserRecordAccess` separately because its accepted query and ORDER BY shapes
+   are specialized. Permission-dependent limits such as `NewsFeed` /
    `UserProfileFeed` row caps and `TopicAssignment` limits cannot be enforced
    unconditionally without execution-context/permission information, so prefer
    documentation or an explicit capability hook over false static guarantees.
@@ -407,8 +406,9 @@ work is narrower and should stay incremental:
    opening another broad syntax family without a concrete gap.
 
 The aggregate-selection, grouping/HAVING, relationship traversal, polymorphic
-selection, function-expression, pagination, scope/category, MRU, Knowledge, and
-UserProfileFeed foundations are now in place.
+selection, function-expression, pagination, scope/category, MRU, Knowledge,
+UserProfileFeed, ContentDocumentLink, and ContentHubItem foundations are now in
+place.
 
 ## Validation and runtime-boundary conventions
 

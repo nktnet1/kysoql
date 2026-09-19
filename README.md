@@ -413,6 +413,13 @@ const profileFeed = await db
 
 Relationship subqueries intentionally omit `.withUserId()`.
 
+Salesforce also imposes required root filters on a small number of objects.
+`ContentDocumentLink` queries must filter on `Id`,
+`ContentDocumentId`, or `LinkedEntityId`; `ContentHubItem` queries must filter
+on `Id`, `ExternalId`, or `ContentHubRepositoryId`. Kysoql validates those
+requirements when compiling root queries, including aggregate and scalar
+`COUNT()` forms. The normal field/operator type system remains unchanged.
+
 Generated child-relationship metadata enables typed parent-to-child subqueries
 without accepting arbitrary subquery `FROM` strings. `.selectSubquery()` takes a
 generated child relationship name and a dedicated child-query builder with the
