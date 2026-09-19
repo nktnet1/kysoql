@@ -1,8 +1,10 @@
 import { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
 import { AliasNode } from "#/operation-node/alias-node";
 import { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
+import { ConvertTimezoneFunctionNode } from "#/operation-node/convert-timezone-function-node";
 import {
   type DateFunction,
+  type DateFunctionArgumentNode,
   DateFunctionNode,
 } from "#/operation-node/date-function-node";
 import { FormatFunctionNode } from "#/operation-node/format-function-node";
@@ -135,13 +137,17 @@ type DateFunctionComparisonValue<
 
 declare const groupingFunctionType: unique symbol;
 declare const dateFunctionIdentityType: unique symbol;
+declare const convertTimezoneReferenceType: unique symbol;
 declare const aggregateFunctionSelectionType: unique symbol;
 declare const selectFunctionSelectionType: unique symbol;
 
 export type DateFunctionIdentity<
   Function extends DateFunction,
-  Reference extends string,
-> = `${Function}(${Reference})`;
+  ArgumentIdentity extends string,
+> = `${Function}(${ArgumentIdentity})`;
+
+export type ConvertTimezoneIdentity<Reference extends string> =
+  `convertTimezone(${Reference})`;
 
 export interface AggregateFunctionExpression<
   Output,
@@ -178,6 +184,12 @@ export interface DateFunctionBuilder<
   as<Alias extends string>(
     alias: Alias,
   ): AliasedDateFunctionBuilder<Output, Alias, Identity>;
+}
+
+export interface ConvertTimezoneFunctionBuilder<Reference extends string> {
+  readonly [convertTimezoneReferenceType]: Reference;
+
+  toOperationNode(): ConvertTimezoneFunctionNode;
 }
 
 export interface AliasedDateFunctionBuilder<
@@ -423,6 +435,22 @@ class DateFunctionBuilderImpl<
   }
 }
 
+class ConvertTimezoneFunctionBuilderImpl<Reference extends string>
+  implements ConvertTimezoneFunctionBuilder<Reference>
+{
+  declare readonly [convertTimezoneReferenceType]: Reference;
+
+  readonly #node: ConvertTimezoneFunctionNode;
+
+  constructor(node: ConvertTimezoneFunctionNode) {
+    this.#node = node;
+  }
+
+  toOperationNode(): ConvertTimezoneFunctionNode {
+    return this.#node;
+  }
+}
+
 class AliasedDateFunctionBuilderImpl<
   Output,
   Alias extends string,
@@ -652,27 +680,62 @@ export type GroupingFieldReference<
   ? GroupableFieldName<DB, TB, Reference>
   : never;
 
+type DateFunctionInput = ConvertTimezoneFunctionBuilder<string> | string;
+
+type DateFunctionInputReference<Input extends DateFunctionInput> =
+  Input extends ConvertTimezoneFunctionBuilder<infer Reference>
+    ? Reference
+    : Input extends string
+      ? Input
+      : never;
+
+type DateFunctionInputIdentity<Input extends DateFunctionInput> =
+  Input extends ConvertTimezoneFunctionBuilder<infer Reference>
+    ? ConvertTimezoneIdentity<Reference>
+    : Input extends string
+      ? Input
+      : never;
+
+type DateFunctionArgument<
+  DB,
+  TB extends keyof DB,
+  Input extends DateFunctionInput,
+  SalesforceType extends TemporalSalesforceType = TemporalSalesforceType,
+> = Input extends string
+  ? Input & DateGroupableFieldReference<DB, TB, Input, SalesforceType>
+  : Input;
+
 type NumericDateFunctionBuilder<
   DB,
   TB extends keyof DB,
   Function extends DateFunction,
-  Reference extends string,
+  Input extends DateFunctionInput,
 > = DateFunctionBuilder<
-  DateFunctionOutput<DB, TB, Reference, number>,
-  DateFunctionComparisonValue<DB, TB, Reference, number>,
+  DateFunctionOutput<DB, TB, DateFunctionInputReference<Input>, number>,
+  DateFunctionComparisonValue<
+    DB,
+    TB,
+    DateFunctionInputReference<Input>,
+    number
+  >,
   NumericAggregateOperator,
-  DateFunctionIdentity<Function, Reference>
+  DateFunctionIdentity<Function, DateFunctionInputIdentity<Input>>
 >;
 
 type DayOnlyFunctionBuilder<
   DB,
   TB extends keyof DB,
-  Reference extends string,
+  Input extends DateFunctionInput,
 > = DateFunctionBuilder<
-  DateFunctionOutput<DB, TB, Reference, string>,
-  DateFunctionComparisonValue<DB, TB, Reference, SoqlDateLiteral>,
+  DateFunctionOutput<DB, TB, DateFunctionInputReference<Input>, string>,
+  DateFunctionComparisonValue<
+    DB,
+    TB,
+    DateFunctionInputReference<Input>,
+    SoqlDateLiteral
+  >,
   NumericAggregateOperator,
-  DateFunctionIdentity<"dayOnly", Reference>
+  DateFunctionIdentity<"dayOnly", DateFunctionInputIdentity<Input>>
 >;
 
 export interface AggregateFunctionModule<
@@ -680,59 +743,62 @@ export interface AggregateFunctionModule<
   TB extends keyof DB,
   GroupingFields extends string = never,
 > {
-  calendarMonth<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "calendarMonth", Reference>;
+  calendarMonth<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "calendarMonth", Input>;
 
-  calendarQuarter<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "calendarQuarter", Reference>;
+  calendarQuarter<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "calendarQuarter", Input>;
 
-  calendarYear<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "calendarYear", Reference>;
+  calendarYear<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "calendarYear", Input>;
 
-  dayInMonth<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "dayInMonth", Reference>;
+  dayInMonth<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "dayInMonth", Input>;
 
-  dayInWeek<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "dayInWeek", Reference>;
+  dayInWeek<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "dayInWeek", Input>;
 
-  dayInYear<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "dayInYear", Reference>;
+  dayInYear<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "dayInYear", Input>;
 
-  dayOnly<Reference extends string>(
+  dayOnly<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input, "datetime">,
+  ): DayOnlyFunctionBuilder<DB, TB, Input>;
+
+  fiscalMonth<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "fiscalMonth", Input>;
+
+  fiscalQuarter<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "fiscalQuarter", Input>;
+
+  fiscalYear<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "fiscalYear", Input>;
+
+  hourInDay<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input, "datetime">,
+  ): NumericDateFunctionBuilder<DB, TB, "hourInDay", Input>;
+
+  weekInMonth<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "weekInMonth", Input>;
+
+  weekInYear<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "weekInYear", Input>;
+
+  convertTimezone<Reference extends string>(
     field: Reference &
       DateGroupableFieldReference<DB, TB, Reference, "datetime">,
-  ): DayOnlyFunctionBuilder<DB, TB, Reference>;
-
-  fiscalMonth<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "fiscalMonth", Reference>;
-
-  fiscalQuarter<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "fiscalQuarter", Reference>;
-
-  fiscalYear<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "fiscalYear", Reference>;
-
-  hourInDay<Reference extends string>(
-    field: Reference &
-      DateGroupableFieldReference<DB, TB, Reference, "datetime">,
-  ): NumericDateFunctionBuilder<DB, TB, "hourInDay", Reference>;
-
-  weekInMonth<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "weekInMonth", Reference>;
-
-  weekInYear<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "weekInYear", Reference>;
+  ): ConvertTimezoneFunctionBuilder<Reference>;
 
   grouping<Reference extends string>(
     field: Reference &
@@ -823,107 +889,149 @@ class AggregateFunctionModuleImpl<
     this.#groupingFields = freeze([...groupingFields]);
   }
 
-  #numericDateFunction<Function extends DateFunction, Reference extends string>(
+  #dateFunctionArgument(input: DateFunctionInput): DateFunctionArgumentNode {
+    if (typeof input === "string") {
+      return ReferenceNode.create(input);
+    }
+
+    const node = input.toOperationNode();
+
+    if (node.kind !== "ConvertTimezoneFunctionNode") {
+      throw new TypeError(
+        "SOQL date functions require a field reference or an unaliased convertTimezone() expression.",
+      );
+    }
+
+    return node;
+  }
+
+  #numericDateFunction<
+    Function extends DateFunction,
+    Input extends DateFunctionInput,
+  >(
     dateFunction: Function,
-    reference: Reference,
-  ): NumericDateFunctionBuilder<DB, TB, Function, Reference> {
+    input: Input,
+  ): NumericDateFunctionBuilder<DB, TB, Function, Input> {
     return new DateFunctionBuilderImpl<
-      DateFunctionOutput<DB, TB, Reference, number>,
-      DateFunctionComparisonValue<DB, TB, Reference, number>,
+      DateFunctionOutput<DB, TB, DateFunctionInputReference<Input>, number>,
+      DateFunctionComparisonValue<
+        DB,
+        TB,
+        DateFunctionInputReference<Input>,
+        number
+      >,
       NumericAggregateOperator,
-      DateFunctionIdentity<Function, Reference>
-    >(DateFunctionNode.create(dateFunction, ReferenceNode.create(reference)));
+      DateFunctionIdentity<Function, DateFunctionInputIdentity<Input>>
+    >(DateFunctionNode.create(dateFunction, this.#dateFunctionArgument(input)));
   }
 
-  #dayOnly<Reference extends string>(
-    reference: Reference,
-  ): DayOnlyFunctionBuilder<DB, TB, Reference> {
+  #dayOnly<Input extends DateFunctionInput>(
+    input: Input,
+  ): DayOnlyFunctionBuilder<DB, TB, Input> {
     return new DateFunctionBuilderImpl<
-      DateFunctionOutput<DB, TB, Reference, string>,
-      DateFunctionComparisonValue<DB, TB, Reference, SoqlDateLiteral>,
+      DateFunctionOutput<DB, TB, DateFunctionInputReference<Input>, string>,
+      DateFunctionComparisonValue<
+        DB,
+        TB,
+        DateFunctionInputReference<Input>,
+        SoqlDateLiteral
+      >,
       NumericAggregateOperator,
-      DateFunctionIdentity<"dayOnly", Reference>
-    >(DateFunctionNode.create("dayOnly", ReferenceNode.create(reference)));
+      DateFunctionIdentity<"dayOnly", DateFunctionInputIdentity<Input>>
+    >(DateFunctionNode.create("dayOnly", this.#dateFunctionArgument(input)));
   }
 
-  calendarMonth<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "calendarMonth", Reference> {
-    return this.#numericDateFunction("calendarMonth", field as Reference);
+  calendarMonth<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "calendarMonth", Input> {
+    return this.#numericDateFunction("calendarMonth", field as Input);
   }
 
-  calendarQuarter<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "calendarQuarter", Reference> {
-    return this.#numericDateFunction("calendarQuarter", field as Reference);
+  calendarQuarter<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "calendarQuarter", Input> {
+    return this.#numericDateFunction("calendarQuarter", field as Input);
   }
 
-  calendarYear<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "calendarYear", Reference> {
-    return this.#numericDateFunction("calendarYear", field as Reference);
+  calendarYear<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "calendarYear", Input> {
+    return this.#numericDateFunction("calendarYear", field as Input);
   }
 
-  dayInMonth<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "dayInMonth", Reference> {
-    return this.#numericDateFunction("dayInMonth", field as Reference);
+  dayInMonth<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "dayInMonth", Input> {
+    return this.#numericDateFunction("dayInMonth", field as Input);
   }
 
-  dayInWeek<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "dayInWeek", Reference> {
-    return this.#numericDateFunction("dayInWeek", field as Reference);
+  dayInWeek<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "dayInWeek", Input> {
+    return this.#numericDateFunction("dayInWeek", field as Input);
   }
 
-  dayInYear<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "dayInYear", Reference> {
-    return this.#numericDateFunction("dayInYear", field as Reference);
+  dayInYear<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "dayInYear", Input> {
+    return this.#numericDateFunction("dayInYear", field as Input);
   }
 
-  dayOnly<Reference extends string>(
+  dayOnly<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input, "datetime">,
+  ): DayOnlyFunctionBuilder<DB, TB, Input> {
+    return this.#dayOnly(field as Input);
+  }
+
+  fiscalMonth<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "fiscalMonth", Input> {
+    return this.#numericDateFunction("fiscalMonth", field as Input);
+  }
+
+  fiscalQuarter<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "fiscalQuarter", Input> {
+    return this.#numericDateFunction("fiscalQuarter", field as Input);
+  }
+
+  fiscalYear<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "fiscalYear", Input> {
+    return this.#numericDateFunction("fiscalYear", field as Input);
+  }
+
+  hourInDay<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input, "datetime">,
+  ): NumericDateFunctionBuilder<DB, TB, "hourInDay", Input> {
+    return this.#numericDateFunction("hourInDay", field as Input);
+  }
+
+  weekInMonth<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "weekInMonth", Input> {
+    return this.#numericDateFunction("weekInMonth", field as Input);
+  }
+
+  weekInYear<Input extends DateFunctionInput>(
+    field: Input & DateFunctionArgument<DB, TB, Input>,
+  ): NumericDateFunctionBuilder<DB, TB, "weekInYear", Input> {
+    return this.#numericDateFunction("weekInYear", field as Input);
+  }
+
+  convertTimezone<Reference extends string>(
     field: Reference &
       DateGroupableFieldReference<DB, TB, Reference, "datetime">,
-  ): DayOnlyFunctionBuilder<DB, TB, Reference> {
-    return this.#dayOnly(field as Reference);
-  }
+  ): ConvertTimezoneFunctionBuilder<Reference> {
+    if (typeof field !== "string") {
+      throw new TypeError(
+        "SOQL convertTimezone() requires a datetime field reference.",
+      );
+    }
 
-  fiscalMonth<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "fiscalMonth", Reference> {
-    return this.#numericDateFunction("fiscalMonth", field as Reference);
-  }
-
-  fiscalQuarter<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "fiscalQuarter", Reference> {
-    return this.#numericDateFunction("fiscalQuarter", field as Reference);
-  }
-
-  fiscalYear<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "fiscalYear", Reference> {
-    return this.#numericDateFunction("fiscalYear", field as Reference);
-  }
-
-  hourInDay<Reference extends string>(
-    field: Reference &
-      DateGroupableFieldReference<DB, TB, Reference, "datetime">,
-  ): NumericDateFunctionBuilder<DB, TB, "hourInDay", Reference> {
-    return this.#numericDateFunction("hourInDay", field as Reference);
-  }
-
-  weekInMonth<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "weekInMonth", Reference> {
-    return this.#numericDateFunction("weekInMonth", field as Reference);
-  }
-
-  weekInYear<Reference extends string>(
-    field: Reference & DateGroupableFieldReference<DB, TB, Reference>,
-  ): NumericDateFunctionBuilder<DB, TB, "weekInYear", Reference> {
-    return this.#numericDateFunction("weekInYear", field as Reference);
+    return new ConvertTimezoneFunctionBuilderImpl<Reference>(
+      ConvertTimezoneFunctionNode.create(ReferenceNode.create(field)),
+    );
   }
 
   convertCurrency<Reference extends string>(

@@ -34,7 +34,12 @@ export type AnyAliasedDateFunctionBuilder = AliasedDateFunctionBuilder<
 >;
 
 export function dateFunctionIdentity(node: DateFunctionNode): string {
-  return `${node.function}(${node.reference.name})`;
+  const argument =
+    node.reference.kind === "ReferenceNode"
+      ? node.reference.name
+      : `convertTimezone(${node.reference.reference.name})`;
+
+  return `${node.function}(${argument})`;
 }
 
 export function parseDateGroupByExpression(

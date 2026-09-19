@@ -340,6 +340,118 @@ describe("aggregate queries", () => {
     expect(Object.isFrozen(query.toOperationNode().groupBy?.items)).toBe(true);
   });
 
+  it("composes convertTimezone with grouped date functions", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupBy(({ fn }) => fn.calendarYear(fn.convertTimezone("CreatedDate")))
+      .groupBy(({ fn }) =>
+        fn.hourInDay(fn.convertTimezone("Owner.CreatedDate")),
+      )
+      .select(({ fn }) => [
+        fn
+          .calendarYear(fn.convertTimezone("CreatedDate"))
+          .as("localCreatedYear"),
+        fn
+          .hourInDay(fn.convertTimezone("Owner.CreatedDate"))
+          .as("localOwnerCreatedHour"),
+      ])
+      .having((eb) =>
+        eb(
+          eb.fn.calendarYear(eb.fn.convertTimezone("CreatedDate")),
+          ">=",
+          2020,
+        ),
+      )
+      .orderBy(
+        ({ fn }) => fn.hourInDay(fn.convertTimezone("Owner.CreatedDate")),
+        "desc",
+      );
+
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly rowCount: number;
+      readonly localCreatedYear: number;
+      readonly localOwnerCreatedHour: number | null;
+    }>();
+    expect(query.toOperationNode().groupBy?.items).toEqual([
+      {
+        kind: "DateFunctionNode",
+        function: "calendarYear",
+        reference: {
+          kind: "ConvertTimezoneFunctionNode",
+          reference: { kind: "ReferenceNode", name: "CreatedDate" },
+        },
+      },
+      {
+        kind: "DateFunctionNode",
+        function: "hourInDay",
+        reference: {
+          kind: "ConvertTimezoneFunctionNode",
+          reference: {
+            kind: "ReferenceNode",
+            name: "Owner.CreatedDate",
+          },
+        },
+      },
+    ]);
+    const firstGrouping = query.toOperationNode().groupBy?.items[0];
+    expect(firstGrouping?.kind).toBe("DateFunctionNode");
+    if (firstGrouping?.kind !== "DateFunctionNode") {
+      throw new Error("Expected a date-function grouping node.");
+    }
+    expect(Object.isFrozen(firstGrouping.reference)).toBe(true);
+  });
+
+  it("keeps converted and UTC date-function grouping identities distinct", () => {
+    const aggregate = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"));
+    const converted = aggregate.groupBy(({ fn }) =>
+      fn.calendarYear(fn.convertTimezone("CreatedDate")),
+    );
+    const utc = aggregate.groupBy(({ fn }) => fn.calendarYear("CreatedDate"));
+
+    expect(() =>
+      converted.select(
+        ({ fn }) => fn.calendarYear("CreatedDate").as("utcYear") as never,
+      ),
+    ).toThrow("SOQL date function expressions must also appear in GROUP BY.");
+    expect(() =>
+      utc.select(
+        ({ fn }) =>
+          fn
+            .calendarYear(fn.convertTimezone("CreatedDate"))
+            .as("localYear") as never,
+      ),
+    ).toThrow("SOQL date function expressions must also appear in GROUP BY.");
+  });
+
+  it("rejects unsupported convertTimezone composition at runtime", () => {
+    const aggregate = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"));
+
+    expect(() =>
+      aggregate.groupBy(({ fn }) =>
+        fn.calendarYear(fn.convertCurrency("AnnualRevenue") as never),
+      ),
+    ).toThrow(
+      "SOQL date functions require a field reference or an unaliased convertTimezone() expression.",
+    );
+    expect(() =>
+      aggregate.groupBy(({ fn }) =>
+        fn.calendarYear(
+          fn.convertTimezone(fn.convertTimezone("CreatedDate") as never),
+        ),
+      ),
+    ).toThrow("SOQL convertTimezone() requires a datetime field reference.");
+    expect(() =>
+      aggregate.select(({ fn }) => fn.convertTimezone("CreatedDate") as never),
+    ).toThrow(
+      "SOQL aggregate selections must be aliased aggregate function expressions.",
+    );
+  });
+
   it("orders grouped results by typed row-producing aggregate functions", () => {
     const grouped = new Kysoql<FixtureSchema>()
       .selectFrom("Account")
@@ -840,6 +952,31 @@ describe("aggregate queries", () => {
       // @ts-expect-error ORDER BY date functions must be exact GROUP BY members.
       dateGroupedQuery.orderBy(({ fn }) => fn.calendarMonth("CloseDate"));
 
+      const timezoneGroupedQuery = aggregateQuery.groupBy(({ fn }) =>
+        fn.calendarYear(fn.convertTimezone("CreatedDate")),
+      );
+      timezoneGroupedQuery.select(({ fn }) =>
+        fn.calendarYear(fn.convertTimezone("CreatedDate")).as("localYear"),
+      );
+      timezoneGroupedQuery.having((eb) =>
+        eb(eb.fn.calendarYear(eb.fn.convertTimezone("CreatedDate")), "=", 2026),
+      );
+      timezoneGroupedQuery.orderBy(({ fn }) =>
+        fn.calendarYear(fn.convertTimezone("CreatedDate")),
+      );
+      // @ts-expect-error Converted and UTC date-function identities are distinct.
+      timezoneGroupedQuery.select(({ fn }) => {
+        return fn.calendarYear("CreatedDate").as("utcYear");
+      });
+      timezoneGroupedQuery.having((eb) => {
+        // @ts-expect-error Converted and UTC HAVING identities are distinct.
+        return eb(eb.fn.calendarYear("CreatedDate"), "=", 2026);
+      });
+      // @ts-expect-error Converted and UTC ORDER BY identities are distinct.
+      timezoneGroupedQuery.orderBy(({ fn }) => {
+        return fn.calendarYear("CreatedDate");
+      });
+
       aggregateQuery.groupBy(({ fn }) => {
         // @ts-expect-error Date grouping functions require date or datetime fields.
         return fn.calendarYear("Name");
@@ -852,6 +989,28 @@ describe("aggregate queries", () => {
         // @ts-expect-error HOUR_IN_DAY accepts only datetime fields.
         return fn.hourInDay("CloseDate");
       });
+      aggregateQuery.groupBy(({ fn }) => {
+        // @ts-expect-error convertTimezone accepts only datetime fields.
+        return fn.calendarYear(fn.convertTimezone("CloseDate"));
+      });
+      aggregateQuery.groupBy(({ fn }) => {
+        // @ts-expect-error convertTimezone accepts only generated field references.
+        return fn.calendarYear(fn.convertTimezone("Does_Not_Exist__c"));
+      });
+      aggregateQuery.groupBy(({ fn }) => {
+        return fn.calendarYear(
+          // @ts-expect-error convertTimezone cannot be nested inside itself.
+          fn.convertTimezone(fn.convertTimezone("CreatedDate")),
+        );
+      });
+      aggregateQuery.groupBy(({ fn }) => {
+        // @ts-expect-error Date functions accept only fields or convertTimezone expressions.
+        return fn.calendarYear(fn.convertCurrency("AnnualRevenue"));
+      });
+      // @ts-expect-error convertTimezone is an intermediate expression, not a standalone selection.
+      db.selectFrom("Account").select(({ fn }) =>
+        fn.convertTimezone("CreatedDate"),
+      );
       // @ts-expect-error Date function grouping cannot be mixed with ROLLUP.
       dateGroupedQuery.groupByRollup("Name");
 

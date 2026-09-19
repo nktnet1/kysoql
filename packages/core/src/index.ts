@@ -8,6 +8,8 @@ export type {
   AliasedDateFunctionBuilder,
   AliasedSelectFunctionBuilder,
   ConvertCurrencyFunctionBuilder,
+  ConvertTimezoneFunctionBuilder,
+  ConvertTimezoneIdentity,
   CountAllFunctionBuilder,
   CurrencyFieldReference,
   DateFunctionBuilder,
@@ -43,8 +45,10 @@ export type { AliasNode } from "#/operation-node/alias-node";
 export type { AndNode } from "#/operation-node/and-node";
 export type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 export type { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
+export type { ConvertTimezoneFunctionNode } from "#/operation-node/convert-timezone-function-node";
 export type {
   DateFunction,
+  DateFunctionArgumentNode,
   DateFunctionNode,
 } from "#/operation-node/date-function-node";
 export type {

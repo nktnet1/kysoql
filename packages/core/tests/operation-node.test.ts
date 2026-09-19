@@ -5,6 +5,7 @@ import { AliasNode } from "#/operation-node/alias-node";
 import { AndNode } from "#/operation-node/and-node";
 import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 import { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
+import { ConvertTimezoneFunctionNode } from "#/operation-node/convert-timezone-function-node";
 import { DateFunctionNode } from "#/operation-node/date-function-node";
 import { FieldsFunctionNode } from "#/operation-node/fields-function-node";
 import { FormatFunctionNode } from "#/operation-node/format-function-node";
@@ -83,6 +84,40 @@ describe("operation nodes", () => {
       reference,
     });
     expectFrozen(dateFunction);
+  });
+
+  it("creates frozen convertTimezone function nodes and date-function composition", () => {
+    const reference = ReferenceNode.create("CreatedDate");
+    const convertTimezone = ConvertTimezoneFunctionNode.create(reference);
+    const dateFunction = DateFunctionNode.create(
+      "calendarYear",
+      convertTimezone,
+    );
+
+    expect(convertTimezone).toEqual({
+      kind: "ConvertTimezoneFunctionNode",
+      reference,
+    });
+    expect(dateFunction).toEqual({
+      kind: "DateFunctionNode",
+      function: "calendarYear",
+      reference: convertTimezone,
+    });
+    expectFrozen(convertTimezone);
+    expectFrozen(dateFunction);
+    expect(() =>
+      ConvertTimezoneFunctionNode.create(
+        DateFunctionNode.create("calendarYear", reference) as never,
+      ),
+    ).toThrow("SOQL convertTimezone() requires a datetime field reference.");
+    expect(() =>
+      DateFunctionNode.create(
+        "calendarYear",
+        ConvertCurrencyFunctionNode.create(reference) as never,
+      ),
+    ).toThrow(
+      "SOQL date functions require a field reference or an unaliased convertTimezone() expression.",
+    );
   });
 
   it("creates frozen FIELDS function nodes", () => {

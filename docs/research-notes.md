@@ -547,8 +547,17 @@ Ordinary `groupBy(({ fn }) => ...)` accumulates the exact function identity, whi
 then scopes aliased selection, `HAVING`, and expression ordering at both type and
 runtime boundaries. Numeric outputs preserve source/relationship nullability;
 `DAY_ONLY` returns the generated API date representation (`string`) and compares
-against `soqlDate(...)`. ROLLUP/CUBE remain field-only so `GROUPING(field)` keeps
-its documented field argument and existing subtotal semantics.
+against `soqlDate(...)`. ROLLUP/CUBE remain field-only, preserving
+`GROUPING(field)`'s documented field argument and existing subtotal semantics.
+
+Implemented consequence in `v1.0.71`: `fn.convertTimezone(...)` creates a
+dedicated frozen intermediate node restricted to generated, groupable
+`datetime` references. Every date function accepts that intermediate expression
+across ordinary GROUP BY, SELECT, HAVING, and ORDER BY while preserving its
+existing output type and source nullability. Converted and UTC expressions have
+different exact grouping identities. The intermediate builder deliberately has
+no aliasing API and cannot be selected or nested independently of a date
+function; runtime node validation mirrors those type-level boundaries.
 
 ### Aggregate expression ordering
 

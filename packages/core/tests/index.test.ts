@@ -20,10 +20,14 @@ import {
   type CompiledQuery,
   type ConvertCurrencyFunctionBuilder,
   type ConvertCurrencyFunctionNode,
+  type ConvertTimezoneFunctionBuilder,
+  type ConvertTimezoneFunctionNode,
+  type ConvertTimezoneIdentity,
   type CountAllFunctionBuilder,
   type CountQueryBuilder,
   type CurrencyFieldReference,
   type DateFunction,
+  type DateFunctionArgumentNode,
   type DateFunctionBuilder,
   type DateFunctionExpression,
   type DateFunctionIdentity,
@@ -149,6 +153,9 @@ type PublicTypeSurface = {
   compiledQuery: CompiledQuery;
   convertCurrencyFunctionBuilder: ConvertCurrencyFunctionBuilder<number>;
   convertCurrencyFunctionNode: ConvertCurrencyFunctionNode;
+  convertTimezoneFunctionBuilder: ConvertTimezoneFunctionBuilder<"CreatedDate">;
+  convertTimezoneFunctionNode: ConvertTimezoneFunctionNode;
+  convertTimezoneIdentity: ConvertTimezoneIdentity<"CreatedDate">;
   countAllFunctionBuilder: CountAllFunctionBuilder;
   currencyFieldReference: CurrencyFieldReference<
     Record<string, never>,
@@ -157,6 +164,7 @@ type PublicTypeSurface = {
   >;
   countQueryBuilder: CountQueryBuilder<Record<string, never>, never>;
   dateFunction: DateFunction;
+  dateFunctionArgumentNode: DateFunctionArgumentNode;
   dateFunctionBuilder: DateFunctionBuilder<
     number,
     number,

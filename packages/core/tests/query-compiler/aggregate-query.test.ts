@@ -234,6 +234,40 @@ describe("aggregate query compilation", () => {
     );
   });
 
+  it("compiles convertTimezone only as a nested date-function argument", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupBy(({ fn }) => fn.calendarYear(fn.convertTimezone("CreatedDate")))
+      .groupBy(({ fn }) => fn.dayOnly(fn.convertTimezone("CreatedDate")))
+      .groupBy(({ fn }) =>
+        fn.hourInDay(fn.convertTimezone("Owner.CreatedDate")),
+      )
+      .select(({ fn }) => [
+        fn.calendarYear(fn.convertTimezone("CreatedDate")).as("localYear"),
+        fn.dayOnly(fn.convertTimezone("CreatedDate")).as("localDay"),
+        fn
+          .hourInDay(fn.convertTimezone("Owner.CreatedDate"))
+          .as("localOwnerHour"),
+      ])
+      .having((eb) =>
+        eb(
+          eb.fn.calendarYear(eb.fn.convertTimezone("CreatedDate")),
+          ">=",
+          2020,
+        ),
+      )
+      .orderBy(
+        ({ fn }) => fn.dayOnly(fn.convertTimezone("CreatedDate")),
+        "desc",
+      )
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT COUNT(Id) rowCount, CALENDAR_YEAR(convertTimezone(CreatedDate)) localYear, DAY_ONLY(convertTimezone(CreatedDate)) localDay, HOUR_IN_DAY(convertTimezone(Owner.CreatedDate)) localOwnerHour FROM Account GROUP BY CALENDAR_YEAR(convertTimezone(CreatedDate)), DAY_ONLY(convertTimezone(CreatedDate)), HOUR_IN_DAY(convertTimezone(Owner.CreatedDate)) HAVING CALENDAR_YEAR(convertTimezone(CreatedDate)) >= 2020 ORDER BY DAY_ONLY(convertTimezone(CreatedDate)) DESC",
+    );
+  });
+
   it("compiles DAY_ONLY HAVING comparisons as date literals", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")

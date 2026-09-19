@@ -5,6 +5,7 @@ import type { AliasNode } from "#/operation-node/alias-node";
 import type { AndNode } from "#/operation-node/and-node";
 import type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 import type { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
+import type { ConvertTimezoneFunctionNode } from "#/operation-node/convert-timezone-function-node";
 import type { DateFunctionNode } from "#/operation-node/date-function-node";
 import type { FieldsFunctionNode } from "#/operation-node/fields-function-node";
 import type { FormatFunctionNode } from "#/operation-node/format-function-node";
@@ -260,11 +261,22 @@ export class DefaultQueryCompiler implements QueryCompiler {
       weekInYear: "WEEK_IN_YEAR",
     }[node.function];
 
-    return `${name}(${this.#compileReference(node.reference)})`;
+    const argument =
+      node.reference.kind === "ReferenceNode"
+        ? this.#compileReference(node.reference)
+        : this.#compileConvertTimezoneFunction(
+            node.reference as ConvertTimezoneFunctionNode,
+          );
+
+    return `${name}(${argument})`;
   }
 
   #compileConvertCurrencyFunction(node: ConvertCurrencyFunctionNode): string {
     return `convertCurrency(${this.#compileReference(node.reference)})`;
+  }
+
+  #compileConvertTimezoneFunction(node: ConvertTimezoneFunctionNode): string {
+    return `convertTimezone(${this.#compileReference(node.reference)})`;
   }
 
   #compileFormatFunction(node: FormatFunctionNode): string {

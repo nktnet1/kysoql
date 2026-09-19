@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.70`, the next patch
-   is `v1.0.71`.
+   reuse or rewrite a version already handed off. After `v1.0.71`, the next patch
+   is `v1.0.72`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.70`
+## Current state after `v1.0.71`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -123,6 +123,7 @@ recent patch sequence:
 | `v1.0.68` | Add typed aliased `FORMAT()` selection for generated numeric/temporal fields and documented `FORMAT(convertCurrency(field))` composition. |
 | `v1.0.69` | Complete typed `FORMAT()` aggregate composition for unaliased row-producing aggregate functions with field arguments. |
 | `v1.0.70` | Add typed `FIELDS(STANDARD\|CUSTOM\|ALL)` selections, generated custom-field metadata, direct-field output inference, overlap protection, and REST/SOAP bounds. |
+| `v1.0.71` | Add typed `convertTimezone()` composition inside date functions with datetime-only inputs and exact converted-expression grouping identity. |
 
 ### Build/tooling state
 
@@ -237,7 +238,9 @@ Core currently has:
   metadata gates inputs (including child-to-parent references), `DAY_ONLY` and
   `HOUR_IN_DAY` are datetime-only, aliased outputs preserve temporal and
   relationship nullability, and exact function membership is retained across
-  ordinary GROUP BY, SELECT, HAVING, and ORDER BY; ROLLUP/CUBE remain field-only;
+  ordinary GROUP BY, SELECT, HAVING, and ORDER BY; datetime inputs can be
+  explicitly wrapped with `convertTimezone()` inside those functions while
+  retaining a distinct exact identity; ROLLUP/CUBE remain field-only;
 - typed aggregate-expression ordering after grouping for unaliased
   `COUNT(field)`, `COUNT_DISTINCT(field)`, `AVG(field)`, `MIN(field)`,
   `MAX(field)`, and `SUM(field)` callbacks, including direction and explicit
@@ -306,28 +309,24 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.71` and should add typed
-`convertTimezone()` composition inside date functions.** Salesforce permits
-`convertTimezone(datetimeField)` only as the input of a date function, so model
-it as an unaliased intermediate expression rather than a standalone selection.
+**The next patch should be `v1.0.72` and should add typed geolocation
+expressions.** Keep this as a focused function slice so location-distance
+semantics do not weaken ordinary scalar expression typing.
 
 Recommended next unit:
 
-- add a dedicated immutable `ConvertTimezoneFunctionNode` and a typed
-  `fn.convertTimezone(...)` builder restricted to generated `datetime` fields,
-  including valid child-to-parent paths;
-- allow that intermediate expression as the input of the existing calendar /
-  fiscal date-function family across GROUP BY, SELECT, HAVING, and ORDER BY;
-- preserve the existing date-function return types and exact grouped-expression
-  identity so converted and unconverted forms cannot satisfy one another's
-  grouping requirement;
-- reject standalone/aliased `convertTimezone()` selections, `date`/`time` and
-  non-temporal inputs, and unsupported nesting at both the type and runtime AST
-  boundaries;
-- add compiler, immutability, expression-membership, nullability, and negative
-  tests without bundling geolocation or polymorphic `TYPEOF` work.
+- teach codegen/core metadata to identify Salesforce `location` fields without
+  opening them to unrelated scalar operators;
+- add dedicated immutable `GEOLOCATION` and `DISTANCE` nodes and typed builders,
+  with literal coordinate validation and the documented `mi` / `km` units;
+- support aliased distance selection, compatible distance filtering, and
+  distance ordering while preserving root and safe relationship field paths;
+- keep argument order, comparison operators, output nullability, and unsupported
+  grouping contexts explicit at both type and runtime boundaries;
+- add compiler, immutability, output-inference, and negative tests without
+  bundling polymorphic `TYPEOF` work.
 
-If the supplied bundle already contains `v1.0.70` or later, inspect the code and
+If the supplied bundle already contains `v1.0.71` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
@@ -335,13 +334,11 @@ advance from the actual state instead of reimplementing this section.
 Group closely related syntax when it shares the same type/AST/compiler path, but
 keep major architecture changes independently reviewable:
 
-1. **Broader SELECT expressions/functions.** Remaining calendar/date functions,
-   `convertTimezone()`, and geolocation expressions where safely modelable.
-2. **Polymorphic references / `TYPEOF`.** Dedicated AST and discriminated output
+1. **Polymorphic references / `TYPEOF`.** Dedicated AST and discriminated output
    typing.
-3. **Specialist top-level clauses.** `USING SCOPE`, `WITH DATA CATEGORY`, and
+2. **Specialist top-level clauses.** `USING SCOPE`, `WITH DATA CATEGORY`, and
    other REST/SOAP-relevant specialist clauses.
-4. **Execution-context-specific syntax.** Re-evaluate Apex-only semantics such as
+3. **Execution-context-specific syntax.** Re-evaluate Apex-only semantics such as
    `FOR UPDATE`, `WITH USER_MODE`, binds, etc. separately from the
    transport-neutral REST/JSforce core.
 

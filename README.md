@@ -350,8 +350,25 @@ The numeric family comprises `calendarMonth`, `calendarQuarter`,
 `calendarYear`, `dayInMonth`, `dayInWeek`, `dayInYear`, `fiscalMonth`,
 `fiscalQuarter`, `fiscalYear`, `hourInDay`, `weekInMonth`, and `weekInYear`.
 `dayOnly` returns the date portion as a string, matching Salesforce query-result
-semantics. Date function grouping is intentionally kept separate from the
-field-only `ROLLUP` / `CUBE` and `GROUPING(field)` API.
+semantics. To group a `datetime` in the querying user's timezone, wrap the field
+with `fn.convertTimezone(...)` inside the date function. The conversion cannot
+be selected by itself, and its grouped identity is distinct from the same date
+function over the unconverted UTC field.
+
+```ts
+const activityByLocalHour = await db
+  .selectFrom("Opportunity")
+  .select(({ fn }) => fn.count("Id").as("opportunityCount"))
+  .groupBy(({ fn }) => fn.hourInDay(fn.convertTimezone("CreatedDate")))
+  .select(({ fn }) =>
+    fn.hourInDay(fn.convertTimezone("CreatedDate")).as("localHour"),
+  )
+  .orderBy(({ fn }) => fn.hourInDay(fn.convertTimezone("CreatedDate")))
+  .execute();
+```
+
+Date function grouping is intentionally kept separate from the field-only
+`ROLLUP` / `CUBE` and `GROUPING(field)` API.
 
 For subtotal reports, aggregate builders also expose `.groupByRollup(...)` and
 `.groupByCube(...)`. Both forms retain the same generated `groupable` checks,
