@@ -20,6 +20,7 @@ export type {
   SalesforceGlobalObjectDescription,
   SalesforceObjectDescription,
   SalesforcePicklistValue,
+  SalesforceSupportedScopeDescription,
 } from "#/types";
 
 export interface GenerateSchemaOptions {

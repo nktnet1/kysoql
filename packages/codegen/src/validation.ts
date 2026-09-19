@@ -41,11 +41,18 @@ const salesforceChildRelationshipDescriptionSchema = v.object({
   relationshipName: v.optional(v.nullable(v.string())),
 });
 
+const salesforceSupportedScopeDescriptionSchema = v.object({
+  name: v.string(),
+});
+
 const salesforceObjectDescriptionSchema = v.object({
   name: v.string(),
   fields: v.array(salesforceFieldDescriptionSchema),
   childRelationships: v.optional(
     v.array(salesforceChildRelationshipDescriptionSchema),
+  ),
+  supportedScopes: v.optional(
+    v.array(salesforceSupportedScopeDescriptionSchema),
   ),
 });
 
@@ -152,6 +159,13 @@ export const parseSalesforceObjectDescription = (
                 : { relationshipName: relationship.relationshipName }),
             }),
           ),
+        }),
+    ...(result.output.supportedScopes === undefined
+      ? {}
+      : {
+          supportedScopes: result.output.supportedScopes.map((scope) => ({
+            name: scope.name,
+          })),
         }),
   };
 };

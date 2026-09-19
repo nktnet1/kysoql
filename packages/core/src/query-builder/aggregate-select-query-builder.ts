@@ -26,6 +26,7 @@ import { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import { QueryNode } from "#/operation-node/query-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
 import type { SelectionNode } from "#/operation-node/selection-node";
+import { UsingScopeNode } from "#/operation-node/using-scope-node";
 import {
   type AggregateSelection,
   type AggregateSelectionArg,
@@ -68,6 +69,7 @@ import {
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { QueryExecutor } from "#/query-executor";
+import type { SalesforceObjectSupportedScope } from "#/schema";
 import { freeze } from "#/util/object-utils";
 
 type AggregateGroupMode = "none" | "ordinary" | AdvancedGroupByMode;
@@ -250,6 +252,17 @@ export interface AggregateSelectQueryBuilder<
   compile(): CompiledQuery<O>;
 
   execute(): Promise<readonly O[]>;
+
+  usingScope(
+    scope: SalesforceObjectSupportedScope<DB[TB]>,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
 
   groupBy<GE extends string>(
     field: GroupModeOnly<
@@ -574,6 +587,32 @@ class AggregateSelectQueryBuilderImpl<
     }
 
     return this.#props.queryExecutor.executeQuery(this.compile());
+  }
+
+  usingScope(
+    scope: SalesforceObjectSupportedScope<DB[TB]>,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithUsingScope(
+        this.#props.queryNode,
+        UsingScopeNode.create(scope),
+      ),
+    });
   }
 
   groupBy<GE extends string>(

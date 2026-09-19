@@ -5,6 +5,7 @@ import {
 import type { ComparisonOperator } from "#/operation-node/operator-node";
 import { QueryNode } from "#/operation-node/query-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
+import { UsingScopeNode } from "#/operation-node/using-scope-node";
 import type {
   ComparisonOperatorExpression,
   FilterableFieldName,
@@ -18,6 +19,7 @@ import { parseLimit } from "#/parser/limit-parser";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { QueryExecutor } from "#/query-executor";
+import type { SalesforceObjectSupportedScope } from "#/schema";
 import { freeze } from "#/util/object-utils";
 
 export interface CountQueryBuilder<DB, TB extends keyof DB> {
@@ -26,6 +28,10 @@ export interface CountQueryBuilder<DB, TB extends keyof DB> {
   execute(): Promise<number>;
 
   limit(limit: number): CountQueryBuilder<DB, TB>;
+
+  usingScope(
+    scope: SalesforceObjectSupportedScope<DB[TB]>,
+  ): CountQueryBuilder<DB, TB>;
 
   where(expression: WhereExpressionFactory<DB, TB>): CountQueryBuilder<DB, TB>;
 
@@ -79,6 +85,18 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
       queryNode: SelectQueryNode.cloneWithLimit(
         this.#props.queryNode,
         parseLimit(limit),
+      ),
+    });
+  }
+
+  usingScope(
+    scope: SalesforceObjectSupportedScope<DB[TB]>,
+  ): CountQueryBuilder<DB, TB> {
+    return new CountQueryBuilderImpl<DB, TB>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithUsingScope(
+        this.#props.queryNode,
+        UsingScopeNode.create(scope),
       ),
     });
   }

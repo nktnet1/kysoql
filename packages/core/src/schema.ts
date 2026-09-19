@@ -95,10 +95,12 @@ export interface SalesforceObject<
     string,
     SalesforceChildRelationship<string, string>
   > = Record<never, never>,
+  SupportedScope extends string = never,
 > {
   readonly fields: Fields;
   readonly parents: Parents;
   readonly children: Children;
+  readonly supportedScopes: SupportedScope;
 }
 
 export type SalesforceSchema = Record<
@@ -106,9 +108,17 @@ export type SalesforceSchema = Record<
   SalesforceObject<
     Record<string, AnySalesforceField>,
     Record<string, SalesforceParentRelationship<string, string, boolean>>,
-    Record<string, SalesforceChildRelationship<string, string>>
+    Record<string, SalesforceChildRelationship<string, string>>,
+    string
   >
 >;
+
+export type SalesforceObjectSupportedScope<ObjectType> =
+  ObjectType extends {
+    readonly supportedScopes: infer SupportedScope extends string;
+  }
+    ? SupportedScope
+    : never;
 
 export type SalesforceFieldValue<Field> =
   Field extends SalesforceField<
@@ -183,7 +193,8 @@ export type SalesforceRow<ObjectType> =
   ObjectType extends SalesforceObject<
     infer Fields,
     Record<string, SalesforceParentRelationship<string, string, boolean>>,
-    Record<string, SalesforceChildRelationship<string, string>>
+    Record<string, SalesforceChildRelationship<string, string>>,
+    string
   >
     ? {
         readonly [FieldName in keyof Fields]: SalesforceFieldValue<

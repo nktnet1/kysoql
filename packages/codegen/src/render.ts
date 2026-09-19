@@ -152,11 +152,16 @@ const renderObject = (object: SalesforceObjectDescription): string => {
   const renderBlock = (entries: readonly string[]): string =>
     entries.length > 0 ? `    {\n${entries.join("\n")}\n    }` : "    {}";
 
+  const supportedScopeType = object.supportedScopes?.length
+    ? stringUnion(object.supportedScopes.map((scope) => scope.name))
+    : "never";
+
   return [
     `  readonly ${quote(object.name)}: SalesforceObject<`,
     `${renderBlock(fields.map(renderField))},`,
     `${renderBlock(parents)},`,
-    renderBlock(children),
+    `${renderBlock(children)},`,
+    `    ${supportedScopeType}`,
     "  >;",
   ].join("\n");
 };

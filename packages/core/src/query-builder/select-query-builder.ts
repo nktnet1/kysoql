@@ -24,6 +24,7 @@ import { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery
 import type { TypeOfNode } from "#/operation-node/type-of-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
 import { SelectionNode } from "#/operation-node/selection-node";
+import { UsingScopeNode } from "#/operation-node/using-scope-node";
 import {
   type AggregateSelection,
   type AggregateSelectionArg,
@@ -100,7 +101,10 @@ import {
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { QueryExecutor } from "#/query-executor";
-import type { SalesforceQueryResult } from "#/schema";
+import type {
+  SalesforceObjectSupportedScope,
+  SalesforceQueryResult,
+} from "#/schema";
 import { freeze } from "#/util/object-utils";
 import type { Simplify } from "#/util/type-utils";
 
@@ -186,6 +190,10 @@ export interface SelectQueryBuilder<
   limit(limit: number): SelectQueryBuilder<DB, TB, O, Mode>;
 
   offset(offset: number): SelectQueryBuilder<DB, TB, O, Mode>;
+
+  usingScope(
+    scope: SalesforceObjectSupportedScope<DB[TB]>,
+  ): SelectQueryBuilder<DB, TB, O, Mode>;
 
   orderBy(
     expression: DistanceOrderByFactory<DB, TB>,
@@ -358,6 +366,18 @@ class SelectQueryBuilderImpl<
       queryNode: SelectQueryNode.cloneWithOffset(
         this.#props.queryNode,
         parseOffset(offset),
+      ),
+    });
+  }
+
+  usingScope(
+    scope: SalesforceObjectSupportedScope<DB[TB]>,
+  ): SelectQueryBuilder<DB, TB, O, Mode> {
+    return new SelectQueryBuilderImpl<DB, TB, O, Mode>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithUsingScope(
+        this.#props.queryNode,
+        UsingScopeNode.create(scope),
       ),
     });
   }

@@ -222,6 +222,22 @@ describe("renderSchema", () => {
     expect(fieldBlock("DuplicateTarget__c")).toMatch(/\n        false$/);
   });
 
+  it("renders supported scopes as a sorted unique string-literal union", () => {
+    const source = renderSchema([
+      objectWith([], {
+        supportedScopes: [
+          { name: "team" },
+          { name: "mine" },
+          { name: "team" },
+        ],
+      }),
+    ]);
+
+    expect(source).toContain(
+      'readonly "Fixture__c": SalesforceObject<\n    {},\n    {},\n    {},\n    "mine" | "team"\n  >;',
+    );
+  });
+
   it("JSON-quotes generated names and string-union members", () => {
     const source = renderSchema([
       objectWith(
@@ -368,7 +384,7 @@ describe("renderSchema", () => {
 
     expect(source).toContain("export interface CustomSchema {");
     expect(source).toContain(
-      'readonly "Fixture__c": SalesforceObject<\n    {},\n    {},\n    {}\n  >;',
+      'readonly "Fixture__c": SalesforceObject<\n    {},\n    {},\n    {},\n    never\n  >;',
     );
     expect(source.endsWith("\n")).toBe(true);
   });

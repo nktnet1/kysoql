@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.73`
+## Current state after `v1.0.74`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -126,6 +126,7 @@ recent patch sequence:
 | `v1.0.71` | Add typed `convertTimezone()` composition inside date functions with datetime-only inputs and exact converted-expression grouping identity. |
 | `v1.0.72` | Add typed geolocation fields plus validated `GEOLOCATION()` / `DISTANCE()` selection, filtering, and ordering with relationship/nullability preservation. |
 | `v1.0.73` | Add Describe-driven typed polymorphic `TYPEOF` selection with branch-specific output unions, parent-path/nullability preservation, and function/grouping compatibility guards. |
+| `v1.0.74` | Add Describe-driven typed top-level `USING SCOPE` with object-specific scope unions, immutable replacement semantics, and root compiler ordering. |
 
 ### Build/tooling state
 
@@ -193,6 +194,12 @@ Core currently has:
   the common field/path surface of all remaining generated targets, and TYPEOF is
   kept incompatible with SELECT functions (including nested child subqueries),
   aggregate/grouping forms, and ordinary field selection through the same target;
+- typed root `.usingScope(scope)` from each object's generated Describe
+  `supportedScopes`; record, aggregate, and scalar `COUNT()` builders retain the
+  capability, repeated calls replace the previous immutable scope node, and the
+  compiler emits the clause after `FROM` and before `WHERE` / grouping / ordering;
+  relationship-subquery builders intentionally omit the method because Salesforce
+  disallows `USING SCOPE` in parent-child relationship queries;
 - typed `.selectFields("standard" | "custom" | "all")` on record and
   relationship-subquery builders; generated `custom` metadata expands exact
   direct-field result shapes, compile-time guards reject overlap with explicit
@@ -314,7 +321,7 @@ Core currently has:
 - generated field metadata for filterable/sortable/groupable/aggregatable/custom
   flags, polymorphic-reference detection (`namePointing`,
   `polymorphicForeignKey`, and `referenceTo`), active picklist values, and
-  parent/child relationships.
+  parent/child relationships, plus object-level `supportedScopes` unions.
 
 Important current filter typing rules:
 
@@ -329,26 +336,14 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.74` and should add typed top-level `USING SCOPE`.**
-Keep it isolated from `WITH DATA CATEGORY`: Salesforce exposes the supported
-scope names directly in each object's Describe metadata, so this is a small
-Describe -> generated schema -> immutable AST -> compiler slice.
+**The next patch should be `v1.0.75` and should take the first coherent typed
+`WITH DATA CATEGORY` slice.** Re-check the current Salesforce documentation and
+metadata inputs before fixing the public API: unlike `USING SCOPE`, this grammar
+combines category groups, category names, selectors such as `AT` / `ABOVE` /
+`BELOW` / `ABOVE_OR_BELOW`, and multiple conditions. Keep the work REST/SOAP
+focused and do not combine it with Apex-only execution modes.
 
-Recommended next unit:
-
-- preserve each object's Describe `supportedScopes` names in codegen and expose
-  them as a generated string-literal union;
-- add a root-query `.usingScope(scope)` method constrained to the selected
-  object's generated supported scopes, with replacement semantics on repeated
-  calls;
-- model the clause with a dedicated immutable node/property and compile it after
-  `FROM` and before filtering/grouping/order clauses;
-- keep `USING SCOPE` out of relationship-subquery builders because Salesforce
-  explicitly disallows the clause for parent-child relationship queries;
-- add codegen, compiler-ordering, immutability, replacement, and unsupported-scope
-  type tests without bundling `WITH DATA CATEGORY` or Apex-only execution modes.
-
-If the supplied bundle already contains `v1.0.73` or later, inspect the code and
+If the supplied bundle already contains `v1.0.74` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
@@ -356,8 +351,8 @@ advance from the actual state instead of reimplementing this section.
 Group closely related syntax when it shares the same type/AST/compiler path, but
 keep major architecture changes independently reviewable:
 
-1. **Remaining specialist top-level clauses.** `WITH DATA CATEGORY` and other
-   REST/SOAP-relevant specialist clauses after the focused `USING SCOPE` slice.
+1. **Remaining specialist top-level clauses.** Complete `WITH DATA CATEGORY` and
+   other REST/SOAP-relevant specialist clauses after the focused first slice.
 2. **Execution-context-specific syntax.** Re-evaluate Apex-only semantics such as
    `FOR UPDATE`, `WITH USER_MODE`, binds, etc. separately from the
    transport-neutral REST/JSforce core.

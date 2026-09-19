@@ -102,6 +102,7 @@ export type { OrderByNode } from "#/operation-node/order-by-node";
 export type { ReferenceNode } from "#/operation-node/reference-node";
 export type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 export type { TypeOfNode, TypeOfWhenNode } from "#/operation-node/type-of-node";
+export type { UsingScopeNode } from "#/operation-node/using-scope-node";
 export type { SelectQueryNode } from "#/operation-node/select-query-node";
 export type { SelectionNode } from "#/operation-node/selection-node";
 export type { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
@@ -146,6 +147,7 @@ export type {
   SalesforceFieldValue,
   SalesforceGeolocation,
   SalesforceObject,
+  SalesforceObjectSupportedScope,
   SalesforceParentRelationship,
   SalesforceQueryResult,
   SalesforceRecordAttributes,

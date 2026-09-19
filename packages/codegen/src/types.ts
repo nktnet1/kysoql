@@ -34,10 +34,15 @@ export interface SalesforceChildRelationshipDescription {
   readonly relationshipName?: string | null;
 }
 
+export interface SalesforceSupportedScopeDescription {
+  readonly name: string;
+}
+
 export interface SalesforceObjectDescription {
   readonly name: string;
   readonly fields: readonly SalesforceFieldDescription[];
   readonly childRelationships?: readonly SalesforceChildRelationshipDescription[];
+  readonly supportedScopes?: readonly SalesforceSupportedScopeDescription[];
 }
 
 export interface SalesforceDescribeClient {

@@ -7,6 +7,7 @@ import type {
   SalesforceGlobalObjectDescription,
   SalesforceObjectDescription,
   SalesforcePicklistValue,
+  SalesforceSupportedScopeDescription,
 } from "#/index";
 import { renderSchema } from "#/index";
 
@@ -35,6 +36,10 @@ it("exports the complete codegen public API from the package entrypoint", () => 
   expectTypeOf<SalesforceObjectDescription>().toMatchTypeOf<{
     readonly name: string;
     readonly fields: readonly SalesforceFieldDescription[];
+    readonly supportedScopes?: readonly SalesforceSupportedScopeDescription[];
+  }>();
+  expectTypeOf<SalesforceSupportedScopeDescription>().toEqualTypeOf<{
+    readonly name: string;
   }>();
   expectTypeOf<SalesforceDescribeClient>().toMatchTypeOf<{
     describeGlobal(): Promise<SalesforceGlobalDescription>;

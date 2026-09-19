@@ -7,6 +7,7 @@ import type {
   SalesforceFieldValue,
   SalesforceGeolocation,
   SalesforceObject,
+  SalesforceObjectSupportedScope,
   SalesforceParentRelationship,
   SalesforceRow,
 } from "#/schema";
@@ -132,6 +133,27 @@ it("preserves parent and child relationship metadata in SalesforceObject", () =>
   expectTypeOf<
     ObjectWithRelationships["children"]["Children__r"]
   >().toEqualTypeOf<SalesforceChildRelationship<"Child__c", "Parent__c">>();
+});
+
+it("preserves object-specific supported scope metadata", () => {
+  type ScopedObject = SalesforceObject<
+    {
+      readonly Id: SalesforceField<string, "id", false, true, true, true>;
+    },
+    {},
+    {},
+    "everything" | "mine"
+  >;
+
+  expectTypeOf<ScopedObject["supportedScopes"]>().toEqualTypeOf<
+    "everything" | "mine"
+  >();
+  expectTypeOf<SalesforceObjectSupportedScope<ScopedObject>>().toEqualTypeOf<
+    "everything" | "mine"
+  >();
+  expectTypeOf<
+    SalesforceObjectSupportedScope<FixtureObject>
+  >().toEqualTypeOf<never>();
 });
 
 it("returns never for non-Salesforce row inputs", () => {

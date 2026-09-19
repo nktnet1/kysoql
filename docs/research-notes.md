@@ -842,6 +842,15 @@ scope union, store it immutably, and compile it in the documented top-level clau
 position. Keep `WITH DATA CATEGORY` separate because its object/category grammar
 and Describe inputs are a different typing problem.
 
+Implemented consequence in `v1.0.74`: codegen validates and preserves each
+object's `supportedScopes` names and renders them as a sorted generated
+string-literal union on `SalesforceObject`. Root record, aggregate, and scalar
+`COUNT()` builders expose `.usingScope()` against that object-specific union. A
+dedicated frozen `UsingScopeNode` gives repeated calls replacement semantics, and
+the compiler emits `USING SCOPE` immediately after the root `FROM` clause. The
+relationship-subquery builder remains deliberately unchanged because Salesforce
+disallows the clause there.
+
 ### Remaining SOQL surface / roadmap references
 
 Sources re-checked on 2026-09-18:

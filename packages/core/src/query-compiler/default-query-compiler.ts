@@ -28,6 +28,7 @@ import type { SelectionNode } from "#/operation-node/selection-node";
 import type { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
 import type { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
 import type { TypeOfNode } from "#/operation-node/type-of-node";
+import type { UsingScopeNode } from "#/operation-node/using-scope-node";
 import type { ValueListNode } from "#/operation-node/value-list-node";
 import type { ValueNode } from "#/operation-node/value-node";
 import type { WhereNode } from "#/operation-node/where-node";
@@ -62,6 +63,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
     validateTypeOfSelections(query);
 
     let soql = `SELECT ${query.selections.map((selection) => this.#compileSelection(selection)).join(", ")} FROM ${query.from.name}`;
+
+    if (query.usingScope) {
+      soql += ` USING SCOPE ${this.#compileUsingScope(query.usingScope)}`;
+    }
 
     if (query.where) {
       soql += ` WHERE ${this.#compileWhere(query.where)}`;
@@ -179,6 +184,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileOffset(offset: OffsetNode): string {
     return String(offset.offset);
+  }
+
+  #compileUsingScope(usingScope: UsingScopeNode): string {
+    return usingScope.scope;
   }
 
   #compileGroupBy(groupBy: GroupByNode): string {

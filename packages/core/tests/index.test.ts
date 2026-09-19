@@ -93,6 +93,7 @@ import {
   type SalesforceFieldValue,
   type SalesforceGeolocation,
   type SalesforceObject,
+  type SalesforceObjectSupportedScope,
   type SalesforceParentRelationship,
   type SalesforceQueryResult,
   type SalesforceRecordAttributes,
@@ -134,6 +135,7 @@ import {
   type TypeOfNode,
   type TypeOfWhenBuilder,
   type TypeOfWhenNode,
+  type UsingScopeNode,
   type ValueListNode,
   type ValueNode,
   type WhereExpressionFactory,
@@ -338,6 +340,16 @@ type PublicTypeSurface = {
   salesforceObject: SalesforceObject<{
     readonly Id: SalesforceField<string, "id", false, true, true, true>;
   }>;
+  salesforceObjectSupportedScope: SalesforceObjectSupportedScope<
+    SalesforceObject<
+      {
+        readonly Id: SalesforceField<string, "id", false, true, true, true>;
+      },
+      {},
+      {},
+      "mine" | "team"
+    >
+  >;
   salesforceParentRelationship: SalesforceParentRelationship<
     "Parent",
     "ParentId",
@@ -429,6 +441,7 @@ type PublicTypeSurface = {
     Record<never, never>
   >;
   typeOfWhenNode: TypeOfWhenNode;
+  usingScopeNode: UsingScopeNode;
   valueListNode: ValueListNode;
   valueNode: ValueNode;
   whereExpressionFactory: WhereExpressionFactory<Record<string, never>, never>;

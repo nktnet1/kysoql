@@ -66,4 +66,24 @@ describe("codegen validation", () => {
       ],
     });
   });
+
+  it("preserves Salesforce supported scope names", () => {
+    expect(
+      parseSalesforceObjectDescription(
+        {
+          name: "Account",
+          fields: [],
+          supportedScopes: [
+            { name: "mine", label: "My accounts" },
+            { name: "team", label: "My team's accounts" },
+          ],
+        },
+        "Account",
+      ),
+    ).toEqual({
+      name: "Account",
+      fields: [],
+      supportedScopes: [{ name: "mine" }, { name: "team" }],
+    });
+  });
 });

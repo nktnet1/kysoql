@@ -303,6 +303,24 @@ forms, or selecting fields through the same polymorphic relationship in the
 ordinary field list; kysoql enforces those boundaries at the typed API and
 compiler validation layers.
 
+Salesforce Describe `supportedScopes` metadata is generated per object. Root
+queries can use `.usingScope(...)`, with the accepted value restricted to the
+selected object's generated scope union rather than a global hard-coded list.
+Repeated calls replace the previous scope, and the compiler emits the clause
+immediately after `FROM`. Salesforce does not allow `USING SCOPE` inside
+parent-to-child relationship subqueries, so the child-query builder intentionally
+does not expose it.
+
+```ts
+const myAccounts = await db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .usingScope("mine")
+  .where("Name", "like", "Acme%")
+  .execute();
+// SELECT Id, Name FROM Account USING SCOPE mine WHERE Name LIKE 'Acme%'
+```
+
 Generated child-relationship metadata enables typed parent-to-child subqueries
 without accepting arbitrary subquery `FROM` strings. `.selectSubquery()` takes a
 generated child relationship name and a dedicated child-query builder with the
