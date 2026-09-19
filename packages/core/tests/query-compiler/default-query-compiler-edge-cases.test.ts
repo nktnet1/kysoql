@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Kysoql } from "#/kysoql";
 import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
+import { FieldsFunctionNode } from "#/operation-node/fields-function-node";
 import type { OperationNode } from "#/operation-node/operation-node";
 import { OperatorNode } from "#/operation-node/operator-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
@@ -153,5 +154,33 @@ describe("DefaultQueryCompiler edge cases", () => {
     expect(() =>
       compiler.compileQuery(manualQuery({ kind: "UnsupportedNode" })),
     ).toThrow("Unsupported operation node: UnsupportedNode");
+  });
+
+  it("rejects overlapping FIELDS nodes in manually constructed ASTs", () => {
+    const compiler = new DefaultQueryCompiler();
+    const repeated: SelectQueryNode = {
+      kind: "SelectQueryNode",
+      from: SObjectNode.create("Account"),
+      selections: [
+        SelectionNode.create(FieldsFunctionNode.create("standard")),
+        SelectionNode.create(FieldsFunctionNode.create("standard")),
+      ],
+    };
+    const allAndExplicit: SelectQueryNode = {
+      kind: "SelectQueryNode",
+      from: SObjectNode.create("Account"),
+      selections: [
+        SelectionNode.create(FieldsFunctionNode.create("all")),
+        SelectionNode.create(ReferenceNode.create("Id")),
+      ],
+      limit: { kind: "LimitNode", limit: 200 },
+    };
+
+    expect(() => compiler.compileQuery(repeated)).toThrow(
+      "SOQL FIELDS() selections must not overlap or repeat.",
+    );
+    expect(() => compiler.compileQuery(allAndExplicit)).toThrow(
+      "SOQL FIELDS() selections must not overlap or repeat.",
+    );
   });
 });

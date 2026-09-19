@@ -16,6 +16,7 @@ const field = (
   sortable: true,
   groupable: true,
   aggregatable: true,
+  custom: true,
   ...overrides,
 });
 
@@ -68,6 +69,7 @@ describe("renderSchema", () => {
           sortable: false,
           groupable: false,
           aggregatable: false,
+          custom: false,
         }),
       ]),
     ]);
@@ -84,6 +86,7 @@ describe("renderSchema", () => {
         "        never,",
         "        never,",
         "        never,",
+        "        false,",
         "        false",
       ].join("\n"),
     );

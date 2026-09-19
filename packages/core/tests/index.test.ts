@@ -33,6 +33,8 @@ import {
   type EqualityComparisonOperator,
   type ExpressionBuilder,
   type ExpressionWrapper,
+  type FieldsFunctionNode,
+  type FieldsSelector,
   type FormatFunctionBuilder,
   type FormatFunctionNode,
   type FormattableFieldReference,
@@ -67,6 +69,7 @@ import {
   type RelationshipSubqueryNode,
   type SalesforceChildRelationship,
   type SalesforceField,
+  type SalesforceFieldCustom,
   type SalesforceFieldFilterValue,
   type SalesforceFieldValue,
   type SalesforceObject,
@@ -176,6 +179,8 @@ type PublicTypeSurface = {
   equalityComparisonOperator: EqualityComparisonOperator;
   expressionBuilder: ExpressionBuilder<Record<string, never>, never>;
   expressionWrapper: ExpressionWrapper<Record<string, never>, never>;
+  fieldsFunctionNode: FieldsFunctionNode;
+  fieldsSelector: FieldsSelector;
   formattableFieldReference: FormattableFieldReference<
     Record<string, never>,
     never,
@@ -237,6 +242,21 @@ type PublicTypeSurface = {
   relationshipSubqueryNode: RelationshipSubqueryNode;
   salesforceChildRelationship: SalesforceChildRelationship<"Child", "Parent">;
   salesforceField: SalesforceField<string, "string", false, true, true, true>;
+  salesforceFieldCustom: SalesforceFieldCustom<
+    SalesforceField<
+      string,
+      "string",
+      false,
+      true,
+      true,
+      true,
+      never,
+      never,
+      never,
+      false,
+      true
+    >
+  >;
   salesforceFieldFilterValue: SalesforceFieldFilterValue<
     SalesforceField<string, "string", false, true, true, true>
   >;

@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.69`, the next patch
-   is `v1.0.70`.
+   reuse or rewrite a version already handed off. After `v1.0.70`, the next patch
+   is `v1.0.71`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.69`
+## Current state after `v1.0.70`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -122,6 +122,7 @@ recent patch sequence:
 | `v1.0.67` | Migrate the codegen executable to oclif with explicit bundled command discovery, generated help, and typed repeatable flags. |
 | `v1.0.68` | Add typed aliased `FORMAT()` selection for generated numeric/temporal fields and documented `FORMAT(convertCurrency(field))` composition. |
 | `v1.0.69` | Complete typed `FORMAT()` aggregate composition for unaliased row-producing aggregate functions with field arguments. |
+| `v1.0.70` | Add typed `FIELDS(STANDARD\|CUSTOM\|ALL)` selections, generated custom-field metadata, direct-field output inference, overlap protection, and REST/SOAP bounds. |
 
 ### Build/tooling state
 
@@ -180,6 +181,11 @@ Core currently has:
   metadata, available in selection/filtering/ordering up to Salesforce's five-level
   traversal limit; related selections infer nested output objects and lookup
   nullability; traversed target objects must be present in the generated schema;
+- typed `.selectFields("standard" | "custom" | "all")` on record and
+  relationship-subquery builders; generated `custom` metadata expands exact
+  direct-field result shapes, compile-time guards reject overlap with explicit
+  direct selections in either call order, and compiler validation requires
+  `LIMIT <= 200` for REST/SOAP `CUSTOM` / `ALL` queries;
 - typed `.selectSubquery(childRelationship, callback)` parent-to-child queries
   derived lazily from generated `children` metadata; child builders support typed
   scalar selections, child-to-parent paths, `where` expression callbacks,
@@ -284,8 +290,8 @@ Core currently has:
 - `CompiledQuery<O>`, compiler output, transport-neutral execution, and the
   JSforce adapter with full explicit pagination plus scalar bare-`COUNT()`
   execution;
-- generated field metadata for filterable/sortable/groupable/aggregatable flags,
-  active picklist values, and parent/child relationships.
+- generated field metadata for filterable/sortable/groupable/aggregatable/custom
+  flags, active picklist values, and parent/child relationships.
 
 Important current filter typing rules:
 
@@ -300,31 +306,28 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.70` and should add typed `FIELDS(...)`
-selections.** Treat this as a record-selection feature with explicit generated
-output typing; leave polymorphic `TYPEOF`, other SELECT functions, and specialist
-clauses for later slices.
+**The next patch should be `v1.0.71` and should add typed
+`convertTimezone()` composition inside date functions.** Salesforce permits
+`convertTimezone(datetimeField)` only as the input of a date function, so model
+it as an unaliased intermediate expression rather than a standalone selection.
 
 Recommended next unit:
 
-- support the three documented selectors, `FIELDS(STANDARD)`, `FIELDS(CUSTOM)`,
-  and `FIELDS(ALL)`, in root and parent-to-child relationship-subquery SELECT
-  lists through a dedicated immutable node rather than string expansion;
-- extend generated field metadata only as needed to distinguish standard from
-  custom fields, and infer the selected direct-field object shape without
-  including relationship metadata;
-- reject duplicate output keys when a `FIELDS(...)` selection overlaps an
-  explicit field selection, and keep aggregate/grouped queries outside this
-  record-only slice;
-- enforce or otherwise safely model Salesforce's bounded-query rule:
-  `FIELDS(STANDARD)` is bounded, while REST/SOAP queries using `FIELDS(ALL)` or
-  `FIELDS(CUSTOM)` require a result bound such as `LIMIT <= 200`; do not silently
-  emit an unbounded query;
-- add compiler, immutability, root/subquery output-inference, codegen metadata,
-  and negative type/runtime tests; keep `TYPEOF`, unrelated SELECT functions,
-  and specialist clauses out of the patch.
+- add a dedicated immutable `ConvertTimezoneFunctionNode` and a typed
+  `fn.convertTimezone(...)` builder restricted to generated `datetime` fields,
+  including valid child-to-parent paths;
+- allow that intermediate expression as the input of the existing calendar /
+  fiscal date-function family across GROUP BY, SELECT, HAVING, and ORDER BY;
+- preserve the existing date-function return types and exact grouped-expression
+  identity so converted and unconverted forms cannot satisfy one another's
+  grouping requirement;
+- reject standalone/aliased `convertTimezone()` selections, `date`/`time` and
+  non-temporal inputs, and unsupported nesting at both the type and runtime AST
+  boundaries;
+- add compiler, immutability, expression-membership, nullability, and negative
+  tests without bundling geolocation or polymorphic `TYPEOF` work.
 
-If the supplied bundle already contains `v1.0.69` or later, inspect the code and
+If the supplied bundle already contains `v1.0.70` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice

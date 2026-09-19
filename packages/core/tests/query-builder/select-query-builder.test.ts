@@ -10,6 +10,31 @@ import type {
 import { soqlDate, soqlDateTime, soqlTime } from "#/soql-temporal-literal";
 import type { Simplify } from "#/util/type-utils";
 
+type CustomField<
+  Value,
+  SalesforceType extends string,
+  Nullable extends boolean,
+  Filterable extends boolean,
+  Sortable extends boolean,
+  Groupable extends boolean,
+  ReferenceTo extends string = never,
+  RelationshipName extends string = never,
+  ActivePicklistValue extends string = never,
+  Aggregatable extends boolean = false,
+> = SalesforceField<
+  Value,
+  SalesforceType,
+  Nullable,
+  Filterable,
+  Sortable,
+  Groupable,
+  ReferenceTo,
+  RelationshipName,
+  ActivePicklistValue,
+  Aggregatable,
+  true
+>;
+
 interface FixtureSchema {
   readonly Account: SalesforceObject<
     {
@@ -23,7 +48,7 @@ interface FixtureSchema {
         true,
         true
       >;
-      readonly CommittedRevenue__c: SalesforceField<
+      readonly CommittedRevenue__c: CustomField<
         number,
         "currency",
         false,
@@ -31,7 +56,7 @@ interface FixtureSchema {
         true,
         true
       >;
-      readonly EmployeeCount__c: SalesforceField<
+      readonly EmployeeCount__c: CustomField<
         number,
         "int",
         false,
@@ -39,7 +64,7 @@ interface FixtureSchema {
         true,
         true
       >;
-      readonly Satisfaction__c: SalesforceField<
+      readonly Satisfaction__c: CustomField<
         number,
         "double",
         true,
@@ -47,7 +72,7 @@ interface FixtureSchema {
         true,
         true
       >;
-      readonly GrowthRate__c: SalesforceField<
+      readonly GrowthRate__c: CustomField<
         number,
         "percent",
         false,
@@ -63,7 +88,7 @@ interface FixtureSchema {
         true,
         true
       >;
-      readonly LastActivityAt__c: SalesforceField<
+      readonly LastActivityAt__c: CustomField<
         string,
         "datetime",
         true,
@@ -71,7 +96,7 @@ interface FixtureSchema {
         true,
         true
       >;
-      readonly OpeningTime__c: SalesforceField<
+      readonly OpeningTime__c: CustomField<
         string,
         "time",
         true,
@@ -100,7 +125,7 @@ interface FixtureSchema {
         "User",
         "Owner"
       >;
-      readonly Tags__c: SalesforceField<
+      readonly Tags__c: CustomField<
         string,
         "multipicklist",
         false,
@@ -111,7 +136,7 @@ interface FixtureSchema {
         never,
         "Priority" | "Strategic"
       >;
-      readonly Internal_Note__c: SalesforceField<
+      readonly Internal_Note__c: CustomField<
         string,
         "string",
         true,
@@ -126,7 +151,7 @@ interface FixtureSchema {
   >;
   readonly Kysoql_Record__c: SalesforceObject<{
     readonly Id: SalesforceField<string, "id", false, true, true, true>;
-    readonly Active__c: SalesforceField<
+    readonly Active__c: CustomField<
       boolean,
       "boolean",
       false,
@@ -136,15 +161,8 @@ interface FixtureSchema {
     >;
   }>;
   readonly User: SalesforceObject<{
-    readonly Quota__c: SalesforceField<
-      number,
-      "currency",
-      false,
-      true,
-      true,
-      true
-    >;
-    readonly Region__c: SalesforceField<
+    readonly Quota__c: CustomField<number, "currency", false, true, true, true>;
+    readonly Region__c: CustomField<
       string,
       "picklist",
       false,
@@ -222,6 +240,102 @@ describe("SelectQueryBuilder", () => {
       readonly Name: string | null;
       readonly AnnualRevenue: number | null;
     }>();
+  });
+
+  it("selects typed standard and custom field groups immutably", () => {
+    const baseQuery = new Kysoql<FixtureSchema>().selectFrom("Account");
+    const standardQuery = baseQuery.selectFields("standard");
+    const customQuery = baseQuery.selectFields("custom").limit(200);
+    const combinedQuery = standardQuery.selectFields("custom").limit(25);
+    const allQuery = baseQuery.selectFields("all").limit(200);
+    const mixedQuery = baseQuery.select("Id").selectFields("custom").limit(200);
+    const relatedQuery = baseQuery
+      .select("Owner.Region__c")
+      .selectFields("all")
+      .limit(200);
+
+    expect(baseQuery.toOperationNode().selections).toBeUndefined();
+    expect(standardQuery.toOperationNode().selections).toEqual([
+      {
+        kind: "SelectionNode",
+        selection: {
+          kind: "FieldsFunctionNode",
+          selector: "standard",
+        },
+      },
+    ]);
+    expect(Object.isFrozen(standardQuery.toOperationNode().selections)).toBe(
+      true,
+    );
+    expect(
+      Object.isFrozen(
+        standardQuery.toOperationNode().selections?.[0]?.selection,
+      ),
+    ).toBe(true);
+    expect(standardQuery.compile().soql).toBe(
+      "SELECT FIELDS(STANDARD) FROM Account",
+    );
+    expect(customQuery.compile().soql).toBe(
+      "SELECT FIELDS(CUSTOM) FROM Account LIMIT 200",
+    );
+    expect(combinedQuery.compile().soql).toBe(
+      "SELECT FIELDS(STANDARD), FIELDS(CUSTOM) FROM Account LIMIT 25",
+    );
+    expect(allQuery.compile().soql).toBe(
+      "SELECT FIELDS(ALL) FROM Account LIMIT 200",
+    );
+    expect(mixedQuery.compile().soql).toBe(
+      "SELECT Id, FIELDS(CUSTOM) FROM Account LIMIT 200",
+    );
+    expect(relatedQuery.compile().soql).toBe(
+      "SELECT Owner.Region__c, FIELDS(ALL) FROM Account LIMIT 200",
+    );
+
+    expectTypeOf<Simplify<OutputOf<typeof standardQuery>>>().toEqualTypeOf<{
+      readonly Id: string;
+      readonly Name: string | null;
+      readonly AnnualRevenue: number | null;
+      readonly CloseDate: string | null;
+      readonly Industry: string | null;
+      readonly OwnerId: string;
+    }>();
+    expectTypeOf<Simplify<OutputOf<typeof customQuery>>>().toEqualTypeOf<{
+      readonly CommittedRevenue__c: number;
+      readonly EmployeeCount__c: number;
+      readonly Satisfaction__c: number | null;
+      readonly GrowthRate__c: number;
+      readonly LastActivityAt__c: string | null;
+      readonly OpeningTime__c: string | null;
+      readonly Tags__c: string;
+      readonly Internal_Note__c: string | null;
+    }>();
+    expectTypeOf<Simplify<OutputOf<typeof combinedQuery>>>().toEqualTypeOf<
+      Simplify<OutputOf<typeof standardQuery> & OutputOf<typeof customQuery>>
+    >();
+    expectTypeOf<Simplify<OutputOf<typeof allQuery>>>().toEqualTypeOf<
+      Simplify<OutputOf<typeof standardQuery> & OutputOf<typeof customQuery>>
+    >();
+  });
+
+  it("rejects overlapping and unknown field-group selections at compile time", () => {
+    const query = new Kysoql<FixtureSchema>().selectFrom("Account");
+
+    void (() => {
+      // @ts-expect-error FIELDS selectors are restricted to Salesforce's three documented groups.
+      query.selectFields("unknown");
+
+      const selectedFirst = query.select("Id");
+      // @ts-expect-error FIELDS(STANDARD) would select Id a second time.
+      selectedFirst.selectFields("standard");
+
+      const fieldsFirst = query.selectFields("custom");
+      // @ts-expect-error Explicit direct selections cannot overlap a selected FIELDS group.
+      fieldsFirst.select(["Name", "CommittedRevenue__c"]);
+
+      const allFields = query.selectFields("all");
+      // @ts-expect-error FIELDS(ALL) overlaps every other FIELDS group.
+      allFields.selectFields("custom");
+    });
   });
 
   it("keeps temporal result values as generated strings", () => {

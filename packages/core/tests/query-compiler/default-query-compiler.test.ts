@@ -77,6 +77,32 @@ describe("DefaultQueryCompiler", () => {
     expect(Object.isFrozen(compiled)).toBe(true);
   });
 
+  it("compiles bounded FIELDS selections and leaves STANDARD unbounded", () => {
+    const standard = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .selectFields("standard")
+      .compile();
+    const all = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .selectFields("all")
+      .limit(200)
+      .compile();
+
+    expect(standard.soql).toBe("SELECT FIELDS(STANDARD) FROM Account");
+    expect(all.soql).toBe("SELECT FIELDS(ALL) FROM Account LIMIT 200");
+  });
+
+  it("rejects unbounded ALL and CUSTOM field groups", () => {
+    const db = new Kysoql<FixtureSchema>();
+
+    expect(() =>
+      db.selectFrom("Account").selectFields("custom").compile(),
+    ).toThrow("SOQL FIELDS(ALL) and FIELDS(CUSTOM) require LIMIT 200 or less.");
+    expect(() =>
+      db.selectFrom("Account").selectFields("all").limit(201).compile(),
+    ).toThrow("SOQL FIELDS(ALL) and FIELDS(CUSTOM) require LIMIT 200 or less.");
+  });
+
   it("compiles aliased toLabel selections in builder order", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")

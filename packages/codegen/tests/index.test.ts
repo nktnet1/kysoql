@@ -23,6 +23,7 @@ const account: SalesforceObjectDescription = {
       sortable: true,
       groupable: true,
       aggregatable: true,
+      custom: false,
     },
     {
       name: "Id",
@@ -32,6 +33,7 @@ const account: SalesforceObjectDescription = {
       sortable: true,
       groupable: true,
       aggregatable: true,
+      custom: false,
     },
   ],
   childRelationships: [
@@ -54,6 +56,7 @@ const kysoqlRecord: SalesforceObjectDescription = {
       sortable: true,
       groupable: true,
       aggregatable: true,
+      custom: true,
       picklistValues: [
         { value: "Gamma", active: true },
         { value: "Alpha", active: true },
@@ -68,6 +71,7 @@ const kysoqlRecord: SalesforceObjectDescription = {
       sortable: true,
       groupable: true,
       aggregatable: true,
+      custom: true,
       referenceTo: ["Account"],
       relationshipName: "Account__r",
     },
@@ -79,6 +83,7 @@ const kysoqlRecord: SalesforceObjectDescription = {
       sortable: true,
       groupable: true,
       aggregatable: true,
+      custom: true,
     },
     {
       name: "Active__c",
@@ -88,6 +93,7 @@ const kysoqlRecord: SalesforceObjectDescription = {
       sortable: true,
       groupable: true,
       aggregatable: true,
+      custom: true,
     },
   ],
 };
@@ -210,6 +216,7 @@ describe("loadSchema", () => {
           sortable: true,
           groupable: true,
           aggregatable: true,
+          custom: false,
         },
       ],
     } as never);
@@ -231,12 +238,35 @@ describe("loadSchema", () => {
           filterable: true,
           sortable: true,
           groupable: true,
+          custom: false,
         },
       ],
     } as never);
 
     await expect(loadSchema(client, ["Account"])).rejects.toThrow(
       /Invalid Salesforce describe response for Account:[\s\S]*fields\.0\.aggregatable/,
+    );
+  });
+
+  it("requires custom-field metadata on described fields", async () => {
+    const client = createClient();
+    vi.mocked(client.describe).mockResolvedValueOnce({
+      name: "Account",
+      fields: [
+        {
+          name: "Id",
+          type: "id",
+          nillable: false,
+          filterable: true,
+          sortable: true,
+          groupable: true,
+          aggregatable: true,
+        },
+      ],
+    } as never);
+
+    await expect(loadSchema(client, ["Account"])).rejects.toThrow(
+      /Invalid Salesforce describe response for Account:[\s\S]*fields\.0\.custom/,
     );
   });
 

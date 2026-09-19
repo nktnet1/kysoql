@@ -47,6 +47,10 @@ export type {
   DateFunction,
   DateFunctionNode,
 } from "#/operation-node/date-function-node";
+export type {
+  FieldsFunctionNode,
+  FieldsSelector,
+} from "#/operation-node/fields-function-node";
 export type { FormatFunctionNode } from "#/operation-node/format-function-node";
 export type {
   AdvancedGroupByMode,
@@ -105,6 +109,7 @@ export type { QueryExecutor } from "#/query-executor";
 export type {
   SalesforceChildRelationship,
   SalesforceField,
+  SalesforceFieldCustom,
   SalesforceFieldFilterValue,
   SalesforceFieldValue,
   SalesforceObject,

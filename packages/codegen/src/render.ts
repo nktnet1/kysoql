@@ -84,7 +84,8 @@ const renderField = (field: SalesforceFieldDescription): string => {
     `        ${referenceTo},`,
     `        ${fieldRelationshipType(field)},`,
     `        ${activePicklistType(field)},`,
-    `        ${booleanLiteral(field.aggregatable)}`,
+    `        ${booleanLiteral(field.aggregatable)},`,
+    `        ${booleanLiteral(field.custom)}`,
     "      >;",
   ].join("\n");
 };

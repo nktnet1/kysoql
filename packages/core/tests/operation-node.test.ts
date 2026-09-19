@@ -6,6 +6,7 @@ import { AndNode } from "#/operation-node/and-node";
 import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 import { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
 import { DateFunctionNode } from "#/operation-node/date-function-node";
+import { FieldsFunctionNode } from "#/operation-node/fields-function-node";
 import { FormatFunctionNode } from "#/operation-node/format-function-node";
 import { GroupByNode } from "#/operation-node/group-by-node";
 import { HavingNode } from "#/operation-node/having-node";
@@ -82,6 +83,19 @@ describe("operation nodes", () => {
       reference,
     });
     expectFrozen(dateFunction);
+  });
+
+  it("creates frozen FIELDS function nodes", () => {
+    const fields = FieldsFunctionNode.create("custom");
+
+    expect(fields).toEqual({
+      kind: "FieldsFunctionNode",
+      selector: "custom",
+    });
+    expectFrozen(fields);
+    expect(() => FieldsFunctionNode.create("unknown" as never)).toThrow(
+      "SOQL FIELDS() selector must be all, custom, or standard.",
+    );
   });
 
   it("creates frozen toLabel function nodes", () => {

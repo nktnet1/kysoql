@@ -11,6 +11,31 @@ import type {
 } from "#/schema";
 import type { Simplify } from "#/util/type-utils";
 
+type CustomField<
+  Value,
+  SalesforceType extends string,
+  Nullable extends boolean,
+  Filterable extends boolean,
+  Sortable extends boolean,
+  Groupable extends boolean,
+  ReferenceTo extends string = never,
+  RelationshipName extends string = never,
+  ActivePicklistValue extends string = never,
+  Aggregatable extends boolean = false,
+> = SalesforceField<
+  Value,
+  SalesforceType,
+  Nullable,
+  Filterable,
+  Sortable,
+  Groupable,
+  ReferenceTo,
+  RelationshipName,
+  ActivePicklistValue,
+  Aggregatable,
+  true
+>;
+
 interface RelationshipSubquerySchema {
   readonly Account: SalesforceObject<
     {
@@ -33,7 +58,7 @@ interface RelationshipSubquerySchema {
         true,
         true
       >;
-      readonly LifetimeValue__c: SalesforceField<
+      readonly LifetimeValue__c: CustomField<
         number,
         "currency",
         true,
@@ -72,7 +97,7 @@ interface RelationshipSubquerySchema {
         "User",
         "CreatedBy"
       >;
-      readonly Internal_Note__c: SalesforceField<
+      readonly Internal_Note__c: CustomField<
         string,
         "string",
         true,
@@ -100,14 +125,7 @@ interface RelationshipSubquerySchema {
   readonly User: SalesforceObject<{
     readonly Id: SalesforceField<string, "id", false, true, true, true>;
     readonly Alias: SalesforceField<string, "string", true, true, true, true>;
-    readonly Quota__c: SalesforceField<
-      number,
-      "currency",
-      false,
-      true,
-      true,
-      true
-    >;
+    readonly Quota__c: CustomField<number, "currency", false, true, true, true>;
   }>;
   readonly Case: SalesforceObject<
     {
@@ -338,6 +356,44 @@ describe("parent-to-child relationship subqueries", () => {
         readonly salutationLabel: string | null;
       }>;
     }>();
+  });
+
+  it("selects typed field groups in relationship subqueries", () => {
+    const query = new Kysoql<RelationshipSubquerySchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .selectSubquery("Contacts", (contacts) =>
+        contacts.selectFields("standard").selectFields("custom").limit(200),
+      );
+
+    expect(query.compile().soql).toBe(
+      "SELECT Id, (SELECT FIELDS(STANDARD), FIELDS(CUSTOM) FROM Contacts LIMIT 200) FROM Account",
+    );
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly Id: string;
+      readonly Contacts: SalesforceQueryResult<{
+        readonly Id: string;
+        readonly LastName: string;
+        readonly LifetimeValue__c: number | null;
+        readonly Salutation: string | null;
+        readonly AccountId: string | null;
+        readonly CreatedById: string;
+        readonly Internal_Note__c: string | null;
+      }>;
+    }>();
+  });
+
+  it("rejects unbounded custom field groups in relationship subqueries", () => {
+    const query = new Kysoql<RelationshipSubquerySchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .selectSubquery("Contacts", (contacts) =>
+        contacts.selectFields("custom"),
+      );
+
+    expect(() => query.compile()).toThrow(
+      "SOQL FIELDS(ALL) and FIELDS(CUSTOM) require LIMIT 200 or less.",
+    );
   });
 
   it("selects converted currencies in relationship subqueries", () => {

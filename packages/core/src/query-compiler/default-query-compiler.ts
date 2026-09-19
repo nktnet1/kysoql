@@ -6,6 +6,7 @@ import type { AndNode } from "#/operation-node/and-node";
 import type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 import type { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
 import type { DateFunctionNode } from "#/operation-node/date-function-node";
+import type { FieldsFunctionNode } from "#/operation-node/fields-function-node";
 import type { FormatFunctionNode } from "#/operation-node/format-function-node";
 import type { GroupByNode } from "#/operation-node/group-by-node";
 import type { HavingNode } from "#/operation-node/having-node";
@@ -26,6 +27,7 @@ import type { ToLabelFunctionNode } from "#/operation-node/to-label-function-nod
 import type { ValueListNode } from "#/operation-node/value-list-node";
 import type { ValueNode } from "#/operation-node/value-node";
 import type { WhereNode } from "#/operation-node/where-node";
+import { validateFieldsSelections } from "#/parser/fields-selection-parser";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import { isSoqlRelativeDateLiteral } from "#/soql-relative-date-literal";
@@ -50,6 +52,8 @@ export class DefaultQueryCompiler implements QueryCompiler {
     if (!query.selections?.length) {
       throw new Error("Cannot compile a SELECT query without selections.");
     }
+
+    validateFieldsSelections(query.selections, query.limit);
 
     let soql = `SELECT ${query.selections.map((selection) => this.#compileSelection(selection)).join(", ")} FROM ${query.from.name}`;
 
@@ -92,6 +96,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
         return this.#compileDateFunction(
           selection.selection as DateFunctionNode,
         );
+      case "FieldsFunctionNode":
+        return this.#compileFieldsFunction(
+          selection.selection as FieldsFunctionNode,
+        );
       case "ReferenceNode":
         return this.#compileReference(selection.selection as ReferenceNode);
       case "RelationshipSubqueryNode":
@@ -109,6 +117,8 @@ export class DefaultQueryCompiler implements QueryCompiler {
         "Cannot compile a relationship subquery without selections.",
       );
     }
+
+    validateFieldsSelections(query.selections, query.limit);
 
     let soql = `SELECT ${query.selections
       .map((selection) => this.#compileSelection(selection))
@@ -135,6 +145,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileLimit(limit: LimitNode): string {
     return String(limit.limit);
+  }
+
+  #compileFieldsFunction(node: FieldsFunctionNode): string {
+    return `FIELDS(${node.selector.toUpperCase()})`;
   }
 
   #compileOffset(offset: OffsetNode): string {

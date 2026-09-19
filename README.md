@@ -119,6 +119,22 @@ Salesforce's default ascending order. `.limit(n)` accepts non-negative safe
 integers, including `0`; repeated calls replace the previous limit instead of
 emitting multiple `LIMIT` clauses.
 
+Generated standard/custom metadata also enables typed `FIELDS(STANDARD)`,
+`FIELDS(CUSTOM)`, and `FIELDS(ALL)` selections on root queries and relationship
+subqueries. The selected row shape expands to the matching direct fields without
+including relationship metadata. Kysoql rejects overlapping explicit selections;
+because Salesforce treats `CUSTOM` and `ALL` as unbounded field groups in
+REST/SOAP queries, those two selectors require `LIMIT 200` or less.
+
+```ts
+const accounts = await db
+  .selectFrom("Account")
+  .selectFields("all")
+  .limit(200)
+  .execute();
+// SELECT FIELDS(ALL) FROM Account LIMIT 200
+```
+
 Translated picklist labels can be selected through an aliased `toLabel()`
 callback. Inputs are restricted to generated `picklist` and `multipicklist`
 fields, including child-to-parent paths, and translated outputs are inferred as

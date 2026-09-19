@@ -509,9 +509,10 @@ ordering yet.
 
 ### Date grouping functions
 
-Sources re-checked on 2026-09-18:
+Sources re-checked on 2026-09-19:
 
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-date-functions.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-convert-time-zone.html
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-functions.html
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-groupby.html
 
@@ -530,8 +531,9 @@ Useful findings:
   date (not dateTime) inputs, but exact expression membership is the uniform,
   conservative safe-builder rule.
 - Client-query dateTime behavior is UTC unless `convertTimezone()` is applied.
-  Timezone conversion remains a separate future function slice rather than an
-  implicit behavior of date grouping.
+  Salesforce permits `convertTimezone(datetimeField)` only inside a date
+  function, so timezone conversion is an explicit nested-expression slice rather
+  than implicit date-grouping behavior or a standalone selection.
 - Fiscal functions are unavailable in organizations with custom fiscal years.
   That org-level setting is not present in generated field metadata, so the
   typed builder preserves the documented function but cannot statically prove
@@ -698,6 +700,33 @@ can return `null`. Bare `COUNT()`, already-aliased aggregates, and `GROUPING()`
 indicators remain excluded so their dedicated query and grouping semantics are
 not blurred.
 
+### FIELDS selections
+
+Source re-checked on 2026-09-19:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-fields.html
+
+Useful findings:
+
+- API version 51.0 and later supports `FIELDS(STANDARD)`, `FIELDS(CUSTOM)`, and
+  `FIELDS(ALL)` in root and relationship-subquery SELECT lists.
+- `FIELDS(...)` can be combined with explicitly named fields, but Salesforce
+  rejects a query if expansion produces a duplicate field name.
+- `FIELDS(STANDARD)` is bounded. In REST and SOAP queries, `FIELDS(CUSTOM)` and
+  `FIELDS(ALL)` must be bounded; `LIMIT 200` or less is one documented bound.
+- The field groups expand to fields on the selected object. They do not imply
+  child-to-parent or parent-to-child relationship traversal.
+- `FIELDS(CUSTOM)` on an object with no custom fields is invalid unless another
+  field selection supplies an actual output field.
+
+Implemented consequence in `v1.0.70`: record and relationship-subquery builders
+expose `.selectFields("standard" | "custom" | "all")` through a dedicated frozen
+AST node. Generated schema fields carry Salesforce's `custom` flag, output types
+expand to the matching direct fields, and compile-time guards reject overlap with
+explicit direct field selections in either call order. Compiler validation also
+rejects repeated/overlapping field groups and requires `LIMIT <= 200` whenever
+`CUSTOM` or `ALL` is selected.
+
 ### Remaining SOQL surface / roadmap references
 
 Sources re-checked on 2026-09-18:
@@ -728,7 +757,8 @@ Useful findings for future milestones:
   results and can combine conditions with `AND`, `OR`, and `NOT`; semi/anti-join
   subqueries are not allowed inside `HAVING`.
 - The SELECT grammar also includes subqueries, aggregate expressions,
-  `FIELDS(...)`, translated/function expressions, and polymorphic `TYPEOF`.
+  `FIELDS(...)`, translated/function expressions, and polymorphic `TYPEOF`;
+  `v1.0.70` implements the three `FIELDS(...)` groups for record queries.
   `TYPEOF` has compatibility restrictions with aggregate/grouping/function query
   forms, so it should be modeled explicitly rather than as a generic raw select
   expression.

@@ -7,6 +7,7 @@ import {
   createExpressionBuilder,
   type WhereExpressionFactory,
 } from "#/expression/expression-builder";
+import type { FieldsSelector } from "#/operation-node/fields-function-node";
 import type { ComparisonOperator } from "#/operation-node/operator-node";
 import type {
   OrderByDirection,
@@ -30,6 +31,12 @@ import type {
 } from "#/parser/binary-operation-parser";
 import { validateDateFunctionSelections } from "#/parser/date-function-parser";
 import {
+  type AvailableSelectExpression,
+  type FieldsSelection,
+  type FieldsSelectionCheck,
+  parseFieldsSelection,
+} from "#/parser/fields-selection-parser";
+import {
   parseFilterBinaryOperation,
   validateSemiJoinWhere,
 } from "#/parser/filter-parser";
@@ -51,7 +58,6 @@ import {
 } from "#/parser/select-function-parser";
 import {
   parseSelectArg,
-  type SelectArg,
   type SelectExpression,
   type Selection,
 } from "#/parser/select-parser";
@@ -144,12 +150,23 @@ export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
   ): AggregateSelectQueryBuilder<DB, TB, AggregateSelection<Aggregate>>;
 
   select<SE extends string>(
-    selections: ReadonlyArray<SE & SelectExpression<DB, TB, SE>>,
+    selections: ReadonlyArray<
+      SE &
+        SelectExpression<DB, TB, SE> &
+        AvailableSelectExpression<DB, TB, O, SE>
+    >,
   ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>>;
 
   select<SE extends string>(
-    selection: SE & SelectExpression<DB, TB, SE>,
+    selection: SE &
+      SelectExpression<DB, TB, SE> &
+      AvailableSelectExpression<DB, TB, O, SE>,
   ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>>;
+
+  selectFields<Selector extends FieldsSelector>(
+    selector: Selector,
+    ...check: FieldsSelectionCheck<DB, TB, O, Selector>
+  ): SelectQueryBuilder<DB, TB, O & FieldsSelection<DB, TB, Selector>>;
 
   selectSubquery<Relationship extends string, SubqueryOutput>(
     relationship: Relationship &
@@ -289,7 +306,16 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     selection: UnselectedOnly<O, AggregateSelectionFactory<DB, TB, Aggregate>>,
   ): AggregateSelectQueryBuilder<DB, TB, AggregateSelection<Aggregate>>;
   select<SE extends string>(
-    selection: SelectArg<DB, TB, SE>,
+    selections: ReadonlyArray<
+      SE &
+        SelectExpression<DB, TB, SE> &
+        AvailableSelectExpression<DB, TB, O, SE>
+    >,
+  ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>>;
+  select<SE extends string>(
+    selection: SE &
+      SelectExpression<DB, TB, SE> &
+      AvailableSelectExpression<DB, TB, O, SE>,
   ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>>;
   select(
     selection:
@@ -359,6 +385,22 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
         this.#props.queryNode,
         selections,
       ),
+    });
+  }
+
+  selectFields<Selector extends FieldsSelector>(
+    selector: Selector,
+    ..._check: FieldsSelectionCheck<DB, TB, O, Selector>
+  ): SelectQueryBuilder<DB, TB, O & FieldsSelection<DB, TB, Selector>> {
+    return new SelectQueryBuilderImpl<
+      DB,
+      TB,
+      O & FieldsSelection<DB, TB, Selector>
+    >({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithSelections(this.#props.queryNode, [
+        parseFieldsSelection(selector),
+      ]),
     });
   }
 

@@ -186,6 +186,7 @@ describe("kysoql oclif CLI", () => {
           sortable: true,
           groupable: true,
           aggregatable: true,
+          custom: false,
         },
       ],
     }));

@@ -16,6 +16,7 @@ export interface SalesforceField<
   RelationshipName extends string = never,
   ActivePicklistValue extends string = never,
   Aggregatable extends boolean = false,
+  Custom extends boolean = false,
 > {
   readonly value: Value;
   readonly salesforceType: SalesforceType;
@@ -27,7 +28,22 @@ export interface SalesforceField<
   readonly relationshipName: RelationshipName;
   readonly activePicklistValue: ActivePicklistValue;
   readonly aggregatable: Aggregatable;
+  readonly custom: Custom;
 }
+
+type AnySalesforceField = SalesforceField<
+  unknown,
+  string,
+  boolean,
+  boolean,
+  boolean,
+  boolean,
+  string,
+  string,
+  string,
+  boolean,
+  boolean
+>;
 
 export interface SalesforceParentRelationship<
   ObjectName extends string,
@@ -55,21 +71,7 @@ export interface SalesforceQueryResult<Row> {
 }
 
 export interface SalesforceObject<
-  Fields extends Record<
-    string,
-    SalesforceField<
-      unknown,
-      string,
-      boolean,
-      boolean,
-      boolean,
-      boolean,
-      string,
-      string,
-      string,
-      boolean
-    >
-  >,
+  Fields extends Record<string, AnySalesforceField>,
   Parents extends Record<
     string,
     SalesforceParentRelationship<string, string, boolean>
@@ -87,21 +89,7 @@ export interface SalesforceObject<
 export type SalesforceSchema = Record<
   string,
   SalesforceObject<
-    Record<
-      string,
-      SalesforceField<
-        unknown,
-        string,
-        boolean,
-        boolean,
-        boolean,
-        boolean,
-        string,
-        string,
-        string,
-        boolean
-      >
-    >,
+    Record<string, AnySalesforceField>,
     Record<string, SalesforceParentRelationship<string, string, boolean>>,
     Record<string, SalesforceChildRelationship<string, string>>
   >
@@ -118,6 +106,7 @@ export type SalesforceFieldValue<Field> =
     string,
     string,
     string,
+    boolean,
     boolean
   >
     ? Nullable extends true
@@ -147,11 +136,29 @@ export type SalesforceFieldFilterValue<Field> =
     string,
     string,
     string,
+    boolean,
     boolean
   >
     ? Nullable extends true
       ? SalesforceFieldFilterScalar<Value, SalesforceType> | null
       : SalesforceFieldFilterScalar<Value, SalesforceType>
+    : never;
+
+export type SalesforceFieldCustom<Field> =
+  Field extends SalesforceField<
+    unknown,
+    string,
+    boolean,
+    boolean,
+    boolean,
+    boolean,
+    string,
+    string,
+    string,
+    boolean,
+    infer Custom
+  >
+    ? Custom
     : never;
 
 export type SalesforceRow<ObjectType> =
