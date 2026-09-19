@@ -111,6 +111,8 @@ describe("operation nodes", () => {
     const directFormat = FormatFunctionNode.create(reference);
     const convertedCurrency = ConvertCurrencyFunctionNode.create(reference);
     const convertedFormat = FormatFunctionNode.create(convertedCurrency);
+    const aggregate = AggregateFunctionNode.create("sum", reference);
+    const aggregateFormat = FormatFunctionNode.create(aggregate);
 
     expect(directFormat).toEqual({
       kind: "FormatFunctionNode",
@@ -120,8 +122,13 @@ describe("operation nodes", () => {
       kind: "FormatFunctionNode",
       expression: convertedCurrency,
     });
+    expect(aggregateFormat).toEqual({
+      kind: "FormatFunctionNode",
+      expression: aggregate,
+    });
     expectFrozen(directFormat);
     expectFrozen(convertedFormat);
+    expectFrozen(aggregateFormat);
   });
 
   it("creates frozen value-list nodes and members", () => {

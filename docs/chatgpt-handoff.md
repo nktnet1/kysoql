@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.68`, the next patch
-   is `v1.0.69`.
+   reuse or rewrite a version already handed off. After `v1.0.69`, the next patch
+   is `v1.0.70`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.68`
+## Current state after `v1.0.69`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -121,6 +121,7 @@ recent patch sequence:
 | `v1.0.66` | Add typed aliased `convertCurrency()` selection for generated currency fields in root and relationship-subquery SELECT lists. |
 | `v1.0.67` | Migrate the codegen executable to oclif with explicit bundled command discovery, generated help, and typed repeatable flags. |
 | `v1.0.68` | Add typed aliased `FORMAT()` selection for generated numeric/temporal fields and documented `FORMAT(convertCurrency(field))` composition. |
+| `v1.0.69` | Complete typed `FORMAT()` aggregate composition for unaliased row-producing aggregate functions with field arguments. |
 
 ### Build/tooling state
 
@@ -254,8 +255,9 @@ Core currently has:
   including child-to-parent references; localized outputs are strings with
   propagated field/relationship nullability, and the documented
   `FORMAT(convertCurrency(field))` composition reuses the existing unaliased
-  currency builder while unsupported aggregate nesting, filtering, and ordering
-  remain outside the public type surface;
+  currency builder; aggregate queries can also format unaliased row-producing
+  field aggregates while preserving aggregate nullability, with bare `COUNT()`,
+  aliased inputs, `GROUPING()` indicators, filtering, and ordering excluded;
 - bare `COUNT()` as a dedicated scalar `CountQueryBuilder` with scalar `WHERE`
   and `LIMIT`; it compiles independently from row-producing aggregates and uses
   the executor's optional `executeCountQuery` capability, implemented by the
@@ -298,7 +300,7 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.69` and should add typed `FIELDS(...)`
+**The next patch should be `v1.0.70` and should add typed `FIELDS(...)`
 selections.** Treat this as a record-selection feature with explicit generated
 output typing; leave polymorphic `TYPEOF`, other SELECT functions, and specialist
 clauses for later slices.
@@ -322,7 +324,7 @@ Recommended next unit:
   and negative type/runtime tests; keep `TYPEOF`, unrelated SELECT functions,
   and specialist clauses out of the patch.
 
-If the supplied bundle already contains `v1.0.68` or later, inspect the code and
+If the supplied bundle already contains `v1.0.69` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice

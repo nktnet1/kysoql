@@ -125,6 +125,40 @@ describe("aggregate queries", () => {
     expect(Object.isFrozen(node.selections?.[0]?.selection)).toBe(true);
   });
 
+  it("formats aliased aggregate selections with inferred output", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => [
+        fn.format(fn.count("Id")).as("formattedCount"),
+        fn.format(fn.sum("AnnualRevenue")).as("formattedRevenue"),
+        fn.format(fn.min("CloseDate")).as("formattedCloseDate"),
+      ]);
+
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly formattedCount: string;
+      readonly formattedRevenue: string | null;
+      readonly formattedCloseDate: string | null;
+    }>();
+    expect(query.compile().soql).toBe(
+      "SELECT FORMAT(COUNT(Id)) formattedCount, FORMAT(SUM(AnnualRevenue)) formattedRevenue, FORMAT(MIN(CloseDate)) formattedCloseDate FROM Account",
+    );
+    expect(query.toOperationNode().selections?.[0]).toEqual({
+      kind: "SelectionNode",
+      selection: {
+        kind: "AliasNode",
+        alias: "formattedCount",
+        node: {
+          kind: "FormatFunctionNode",
+          expression: {
+            kind: "AggregateFunctionNode",
+            function: "count",
+            reference: { kind: "ReferenceNode", name: "Id" },
+          },
+        },
+      },
+    });
+  });
+
   it("accumulates aliased aggregate selections without mutating earlier builders", () => {
     const db = new Kysoql<FixtureSchema>();
     const countQuery = db
@@ -610,6 +644,17 @@ describe("aggregate queries", () => {
         .select(({ fn }) => fn.count("Id").as("duplicate"))
         .select(({ fn }) => fn.max("Name").as("duplicate")),
     ).toThrow("Duplicate SOQL aggregate selection alias: duplicate.");
+    expect(() =>
+      db
+        .selectFrom("Account")
+        .select(({ fn }) =>
+          fn
+            .format(fn.sum("AnnualRevenue").as("totalRevenue") as never)
+            .as("formattedRevenue"),
+        ),
+    ).toThrow(
+      "SOQL FORMAT() only supports field references, unaliased convertCurrency() expressions, or unaliased aggregate functions with field arguments.",
+    );
   });
 
   it("models bare COUNT() as a scalar query with WHERE and LIMIT", async () => {
@@ -691,6 +736,20 @@ describe("aggregate queries", () => {
 
       // @ts-expect-error Row-producing aggregate selections require aliases.
       db.selectFrom("Account").select(({ fn }) => fn.sum("AnnualRevenue"));
+
+      db.selectFrom("Account").select(({ fn }) => {
+        return (
+          fn
+            // @ts-expect-error FORMAT cannot wrap an already aliased aggregate selection.
+            .format(fn.sum("AnnualRevenue").as("totalRevenue"))
+            .as("formattedRevenue")
+        );
+      });
+
+      db.selectFrom("Account").select(({ fn }) => {
+        // @ts-expect-error Bare COUNT() retains its dedicated scalar-query result path.
+        return fn.format(fn.count()).as("formattedCount");
+      });
 
       const scalarQuery = db.selectFrom("Account").select("Id");
       // @ts-expect-error Aggregate mode cannot begin after record selections.
@@ -807,6 +866,11 @@ describe("aggregate queries", () => {
       rollupQuery.having((eb) => eb(eb.fn.count("Id"), ">", 1));
       rollupQuery.having((eb) => eb(eb.fn.grouping("Name"), "=", 1));
       rollupQuery.select(({ fn }) => fn.grouping("Name").as("nameGrouping"));
+      // @ts-expect-error FORMAT supports row-producing aggregates, not GROUPING indicators.
+      rollupQuery.select(({ fn }) => {
+        // @ts-expect-error FORMAT supports row-producing aggregates, not GROUPING indicators.
+        return fn.format(fn.grouping("Name")).as("formattedGrouping");
+      });
       rollupQuery.orderBy(({ fn }) => fn.grouping("Name"));
       rollupQuery.orderBy("Name");
       rollupQuery.limit(10);

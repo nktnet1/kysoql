@@ -5,6 +5,7 @@ import type {
 } from "#/expression/aggregate-function-builder";
 import type { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
 import type { AliasNode } from "#/operation-node/alias-node";
+import type { FormatFunctionNode } from "#/operation-node/format-function-node";
 import { SelectionNode } from "#/operation-node/selection-node";
 
 export type AggregateSelectionExpression = AliasedAggregateFunctionBuilder<
@@ -75,11 +76,17 @@ function parseAliasedAggregateNode(expression: unknown): AliasNode {
   }
 
   const node = expression.toOperationNode() as AliasNode;
+  const isFormattedAggregate =
+    node.kind === "AliasNode" &&
+    node.node.kind === "FormatFunctionNode" &&
+    (node.node as FormatFunctionNode).expression.kind ===
+      "AggregateFunctionNode";
 
   if (
     node.kind !== "AliasNode" ||
     (node.node.kind !== "AggregateFunctionNode" &&
-      node.node.kind !== "DateFunctionNode")
+      node.node.kind !== "DateFunctionNode" &&
+      !isFormattedAggregate)
   ) {
     throw new TypeError(AGGREGATE_SELECTION_ERROR);
   }

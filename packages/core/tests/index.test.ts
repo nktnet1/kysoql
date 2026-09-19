@@ -3,6 +3,7 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 import {
   type AdvancedGroupByMode,
   type AggregatableFieldReference,
+  type AggregateFormatFunctionBuilder,
   type AggregateFunction,
   type AggregateFunctionBuilder,
   type AggregateFunctionExpression,
@@ -108,6 +109,7 @@ import {
 } from "#/index";
 
 type PublicTypeSurface = {
+  aggregateFormatFunctionBuilder: AggregateFormatFunctionBuilder<string>;
   advancedGroupByMode: AdvancedGroupByMode;
   aggregateFunction: AggregateFunction;
   aggregateFunctionBuilder: AggregateFunctionBuilder<number>;

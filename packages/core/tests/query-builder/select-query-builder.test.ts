@@ -451,7 +451,7 @@ describe("SelectQueryBuilder", () => {
         fn.format(fn.toLabel("Industry") as never).as("formattedIndustry"),
       ),
     ).toThrow(
-      "SOQL FORMAT() only supports field references or unaliased convertCurrency() expressions.",
+      "SOQL FORMAT() only supports field references, unaliased convertCurrency() expressions, or unaliased aggregate functions with field arguments.",
     );
 
     const selected = baseQuery.select(({ fn }) =>

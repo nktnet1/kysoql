@@ -673,9 +673,9 @@ Useful findings:
 - `FORMAT(convertCurrency(field))` is a documented composition that first
   converts a currency value into the querying user's currency and then formats
   the result for their locale.
-- Salesforce also permits aggregate-function nesting, but aggregate result rows
-  have a distinct builder/type path. That composition remains a later,
-  aggregate-specific addition instead of weakening the record-selection API.
+- Salesforce also permits aggregate-function nesting. Aggregate result rows have
+  a distinct builder/type path, so that composition must retain aggregate-query
+  routing and result nullability rather than weakening the record-selection API.
 - `FORMAT()` is a SELECT function. This slice does not expose it through
   filtering or ordering callbacks.
 
@@ -686,9 +686,17 @@ references, including child-to-parent paths. A dedicated frozen function node
 compiles direct fields as `FORMAT(field) alias` and composes with the existing
 unaliased currency builder as `FORMAT(convertCurrency(field)) alias`. Outputs
 infer as localized strings with field and relationship nullability propagated.
-Unsupported inputs, aliased nested expressions, aggregate nesting, filtering,
-and ordering remain outside the type surface, with matching runtime validation
-for invalid nested nodes.
+In that patch, unsupported inputs, aliased nested expressions, aggregate
+nesting, filtering, and ordering remained outside the type surface, with
+matching runtime validation for invalid nested nodes.
+
+Implemented consequence in `v1.0.69`: `fn.format(...)` also accepts unaliased
+row-producing aggregate builders with field arguments. Formatted aggregates
+remain aggregate selections, compile as `FORMAT(AGGREGATE(field)) alias`, and
+infer localized string output while preserving whether the underlying aggregate
+can return `null`. Bare `COUNT()`, already-aliased aggregates, and `GROUPING()`
+indicators remain excluded so their dedicated query and grouping semantics are
+not blurred.
 
 ### Remaining SOQL surface / roadmap references
 

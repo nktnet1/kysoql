@@ -1,5 +1,6 @@
 import type { AliasedSelectFunctionBuilder } from "#/expression/aggregate-function-builder";
 import type { AliasNode } from "#/operation-node/alias-node";
+import type { FormatFunctionNode } from "#/operation-node/format-function-node";
 import type { OperationNode } from "#/operation-node/operation-node";
 import { SelectionNode } from "#/operation-node/selection-node";
 
@@ -52,9 +53,14 @@ function operationNodeOf(expression: unknown): OperationNode | undefined {
 }
 
 function isSelectFunctionNode(node: OperationNode | undefined): boolean {
+  if (node?.kind === "FormatFunctionNode") {
+    return (
+      (node as FormatFunctionNode).expression.kind !== "AggregateFunctionNode"
+    );
+  }
+
   return (
     node?.kind === "ConvertCurrencyFunctionNode" ||
-    node?.kind === "FormatFunctionNode" ||
     node?.kind === "ToLabelFunctionNode"
   );
 }

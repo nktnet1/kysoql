@@ -280,6 +280,14 @@ type FormatOutput<DB, TB extends keyof DB, Reference extends string> =
 
 type NestedFormatOutput<Output> = null extends Output ? string | null : string;
 
+type FormattableAggregateFunctionBuilder<
+  Output,
+  ComparisonValue,
+  Operator extends ComparisonOperator,
+> = AggregateFunctionBuilder<Output, ComparisonValue, Operator> & {
+  readonly [groupingFunctionType]?: never;
+};
+
 type ToLabelOutput<DB, TB extends keyof DB, Reference extends string> =
   true extends FieldReferenceNullable<DB, TB, Reference>
     ? string | null
@@ -311,6 +319,16 @@ export interface FormatFunctionBuilder<Output> {
   as<Alias extends string>(
     alias: Alias,
   ): AliasedSelectFunctionBuilder<Output, Alias>;
+
+  toOperationNode(): FormatFunctionNode;
+}
+
+export interface AggregateFormatFunctionBuilder<Output> {
+  readonly expressionType: Output | undefined;
+
+  as<Alias extends string>(
+    alias: Alias,
+  ): AliasedAggregateFunctionBuilder<Output, Alias>;
 
   toOperationNode(): FormatFunctionNode;
 }
@@ -541,6 +559,59 @@ class FormatFunctionBuilderImpl<Output>
   }
 }
 
+class AggregateFormatFunctionBuilderImpl<Output>
+  implements AggregateFormatFunctionBuilder<Output>
+{
+  readonly #node: FormatFunctionNode;
+
+  constructor(node: FormatFunctionNode) {
+    this.#node = node;
+  }
+
+  get expressionType(): Output | undefined {
+    return undefined;
+  }
+
+  as<Alias extends string>(
+    alias: Alias,
+  ): AliasedAggregateFunctionBuilder<Output, Alias> {
+    return new AliasedFormattedAggregateFunctionBuilderImpl<Output, Alias>(
+      this.#node,
+      parseSelectionAlias(alias) as Alias,
+    );
+  }
+
+  toOperationNode(): FormatFunctionNode {
+    return this.#node;
+  }
+}
+
+class AliasedFormattedAggregateFunctionBuilderImpl<Output, Alias extends string>
+  implements AliasedAggregateFunctionBuilder<Output, Alias>
+{
+  declare readonly [aggregateFunctionSelectionType]: true;
+
+  readonly #node: AliasNode;
+  readonly #alias: Alias;
+
+  constructor(node: FormatFunctionNode, alias: Alias) {
+    this.#node = AliasNode.create(node, alias);
+    this.#alias = alias;
+  }
+
+  get expressionType(): Output | undefined {
+    return undefined;
+  }
+
+  get alias(): Alias | undefined {
+    return this.#alias;
+  }
+
+  toOperationNode(): AliasNode {
+    return this.#node;
+  }
+}
+
 type SelectFunctionNode =
   | ConvertCurrencyFunctionNode
   | FormatFunctionNode
@@ -728,6 +799,14 @@ export interface SelectFunctionModule<
     expression: ConvertCurrencyFunctionBuilder<Output>,
   ): FormatFunctionBuilder<NestedFormatOutput<Output>>;
 
+  format<Output, ComparisonValue, Operator extends ComparisonOperator>(
+    expression: FormattableAggregateFunctionBuilder<
+      Output,
+      ComparisonValue,
+      Operator
+    >,
+  ): AggregateFormatFunctionBuilder<NestedFormatOutput<Output>>;
+
   toLabel<Reference extends string>(
     field: Reference & TranslatableFieldReference<DB, TB, Reference>,
   ): ToLabelFunctionBuilder<ToLabelOutput<DB, TB, Reference>>;
@@ -861,20 +940,42 @@ class AggregateFunctionModuleImpl<
   format<Output>(
     expression: ConvertCurrencyFunctionBuilder<Output>,
   ): FormatFunctionBuilder<NestedFormatOutput<Output>>;
+  format<Output, ComparisonValue, Operator extends ComparisonOperator>(
+    expression: FormattableAggregateFunctionBuilder<
+      Output,
+      ComparisonValue,
+      Operator
+    >,
+  ): AggregateFormatFunctionBuilder<NestedFormatOutput<Output>>;
   format(
-    fieldOrExpression: string | ConvertCurrencyFunctionBuilder<unknown>,
-  ): FormatFunctionBuilder<string | null> {
+    fieldOrExpression:
+      | string
+      | ConvertCurrencyFunctionBuilder<unknown>
+      | AggregateFunctionBuilder<unknown, unknown, ComparisonOperator>,
+  ):
+    | AggregateFormatFunctionBuilder<string | null>
+    | FormatFunctionBuilder<string | null> {
     const expression =
       typeof fieldOrExpression === "string"
         ? ReferenceNode.create(fieldOrExpression)
         : fieldOrExpression.toOperationNode();
 
     if (
+      expression.kind === "AggregateFunctionNode" &&
+      expression.function !== "grouping" &&
+      expression.reference !== undefined
+    ) {
+      return new AggregateFormatFunctionBuilderImpl<string | null>(
+        FormatFunctionNode.create(expression),
+      );
+    }
+
+    if (
       expression.kind !== "ReferenceNode" &&
       expression.kind !== "ConvertCurrencyFunctionNode"
     ) {
       throw new TypeError(
-        "SOQL FORMAT() only supports field references or unaliased convertCurrency() expressions.",
+        "SOQL FORMAT() only supports field references, unaliased convertCurrency() expressions, or unaliased aggregate functions with field arguments.",
       );
     }
 

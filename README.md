@@ -161,7 +161,9 @@ aliased `format()` expression. Direct inputs are restricted to generated
 including child-to-parent paths. Outputs are strings with source/relationship
 nullability preserved. `format()` can also wrap an unaliased
 `convertCurrency()` expression when the localized value should use the querying
-user's currency.
+user's currency. Aggregate queries can wrap unaliased field aggregates such as
+`count(field)`, `sum(field)`, and `min(field)`; their aliases and nullable result
+types remain explicit.
 
 ```ts
 const opportunities = await db
@@ -172,6 +174,16 @@ const opportunities = await db
     fn
       .format(fn.convertCurrency("Amount"))
       .as("localizedConvertedAmount"),
+  ])
+  .execute();
+```
+
+```ts
+const totals = await db
+  .selectFrom("Opportunity")
+  .select(({ fn }) => [
+    fn.format(fn.count("Id")).as("localizedCount"),
+    fn.format(fn.sum("Amount")).as("localizedAmount"),
   ])
   .execute();
 ```

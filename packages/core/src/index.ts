@@ -1,5 +1,6 @@
 export type {
   AggregatableFieldReference,
+  AggregateFormatFunctionBuilder,
   AggregateFunctionBuilder,
   AggregateFunctionExpression,
   AggregateFunctionModule,
