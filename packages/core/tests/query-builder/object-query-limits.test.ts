@@ -30,6 +30,36 @@ type ReferenceField<Target extends string> = SalesforceField<
   Target
 >;
 
+type MultiPicklistField = SalesforceField<
+  string,
+  "multipicklist",
+  true,
+  true,
+  true,
+  true,
+  never,
+  never,
+  "Alpha" | "Beta"
+>;
+
+type PolymorphicReferenceField<
+  Targets extends string,
+  Relationship extends string,
+> = SalesforceField<
+  string,
+  "reference",
+  false,
+  true,
+  true,
+  true,
+  Targets,
+  Relationship,
+  never,
+  true,
+  false,
+  true
+>;
+
 interface FixtureSchema {
   readonly ContentDocumentLink: SalesforceObject<{
     readonly Id: Field<string, "id">;
@@ -89,7 +119,50 @@ interface FixtureSchema {
       readonly User: SalesforceParentRelationship<"User", "UserId", false>;
     }
   >;
+  readonly Config__mdt: SalesforceObject<
+    {
+      readonly Id: Field<string, "id">;
+      readonly DeveloperName: Field;
+      readonly Priority__c: Field<number, "int">;
+      readonly Parent__c: ReferenceField<"ParentConfig__mdt">;
+    },
+    {
+      readonly Parent__r: SalesforceParentRelationship<
+        "ParentConfig__mdt",
+        "Parent__c",
+        false
+      >;
+    }
+  >;
+  readonly ParentConfig__mdt: SalesforceObject<{
+    readonly Id: Field<string, "id">;
+    readonly DeveloperName: Field;
+  }>;
+  readonly Invoice__x: SalesforceObject<
+    {
+      readonly Id: Field<string, "id">;
+      readonly Name: Field;
+      readonly Amount__c: Field<number, "double">;
+      readonly Status__c: Field<"Open" | "Closed", "picklist">;
+      readonly Tags__c: MultiPicklistField;
+      readonly WhatId: PolymorphicReferenceField<
+        "Account" | "Opportunity",
+        "What"
+      >;
+    },
+    {
+      readonly What: SalesforceParentRelationship<
+        "Account" | "Opportunity",
+        "WhatId",
+        false
+      >;
+    }
+  >;
   readonly Account: SalesforceObject<{
+    readonly Id: Field<string, "id">;
+    readonly Name: Field;
+  }>;
+  readonly Opportunity: SalesforceObject<{
     readonly Id: Field<string, "id">;
     readonly Name: Field;
   }>;
@@ -532,6 +605,177 @@ describe("object-specific SOQL query limits", () => {
         .select("Id")
         .withUserId("005000000000001")
         .orderBy("User.Name")
+        .compile(),
+    ).toThrow(error);
+  });
+
+  it("enforces custom metadata WHERE operator and OR restrictions", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const base = db
+      .selectFrom("Config__mdt")
+      .select(["Id", "DeveloperName", "Parent__r.DeveloperName"]);
+    const error =
+      "SOQL custom metadata type WHERE clauses support IN/NOT IN, =, !=, >, >=, <, <=, LIKE, AND, and same-field OR groups using only =/LIKE predicates.";
+
+    expect(
+      base
+        .where("Parent__r.DeveloperName", "=", "Parent")
+        .where("Priority__c", ">=", 10)
+        .where((eb) =>
+          eb.or([
+            eb("DeveloperName", "=", "Primary"),
+            eb("DeveloperName", "like", "Fallback%"),
+          ]),
+        )
+        .compile().soql,
+    ).toBe(
+      "SELECT Id, DeveloperName, Parent__r.DeveloperName FROM Config__mdt WHERE Parent__r.DeveloperName = 'Parent' AND Priority__c >= 10 AND (DeveloperName = 'Primary' OR DeveloperName LIKE 'Fallback%')",
+    );
+    expect(
+      db
+        .selectFrom("Config__mdt")
+        .select("Id")
+        .where("DeveloperName", "in", ["Primary", "Secondary"])
+        .where("Parent__r.DeveloperName", "not in", ["Hidden"])
+        .compile().soql,
+    ).toBe(
+      "SELECT Id FROM Config__mdt WHERE DeveloperName IN ('Primary', 'Secondary') AND Parent__r.DeveloperName NOT IN ('Hidden')",
+    );
+
+    expect(() =>
+      base
+        .where((eb) =>
+          eb.or([
+            eb("DeveloperName", "=", "Primary"),
+            eb("Priority__c", "=", 10),
+          ]),
+        )
+        .compile(),
+    ).toThrow(error);
+    expect(() =>
+      base
+        .where((eb) =>
+          eb.or([
+            eb("Priority__c", ">", 10),
+            eb("Priority__c", "=", 20),
+          ]),
+        )
+        .compile(),
+    ).toThrow(error);
+    expect(() =>
+      base.where((eb) => eb.not(eb("DeveloperName", "=", "Hidden"))).compile(),
+    ).toThrow(error);
+  });
+
+  it("rejects unsupported custom metadata operators at the compiler boundary", () => {
+    const base = new Kysoql<FixtureSchema>()
+      .selectFrom("Config__mdt")
+      .select("Id");
+    const queryNode = QueryNode.cloneWithWhere(
+      base.toOperationNode(),
+      BinaryOperationNode.create(
+        ReferenceNode.create("DeveloperName"),
+        OperatorNode.create("includes"),
+        ValueNode.create("Primary"),
+      ),
+    );
+
+    expect(() => new DefaultQueryCompiler().compileQuery(queryNode)).toThrow(
+      "SOQL custom metadata type WHERE clauses support IN/NOT IN, =, !=, >, >=, <, <=, LIKE, AND, and same-field OR groups using only =/LIKE predicates.",
+    );
+  });
+
+  it("rejects relationship-field ORDER BY on custom metadata types", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const error =
+      "SOQL custom metadata type ORDER BY clauses can reference only non-relationship fields.";
+
+    expect(
+      db
+        .selectFrom("Config__mdt")
+        .select("Id")
+        .orderBy("DeveloperName")
+        .compile().soql,
+    ).toBe("SELECT Id FROM Config__mdt ORDER BY DeveloperName");
+    expect(() =>
+      db
+        .selectFrom("Config__mdt")
+        .select("Id")
+        .orderBy("Parent__r.DeveloperName")
+        .compile(),
+    ).toThrow(error);
+  });
+
+  it("allows the external-object subset Salesforce documents as supported", () => {
+    const db = new Kysoql<FixtureSchema>();
+
+    expect(
+      db
+        .selectFrom("Invoice__x")
+        .select(["Id", "Name"])
+        .where("Status__c", "=", "Open")
+        .orderBy("Name")
+        .limit(25)
+        .compile().soql,
+    ).toBe(
+      "SELECT Id, Name FROM Invoice__x WHERE Status__c = 'Open' ORDER BY Name LIMIT 25",
+    );
+    expect(
+      db.selectFrom("Invoice__x").select(({ fn }) => fn.count()).compile().soql,
+    ).toBe("SELECT COUNT() FROM Invoice__x");
+  });
+
+  it("rejects unsupported external-object filters and query clauses", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const error =
+      "SOQL external objects do not support GROUP BY, HAVING, fielded COUNT/AVG/MIN/MAX/SUM, LIKE, INCLUDES/EXCLUDES, toLabel(), TYPEOF, FOR VIEW/REFERENCE, or WITH clauses.";
+    const base = db.selectFrom("Invoice__x");
+
+    expect(() =>
+      base.select("Id").where("Name", "like", "A%").compile(),
+    ).toThrow(error);
+    expect(() =>
+      base.select("Id").where("Tags__c", "includes", ["Alpha"]).compile(),
+    ).toThrow(error);
+    expect(() =>
+      base
+        .select(({ fn }) => fn.count("Id").as("invoiceCount"))
+        .compile(),
+    ).toThrow(error);
+    expect(() =>
+      base.select(({ fn }) => fn.sum("Amount__c").as("total")).compile(),
+    ).toThrow(error);
+    expect(() =>
+      base
+        .select(({ fn }) => fn.toLabel("Status__c").as("statusLabel"))
+        .compile(),
+    ).toThrow(error);
+    expect(() => base.select("Id").forView().compile()).toThrow(error);
+  });
+
+  it("rejects GROUP BY, HAVING, and TYPEOF on external objects", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const error =
+      "SOQL external objects do not support GROUP BY, HAVING, fielded COUNT/AVG/MIN/MAX/SUM, LIKE, INCLUDES/EXCLUDES, toLabel(), TYPEOF, FOR VIEW/REFERENCE, or WITH clauses.";
+
+    expect(() =>
+      db
+        .selectFrom("Invoice__x")
+        .select(({ fn }) => fn.countDistinct("Status__c").as("statuses"))
+        .groupBy("Status__c")
+        .having((eb) => eb(eb.fn.countDistinct("Status__c"), ">", 0))
+        .compile(),
+    ).toThrow(error);
+
+    expect(() =>
+      db
+        .selectFrom("Invoice__x")
+        .select("Id")
+        .selectTypeOf("What", (typeOf) =>
+          typeOf
+            .when("Account", ["Name"])
+            .when("Opportunity", ["Name"]),
+        )
         .compile(),
     ).toThrow(error);
   });

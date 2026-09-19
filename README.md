@@ -433,6 +433,18 @@ fields. Permission-dependent feed row caps remain execution-context concerns rat
 than unconditional compiler errors. The normal field/operator type system remains
 unchanged.
 
+Custom metadata types (`__mdt`) and external objects (`__x`) also receive the
+unconditional SOQL limits Salesforce documents for those object families. Custom
+metadata WHERE clauses are limited to the documented comparison/list operators,
+`AND`, and same-field `OR` groups using `=` / `LIKE`; metadata relationship fields
+remain valid in SELECT/WHERE, but relationship-field `ORDER BY` is rejected.
+External objects reject the universal unsupported subset: `GROUP BY` / `HAVING`,
+fielded `COUNT` plus `AVG` / `MIN` / `MAX` / `SUM`, `LIKE`,
+`INCLUDES` / `EXCLUDES`, `toLabel()`, `TYPEOF`, `FOR VIEW` / `FOR REFERENCE`,
+and `WITH` clauses. Bare `COUNT()` remains available; adapter-specific limits
+(such as OData relationship ordering or custom-adapter location/scope behavior)
+are intentionally left to execution context instead of being treated as universal.
+
 Generated child-relationship metadata enables typed parent-to-child subqueries
 without accepting arbitrary subquery `FROM` strings. `.selectSubquery()` takes a
 generated child relationship name and a dedicated child-query builder with the

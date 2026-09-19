@@ -1234,3 +1234,45 @@ Kysoql consequence in `v1.0.83`: extend the shared object-query-limit compiler
 validator for root `NewsFeed` and `UserProfileFeed` queries. Reject any `ORDER BY`
 expression that references a dotted relationship path while preserving root-field
 ordering. Keep the permission-dependent 1,000-row caps unenforced.
+
+
+### External-object and custom-metadata query-limit audit
+
+Sources re-checked on 2026-09-19:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-limits.html
+- https://developer.salesforce.com/docs/platform/lwc/guide/data-wire-service-about.html
+- https://developer.salesforce.com/docs/platform/api-rest/guide/resources-sobject-describe.html
+
+Useful findings:
+
+- Salesforce's standard sObject Describe result does not expose an object-level
+  boolean that identifies an external object. Salesforce does, however, define
+  `__x` as the API-name suffix for external custom objects, while custom metadata
+  types use the distinct `__mdt` suffix. Because these suffixes are part of the
+  platform API naming model, they are a stable fallback for object-family limits
+  that Describe cannot express.
+- Custom metadata types support metadata relationship fields in SELECT and WHERE.
+  Their WHERE operator surface is limited to `IN`, `NOT IN`, `=`, `!=`, `>`,
+  `>=`, `<`, `<=`, `LIKE`, and logical `AND`; `OR` is supported only on the
+  same column using `LIKE` / `=` predicates. `ORDER BY` is restricted to
+  non-relationship fields.
+- External objects universally reject `AVG`, fielded `COUNT`, `MIN`, `MAX`,
+  `SUM`, `GROUP BY`, `HAVING`, `LIKE`, `INCLUDES`, `EXCLUDES`, `toLabel()`,
+  `TYPEOF`, `FOR VIEW`, `FOR REFERENCE`, and `WITH`. Bare `COUNT()` is listed
+  separately as supported, though some adapters require external-source row-count
+  support at execution time.
+- Additional external-object limits are adapter-specific. OData adapters restrict
+  relationship ordering and can gate `COUNT()` on `Request Row Counts`; custom
+  adapters reject location queries, `convertCurrency()`, Knowledge usage updates,
+  and `USING SCOPE`. These must not be promoted to unconditional compiler errors
+  without adapter capability metadata.
+- External-object subquery row caps and the four-join limit cannot currently be
+  enforced reliably from the root compiler AST because relationship subqueries do
+  not retain enough target-object/adapter identity.
+
+Kysoql consequence in `v1.0.84`: recognize `__mdt` / `__x` at the compiler
+boundary and enforce only the documented universal restrictions that the current
+AST can represent accurately. Preserve metadata relationship SELECT/WHERE support,
+keep bare external-object `COUNT()`, and leave adapter-specific rules to future
+execution-capability metadata instead of guessing.

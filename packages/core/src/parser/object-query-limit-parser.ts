@@ -1,11 +1,15 @@
+import type { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
+import type { AliasNode } from "#/operation-node/alias-node";
 import type { AndNode } from "#/operation-node/and-node";
 import type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
+import type { FormatFunctionNode } from "#/operation-node/format-function-node";
 import type { NotNode } from "#/operation-node/not-node";
 import type { OperationNode } from "#/operation-node/operation-node";
 import type { OperatorNode } from "#/operation-node/operator-node";
 import type { OrNode } from "#/operation-node/or-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { SelectQueryNode } from "#/operation-node/select-query-node";
+import type { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
 import type { ValueListNode } from "#/operation-node/value-list-node";
 import type { ValueNode } from "#/operation-node/value-node";
 
@@ -43,6 +47,36 @@ const USER_RECORD_ACCESS_ORDER_BY_ERROR =
   "SOQL UserRecordAccess ORDER BY may reference only selected fields, and every selected Has*Access or MaxAccessLevel field must also be ordered.";
 const FEED_RELATIONSHIP_ORDER_BY_ERROR =
   "SOQL NewsFeed and UserProfileFeed ORDER BY clauses can reference only fields on the root object.";
+const CUSTOM_METADATA_WHERE_ERROR =
+  "SOQL custom metadata type WHERE clauses support IN/NOT IN, =, !=, >, >=, <, <=, LIKE, AND, and same-field OR groups using only =/LIKE predicates.";
+const CUSTOM_METADATA_ORDER_BY_ERROR =
+  "SOQL custom metadata type ORDER BY clauses can reference only non-relationship fields.";
+const EXTERNAL_OBJECT_QUERY_ERROR =
+  "SOQL external objects do not support GROUP BY, HAVING, fielded COUNT/AVG/MIN/MAX/SUM, LIKE, INCLUDES/EXCLUDES, toLabel(), TYPEOF, FOR VIEW/REFERENCE, or WITH clauses.";
+
+const CUSTOM_METADATA_OPERATORS = new Set([
+  "=",
+  "!=",
+  ">",
+  ">=",
+  "<",
+  "<=",
+  "like",
+  "in",
+  "not in",
+]);
+const CUSTOM_METADATA_OR_OPERATORS = new Set(["=", "like"]);
+const EXTERNAL_OBJECT_UNSUPPORTED_OPERATORS = new Set([
+  "like",
+  "includes",
+  "excludes",
+]);
+const EXTERNAL_OBJECT_UNSUPPORTED_AGGREGATES = new Set([
+  "avg",
+  "max",
+  "min",
+  "sum",
+]);
 
 const USER_RECORD_ACCESS_MAX_RECORD_IDS = 200;
 const USER_RECORD_ACCESS_FIELDS = new Set([
@@ -336,6 +370,172 @@ const validateUserRecordAccessQuery = (query: SelectQueryNode): void => {
   validateUserRecordAccessOrderBy(query, selectedFields);
 };
 
+const binaryReferenceAndOperator = (
+  node: BinaryOperationNode,
+): readonly [string, string] | undefined => {
+  if (
+    node.leftOperand.kind !== "ReferenceNode" ||
+    node.operator.kind !== "OperatorNode"
+  ) {
+    return undefined;
+  }
+
+  return [
+    (node.leftOperand as ReferenceNode).name.toLowerCase(),
+    (node.operator as OperatorNode).operator,
+  ];
+};
+
+const collectCustomMetadataOrPredicates = (
+  node: OperationNode,
+): readonly BinaryOperationNode[] | undefined => {
+  if (node.kind === "BinaryOperationNode") {
+    return [node as BinaryOperationNode];
+  }
+
+  if (node.kind !== "OrNode") {
+    return undefined;
+  }
+
+  const or = node as OrNode;
+  const left = collectCustomMetadataOrPredicates(or.left);
+  const right = collectCustomMetadataOrPredicates(or.right);
+  return left && right ? [...left, ...right] : undefined;
+};
+
+const validateCustomMetadataOr = (node: OrNode): void => {
+  const predicates = collectCustomMetadataOrPredicates(node);
+  const first = predicates?.[0]
+    ? binaryReferenceAndOperator(predicates[0])
+    : undefined;
+
+  if (!predicates || !first || !CUSTOM_METADATA_OR_OPERATORS.has(first[1])) {
+    throw new TypeError(CUSTOM_METADATA_WHERE_ERROR);
+  }
+
+  const field = first[0];
+  for (const predicate of predicates.slice(1)) {
+    const pair = binaryReferenceAndOperator(predicate);
+    if (
+      !pair ||
+      pair[0] !== field ||
+      !CUSTOM_METADATA_OR_OPERATORS.has(pair[1])
+    ) {
+      throw new TypeError(CUSTOM_METADATA_WHERE_ERROR);
+    }
+  }
+};
+
+const validateCustomMetadataWhere = (node: OperationNode): void => {
+  switch (node.kind) {
+    case "AndNode": {
+      const and = node as AndNode;
+      validateCustomMetadataWhere(and.left);
+      validateCustomMetadataWhere(and.right);
+      return;
+    }
+    case "BinaryOperationNode": {
+      const pair = binaryReferenceAndOperator(node as BinaryOperationNode);
+      if (!pair || !CUSTOM_METADATA_OPERATORS.has(pair[1])) {
+        throw new TypeError(CUSTOM_METADATA_WHERE_ERROR);
+      }
+      return;
+    }
+    case "OrNode":
+      validateCustomMetadataOr(node as OrNode);
+      return;
+    default:
+      throw new TypeError(CUSTOM_METADATA_WHERE_ERROR);
+  }
+};
+
+const validateCustomMetadataQuery = (query: SelectQueryNode): void => {
+  if (query.where) {
+    validateCustomMetadataWhere(query.where.where);
+  }
+
+  if (orderByUsesRelationship(query)) {
+    throw new TypeError(CUSTOM_METADATA_ORDER_BY_ERROR);
+  }
+};
+
+const whereUsesOperator = (
+  node: OperationNode,
+  operators: ReadonlySet<string>,
+): boolean => {
+  switch (node.kind) {
+    case "AndNode": {
+      const and = node as AndNode;
+      return (
+        whereUsesOperator(and.left, operators) ||
+        whereUsesOperator(and.right, operators)
+      );
+    }
+    case "BinaryOperationNode": {
+      const binary = node as BinaryOperationNode;
+      return (
+        binary.operator.kind === "OperatorNode" &&
+        operators.has((binary.operator as OperatorNode).operator)
+      );
+    }
+    case "NotNode":
+      return whereUsesOperator((node as NotNode).operand, operators);
+    case "OrNode": {
+      const or = node as OrNode;
+      return (
+        whereUsesOperator(or.left, operators) ||
+        whereUsesOperator(or.right, operators)
+      );
+    }
+    default:
+      return false;
+  }
+};
+
+const externalSelectionIsUnsupported = (node: OperationNode): boolean => {
+  switch (node.kind) {
+    case "AggregateFunctionNode": {
+      const aggregate = node as AggregateFunctionNode;
+      return (
+        EXTERNAL_OBJECT_UNSUPPORTED_AGGREGATES.has(aggregate.function) ||
+        (aggregate.function === "count" && aggregate.reference !== undefined)
+      );
+    }
+    case "AliasNode":
+      return externalSelectionIsUnsupported((node as AliasNode).node);
+    case "FormatFunctionNode":
+      return externalSelectionIsUnsupported(
+        (node as FormatFunctionNode).expression,
+      );
+    case "ToLabelFunctionNode":
+      return true;
+    case "TypeOfNode":
+      return true;
+    default:
+      return false;
+  }
+};
+
+const validateExternalObjectQuery = (query: SelectQueryNode): void => {
+  if (
+    query.groupBy ||
+    query.having ||
+    query.forViewReference ||
+    query.userProfileFeedWith ||
+    query.withDataCategory ||
+    query.selections?.some((selection) =>
+      externalSelectionIsUnsupported(selection.selection),
+    ) ||
+    (query.where &&
+      whereUsesOperator(
+        query.where.where,
+        EXTERNAL_OBJECT_UNSUPPORTED_OPERATORS,
+      ))
+  ) {
+    throw new TypeError(EXTERNAL_OBJECT_QUERY_ERROR);
+  }
+};
+
 export const validateObjectQueryLimits = (query: SelectQueryNode): void => {
   const objectName = query.from.name.toLowerCase();
   const rule = REQUIRED_ROOT_FILTERS.get(objectName);
@@ -364,5 +564,13 @@ export const validateObjectQueryLimits = (query: SelectQueryNode): void => {
     orderByUsesRelationship(query)
   ) {
     throw new TypeError(FEED_RELATIONSHIP_ORDER_BY_ERROR);
+  }
+
+  if (objectName.endsWith("__mdt")) {
+    validateCustomMetadataQuery(query);
+  }
+
+  if (objectName.endsWith("__x")) {
+    validateExternalObjectQuery(query);
   }
 };
