@@ -1,3 +1,4 @@
+export { apexBind, type ApexBindExpression } from "#/apex-bind";
 export type {
   AggregatableFieldReference,
   AggregateFormatFunctionBuilder,
@@ -58,6 +59,7 @@ export type {
   ApexAccessMode,
   ApexAccessModeNode,
 } from "#/operation-node/apex-access-mode-node";
+export type { ApexBindNode } from "#/operation-node/apex-bind-node";
 export type { AndNode } from "#/operation-node/and-node";
 export type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 export type { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
@@ -130,6 +132,7 @@ export type {
   DataCategorySelector,
   WithDataCategoryNode,
 } from "#/operation-node/with-data-category-node";
+export type { ApexOperandValueExpression } from "#/parser/apex-bind-parser";
 export type { DataCategoryInput } from "#/parser/data-category-parser";
 export type { DistanceComparisonOperator } from "#/parser/geolocation-expression-parser";
 export type { AggregateSelectQueryBuilder } from "#/query-builder/aggregate-select-query-builder";

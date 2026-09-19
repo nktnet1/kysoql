@@ -1,6 +1,7 @@
 import * as v from "valibot";
 
 import type { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
+import type { ApexBindNode } from "#/operation-node/apex-bind-node";
 import type { AliasNode } from "#/operation-node/alias-node";
 import type { AndNode } from "#/operation-node/and-node";
 import type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
@@ -40,6 +41,7 @@ import type {
   WithDataCategoryNode,
 } from "#/operation-node/with-data-category-node";
 import { validateApexAccessModeQuery } from "#/parser/apex-access-mode-parser";
+import { validateApexBindQuery } from "#/parser/apex-bind-parser";
 import { validateDataCategoryQuery } from "#/parser/data-category-parser";
 import { validateFieldsSelections } from "#/parser/fields-selection-parser";
 import { validateForUpdateQuery } from "#/parser/for-update-parser";
@@ -74,6 +76,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
     validateFieldsSelections(query.selections, query.limit);
     validateApexAccessModeQuery(query);
+    validateApexBindQuery(query);
     validateForUpdateQuery(query);
     validateTypeOfSelections(query);
     validateKnowledgeUpdateQuery(query);
@@ -303,6 +306,8 @@ export class DefaultQueryCompiler implements QueryCompiler {
         return this.#compileAlias(node as AliasNode);
       case "AndNode":
         return this.#compileAnd(node as AndNode);
+      case "ApexBindNode":
+        return this.#compileApexBind(node as ApexBindNode);
       case "BinaryOperationNode":
         return this.#compileBinaryOperation(node as BinaryOperationNode);
       case "ConvertCurrencyFunctionNode":
@@ -338,6 +343,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
       default:
         throw new Error(`Unsupported operation node: ${node.kind}`);
     }
+  }
+
+  #compileApexBind(node: ApexBindNode): string {
+    return `:${node.name}`;
   }
 
   #compileAggregateFunction(node: AggregateFunctionNode): string {

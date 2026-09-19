@@ -724,6 +724,32 @@ Repeated access-mode calls replace the previous mode. `WITH USER_MODE` /
 such as `WITH DATA CATEGORY`. `FOR UPDATE` is also rejected if the underlying
 query already contains `ORDER BY`.
 
+Apex-only `WHERE` binds use `apexBind<T>(name)` rather than embedding raw SOQL.
+The generic describes the Apex variable's value shape, while the helper validates
+the emitted bind name as a simple identifier:
+
+```ts
+import { apexBind } from "@kysoql/core";
+
+const apexQuery = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .apex()
+  .where("Name", "=", apexBind<string>("accountName"))
+  .where("Id", "in", apexBind<readonly string[]>("accountIds"))
+  .compile();
+
+// SELECT Id, Name FROM Account
+// WHERE Name = :accountName AND Id IN :accountIds
+```
+
+Scalar binds work with typed direct and child-to-parent relationship filters,
+including temporal fields without converting the variable name into a SOQL
+literal. `IN` / `NOT IN` binds represent collections. Salesforce does not allow
+bind expressions with `INCLUDES` / `EXCLUDES`, and KnowledgeArticleVersion /
+`__kav` Apex queries reject binds at compilation. Ordinary REST/JSforce builders
+continue to accept only escaped literal values and typed subqueries.
+
 Execution stays transport-neutral in core. Configure the JSforce adapter to run
 compiled SOQL through an existing JSforce connection:
 

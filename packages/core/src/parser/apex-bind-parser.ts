@@ -1,0 +1,127 @@
+import { isApexBindExpression, type ApexBindExpression } from "#/apex-bind";
+import type { AndNode } from "#/operation-node/and-node";
+import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
+import type { NotNode } from "#/operation-node/not-node";
+import type { OperationNode } from "#/operation-node/operation-node";
+import {
+  type ComparisonOperator,
+  type LikeComparisonOperator,
+  type MultiSelectComparisonOperator,
+  OperatorNode,
+  type OrderedComparisonOperator,
+  type SetComparisonOperator,
+} from "#/operation-node/operator-node";
+import type { OrNode } from "#/operation-node/or-node";
+import { ReferenceNode } from "#/operation-node/reference-node";
+import type { SelectQueryNode } from "#/operation-node/select-query-node";
+import type {
+  ComparisonOperatorExpression,
+  OperandValueExpression,
+} from "#/parser/binary-operation-parser";
+import { parseFilterBinaryOperation } from "#/parser/filter-parser";
+import type { FieldReferenceDefinition } from "#/parser/reference-parser";
+import type { SalesforceFieldValue } from "#/schema";
+
+const KNOWLEDGE_APEX_BIND_ERROR =
+  "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.";
+const MULTISELECT_APEX_BIND_ERROR =
+  "Apex SOQL bind expressions cannot be used with INCLUDES or EXCLUDES.";
+
+type ApexFieldValue<DB, TB extends keyof DB, RE extends string> =
+  SalesforceFieldValue<FieldReferenceDefinition<DB, TB, RE>>;
+
+type ApexScalarBindValue<
+  DB,
+  TB extends keyof DB,
+  RE extends string,
+  OP extends ComparisonOperatorExpression<DB, TB, RE>,
+> = OP extends LikeComparisonOperator
+  ? Extract<NonNullable<ApexFieldValue<DB, TB, RE>>, string>
+  : OP extends OrderedComparisonOperator
+    ? NonNullable<ApexFieldValue<DB, TB, RE>>
+    : ApexFieldValue<DB, TB, RE>;
+
+type ApexBindOperandValueExpression<
+  DB,
+  TB extends keyof DB,
+  RE extends string,
+  OP extends ComparisonOperatorExpression<DB, TB, RE>,
+> = OP extends MultiSelectComparisonOperator
+  ? never
+  : OP extends SetComparisonOperator
+    ? ApexBindExpression<readonly ApexFieldValue<DB, TB, RE>[]>
+    : ApexBindExpression<ApexScalarBindValue<DB, TB, RE, OP>>;
+
+export type ApexOperandValueExpression<
+  DB,
+  TB extends keyof DB,
+  RE extends string,
+  OP extends ComparisonOperatorExpression<DB, TB, RE>,
+> =
+  | OperandValueExpression<DB, TB, RE, OP>
+  | ApexBindOperandValueExpression<DB, TB, RE, OP>;
+
+export function parseApexFilterBinaryOperation(
+  left: string,
+  operator: ComparisonOperator,
+  right: unknown,
+  outerObject: string,
+): BinaryOperationNode {
+  if (!isApexBindExpression(right)) {
+    return parseFilterBinaryOperation(left, operator, right, { outerObject });
+  }
+
+  if (operator === "includes" || operator === "excludes") {
+    throw new TypeError(MULTISELECT_APEX_BIND_ERROR);
+  }
+
+  return BinaryOperationNode.create(
+    ReferenceNode.create(left),
+    OperatorNode.create(operator),
+    right.toOperationNode(),
+  );
+}
+
+const containsApexBind = (node: OperationNode): boolean => {
+  switch (node.kind) {
+    case "ApexBindNode":
+      return true;
+    case "AndNode": {
+      const and = node as AndNode;
+      return containsApexBind(and.left) || containsApexBind(and.right);
+    }
+    case "BinaryOperationNode": {
+      const binary = node as BinaryOperationNode;
+      return (
+        containsApexBind(binary.leftOperand) ||
+        containsApexBind(binary.rightOperand)
+      );
+    }
+    case "NotNode":
+      return containsApexBind((node as NotNode).operand);
+    case "OrNode": {
+      const or = node as OrNode;
+      return containsApexBind(or.left) || containsApexBind(or.right);
+    }
+    default:
+      return false;
+  }
+};
+
+const isKnowledgeArticleObject = (objectName: string): boolean => {
+  const normalized = objectName.toLowerCase();
+
+  return (
+    normalized === "knowledgearticleversion" || normalized.endsWith("__kav")
+  );
+};
+
+export function validateApexBindQuery(query: SelectQueryNode): void {
+  if (
+    isKnowledgeArticleObject(query.from.name) &&
+    query.where &&
+    containsApexBind(query.where.where)
+  ) {
+    throw new TypeError(KNOWLEDGE_APEX_BIND_ERROR);
+  }
+}

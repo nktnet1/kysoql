@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.93`, the next patch
-   is `v1.0.94`.
+   reuse or rewrite a version already handed off. After `v1.0.94`, the next patch
+   is `v1.0.95`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -146,6 +146,7 @@ recent patch sequence:
 | `v1.0.91` | Fix the aggregate QueryAll executor test so its mock preserves the generic `QueryExecutor.executeAllQuery<O>()` contract under TypeScript 7/Vitest 5 instead of collapsing the return type to `unknown[]`. |
 | `v1.0.92` | Add an explicit compile-only Apex query context and typed root record `FOR UPDATE`, with immutable AST/compiler support and rejection of the Salesforce-invalid `ORDER BY` combination. |
 | `v1.0.93` | Add explicit Apex `WITH USER_MODE` / `WITH SYSTEM_MODE` access clauses with immutable replacement, competing-`WITH` rejection, and no inferred API-version default. |
+| `v1.0.94` | Add typed Apex `WHERE` bind expressions with validated identifiers, scalar and `IN` / `NOT IN` collection typing, relationship-field support, and Knowledge/multipicklist guardrails. |
 
 ### Build/tooling state
 
@@ -378,10 +379,14 @@ Core currently has:
   page and ordinary `queryMore` locators thereafter;
 - an explicit terminal `.apex()` context on row-producing root record queries;
   the returned `ApexSelectQueryBuilder` is compile-only and adds typed
-  `.forUpdate()` locking plus explicit `.withUserMode()` / `.withSystemMode()`
-  access clauses, while ordinary REST/JSforce builders expose none of those Apex
-  forms; the compiler rejects `ORDER BY` on locking queries and competing `WITH`
-  filtering forms alongside an Apex access mode;
+  `.forUpdate()` locking, explicit `.withUserMode()` / `.withSystemMode()` access
+  clauses, and typed `.where(...)` bind filters through `apexBind<T>(name)`;
+  scalar binds follow generated field/relationship value types, `IN` / `NOT IN`
+  binds require readonly collections, bind identifiers are validated, ordinary
+  REST/JSforce builders expose none of those Apex forms; the type/parser surface
+  rejects multipicklist bind use, while compilation rejects `ORDER BY` on locking
+  queries, competing `WITH` filtering forms alongside an Apex access mode, and
+  Knowledge-article Apex binds;
 - generated field metadata for filterable/sortable/groupable/aggregatable/custom
   flags, polymorphic-reference detection (`namePointing`,
   `polymorphicForeignKey`, and `referenceTo`), active picklist values, and
@@ -401,19 +406,21 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.94` and should continue feature work.**
-`v1.0.93` adds explicit Apex `WITH USER_MODE` / `WITH SYSTEM_MODE` clauses without
-inferring the default mode for a caller's Apex API version. Do not add
-`WITH SECURITY_ENFORCED` as a compatibility alias: current API 67 guidance retires
-it, while explicit user/system modes already cover the supported access-mode
-surface.
+**The next patch should be `v1.0.95` and should continue feature work.**
+`v1.0.94` adds a conservative Apex-only bind surface for direct `WHERE` filters:
+`apexBind<T>(name)` compiles to a validated `:name` AST node, scalar binds are
+field-value typed, `IN` / `NOT IN` binds require collections, relationship fields
+work through the existing generated reference surface, and unsupported
+Knowledge/multipicklist cases are rejected.
 
-The strongest remaining Apex-context feature is bind-expression support. Keep it
-behind `.apex()` and model bind values as explicit AST nodes rather than raw SOQL
-fragments so ordinary REST/JSforce builders remain injection-safe and unchanged.
-Before implementing it, inspect how bind references interact with scalar values,
-`IN` lists, relative/temporal literals, and relationship filters; choose one
-coherent typed bind surface rather than accepting arbitrary strings.
+The next coherent Apex slice is to complete bind ergonomics without opening a raw
+SOQL escape hatch. Reuse the same `ApexBindNode` for the remaining documented
+bind positions that fit the current AST, especially numeric `LIMIT` / `OFFSET`,
+and consider an Apex-specific grouped-WHERE expression callback so bind filters
+can participate in `OR` / `NOT` groups rather than only repeated top-level `AND`
+terms. Keep ordinary REST/JSforce builders unchanged, preserve semi-join nesting
+rules, and do not broaden bind names from simple identifiers unless an
+authoritative Apex grammar can be validated safely.
 
 The `v1.0.84` object-limit audit still defines the boundary for specialist-object
 work: do not infer big-object index rules from the `__b` suffix, do not encode
@@ -422,7 +429,7 @@ permission/cardinality-dependent feed/object caps as execution-context concerns.
 Automatic `Question` data-category taxonomy discovery also remains deferred until
 a stable public JSforce/Salesforce transport path exists.
 
-If the supplied bundle already contains `v1.0.92` or later, inspect the code and
+If the supplied bundle already contains `v1.0.94` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Follow-on roadmap after the consistency audit
@@ -435,8 +442,9 @@ consistency audit:
    codegen hook already accepts normalized `Question` taxonomy metadata; do not
    use JSforce's private SOAP invocation machinery solely to automate it.
 2. **Execution-context-specific syntax.** Re-evaluate `FOR UPDATE`,
-   `WITH USER_MODE`, `WITH SECURITY_ENFORCED`, bind expressions, and related
-   Apex-context behavior separately from the transport-neutral REST/JSforce core.
+   `WITH USER_MODE`, remaining bind positions, and related Apex-context behavior
+   separately from the transport-neutral REST/JSforce core. Do not reintroduce
+   retired `WITH SECURITY_ENFORCED` syntax.
 3. **Capability-rich specialist objects.** Big-object index validation, Data 360
    object rules, external-adapter-specific limits, and permission/cardinality
    dependent caps need authoritative metadata or execution-context hooks before

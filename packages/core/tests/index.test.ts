@@ -12,6 +12,10 @@ import {
   type AggregateSelectQueryBuilder,
   type ApexAccessMode,
   type ApexAccessModeNode,
+  apexBind,
+  type ApexBindExpression,
+  type ApexBindNode,
+  type ApexOperandValueExpression,
   type ApexSelectQueryBuilder,
   type AliasedAggregateFunctionBuilder,
   type AliasedDateFunctionBuilder,
@@ -176,6 +180,14 @@ type PublicTypeSurface = {
   >;
   apexAccessMode: ApexAccessMode;
   apexAccessModeNode: ApexAccessModeNode;
+  apexBindExpression: ApexBindExpression<string>;
+  apexBindNode: ApexBindNode;
+  apexOperandValueExpression: ApexOperandValueExpression<
+    Record<string, never>,
+    never,
+    "Id",
+    "="
+  >;
   apexSelectQueryBuilder: ApexSelectQueryBuilder<
     Record<string, never>,
     never,
@@ -503,6 +515,7 @@ describe("@kysoql/core public API", () => {
     expect(Kysoql).toBeTypeOf("function");
     expect(QueryCreator).toBeTypeOf("function");
     expect(DefaultQueryCompiler).toBeTypeOf("function");
+    expect(apexBind).toBeTypeOf("function");
     expect(soqlDate).toBeTypeOf("function");
     expect(soqlDateTime).toBeTypeOf("function");
     expect(soqlRelativeDate).toBeTypeOf("function");

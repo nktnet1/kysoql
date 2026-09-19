@@ -3,7 +3,18 @@ import {
   ApexAccessModeNode,
 } from "#/operation-node/apex-access-mode-node";
 import { ForUpdateNode } from "#/operation-node/for-update-node";
+import type { ComparisonOperator } from "#/operation-node/operator-node";
+import { QueryNode } from "#/operation-node/query-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
+import {
+  type ApexOperandValueExpression,
+  parseApexFilterBinaryOperation,
+} from "#/parser/apex-bind-parser";
+import type {
+  ComparisonOperatorExpression,
+  FilterableFieldName,
+} from "#/parser/binary-operation-parser";
+import { validateSemiJoinWhere } from "#/parser/filter-parser";
 import type { SelectQueryBuilderProps } from "#/query-builder/select-query-builder";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import { freeze } from "#/util/object-utils";
@@ -12,6 +23,15 @@ export interface ApexSelectQueryBuilder<DB, TB extends keyof DB, O> {
   compile(): CompiledQuery<O>;
 
   forUpdate(): ApexSelectQueryBuilder<DB, TB, O>;
+
+  where<
+    RE extends string,
+    OP extends ComparisonOperatorExpression<DB, TB, RE>,
+  >(
+    lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
+    op: OP,
+    rhs: ApexOperandValueExpression<DB, TB, NoInfer<RE>, NoInfer<OP>>,
+  ): ApexSelectQueryBuilder<DB, TB, O>;
 
   withSystemMode(): ApexSelectQueryBuilder<DB, TB, O>;
 
@@ -40,6 +60,35 @@ class ApexSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
         this.#props.queryNode,
         ForUpdateNode.create(),
       ),
+    });
+  }
+
+  where<
+    RE extends string,
+    OP extends ComparisonOperatorExpression<DB, TB, RE>,
+  >(
+    lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
+    op: OP,
+    rhs: ApexOperandValueExpression<DB, TB, NoInfer<RE>, NoInfer<OP>>,
+  ): ApexSelectQueryBuilder<DB, TB, O>;
+  where(
+    lhs: string,
+    op: ComparisonOperator,
+    rhs: unknown,
+  ): ApexSelectQueryBuilder<DB, TB, O> {
+    const operation = parseApexFilterBinaryOperation(
+      lhs,
+      op,
+      rhs,
+      this.#props.queryNode.from.name,
+    );
+    const queryNode = QueryNode.cloneWithWhere(this.#props.queryNode, operation);
+
+    validateSemiJoinWhere(queryNode.where?.where ?? operation);
+
+    return new ApexSelectQueryBuilderImpl<DB, TB, O>({
+      ...this.#props,
+      queryNode,
     });
   }
 

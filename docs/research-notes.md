@@ -1366,3 +1366,38 @@ choice in a frozen `ApexAccessModeNode`; repeated calls replace the prior mode.
 If neither method is called, compile no access-mode clause and leave the runtime
 default to the caller's Apex/API-version context. Do not expose
 `WITH SECURITY_ENFORCED` on the current API surface.
+
+### Apex bind expressions
+
+Sources re-checked on 2026-09-20:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-limits.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-querying-multiselect-picklists.html
+
+Useful findings:
+
+- Apex SOQL can reference Apex variables and expressions when they are preceded
+  by `:`. The documented bind positions include `WHERE` filter literals and the
+  value of `IN` / `NOT IN`, which can bind collections dynamically.
+- Bind expressions are not supported by every filtering clause. In particular,
+  Salesforce documents `INCLUDES` / `EXCLUDES` separately for multi-select
+  picklists and does not support bind expressions there.
+- Salesforce's object-limit reference explicitly states that binding variables
+  are not supported in Apex SOQL statements for `KnowledgeArticleVersion`; the
+  same Knowledge article family includes custom `__kav` article-version types.
+- A safe TypeScript builder cannot validate the contents of an Apex variable that
+  exists outside JavaScript. It can still type the expected value shape, restrict
+  the bind to supported clause positions, and validate the emitted bind identifier
+  instead of accepting a raw SOQL fragment.
+
+Kysoql consequence for `v1.0.94`: add public `apexBind<T>(name)` expressions backed
+by a frozen `ApexBindNode`, and allow them only on `.apex().where(...)`. Scalar
+binds are typed against the generated field value type; `IN` / `NOT IN` require a
+readonly collection bind; relationship references retain the existing generated
+field/path typing; and date/datetime binds use the generated returned-value type
+rather than the REST literal wrappers because Apex evaluates the variable at
+runtime. Bind names are limited to simple identifiers so the feature cannot become
+a raw-SOQL escape hatch. Keep ordinary executable builders unchanged, reject binds
+with `INCLUDES` / `EXCLUDES`, and reject Knowledge article Apex binds at the
+compiler boundary.

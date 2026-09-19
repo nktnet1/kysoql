@@ -49,6 +49,26 @@ The same Apex-only surface supports explicit `.withUserMode()` and
 those methods is called, so the generated SOQL does not assume an Apex API
 version's default access behavior.
 
+Apex `WHERE` bind expressions use the typed `apexBind<T>(name)` helper. Bind
+names are validated as simple identifiers, scalar binds preserve field-value
+typing, and `IN` / `NOT IN` collection binds compile without literal-list
+parentheses:
+
+```ts
+import { apexBind } from "@kysoql/core";
+
+const byName = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .apex()
+  .where("Name", "=", apexBind<string>("accountName"))
+  .where("Id", "in", apexBind<readonly string[]>("accountIds"))
+  .compile();
+```
+
+Bind expressions are intentionally unavailable on ordinary API-executable
+builders, with `INCLUDES` / `EXCLUDES`, and for Knowledge article Apex queries.
+
 Pass a `QueryExecutor` to `Kysoql` when queries should execute rather than only
 compile. Normal `.execute()` delegates to `QueryExecutor.executeQuery()` (or the
 dedicated count hook for bare `COUNT()`). Root query builders also expose
