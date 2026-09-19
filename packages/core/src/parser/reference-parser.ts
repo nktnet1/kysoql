@@ -54,7 +54,7 @@ export type ChildRelationshipDefinition<
   Relationship extends ChildRelationshipName<DB, TB>,
 > = ChildrenOf<DB, TB>[Relationship];
 
-type ParentObjectNameFromRelationship<Relationship> =
+export type ParentObjectNameFromRelationship<Relationship> =
   Relationship extends SalesforceParentRelationship<
     infer ObjectName,
     string,
@@ -77,13 +77,32 @@ type ChildObjectNameFromRelationship<Relationship> =
     ? ObjectName
     : never;
 
+export type ParentRelationshipObjectName<
+  DB,
+  TB extends keyof DB,
+  Relationship extends ParentRelationshipName<DB, TB>,
+> = ParentObjectNameFromRelationship<
+  ParentRelationshipDefinition<DB, TB, Relationship>
+>;
+
+export type ParentRelationshipFieldName<
+  DB,
+  TB extends keyof DB,
+  Relationship extends ParentRelationshipName<DB, TB>,
+> = ParentRelationshipDefinition<DB, TB, Relationship> extends
+  SalesforceParentRelationship<string, infer FieldName, boolean>
+  ? FieldName
+  : never;
+
 export type ParentObjectName<
   DB,
   TB extends keyof DB,
   Relationship extends ParentRelationshipName<DB, TB>,
 > =
-  ParentObjectNameFromRelationship<
-    ParentRelationshipDefinition<DB, TB, Relationship>
+  ParentRelationshipObjectName<
+    DB,
+    TB,
+    Relationship
   > extends infer ObjectName extends string
     ? [ObjectName] extends [keyof DB & string]
       ? ObjectName

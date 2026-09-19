@@ -95,6 +95,7 @@ import {
   type SalesforceObject,
   type SalesforceParentRelationship,
   type SalesforceQueryResult,
+  type SalesforceRecordAttributes,
   type SalesforceRow,
   type SalesforceSchema,
   type SelectExpressionBuilder,
@@ -102,6 +103,7 @@ import {
   type SelectFunctionModule,
   type SelectionNode,
   type SelectQueryBuilder,
+  type SelectQueryMode,
   type SelectQueryBuilderProps,
   type SelectQueryNode,
   type SemiJoinQueryCreator,
@@ -125,6 +127,13 @@ import {
   type ToLabelFunctionBuilder,
   type ToLabelFunctionNode,
   type TranslatableFieldReference,
+  type TypeOfBuilder,
+  type TypeOfElseBuilder,
+  type TypeOfElseFieldList,
+  type TypeOfFieldList,
+  type TypeOfNode,
+  type TypeOfWhenBuilder,
+  type TypeOfWhenNode,
   type ValueListNode,
   type ValueNode,
   type WhereExpressionFactory,
@@ -335,6 +344,7 @@ type PublicTypeSurface = {
     true
   >;
   salesforceQueryResult: SalesforceQueryResult<{ readonly Id: string }>;
+  salesforceRecordAttributes: SalesforceRecordAttributes<"Account">;
   salesforceRow: SalesforceRow<
     SalesforceObject<{
       readonly Id: SalesforceField<string, "id", false, true, true, true>;
@@ -346,6 +356,7 @@ type PublicTypeSurface = {
     never,
     Record<never, never>
   >;
+  selectQueryMode: SelectQueryMode;
   selectQueryBuilderProps: SelectQueryBuilderProps;
   selectQueryNode: SelectQueryNode;
   selectedSemiJoinSubqueryBuilder: SelectedSemiJoinSubqueryBuilder<
@@ -397,6 +408,27 @@ type PublicTypeSurface = {
     never,
     "Status"
   >;
+  typeOfBuilder: TypeOfBuilder<Record<string, never>, "Account">;
+  typeOfElseBuilder: TypeOfElseBuilder<
+    Record<string, never>,
+    "Account",
+    "Account",
+    Record<never, never>
+  >;
+  typeOfElseFieldList: TypeOfElseFieldList<
+    Record<string, never>,
+    never,
+    "Id"
+  >;
+  typeOfFieldList: TypeOfFieldList<Record<string, never>, never, "Id">;
+  typeOfNode: TypeOfNode;
+  typeOfWhenBuilder: TypeOfWhenBuilder<
+    Record<string, never>,
+    "Account",
+    "Account",
+    Record<never, never>
+  >;
+  typeOfWhenNode: TypeOfWhenNode;
   valueListNode: ValueListNode;
   valueNode: ValueNode;
   whereExpressionFactory: WhereExpressionFactory<Record<string, never>, never>;

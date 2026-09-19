@@ -21,6 +21,7 @@ import type {
 import { QueryNode } from "#/operation-node/query-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
 import { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
+import type { TypeOfNode } from "#/operation-node/type-of-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
 import { SelectionNode } from "#/operation-node/selection-node";
 import {
@@ -71,6 +72,13 @@ import {
   type Selection,
 } from "#/parser/select-parser";
 import {
+  type AvailableTypeOfReference,
+  type PolymorphicRelationshipReference,
+  type PolymorphicRelationshipTargets,
+  type TypeOfSelection,
+  validateTypeOfSelections,
+} from "#/parser/type-of-parser";
+import {
   type AggregateSelectQueryBuilder,
   createAggregateSelectQueryBuilder,
 } from "#/query-builder/aggregate-select-query-builder";
@@ -82,6 +90,13 @@ import {
   createRelationshipSubqueryBuilder,
   type RelationshipSubqueryBuilder,
 } from "#/query-builder/relationship-subquery-builder";
+import {
+  createTypeOfBuilder,
+  type TypeOfBuilder,
+  type TypeOfBuilderHandled,
+  type TypeOfBuilderHasElse,
+  type TypeOfBuilderOutput,
+} from "#/query-builder/type-of-builder";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { QueryExecutor } from "#/query-executor";
@@ -121,30 +136,72 @@ type DistanceOrderByFactory<DB, TB extends keyof DB> = (
   eb: GeolocationExpressionBuilder<DB, TB>,
 ) => DistanceFunctionExpression<unknown, boolean, true>;
 
-export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
+export type SelectQueryMode = "plain" | "function" | "typeof";
+
+type AfterSelectFunctionMode<Mode extends SelectQueryMode> =
+  Mode extends "plain" ? "function" : Mode;
+
+type AfterTypeOfMode<Mode extends SelectQueryMode> =
+  Mode extends "plain" ? "typeof" : Mode;
+
+type AfterSubqueryMode<
+  Mode extends SelectQueryMode,
+  SubqueryFunctionMode extends "none" | "present" | "forbidden",
+> = SubqueryFunctionMode extends "present"
+  ? AfterSelectFunctionMode<Mode>
+  : Mode;
+
+type InitialSubqueryFunctionMode<Mode extends SelectQueryMode> =
+  Mode extends "typeof" ? "forbidden" : "none";
+
+type SelectFunctionFactoryForMode<Mode extends SelectQueryMode, Factory> =
+  Mode extends "typeof" ? never : Factory;
+
+type TypeOfModeCheck<Mode extends SelectQueryMode> = Mode extends "function"
+  ? readonly [incompatibleQueryMode: never]
+  : readonly [];
+
+type CompletedTypeOfBuilder = {
+  toOperationNode(): TypeOfNode;
+};
+
+type TypeOfValue<Targets extends string, Builder> =
+  | TypeOfBuilderOutput<Builder>
+  | (TypeOfBuilderHasElse<Builder> extends true
+      ? never
+      : Exclude<Targets, TypeOfBuilderHandled<Builder>> extends never
+        ? never
+        : null);
+
+export interface SelectQueryBuilder<
+  DB,
+  TB extends keyof DB,
+  O,
+  Mode extends SelectQueryMode = any,
+> {
   compile(): CompiledQuery<O>;
 
   execute(): Promise<readonly O[]>;
 
-  limit(limit: number): SelectQueryBuilder<DB, TB, O>;
+  limit(limit: number): SelectQueryBuilder<DB, TB, O, Mode>;
 
-  offset(offset: number): SelectQueryBuilder<DB, TB, O>;
+  offset(offset: number): SelectQueryBuilder<DB, TB, O, Mode>;
 
   orderBy(
     expression: DistanceOrderByFactory<DB, TB>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
-  ): SelectQueryBuilder<DB, TB, O>;
+  ): SelectQueryBuilder<DB, TB, O, Mode>;
 
   orderBy<OE extends string>(
     field: OE & SortableFieldName<DB, TB, OE>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
-  ): SelectQueryBuilder<DB, TB, O>;
+  ): SelectQueryBuilder<DB, TB, O, Mode>;
 
   where(
     expression: WhereExpressionFactory<DB, TB>,
-  ): SelectQueryBuilder<DB, TB, O>;
+  ): SelectQueryBuilder<DB, TB, O, Mode>;
 
   where<
     RE extends string,
@@ -154,15 +211,23 @@ export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
     lhs: RE & FilterableFieldName<DB, TB, RE>,
     op: OP,
     rhs: RHS,
-  ): SelectQueryBuilder<DB, TB, O>;
+  ): SelectQueryBuilder<DB, TB, O, Mode>;
 
   select(
     selection: UnselectedOnly<O, CountSelectionFactory<DB, TB>>,
   ): CountQueryBuilder<DB, TB>;
 
   select<FunctionSelection extends SelectFunctionSelectionArg>(
-    selection: SelectFunctionSelectionFactory<DB, TB, FunctionSelection>,
-  ): SelectQueryBuilder<DB, TB, O & SelectFunctionSelection<FunctionSelection>>;
+    selection: SelectFunctionFactoryForMode<
+      Mode,
+      SelectFunctionSelectionFactory<DB, TB, FunctionSelection>
+    >,
+  ): SelectQueryBuilder<
+    DB,
+    TB,
+    O & SelectFunctionSelection<FunctionSelection>,
+    AfterSelectFunctionMode<Mode>
+  >;
 
   select<Aggregate extends AggregateSelectionArg>(
     selection: UnselectedOnly<O, AggregateSelectionFactory<DB, TB, Aggregate>>,
@@ -174,20 +239,51 @@ export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
         SelectExpression<DB, TB, SE> &
         AvailableSelectExpression<DB, TB, O, SE>
     >,
-  ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>>;
+  ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>, Mode>;
 
   select<SE extends string>(
     selection: SE &
       SelectExpression<DB, TB, SE> &
       AvailableSelectExpression<DB, TB, O, SE>,
-  ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>>;
+  ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>, Mode>;
 
   selectFields<Selector extends FieldsSelector>(
     selector: Selector,
     ...check: FieldsSelectionCheck<DB, TB, O, Selector>
-  ): SelectQueryBuilder<DB, TB, O & FieldsSelection<DB, TB, Selector>>;
+  ): SelectQueryBuilder<DB, TB, O & FieldsSelection<DB, TB, Selector>, Mode>;
 
-  selectSubquery<Relationship extends string, SubqueryOutput>(
+  selectTypeOf<Reference extends string, Builder extends CompletedTypeOfBuilder>(
+    reference: Reference &
+      PolymorphicRelationshipReference<DB, TB, Reference> &
+      AvailableTypeOfReference<O, Reference>,
+    callback: (
+      typeOf: TypeOfBuilder<
+        DB,
+        PolymorphicRelationshipTargets<DB, TB, Reference>
+      >,
+    ) => Builder,
+    ..._modeCheck: TypeOfModeCheck<Mode>
+  ): SelectQueryBuilder<
+    DB,
+    TB,
+    O &
+      TypeOfSelection<
+        DB,
+        TB,
+        Reference,
+        TypeOfValue<
+          PolymorphicRelationshipTargets<DB, TB, Reference>,
+          Builder
+        >
+      >,
+    AfterTypeOfMode<Mode>
+  >;
+
+  selectSubquery<
+    Relationship extends string,
+    SubqueryOutput,
+    SubqueryFunctionMode extends "none" | "present" | "forbidden",
+  >(
     relationship: Relationship &
       ChildRelationshipReference<DB, TB, Relationship>,
     callback: (
@@ -195,13 +291,15 @@ export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
         DB,
         ChildObjectForRelationship<DB, TB, Relationship>,
         Record<never, never>,
-        readonly [unknown]
+        readonly [unknown],
+        InitialSubqueryFunctionMode<Mode>
       >,
     ) => RelationshipSubqueryBuilder<
       DB,
       ChildObjectForRelationship<DB, TB, Relationship>,
       SubqueryOutput,
-      readonly [unknown]
+      readonly [unknown],
+      SubqueryFunctionMode
     >,
   ): SelectQueryBuilder<
     DB,
@@ -210,14 +308,19 @@ export interface SelectQueryBuilder<DB, TB extends keyof DB, O> {
       readonly [Key in Relationship]: SalesforceQueryResult<
         Simplify<SubqueryOutput>
       >;
-    }
+    },
+    AfterSubqueryMode<Mode, SubqueryFunctionMode>
   >;
 
   toOperationNode(): SelectQueryNode;
 }
 
-class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
-  implements SelectQueryBuilder<DB, TB, O>
+class SelectQueryBuilderImpl<
+  DB,
+  TB extends keyof DB,
+  O,
+  Mode extends SelectQueryMode,
+> implements SelectQueryBuilder<DB, TB, O, Mode>
 {
   readonly #props: SelectQueryBuilderProps;
 
@@ -239,8 +342,8 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     return this.#props.queryExecutor.executeQuery(this.compile());
   }
 
-  limit(limit: number): SelectQueryBuilder<DB, TB, O> {
-    return new SelectQueryBuilderImpl<DB, TB, O>({
+  limit(limit: number): SelectQueryBuilder<DB, TB, O, Mode> {
+    return new SelectQueryBuilderImpl<DB, TB, O, Mode>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithLimit(
         this.#props.queryNode,
@@ -249,8 +352,8 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     });
   }
 
-  offset(offset: number): SelectQueryBuilder<DB, TB, O> {
-    return new SelectQueryBuilderImpl<DB, TB, O>({
+  offset(offset: number): SelectQueryBuilder<DB, TB, O, Mode> {
+    return new SelectQueryBuilderImpl<DB, TB, O, Mode>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithOffset(
         this.#props.queryNode,
@@ -263,17 +366,17 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     expression: DistanceOrderByFactory<DB, TB>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
-  ): SelectQueryBuilder<DB, TB, O>;
+  ): SelectQueryBuilder<DB, TB, O, Mode>;
   orderBy<OE extends string>(
     field: OE & SortableFieldName<DB, TB, OE>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
-  ): SelectQueryBuilder<DB, TB, O>;
+  ): SelectQueryBuilder<DB, TB, O, Mode>;
   orderBy(
     fieldOrExpression: string | DistanceOrderByFactory<DB, TB>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
-  ): SelectQueryBuilder<DB, TB, O> {
+  ): SelectQueryBuilder<DB, TB, O, Mode> {
     const item =
       typeof fieldOrExpression === "function"
         ? parseDistanceOrderBy(
@@ -283,7 +386,7 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
           )
         : parseOrderBy(fieldOrExpression, direction, nulls);
 
-    return new SelectQueryBuilderImpl<DB, TB, O>({
+    return new SelectQueryBuilderImpl<DB, TB, O, Mode>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithOrderByItems(this.#props.queryNode, [
         item,
@@ -293,7 +396,7 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
 
   where(
     expression: WhereExpressionFactory<DB, TB>,
-  ): SelectQueryBuilder<DB, TB, O>;
+  ): SelectQueryBuilder<DB, TB, O, Mode>;
   where<
     RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
@@ -302,12 +405,12 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     lhs: RE & FilterableFieldName<DB, TB, RE>,
     op: OP,
     rhs: RHS,
-  ): SelectQueryBuilder<DB, TB, O>;
+  ): SelectQueryBuilder<DB, TB, O, Mode>;
   where(
     lhsOrExpression: string | WhereExpressionFactory<DB, TB>,
     op?: ComparisonOperator,
     rhs?: unknown,
-  ): SelectQueryBuilder<DB, TB, O> {
+  ): SelectQueryBuilder<DB, TB, O, Mode> {
     const operation =
       typeof lhsOrExpression === "function"
         ? lhsOrExpression(
@@ -328,7 +431,7 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
 
     validateSemiJoinWhere(queryNode.where?.where ?? operation);
 
-    return new SelectQueryBuilderImpl<DB, TB, O>({
+    return new SelectQueryBuilderImpl<DB, TB, O, Mode>({
       ...this.#props,
       queryNode,
     });
@@ -338,8 +441,16 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     selection: UnselectedOnly<O, CountSelectionFactory<DB, TB>>,
   ): CountQueryBuilder<DB, TB>;
   select<FunctionSelection extends SelectFunctionSelectionArg>(
-    selection: SelectFunctionSelectionFactory<DB, TB, FunctionSelection>,
-  ): SelectQueryBuilder<DB, TB, O & SelectFunctionSelection<FunctionSelection>>;
+    selection: SelectFunctionFactoryForMode<
+      Mode,
+      SelectFunctionSelectionFactory<DB, TB, FunctionSelection>
+    >,
+  ): SelectQueryBuilder<
+    DB,
+    TB,
+    O & SelectFunctionSelection<FunctionSelection>,
+    AfterSelectFunctionMode<Mode>
+  >;
   select<Aggregate extends AggregateSelectionArg>(
     selection: UnselectedOnly<O, AggregateSelectionFactory<DB, TB, Aggregate>>,
   ): AggregateSelectQueryBuilder<DB, TB, AggregateSelection<Aggregate>>;
@@ -349,12 +460,12 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
         SelectExpression<DB, TB, SE> &
         AvailableSelectExpression<DB, TB, O, SE>
     >,
-  ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>>;
+  ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>, Mode>;
   select<SE extends string>(
     selection: SE &
       SelectExpression<DB, TB, SE> &
       AvailableSelectExpression<DB, TB, O, SE>,
-  ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>>;
+  ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>, Mode>;
   select(
     selection:
       | string
@@ -365,18 +476,23 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     | CountQueryBuilder<DB, TB>
     | SelectQueryBuilder<DB, TB, unknown> {
     if (typeof selection !== "function") {
-      return new SelectQueryBuilderImpl<DB, TB, unknown>({
+      const queryNode = SelectQueryNode.cloneWithSelections(
+        this.#props.queryNode,
+        parseSelectArg(selection),
+      );
+      validateTypeOfSelections(queryNode);
+
+      return new SelectQueryBuilderImpl<DB, TB, unknown, Mode>({
         ...this.#props,
-        queryNode: SelectQueryNode.cloneWithSelections(
-          this.#props.queryNode,
-          parseSelectArg(selection),
-        ),
+        queryNode,
       });
     }
 
     const expression = selection(createSelectExpressionBuilder<DB, TB>());
 
     if (isSelectFunctionSelectionArg(expression)) {
+      assertNoTypeOfSelections(this.#props.queryNode);
+
       const selections = parseSelectFunctionSelectArg(
         expression as SelectFunctionSelectionArg,
       );
@@ -386,7 +502,12 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
         selections,
       );
 
-      return new SelectQueryBuilderImpl<DB, TB, unknown>({
+      return new SelectQueryBuilderImpl<
+        DB,
+        TB,
+        unknown,
+        AfterSelectFunctionMode<Mode>
+      >({
         ...this.#props,
         queryNode: SelectQueryNode.cloneWithSelections(
           this.#props.queryNode,
@@ -429,11 +550,17 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
   selectFields<Selector extends FieldsSelector>(
     selector: Selector,
     ..._check: FieldsSelectionCheck<DB, TB, O, Selector>
-  ): SelectQueryBuilder<DB, TB, O & FieldsSelection<DB, TB, Selector>> {
+  ): SelectQueryBuilder<
+    DB,
+    TB,
+    O & FieldsSelection<DB, TB, Selector>,
+    Mode
+  > {
     return new SelectQueryBuilderImpl<
       DB,
       TB,
-      O & FieldsSelection<DB, TB, Selector>
+      O & FieldsSelection<DB, TB, Selector>,
+      Mode
     >({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithSelections(this.#props.queryNode, [
@@ -442,7 +569,86 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     });
   }
 
-  selectSubquery<Relationship extends string, SubqueryOutput>(
+  selectTypeOf<Reference extends string, Builder extends CompletedTypeOfBuilder>(
+    reference: Reference &
+      PolymorphicRelationshipReference<DB, TB, Reference> &
+      AvailableTypeOfReference<O, Reference>,
+    callback: (
+      typeOf: TypeOfBuilder<
+        DB,
+        PolymorphicRelationshipTargets<DB, TB, Reference>
+      >,
+    ) => Builder,
+    ..._modeCheck: TypeOfModeCheck<Mode>
+  ): SelectQueryBuilder<
+    DB,
+    TB,
+    O &
+      TypeOfSelection<
+        DB,
+        TB,
+        Reference,
+        TypeOfValue<
+          PolymorphicRelationshipTargets<DB, TB, Reference>,
+          Builder
+        >
+      >,
+    AfterTypeOfMode<Mode>
+  > {
+    assertNoSelectFunctionSelections(this.#props.queryNode);
+
+    const typeOf = callback(
+      createTypeOfBuilder<
+        DB,
+        PolymorphicRelationshipTargets<DB, TB, Reference>
+      >(ReferenceNode.create(reference as string)),
+    );
+
+    if (
+      typeof typeOf !== "object" ||
+      typeOf === null ||
+      !("toOperationNode" in typeOf) ||
+      typeof typeOf.toOperationNode !== "function"
+    ) {
+      throw new TypeError("SOQL TYPEOF requires at least one WHEN branch.");
+    }
+
+    const node = typeOf.toOperationNode() as TypeOfNode;
+    if (node.whens.length === 0) {
+      throw new TypeError("SOQL TYPEOF requires at least one WHEN branch.");
+    }
+
+    const queryNode = SelectQueryNode.cloneWithSelections(
+      this.#props.queryNode,
+      [SelectionNode.create(node)],
+    );
+    validateTypeOfSelections(queryNode);
+
+    return new SelectQueryBuilderImpl<
+      DB,
+      TB,
+      O &
+        TypeOfSelection<
+          DB,
+          TB,
+          Reference,
+          TypeOfValue<
+            PolymorphicRelationshipTargets<DB, TB, Reference>,
+            Builder
+          >
+        >,
+      AfterTypeOfMode<Mode>
+    >({
+      ...this.#props,
+      queryNode,
+    });
+  }
+
+  selectSubquery<
+    Relationship extends string,
+    SubqueryOutput,
+    SubqueryFunctionMode extends "none" | "present" | "forbidden",
+  >(
     relationship: Relationship &
       ChildRelationshipReference<DB, TB, Relationship>,
     callback: (
@@ -450,13 +656,15 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
         DB,
         ChildObjectForRelationship<DB, TB, Relationship>,
         Record<never, never>,
-        readonly [unknown]
+        readonly [unknown],
+        InitialSubqueryFunctionMode<Mode>
       >,
     ) => RelationshipSubqueryBuilder<
       DB,
       ChildObjectForRelationship<DB, TB, Relationship>,
       SubqueryOutput,
-      readonly [unknown]
+      readonly [unknown],
+      SubqueryFunctionMode
     >,
   ): SelectQueryBuilder<
     DB,
@@ -465,20 +673,28 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
       readonly [Key in Relationship]: SalesforceQueryResult<
         Simplify<SubqueryOutput>
       >;
-    }
+    },
+    AfterSubqueryMode<Mode, SubqueryFunctionMode>
   > {
     const subquery = callback(
       createRelationshipSubqueryBuilder<
         DB,
         ChildObjectForRelationship<DB, TB, Relationship>,
         Record<never, never>,
-        readonly [unknown]
+        readonly [unknown],
+        InitialSubqueryFunctionMode<Mode>
       >({
         queryNode: RelationshipSubqueryNode.create(
           ReferenceNode.create(relationship),
         ),
       }),
     );
+
+    const queryNode = SelectQueryNode.cloneWithSelections(
+      this.#props.queryNode,
+      [SelectionNode.create(subquery.toOperationNode())],
+    );
+    validateTypeOfSelections(queryNode);
 
     return new SelectQueryBuilderImpl<
       DB,
@@ -487,12 +703,11 @@ class SelectQueryBuilderImpl<DB, TB extends keyof DB, O>
         readonly [Key in Relationship]: SalesforceQueryResult<
           Simplify<SubqueryOutput>
         >;
-      }
+      },
+      AfterSubqueryMode<Mode, SubqueryFunctionMode>
     >({
       ...this.#props,
-      queryNode: SelectQueryNode.cloneWithSelections(this.#props.queryNode, [
-        SelectionNode.create(subquery.toOperationNode()),
-      ]),
+      queryNode,
     });
   }
 
@@ -507,10 +722,39 @@ export interface SelectQueryBuilderProps {
   readonly queryNode: SelectQueryNode;
 }
 
-export function createSelectQueryBuilder<DB, TB extends keyof DB, O>(
+export function createSelectQueryBuilder<
+  DB,
+  TB extends keyof DB,
+  O,
+  Mode extends SelectQueryMode = "plain",
+>(
   props: SelectQueryBuilderProps,
-): SelectQueryBuilder<DB, TB, O> {
-  return new SelectQueryBuilderImpl(props);
+): SelectQueryBuilder<DB, TB, O, Mode> {
+  return new SelectQueryBuilderImpl<DB, TB, O, Mode>(props);
+}
+
+function assertNoTypeOfSelections(queryNode: SelectQueryNode): void {
+  if (
+    queryNode.selections?.some(
+      (selection) => selection.selection.kind === "TypeOfNode",
+    )
+  ) {
+    throw new TypeError(
+      "SOQL TYPEOF cannot be combined with SELECT function expressions.",
+    );
+  }
+}
+
+function assertNoSelectFunctionSelections(queryNode: SelectQueryNode): void {
+  if (
+    queryNode.selections?.some(
+      (selection) => selection.selection.kind === "AliasNode",
+    )
+  ) {
+    throw new TypeError(
+      "SOQL TYPEOF cannot be combined with SELECT function expressions.",
+    );
+  }
 }
 
 function isCountAllFunctionBuilder(

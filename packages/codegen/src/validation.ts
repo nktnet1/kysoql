@@ -30,6 +30,8 @@ const salesforceFieldDescriptionSchema = v.object({
   custom: v.boolean(),
   referenceTo: v.optional(v.array(v.string())),
   relationshipName: v.optional(v.nullable(v.string())),
+  namePointing: v.optional(v.boolean()),
+  polymorphicForeignKey: v.optional(v.boolean()),
   picklistValues: v.optional(v.array(salesforcePicklistValueSchema)),
 });
 
@@ -121,6 +123,12 @@ export const parseSalesforceObjectDescription = (
       ...(field.relationshipName === undefined
         ? {}
         : { relationshipName: field.relationshipName }),
+      ...(field.namePointing === undefined
+        ? {}
+        : { namePointing: field.namePointing }),
+      ...(field.polymorphicForeignKey === undefined
+        ? {}
+        : { polymorphicForeignKey: field.polymorphicForeignKey }),
       ...(field.picklistValues === undefined
         ? {}
         : {

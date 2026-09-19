@@ -268,6 +268,41 @@ const records = await db
   .execute();
 ```
 
+Generated polymorphic-reference metadata also enables typed `TYPEOF` selections.
+Use the Salesforce relationship name such as `What` or `Who`, not the underlying
+foreign-key field such as `WhatId`. Each `WHEN` branch is checked against its
+referenced object, and the selected relationship is inferred as a union
+discriminated by Salesforce's returned `attributes.type`. Parent relationship
+paths such as `Event__r.What` preserve their generated nullability.
+
+```ts
+const events = await db
+  .selectFrom("Event")
+  .select(["Id", "Subject"])
+  .selectTypeOf("What", (typeOf) =>
+    typeOf
+      .when("Account", ["Phone", "NumberOfEmployees"])
+      .when("Opportunity", ["Amount", "CloseDate"])
+      .else(["Name"]),
+  )
+  .execute();
+
+for (const event of events) {
+  if (event.What?.attributes.type === "Account") {
+    console.log(event.What.Phone);
+  }
+}
+```
+
+Without `ELSE`, an unmatched polymorphic runtime type contributes `null` to the
+selected relationship. Kysoql currently types `ELSE` conservatively: every
+selected field must be valid across all remaining generated target objects rather
+than modeling Salesforce's broader `Name` pseudo-object surface. Salesforce also
+forbids combining `TYPEOF` with SELECT-function expressions, aggregate/grouping
+forms, or selecting fields through the same polymorphic relationship in the
+ordinary field list; kysoql enforces those boundaries at the typed API and
+compiler validation layers.
+
 Generated child-relationship metadata enables typed parent-to-child subqueries
 without accepting arbitrary subquery `FROM` strings. `.selectSubquery()` takes a
 generated child relationship name and a dedicated child-query builder with the

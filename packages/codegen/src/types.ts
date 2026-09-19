@@ -23,6 +23,8 @@ export interface SalesforceFieldDescription {
   readonly custom: boolean;
   readonly referenceTo?: readonly string[];
   readonly relationshipName?: string | null;
+  readonly namePointing?: boolean;
+  readonly polymorphicForeignKey?: boolean;
   readonly picklistValues?: readonly SalesforcePicklistValue[];
 }
 

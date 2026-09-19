@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.72`, the next patch
-   is `v1.0.73`.
+   reuse or rewrite a version already handed off. After `v1.0.73`, the next patch
+   is `v1.0.74`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.72`
+## Current state after `v1.0.73`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -125,6 +125,7 @@ recent patch sequence:
 | `v1.0.70` | Add typed `FIELDS(STANDARD\|CUSTOM\|ALL)` selections, generated custom-field metadata, direct-field output inference, overlap protection, and REST/SOAP bounds. |
 | `v1.0.71` | Add typed `convertTimezone()` composition inside date functions with datetime-only inputs and exact converted-expression grouping identity. |
 | `v1.0.72` | Add typed geolocation fields plus validated `GEOLOCATION()` / `DISTANCE()` selection, filtering, and ordering with relationship/nullability preservation. |
+| `v1.0.73` | Add Describe-driven typed polymorphic `TYPEOF` selection with branch-specific output unions, parent-path/nullability preservation, and function/grouping compatibility guards. |
 
 ### Build/tooling state
 
@@ -183,6 +184,15 @@ Core currently has:
   metadata, available in selection/filtering/ordering up to Salesforce's five-level
   traversal limit; related selections infer nested output objects and lookup
   nullability; traversed target objects must be present in the generated schema;
+- typed `.selectTypeOf(relationship, callback)` for Describe-confirmed polymorphic
+  parent relationships, including child-to-parent target paths; generated
+  `referenceTo`, `namePointing`, and `polymorphicForeignKey` metadata constrain
+  valid targets and `WHEN` objects, branch fields are typed against the referenced
+  objects, output unions are discriminated by Salesforce record `attributes.type`,
+  and parent/unmatched-type nullability is preserved; typed `ELSE` currently uses
+  the common field/path surface of all remaining generated targets, and TYPEOF is
+  kept incompatible with SELECT functions (including nested child subqueries),
+  aggregate/grouping forms, and ordinary field selection through the same target;
 - typed `.selectFields("standard" | "custom" | "all")` on record and
   relationship-subquery builders; generated `custom` metadata expands exact
   direct-field result shapes, compile-time guards reject overlap with explicit
@@ -302,7 +312,9 @@ Core currently has:
   JSforce adapter with full explicit pagination plus scalar bare-`COUNT()`
   execution;
 - generated field metadata for filterable/sortable/groupable/aggregatable/custom
-  flags, active picklist values, and parent/child relationships.
+  flags, polymorphic-reference detection (`namePointing`,
+  `polymorphicForeignKey`, and `referenceTo`), active picklist values, and
+  parent/child relationships.
 
 Important current filter typing rules:
 
@@ -317,24 +329,26 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.73` and should add typed polymorphic `TYPEOF`
-selection.** Keep it isolated from specialist top-level clauses because its AST
-and output typing are a distinct architecture slice.
+**The next patch should be `v1.0.74` and should add typed top-level `USING SCOPE`.**
+Keep it isolated from `WITH DATA CATEGORY`: Salesforce exposes the supported
+scope names directly in each object's Describe metadata, so this is a small
+Describe -> generated schema -> immutable AST -> compiler slice.
 
 Recommended next unit:
 
-- model `TYPEOF` with a dedicated immutable selection node rather than raw SOQL;
-- constrain the target to generated polymorphic reference fields and derive
-  valid `WHEN <Object>` branches from generated `referenceTo` metadata;
-- type each branch's selected fields against the corresponding generated object
-  and infer a discriminated relationship result shape, including an optional
-  `ELSE` branch;
-- preserve Salesforce compatibility restrictions with aggregate/grouping/function
-  query forms at type and runtime boundaries;
-- add compiler, immutability, output-inference, relationship-path, and negative
-  tests without bundling `USING SCOPE` or other specialist clauses.
+- preserve each object's Describe `supportedScopes` names in codegen and expose
+  them as a generated string-literal union;
+- add a root-query `.usingScope(scope)` method constrained to the selected
+  object's generated supported scopes, with replacement semantics on repeated
+  calls;
+- model the clause with a dedicated immutable node/property and compile it after
+  `FROM` and before filtering/grouping/order clauses;
+- keep `USING SCOPE` out of relationship-subquery builders because Salesforce
+  explicitly disallows the clause for parent-child relationship queries;
+- add codegen, compiler-ordering, immutability, replacement, and unsupported-scope
+  type tests without bundling `WITH DATA CATEGORY` or Apex-only execution modes.
 
-If the supplied bundle already contains `v1.0.72` or later, inspect the code and
+If the supplied bundle already contains `v1.0.73` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Remaining roadmap after the next slice
@@ -342,8 +356,8 @@ advance from the actual state instead of reimplementing this section.
 Group closely related syntax when it shares the same type/AST/compiler path, but
 keep major architecture changes independently reviewable:
 
-1. **Specialist top-level clauses.** `USING SCOPE`, `WITH DATA CATEGORY`, and
-   other REST/SOAP-relevant specialist clauses.
+1. **Remaining specialist top-level clauses.** `WITH DATA CATEGORY` and other
+   REST/SOAP-relevant specialist clauses after the focused `USING SCOPE` slice.
 2. **Execution-context-specific syntax.** Re-evaluate Apex-only semantics such as
    `FOR UPDATE`, `WITH USER_MODE`, binds, etc. separately from the
    transport-neutral REST/JSforce core.

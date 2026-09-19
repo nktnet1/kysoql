@@ -87,6 +87,7 @@ describe("renderSchema", () => {
         "        never,",
         "        never,",
         "        false,",
+        "        false,",
         "        false",
       ].join("\n"),
     );
@@ -178,6 +179,47 @@ describe("renderSchema", () => {
         "        true",
       ].join("\n"),
     );
+  });
+
+  it("marks only Describe-confirmed multi-target named references as polymorphic", () => {
+    const source = renderSchema([
+      objectWith([
+        field({
+          name: "WhatId",
+          type: "reference",
+          referenceTo: ["Opportunity", "Account", "Account"],
+          relationshipName: "What",
+          namePointing: true,
+          polymorphicForeignKey: true,
+        }),
+        field({
+          name: "OwnerId",
+          type: "reference",
+          referenceTo: ["User", "Calendar"],
+          relationshipName: "Owner",
+          namePointing: true,
+          polymorphicForeignKey: false,
+        }),
+        field({
+          name: "DuplicateTarget__c",
+          type: "reference",
+          referenceTo: ["Account", "Account"],
+          relationshipName: "DuplicateTarget__r",
+          namePointing: true,
+          polymorphicForeignKey: true,
+        }),
+      ]),
+    ]);
+
+    const fieldBlock = (name: string): string => {
+      const start = source.indexOf(`readonly "${name}": SalesforceField<`);
+      const end = source.indexOf("      >;", start);
+      return source.slice(start, end).trimEnd();
+    };
+
+    expect(fieldBlock("WhatId")).toMatch(/\n        true$/);
+    expect(fieldBlock("OwnerId")).toMatch(/\n        false$/);
+    expect(fieldBlock("DuplicateTarget__c")).toMatch(/\n        false$/);
   });
 
   it("JSON-quotes generated names and string-union members", () => {

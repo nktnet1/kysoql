@@ -9,6 +9,7 @@ import type {
   FieldName,
   FieldsOf,
 } from "#/parser/reference-parser";
+import type { TraversesTypeOfRelationship } from "#/parser/type-of-parser";
 import type { SalesforceFieldCustom, SalesforceFieldValue } from "#/schema";
 import type { Simplify } from "#/util/type-utils";
 
@@ -53,7 +54,9 @@ export type AvailableSelectExpression<
   Selection extends string,
 > =
   Extract<Selection, FieldName<DB, TB> & keyof O> extends never
-    ? unknown
+    ? TraversesTypeOfRelationship<O, Selection> extends true
+      ? never
+      : unknown
     : never;
 
 export function parseFieldsSelection(selector: FieldsSelector): SelectionNode {

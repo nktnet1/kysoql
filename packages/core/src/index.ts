@@ -101,6 +101,7 @@ export type {
 export type { OrderByNode } from "#/operation-node/order-by-node";
 export type { ReferenceNode } from "#/operation-node/reference-node";
 export type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
+export type { TypeOfNode, TypeOfWhenNode } from "#/operation-node/type-of-node";
 export type { SelectQueryNode } from "#/operation-node/select-query-node";
 export type { SelectionNode } from "#/operation-node/selection-node";
 export type { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
@@ -113,8 +114,16 @@ export type { AggregateSelectQueryBuilder } from "#/query-builder/aggregate-sele
 export type { CountQueryBuilder } from "#/query-builder/count-query-builder";
 export type { RelationshipSubqueryBuilder } from "#/query-builder/relationship-subquery-builder";
 export type {
+  TypeOfBuilder,
+  TypeOfElseBuilder,
+  TypeOfElseFieldList,
+  TypeOfFieldList,
+  TypeOfWhenBuilder,
+} from "#/query-builder/type-of-builder";
+export type {
   SelectQueryBuilder,
   SelectQueryBuilderProps,
+  SelectQueryMode,
 } from "#/query-builder/select-query-builder";
 export type {
   SelectedSemiJoinSubqueryBuilder,
@@ -139,6 +148,7 @@ export type {
   SalesforceObject,
   SalesforceParentRelationship,
   SalesforceQueryResult,
+  SalesforceRecordAttributes,
   SalesforceRow,
   SalesforceSchema,
 } from "#/schema";

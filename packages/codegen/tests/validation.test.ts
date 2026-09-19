@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { parseSchemaName } from "#/validation";
+import {
+  parseSalesforceObjectDescription,
+  parseSchemaName,
+} from "#/validation";
 
 describe("codegen validation", () => {
   it.each(["Schema", "_Schema", "$Schema", "Schema9"])(
@@ -18,4 +21,49 @@ describe("codegen validation", () => {
       );
     },
   );
+
+  it("preserves Salesforce polymorphic reference metadata", () => {
+    expect(
+      parseSalesforceObjectDescription(
+        {
+          name: "Event",
+          fields: [
+            {
+              name: "WhatId",
+              type: "reference",
+              nillable: true,
+              filterable: true,
+              sortable: true,
+              groupable: false,
+              aggregatable: false,
+              custom: false,
+              referenceTo: ["Account", "Opportunity"],
+              relationshipName: "What",
+              namePointing: true,
+              polymorphicForeignKey: true,
+            },
+          ],
+        },
+        "Event",
+      ),
+    ).toEqual({
+      name: "Event",
+      fields: [
+        {
+          name: "WhatId",
+          type: "reference",
+          nillable: true,
+          filterable: true,
+          sortable: true,
+          groupable: false,
+          aggregatable: false,
+          custom: false,
+          referenceTo: ["Account", "Opportunity"],
+          relationshipName: "What",
+          namePointing: true,
+          polymorphicForeignKey: true,
+        },
+      ],
+    });
+  });
 });

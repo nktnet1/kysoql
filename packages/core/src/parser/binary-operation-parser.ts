@@ -47,6 +47,7 @@ type SalesforceTypeOfField<DB, TB extends keyof DB, RE extends string> =
     string,
     string,
     boolean,
+    boolean,
     boolean
   >
     ? SalesforceType
@@ -63,6 +64,7 @@ type ActivePicklistValueOfField<DB, TB extends keyof DB, RE extends string> =
     string,
     string,
     infer ActivePicklistValue,
+    boolean,
     boolean,
     boolean
   >

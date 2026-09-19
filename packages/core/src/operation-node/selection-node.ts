@@ -4,6 +4,7 @@ import type { DateFunctionNode } from "#/operation-node/date-function-node";
 import type { FieldsFunctionNode } from "#/operation-node/fields-function-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
+import type { TypeOfNode } from "#/operation-node/type-of-node";
 import { freeze } from "#/util/object-utils";
 
 export interface SelectionNode {
@@ -14,7 +15,8 @@ export interface SelectionNode {
     | DateFunctionNode
     | FieldsFunctionNode
     | ReferenceNode
-    | RelationshipSubqueryNode;
+    | RelationshipSubqueryNode
+    | TypeOfNode;
 }
 
 export const SelectionNode = {
@@ -25,7 +27,8 @@ export const SelectionNode = {
       | DateFunctionNode
       | FieldsFunctionNode
       | ReferenceNode
-      | RelationshipSubqueryNode,
+      | RelationshipSubqueryNode
+      | TypeOfNode,
   ): SelectionNode {
     return freeze({
       kind: "SelectionNode",

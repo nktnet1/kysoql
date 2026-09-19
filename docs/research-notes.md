@@ -772,6 +772,76 @@ ordering. Root and child-to-parent location references retain generated
 filterable/sortable capabilities and relationship nullability; relationship
 subqueries expose the same distance filter/order/select surface.
 
+### Polymorphic `TYPEOF` selection
+
+Sources re-checked on 2026-09-19:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-typeof.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-relationships-and-polymorph-keys.html
+- https://developer.salesforce.com/docs/platform/api/guide/sforce-api-calls-describesobjects-describesobjectresult.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select.html
+
+Useful findings:
+
+- A `TYPEOF` target is the polymorphic **relationship name** (`What`, `Who`, or a
+  relationship path ending in one), not its foreign-key field such as `WhatId`.
+- Describe metadata identifies a polymorphic relationship when the reference field
+  has a relationship name, `namePointing=true`, `polymorphicForeignKey=true`, and
+  more than one referenced object in `referenceTo`. A multi-target reference alone
+  is not enough.
+- `TYPEOF` requires one or more `WHEN <Object> THEN <fieldList>` branches and can
+  have an optional `ELSE`. Branch field lists are relative to the corresponding
+  referenced object, and a polymorphic target in a parent path is supported.
+- If there is no `ELSE` and the runtime object type matches no `WHEN`, Salesforce
+  returns null for the polymorphic selection. Multiple independent TYPEOF
+  expressions are allowed.
+- Salesforce does not allow the TYPEOF relationship to also appear as a normal
+  relationship field path in the same SELECT list. TYPEOF is also incompatible
+  with SELECT functions, non-object/aggregate queries, `GROUP BY`, `ROLLUP`,
+  `CUBE`, and `HAVING`; nested TYPEOF and semi-join SELECT use are not supported.
+- Salesforce defines ELSE fields against its broader `Name` object abstraction.
+  Kysoql does not yet model that pseudo-object, so a sound generated-schema-only
+  subset is preferable to accepting arbitrary ELSE fields.
+
+Implemented consequence in `v1.0.73`: codegen preserves the relevant Describe
+flags and marks only confirmed multi-target named references as polymorphic. Core
+adds a dedicated frozen TYPEOF AST and `.selectTypeOf()` builder whose `WHEN`
+branches are restricted to generated `referenceTo` targets and whose fields are
+typed against each target object. Output is a branch union discriminated by the
+Salesforce record `attributes.type`, with parent relationship and unmatched-type
+nullability preserved. Typed ELSE selections are conservatively limited to the
+common field/path surface of all remaining generated targets. Query-mode types and
+compiler/runtime validation prevent TYPEOF from mixing with SELECT functions
+(including functions inside child subqueries), aggregate/grouping forms, duplicate
+TYPEOF targets, or ordinary field selection through the same relationship.
+
+### `USING SCOPE` next-slice notes
+
+Sources re-checked on 2026-09-19:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-using-scope.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-relationships-query-limits.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select.html
+
+Useful findings:
+
+- API 32.0+ supports `USING SCOPE <filterScope>` on top-level SELECT queries.
+- Salesforce explicitly says to obtain the scopes valid for a specific object from
+  that object's Describe `supportedScopes`; each entry exposes a `name` and label.
+  This makes generated object metadata preferable to a global hard-coded scope
+  enum, because availability is object/org dependent.
+- The clause is positioned after the root `FROM <object>` and before the normal
+  filtering/grouping/order clauses in SELECT syntax.
+- Salesforce explicitly disallows `USING SCOPE` for parent-child relationship
+  queries, so it should remain a root-query capability rather than being copied to
+  the relationship-subquery builder.
+
+Kysoql consequence for `v1.0.74`: preserve Describe `supportedScopes` names in
+codegen, constrain a root `.usingScope()` call to the selected object's generated
+scope union, store it immutably, and compile it in the documented top-level clause
+position. Keep `WITH DATA CATEGORY` separate because its object/category grammar
+and Describe inputs are a different typing problem.
+
 ### Remaining SOQL surface / roadmap references
 
 Sources re-checked on 2026-09-18:

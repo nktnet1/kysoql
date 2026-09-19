@@ -70,6 +70,13 @@ const fieldReferenceType = (field: SalesforceFieldDescription): string =>
 const fieldRelationshipType = (field: SalesforceFieldDescription): string =>
   field.relationshipName ? quote(field.relationshipName) : "never";
 
+const fieldPolymorphic = (field: SalesforceFieldDescription): boolean =>
+  field.type === "reference" &&
+  Boolean(field.relationshipName) &&
+  field.namePointing === true &&
+  field.polymorphicForeignKey === true &&
+  new Set(field.referenceTo ?? []).size > 1;
+
 const renderField = (field: SalesforceFieldDescription): string => {
   const referenceTo = field.referenceTo?.length
     ? fieldReferenceType(field)
@@ -87,7 +94,8 @@ const renderField = (field: SalesforceFieldDescription): string => {
     `        ${fieldRelationshipType(field)},`,
     `        ${activePicklistType(field)},`,
     `        ${booleanLiteral(field.aggregatable)},`,
-    `        ${booleanLiteral(field.custom)}`,
+    `        ${booleanLiteral(field.custom)},`,
+    `        ${booleanLiteral(fieldPolymorphic(field))}`,
     "      >;",
   ].join("\n");
 };

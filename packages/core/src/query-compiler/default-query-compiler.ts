@@ -27,10 +27,12 @@ import type { SelectQueryNode } from "#/operation-node/select-query-node";
 import type { SelectionNode } from "#/operation-node/selection-node";
 import type { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
 import type { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
+import type { TypeOfNode } from "#/operation-node/type-of-node";
 import type { ValueListNode } from "#/operation-node/value-list-node";
 import type { ValueNode } from "#/operation-node/value-node";
 import type { WhereNode } from "#/operation-node/where-node";
 import { validateFieldsSelections } from "#/parser/fields-selection-parser";
+import { validateTypeOfSelections } from "#/parser/type-of-parser";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import { isSoqlRelativeDateLiteral } from "#/soql-relative-date-literal";
@@ -57,6 +59,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
     }
 
     validateFieldsSelections(query.selections, query.limit);
+    validateTypeOfSelections(query);
 
     let soql = `SELECT ${query.selections.map((selection) => this.#compileSelection(selection)).join(", ")} FROM ${query.from.name}`;
 
@@ -109,9 +112,29 @@ export class DefaultQueryCompiler implements QueryCompiler {
         return `(${this.#compileRelationshipSubquery(
           selection.selection as RelationshipSubqueryNode,
         )})`;
+      case "TypeOfNode":
+        return this.#compileTypeOf(selection.selection as TypeOfNode);
       default:
         throw new Error("Unsupported selection node.");
     }
+  }
+
+  #compileTypeOf(node: TypeOfNode): string {
+    const whens = node.whens
+      .map(
+        (when) =>
+          `WHEN ${when.object} THEN ${when.selections
+            .map((selection) => this.#compileReference(selection))
+            .join(", ")}`,
+      )
+      .join(" ");
+    const elseClause = node.elseSelections
+      ? ` ELSE ${node.elseSelections
+          .map((selection) => this.#compileReference(selection))
+          .join(", ")}`
+      : "";
+
+    return `TYPEOF ${this.#compileReference(node.reference)} ${whens}${elseClause} END`;
   }
 
   #compileRelationshipSubquery(query: RelationshipSubqueryNode): string {

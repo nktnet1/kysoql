@@ -17,6 +17,7 @@ export interface SalesforceField<
   ActivePicklistValue extends string = never,
   Aggregatable extends boolean = false,
   Custom extends boolean = false,
+  Polymorphic extends boolean = false,
 > {
   readonly value: Value;
   readonly salesforceType: SalesforceType;
@@ -29,6 +30,7 @@ export interface SalesforceField<
   readonly activePicklistValue: ActivePicklistValue;
   readonly aggregatable: Aggregatable;
   readonly custom: Custom;
+  readonly polymorphic: Polymorphic;
 }
 
 type AnySalesforceField = SalesforceField<
@@ -41,6 +43,7 @@ type AnySalesforceField = SalesforceField<
   string,
   string,
   string,
+  boolean,
   boolean,
   boolean
 >;
@@ -66,6 +69,13 @@ export interface SalesforceChildRelationship<
 export interface SalesforceGeolocation {
   readonly latitude: number;
   readonly longitude: number;
+}
+
+export interface SalesforceRecordAttributes<
+  ObjectName extends string = string,
+> {
+  readonly type: ObjectName;
+  readonly url: string;
 }
 
 export interface SalesforceQueryResult<Row> {
@@ -112,6 +122,7 @@ export type SalesforceFieldValue<Field> =
     string,
     string,
     boolean,
+    boolean,
     boolean
   >
     ? Nullable extends true
@@ -142,6 +153,7 @@ export type SalesforceFieldFilterValue<Field> =
     string,
     string,
     boolean,
+    boolean,
     boolean
   >
     ? Nullable extends true
@@ -161,7 +173,8 @@ export type SalesforceFieldCustom<Field> =
     string,
     string,
     boolean,
-    infer Custom
+    infer Custom,
+    boolean
   >
     ? Custom
     : never;

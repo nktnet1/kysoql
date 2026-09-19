@@ -32,7 +32,7 @@ export class QueryCreator<DB> {
 
   selectFrom<TB extends keyof DB & string>(
     from: TB,
-  ): SelectQueryBuilder<DB, TB, Record<never, never>> {
+  ): SelectQueryBuilder<DB, TB, Record<never, never>, "plain"> {
     return createSelectQueryBuilder({
       queryCompiler: this.#queryCompiler,
       queryExecutor: this.#queryExecutor,
