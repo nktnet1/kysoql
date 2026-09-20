@@ -62,6 +62,12 @@ version is cut.
 
 ### Fixed
 
+- Coalesce repeated Salesforce Describe child-relationship names into one generated
+  property with an exact union of the concrete child-object / foreign-key pairs,
+  avoiding duplicate TypeScript property declarations without discarding metadata.
+- Make `pnpm typecheck` / `pnpm validate` explicitly type-check source and test
+  code as separate phases, including package Vitest suites, root test tooling,
+  and the generated Salesforce TypeScript fixture under `test/`.
 - Correct publish-shape runtime classification for type-only default interface
   exports, and add direct regression coverage for the TypeScript-7 export scanner.
 - Keep `verify:publish` compatible with TypeScript 7 by parsing the package

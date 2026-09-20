@@ -32,17 +32,20 @@ Run the local validation gate with one command:
 pnpm validate
 ```
 
-It runs TypeScript typechecking, Vitest, all package builds, and publish-shape
-verification in fail-fast order. The publish check confirms that every declared
-package export, declaration file, and CLI binary exists in the built output. The
-validation gate also verifies release metadata, package-specific README files,
-version alignment, and the root changelog. Biome is intentionally separate so
+It runs source TypeScript typechecking, test TypeScript typechecking, Vitest,
+all package builds, and publish-shape verification in fail-fast order. The
+publish check confirms that every declared package export, declaration file, and
+CLI binary exists in the built output. The validation gate also verifies release
+metadata, package-specific README files, version alignment, and the root
+changelog. Biome is intentionally separate so
 formatting can be run manually when needed:
 
 ```bash
 pnpm check
 pnpm check --write
 pnpm typecheck
+pnpm typecheck:source
+pnpm typecheck:test
 pnpm test
 pnpm test:coverage
 pnpm build
@@ -58,7 +61,10 @@ automatically. `pnpm verify:release` can run independently because it checks
 manifest/documentation metadata rather than build artifacts.
 
 Vitest is configured at the workspace root and discovers tests under
-`packages/**/tests/**/*.test.ts`. V8 coverage output is written to `coverage/`.
+`packages/**/tests/**/*.test.ts` plus `scripts/**/*.test.ts`. `pnpm typecheck:test`
+checks those test files with their package-specific TypeScript configs and also
+checks root test tooling plus the generated Salesforce fixture under `test/`.
+V8 coverage output is written to `coverage/`.
 
 To inspect the query builder at runtime without connecting to Salesforce, run:
 

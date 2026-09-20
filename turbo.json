@@ -15,6 +15,12 @@
     "typecheck": {
       "dependsOn": ["^typecheck", "^build"]
     },
+    "typecheck:source": {
+      "dependsOn": ["^typecheck:source", "^build"]
+    },
+    "typecheck:test": {
+      "dependsOn": ["^typecheck:test", "^build"]
+    },
     "clean": {
       "cache": false
     }

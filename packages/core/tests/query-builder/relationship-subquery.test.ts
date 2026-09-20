@@ -236,6 +236,49 @@ interface RelationshipSubquerySchema {
   }>;
 }
 
+interface RepeatedChildRelationshipSchema {
+  readonly LegalEntity: SalesforceObject<
+    {
+      readonly Id: SalesforceField<string, "id", false, true, true, true>;
+    },
+    Record<string, never>,
+    {
+      readonly FinanceBalanceSnapshots:
+        | SalesforceChildRelationship<
+            "FinanceBalanceSnapshot",
+            "LegalEntityId"
+          >
+        | SalesforceChildRelationship<
+            "FinanceBalanceSnapshot",
+            "ReferenceEntityId"
+          >;
+    }
+  >;
+  readonly FinanceBalanceSnapshot: SalesforceObject<{
+    readonly Id: SalesforceField<string, "id", false, true, true, true>;
+    readonly LegalEntityId: SalesforceField<
+      string,
+      "reference",
+      true,
+      true,
+      true,
+      true,
+      "LegalEntity",
+      "LegalEntity"
+    >;
+    readonly ReferenceEntityId: SalesforceField<
+      string,
+      "reference",
+      true,
+      true,
+      true,
+      true,
+      "LegalEntity",
+      "LegalEntity"
+    >;
+  }>;
+}
+
 type OutputOf<Query> =
   Query extends SelectQueryBuilder<infer _DB, infer _TB, infer Output>
     ? Output
@@ -354,6 +397,26 @@ describe("parent-to-child relationship subqueries", () => {
           readonly Alias: string | null;
         };
         readonly salutationLabel: string | null;
+      }>;
+    }>();
+  });
+
+  it("keeps coalesced child relationship unions fully queryable", () => {
+    const query = new Kysoql<RepeatedChildRelationshipSchema>()
+      .selectFrom("LegalEntity")
+      .select("Id")
+      .selectSubquery("FinanceBalanceSnapshots", (snapshots) =>
+        snapshots.select(["Id", "ReferenceEntityId"]),
+      );
+
+    expect(query.compile().soql).toBe(
+      "SELECT Id, (SELECT Id, ReferenceEntityId FROM FinanceBalanceSnapshots) FROM LegalEntity",
+    );
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly Id: string;
+      readonly FinanceBalanceSnapshots: SalesforceQueryResult<{
+        readonly Id: string;
+        readonly ReferenceEntityId: string | null;
       }>;
     }>();
   });

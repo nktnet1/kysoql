@@ -125,19 +125,95 @@ const renderDataCategoryGroup = (
   return `      readonly ${quote(name)}: ${categoryType};`;
 };
 
+const compareChildRelationships = (
+  left: SalesforceChildRelationshipDescription,
+  right: SalesforceChildRelationshipDescription,
+): number =>
+  left.childSObject.localeCompare(right.childSObject) ||
+  left.field.localeCompare(right.field);
+
+const uniqueChildRelationships = (
+  relationships: readonly SalesforceChildRelationshipDescription[],
+): readonly SalesforceChildRelationshipDescription[] => {
+  const seenFieldsByObject = new Map<string, Set<string>>();
+  const uniqueRelationships: SalesforceChildRelationshipDescription[] = [];
+
+  for (const relationship of relationships) {
+    let fields = seenFieldsByObject.get(relationship.childSObject);
+    if (!fields) {
+      fields = new Set<string>();
+      seenFieldsByObject.set(relationship.childSObject, fields);
+    }
+
+    if (fields.has(relationship.field)) {
+      continue;
+    }
+
+    fields.add(relationship.field);
+    uniqueRelationships.push(relationship);
+  }
+
+  return uniqueRelationships.sort(compareChildRelationships);
+};
+
 const renderChildRelationship = (
-  relationship: SalesforceChildRelationshipDescription,
-): string | undefined => {
-  if (!relationship.relationshipName) {
-    return undefined;
+  relationshipName: string,
+  relationships: readonly SalesforceChildRelationshipDescription[],
+): string => {
+  const uniqueRelationships = uniqueChildRelationships(relationships);
+  const [relationship] = uniqueRelationships;
+
+  if (!relationship) {
+    throw new Error("Expected at least one child relationship");
+  }
+
+  if (uniqueRelationships.length === 1) {
+    return [
+      `      readonly ${quote(relationshipName)}: SalesforceChildRelationship<`,
+      `        ${quote(relationship.childSObject)},`,
+      `        ${quote(relationship.field)}`,
+      "      >;",
+    ].join("\n");
   }
 
   return [
-    `      readonly ${quote(relationship.relationshipName)}: SalesforceChildRelationship<`,
-    `        ${quote(relationship.childSObject)},`,
-    `        ${quote(relationship.field)}`,
-    "      >;",
+    `      readonly ${quote(relationshipName)}:`,
+    ...uniqueRelationships.flatMap((relationship, index) => [
+      "        | SalesforceChildRelationship<",
+      `            ${quote(relationship.childSObject)},`,
+      `            ${quote(relationship.field)}`,
+      `          >${index === uniqueRelationships.length - 1 ? ";" : ""}`,
+    ]),
   ].join("\n");
+};
+
+const renderChildRelationships = (
+  relationships: readonly SalesforceChildRelationshipDescription[],
+): readonly string[] => {
+  const groupedRelationships = new Map<
+    string,
+    SalesforceChildRelationshipDescription[]
+  >();
+
+  for (const relationship of relationships) {
+    const relationshipName = relationship.relationshipName;
+    if (!relationshipName) {
+      continue;
+    }
+
+    const existing = groupedRelationships.get(relationshipName);
+    if (existing) {
+      existing.push(relationship);
+    } else {
+      groupedRelationships.set(relationshipName, [relationship]);
+    }
+  }
+
+  return [...groupedRelationships.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([relationshipName, grouped]) =>
+      renderChildRelationship(relationshipName, grouped),
+    );
 };
 
 const renderImports = (
@@ -189,14 +265,7 @@ const renderObject = (object: SalesforceObjectDescription): string => {
     .filter(
       (relationship): relationship is string => relationship !== undefined,
     );
-  const children = [...(object.childRelationships ?? [])]
-    .sort((left, right) =>
-      (left.relationshipName ?? "").localeCompare(right.relationshipName ?? ""),
-    )
-    .map(renderChildRelationship)
-    .filter(
-      (relationship): relationship is string => relationship !== undefined,
-    );
+  const children = renderChildRelationships(object.childRelationships ?? []);
 
   const renderBlock = (entries: readonly string[]): string =>
     entries.length > 0

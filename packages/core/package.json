@@ -34,7 +34,9 @@
     "build": "tsdown",
     "check": "biome check",
     "test": "vitest run --dir tests --passWithNoTests",
-    "typecheck": "tsc -p tsconfig.test.json",
+    "typecheck": "pnpm typecheck:source && pnpm typecheck:test",
+    "typecheck:source": "tsc -p tsconfig.json --noEmit",
+    "typecheck:test": "tsc -p tsconfig.test.json",
     "clean": "rm -rf dist coverage"
   },
   "dependencies": {

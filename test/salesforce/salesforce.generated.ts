@@ -1215,22 +1215,24 @@ export interface SalesforceSchema {
         "EntitySubscription",
         "ParentId"
       >;
-      readonly "FinanceBalanceSnapshots": SalesforceChildRelationship<
-        "FinanceBalanceSnapshot",
-        "LegalEntityId"
-      >;
-      readonly "FinanceBalanceSnapshots": SalesforceChildRelationship<
-        "FinanceBalanceSnapshot",
-        "ReferenceEntityId"
-      >;
-      readonly "FinanceTransactions": SalesforceChildRelationship<
-        "FinanceTransaction",
-        "LegalEntityId"
-      >;
-      readonly "FinanceTransactions": SalesforceChildRelationship<
-        "FinanceTransaction",
-        "ReferenceEntityId"
-      >;
+      readonly "FinanceBalanceSnapshots":
+        | SalesforceChildRelationship<
+            "FinanceBalanceSnapshot",
+            "LegalEntityId"
+          >
+        | SalesforceChildRelationship<
+            "FinanceBalanceSnapshot",
+            "ReferenceEntityId"
+          >;
+      readonly "FinanceTransactions":
+        | SalesforceChildRelationship<
+            "FinanceTransaction",
+            "LegalEntityId"
+          >
+        | SalesforceChildRelationship<
+            "FinanceTransaction",
+            "ReferenceEntityId"
+          >;
       readonly "Notes": SalesforceChildRelationship<
         "Note",
         "ParentId"

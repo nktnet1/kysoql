@@ -28,7 +28,8 @@ run_step() {
   "$@"
 }
 
-run_step "TypeScript typecheck" pnpm typecheck
+run_step "TypeScript source typecheck" pnpm typecheck:source
+run_step "TypeScript test typecheck" pnpm typecheck:test
 run_step "Vitest" pnpm test
 run_step "Build" pnpm build
 run_step "Publish shape" pnpm verify:publish

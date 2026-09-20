@@ -289,6 +289,11 @@ Useful findings:
   at most five child-to-parent relationship levels.
 - Parent-to-child traversal uses nested `SELECT` subqueries whose `FROM` member is
   the generated child relationship name, not necessarily the child object name.
+- Real-org Describe metadata can repeat the same child `relationshipName` for
+  multiple concrete foreign-key fields on the same child object. Codegen therefore
+  cannot model `childRelationships` as one declaration per Describe row; repeated
+  names must be coalesced while preserving the concrete `(childSObject, field)`
+  alternatives.
 - In API version 58.0 and later, REST/SOAP/Apex query calls can return five total
   parent-to-child levels: the root is level one and child relationships can nest
   four levels beneath it. Salesforce allows at most 20 parent-to-child

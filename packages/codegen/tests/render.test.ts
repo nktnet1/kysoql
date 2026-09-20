@@ -381,6 +381,46 @@ describe("renderSchema", () => {
     );
   });
 
+  it("coalesces duplicate child relationship names into exact relationship unions", () => {
+    const source = renderSchema([
+      objectWith([], {
+        childRelationships: [
+          {
+            childSObject: "FinanceBalanceSnapshot",
+            field: "ReferenceEntityId",
+            relationshipName: "FinanceBalanceSnapshots",
+          },
+          {
+            childSObject: "FinanceBalanceSnapshot",
+            field: "LegalEntityId",
+            relationshipName: "FinanceBalanceSnapshots",
+          },
+          {
+            childSObject: "FinanceBalanceSnapshot",
+            field: "ReferenceEntityId",
+            relationshipName: "FinanceBalanceSnapshots",
+          },
+        ],
+      }),
+    ]);
+
+    expect(source).toContain(
+      [
+        'readonly "FinanceBalanceSnapshots":',
+        "        | SalesforceChildRelationship<",
+        '            "FinanceBalanceSnapshot",',
+        '            "LegalEntityId"',
+        "          >",
+        "        | SalesforceChildRelationship<",
+        '            "FinanceBalanceSnapshot",',
+        '            "ReferenceEntityId"',
+        "          >;",
+      ].join("\n"),
+    );
+    expect(source.match(/readonly "FinanceBalanceSnapshots"/g)).toHaveLength(1);
+    expect(source.match(/"ReferenceEntityId"/g)).toHaveLength(1);
+  });
+
   it("sorts objects and fields without mutating caller-owned arrays", () => {
     const fields = [field({ name: "Zulu__c" }), field({ name: "Alpha__c" })];
     const objects = [
