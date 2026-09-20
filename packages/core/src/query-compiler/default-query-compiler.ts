@@ -4,6 +4,12 @@ import type { AggregateFunctionNode } from "#/operation-node/aggregate-function-
 import type { AliasNode } from "#/operation-node/alias-node";
 import type { AndNode } from "#/operation-node/and-node";
 import type { ApexBindNode } from "#/operation-node/apex-bind-node";
+import type {
+  ApexAdditionNode,
+  ApexBindExpressionNode,
+  ApexExpressionOperandNode,
+} from "#/operation-node/apex-expression-node";
+import type { ApexLiteralNode } from "#/operation-node/apex-literal-node";
 import type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 import type { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
 import type { ConvertTimezoneFunctionNode } from "#/operation-node/convert-timezone-function-node";
@@ -236,7 +242,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
     return `${node.group} ${selector} ${categories}`;
   }
 
-  #compileLimit(limit: LimitNode<number | ApexBindNode>): string {
+  #compileLimit(limit: LimitNode<number | ApexBindExpressionNode>): string {
     return typeof limit.limit === "number"
       ? String(limit.limit)
       : this.#compileApexBind(limit.limit);
@@ -246,7 +252,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
     return `FIELDS(${node.selector.toUpperCase()})`;
   }
 
-  #compileOffset(offset: OffsetNode<number | ApexBindNode>): string {
+  #compileOffset(offset: OffsetNode<number | ApexBindExpressionNode>): string {
     return typeof offset.offset === "number"
       ? String(offset.offset)
       : this.#compileApexBind(offset.offset);
@@ -310,8 +316,9 @@ export class DefaultQueryCompiler implements QueryCompiler {
         return this.#compileAlias(node as AliasNode);
       case "AndNode":
         return this.#compileAnd(node as AndNode);
+      case "ApexAdditionNode":
       case "ApexBindNode":
-        return this.#compileApexBind(node as ApexBindNode);
+        return this.#compileApexBind(node as ApexBindExpressionNode);
       case "BinaryOperationNode":
         return this.#compileBinaryOperation(node as BinaryOperationNode);
       case "ConvertCurrencyFunctionNode":
@@ -349,8 +356,31 @@ export class DefaultQueryCompiler implements QueryCompiler {
     }
   }
 
-  #compileApexBind(node: ApexBindNode): string {
-    return `:${node.name}`;
+  #compileApexBind(node: ApexBindExpressionNode): string {
+    return `:${this.#compileApexExpression(node)}`;
+  }
+
+  #compileApexExpression(node: ApexExpressionOperandNode): string {
+    switch (node.kind) {
+      case "ApexAdditionNode": {
+        const addition = node as ApexAdditionNode;
+        return `(${this.#compileApexExpression(
+          addition.leftOperand,
+        )} + ${this.#compileApexExpression(addition.rightOperand)})`;
+      }
+      case "ApexBindNode":
+        return (node as ApexBindNode).name;
+      case "ApexLiteralNode":
+        return this.#compileApexLiteral(node as ApexLiteralNode);
+      default:
+        throw new Error("Unsupported Apex expression node.");
+    }
+  }
+
+  #compileApexLiteral(node: ApexLiteralNode): string {
+    return typeof node.value === "string"
+      ? `'${this.#escapeString(node.value, false)}'`
+      : this.#compileNumericLiteral(node.value);
   }
 
   #compileAggregateFunction(node: AggregateFunctionNode): string {
@@ -512,20 +542,23 @@ export class DefaultQueryCompiler implements QueryCompiler {
     switch (typeof value) {
       case "string":
         return `'${this.#escapeString(value, likePattern)}'`;
-      case "number": {
-        const result = v.safeParse(numericLiteralSchema, value);
-
-        if (!result.success) {
-          throw new TypeError(result.issues[0].message);
-        }
-
-        return String(result.output);
-      }
+      case "number":
+        return this.#compileNumericLiteral(value);
       case "boolean":
         return value ? "TRUE" : "FALSE";
       default:
         throw new TypeError(`Unsupported SOQL literal type: ${typeof value}`);
     }
+  }
+
+  #compileNumericLiteral(value: number): string {
+    const result = v.safeParse(numericLiteralSchema, value);
+
+    if (!result.success) {
+      throw new TypeError(result.issues[0].message);
+    }
+
+    return String(result.output);
   }
 
   #escapeString(value: string, likePattern: boolean): string {

@@ -729,7 +729,7 @@ SOQL. The generic describes the Apex value shape, while the helper accepts only 
 simple identifier or a dotted member path such as `filters.accountName`:
 
 ```ts
-import { apexBind } from "@kysoql/core";
+import { apexAdd, apexBind } from "@kysoql/core";
 
 const apexQuery = db
   .selectFrom("Account")
@@ -748,6 +748,24 @@ const apexQuery = db
 // SELECT Id, Name FROM Account
 // WHERE (Name = :accountName OR Id IN :accountIds)
 // LIMIT :rowLimit OFFSET :rowOffset
+```
+
+For the documented static-Apex `+` expression family, use `apexAdd(...)` rather
+than placing arithmetic text inside `apexBind(...)`. String operands concatenate,
+number operands add, and either side can itself be another typed bind expression:
+
+```ts
+const composedBindQuery = db
+  .selectFrom("Account")
+  .select("Id")
+  .apex()
+  .where("Name", "=", apexAdd("x", "xx"))
+  .limit(apexAdd(apexBind<number>("page.baseLimit"), 1))
+  .compile();
+
+// SELECT Id FROM Account
+// WHERE Name = :('x' + 'xx')
+// LIMIT :(page.baseLimit + 1)
 ```
 
 Salesforce static Apex also permits a bind expression on the left side of
@@ -791,9 +809,12 @@ const accountsWithContacts = db
 
 Scalar binds work with typed direct and child-to-parent relationship filters,
 including temporal fields without converting the Apex expression into a SOQL
-literal. Dotted member paths compile as expressions such as `:filters.accountName`;
-method calls, indexing, arithmetic, whitespace, and other raw fragments remain
-rejected. `IN` / `NOT IN` binds represent collections, grouped Apex callbacks
+literal. Dotted member paths compile as expressions such as `:filters.accountName`. Raw
+method calls, indexing, arithmetic text, whitespace, and other fragments remain
+rejected by `apexBind(...)`; structured `+` expressions use `apexAdd(...)` instead.
+`apexAdd(...)` currently accepts string-with-string or number-with-number operands,
+can nest, and can include existing typed bind expressions. `IN` / `NOT IN` binds
+represent collections, grouped Apex callbacks
 support the same `and` / `or` / `not` composition as ordinary filters, and
 `LIMIT` / `OFFSET` accept numeric binds. Literal pagination values retain the
 normal Kysoql validation; a bound Apex value is validated by Salesforce when

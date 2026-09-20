@@ -1,7 +1,9 @@
-import type { ApexBindNode } from "#/operation-node/apex-bind-node";
+import type {
+  ApexBindExpressionNode,
+} from "#/operation-node/apex-expression-node";
 import { freeze } from "#/util/object-utils";
 
-type OffsetValue = number | ApexBindNode;
+type OffsetValue = number | ApexBindExpressionNode;
 
 export interface OffsetNode<Value extends OffsetValue = number> {
   readonly kind: "OffsetNode";

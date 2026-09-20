@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import { apexBind } from "#/apex-bind";
+import { apexAdd, apexBind } from "#/apex-bind";
 import { Kysoql } from "#/kysoql";
 import type { ApexSelectQueryBuilder } from "#/query-builder/apex-select-query-builder";
 import type {
@@ -126,6 +126,28 @@ describe("Apex bind expressions", () => {
 
     expect(query.compile().soql).toBe(
       "SELECT Id FROM Account WHERE Name = :filters.accountName AND Id IN :filters.accountIds LIMIT :page.rowLimit OFFSET :page.rowOffset",
+    );
+  });
+
+  it("compiles structured Apex addition bind expressions", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .apex()
+      .where("Name", "=", apexAdd("x", "xx"))
+      .where(
+        "Name",
+        "like",
+        apexAdd(
+          apexBind<string>("filters.prefix"),
+          apexAdd("%", apexBind<string>("filters.suffix")),
+        ),
+      )
+      .limit(apexAdd(apexBind<number>("page.baseLimit"), 1))
+      .offset(apexAdd(2, 3));
+
+    expect(query.compile().soql).toBe(
+      "SELECT Id FROM Account WHERE Name = :('x' + 'xx') AND Name LIKE :(filters.prefix + ('%' + filters.suffix)) LIMIT :(page.baseLimit + 1) OFFSET :(2 + 3)",
     );
   });
 
@@ -319,6 +341,39 @@ describe("Apex bind expressions", () => {
     );
   });
 
+  it("creates frozen structured Apex addition nodes", () => {
+    const addition = apexAdd(
+      "O'Brien",
+      apexAdd(apexBind<string>("filters.suffix"), "!"),
+    );
+    const node = addition.toOperationNode();
+
+    expect(node).toEqual({
+      kind: "ApexAdditionNode",
+      leftOperand: { kind: "ApexLiteralNode", value: "O'Brien" },
+      rightOperand: {
+        kind: "ApexAdditionNode",
+        leftOperand: { kind: "ApexBindNode", name: "filters.suffix" },
+        rightOperand: { kind: "ApexLiteralNode", value: "!" },
+      },
+    });
+    expect(Object.isFrozen(node)).toBe(true);
+    if (node.kind === "ApexAdditionNode") {
+      expect(Object.isFrozen(node.leftOperand)).toBe(true);
+      expect(Object.isFrozen(node.rightOperand)).toBe(true);
+    }
+
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .apex()
+      .where("Name", "=", addition);
+
+    expect(query.compile().soql).toBe(
+      "SELECT Id FROM Account WHERE Name = :('O\\'Brien' + (filters.suffix + '!'))",
+    );
+  });
+
   it("creates frozen bind nodes and validates bind expressions", () => {
     const binding = apexBind<string>("accountName");
     const memberBinding = apexBind<string>("context.account.Name");
@@ -391,6 +446,11 @@ describe("Apex bind expressions", () => {
           .select("Id")
           .where("LastName", "=", apexBind<string>("lastName")),
       );
+    const additionQuery = new Kysoql<FixtureSchema>()
+      .selectFrom("KnowledgeArticleVersion")
+      .select("Id")
+      .apex()
+      .where("PublishStatus", "=", apexAdd("Dra", "ft"));
 
     expect(() => query.compile()).toThrow(
       "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.",
@@ -410,6 +470,9 @@ describe("Apex bind expressions", () => {
     expect(() => relationshipQuery.compile()).toThrow(
       "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.",
     );
+    expect(() => additionQuery.compile()).toThrow(
+      "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.",
+    );
   });
 
   it("keeps bind expressions typed and Apex-only", () => {
@@ -419,6 +482,8 @@ describe("Apex bind expressions", () => {
 
       // @ts-expect-error Bind expressions require the explicit Apex context.
       normal.where("Name", "=", apexBind<string>("accountName"));
+      // @ts-expect-error Structured bind expressions require the explicit Apex context.
+      normal.where("Name", "=", apexAdd("x", "xx"));
       // @ts-expect-error Bind-left INCLUDES requires the explicit Apex context.
       normal.where(apexBind<string>("accountType"), "includes", ["Partner"]);
 
@@ -441,6 +506,12 @@ describe("Apex bind expressions", () => {
       apex.where("Name", "=", apexBind<string>("accountName"));
       apex.where("Id", "in", apexBind<readonly string[]>("accountIds"));
       apex.where("CreatedDate", ">", apexBind<string>("createdAfter"));
+      apex.where("Name", "=", apexAdd("x", "xx"));
+      apex.where(
+        "AnnualRevenue",
+        ">=",
+        apexAdd(apexBind<number>("minimumRevenue"), 1),
+      );
       apex.where(apexBind<string>("accountType"), "includes", ["Partner"]);
       apex.where((eb) =>
         eb.or([
@@ -451,6 +522,8 @@ describe("Apex bind expressions", () => {
       );
       apex.limit(apexBind<number>("rowLimit"));
       apex.offset(apexBind<number>("rowOffset"));
+      apex.limit(apexAdd(apexBind<number>("baseLimit"), 1));
+      apex.offset(apexAdd(5, 5));
       apex.selectSubquery("Contacts", (contacts) => {
         contacts.where("LastName", "=", apexBind<string>("lastName"));
         contacts.where(
@@ -473,6 +546,15 @@ describe("Apex bind expressions", () => {
 
         return contacts.select("Id");
       });
+
+      // @ts-expect-error Apex addition operands must have the same supported value type.
+      apexAdd("x", 1);
+      // @ts-expect-error Apex addition operands must have the same supported value type.
+      apexAdd(apexBind<string>("prefix"), 1);
+      // @ts-expect-error Structured scalar binds must still match the field value type.
+      apex.where("Name", "=", apexAdd(1, 2));
+      // @ts-expect-error Field-left INCLUDES still rejects structured right-hand binds.
+      apex.where("Tags__c", "includes", apexAdd("A", "B"));
 
       // @ts-expect-error LIMIT binds must be numeric.
       apex.limit(apexBind<string>("rowLimit"));

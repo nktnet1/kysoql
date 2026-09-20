@@ -1,4 +1,6 @@
-import type { ApexBindNode } from "#/operation-node/apex-bind-node";
+import type {
+  ApexBindExpressionNode,
+} from "#/operation-node/apex-expression-node";
 import {
   FieldsFunctionNode,
   type FieldsSelector,
@@ -71,7 +73,7 @@ const DUPLICATE_FIELDS_ERROR =
 
 export function validateFieldsSelections(
   selections: readonly SelectionNode[],
-  limit: LimitNode<number | ApexBindNode> | undefined,
+  limit: LimitNode<number | ApexBindExpressionNode> | undefined,
 ): void {
   const selectors = selections.flatMap((selection) =>
     selection.selection.kind === "FieldsFunctionNode"

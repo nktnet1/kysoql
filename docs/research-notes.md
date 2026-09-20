@@ -1471,3 +1471,17 @@ grouped-expression, and Apex relationship-subquery `WHERE` surfaces. Keep
 right-hand `ApexBindExpression` values rejected for field-left `INCLUDES` /
 `EXCLUDES`, and preserve Knowledge-article bind rejection through the existing AST
 walk.
+
+Kysoql consequence for `v1.0.101`: add only the documented `+` expression family
+as a structured `apexAdd(...)` helper. Salesforce's current Apex guide shows
+`:('x' + 'xx')` as a bind expression, and the Apex operator reference defines `+`
+for numeric addition and string concatenation. Model operands with frozen
+`ApexAdditionNode` / `ApexLiteralNode` structures rather than interpolating raw
+text. Keep the public types conservative: string operands combine with strings,
+numeric operands combine with numbers, and either side can reuse an existing
+`ApexBindExpression` or another structured addition. Compile the entire expression
+under one leading colon, preserve literal escaping/finite-number validation, and
+reuse the existing clause-position and Knowledge-article guards. Raw arithmetic,
+method calls, indexing, and query-result expressions remain rejected by
+`apexBind(...)`; method calls and nested-query-result binds are separate future
+structured families.

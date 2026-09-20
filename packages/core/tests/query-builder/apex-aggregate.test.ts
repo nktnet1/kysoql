@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { apexBind } from "#/apex-bind";
+import { apexAdd, apexBind } from "#/apex-bind";
 import { Kysoql } from "#/kysoql";
 import type { SalesforceField, SalesforceObject } from "#/schema";
 
@@ -35,15 +35,19 @@ describe("Apex aggregate queries", () => {
       .selectFrom("Account")
       .select(({ fn }) => fn.sum("AnnualRevenue").as("totalRevenue"))
       .apex()
-      .where("AnnualRevenue", ">=", apexBind<number>("minimumRevenue"))
+      .where(
+        "AnnualRevenue",
+        ">=",
+        apexAdd(apexBind<number>("minimumRevenue"), 1),
+      )
       .where(apexBind<string>("accountType"), "includes", ["Partner"])
       .withUserMode()
-      .limit(apexBind<number>("rowLimit"))
-      .offset(apexBind<number>("rowOffset"));
+      .limit(apexAdd(apexBind<number>("rowLimit"), 1))
+      .offset(apexAdd(apexBind<number>("rowOffset"), 1));
 
     expect(query.compile().soql).toContain("SUM(AnnualRevenue)");
     expect(query.compile().soql).toContain(
-      "WHERE AnnualRevenue >= :minimumRevenue AND :accountType INCLUDES ('Partner') WITH USER_MODE LIMIT :rowLimit OFFSET :rowOffset",
+      "WHERE AnnualRevenue >= :(minimumRevenue + 1) AND :accountType INCLUDES ('Partner') WITH USER_MODE LIMIT :(rowLimit + 1) OFFSET :(rowOffset + 1)",
     );
   });
 
@@ -54,16 +58,16 @@ describe("Apex aggregate queries", () => {
       .apex()
       .where((eb) =>
         eb.or([
-          eb("Name", "=", apexBind<string>("accountName")),
+          eb("Name", "=", apexAdd("Ac", "me")),
           eb("Id", "in", apexBind<readonly string[]>("accountIds")),
           eb(apexBind<string>("accountType"), "includes", ["Partner"]),
         ]),
       )
       .withSystemMode()
-      .limit(apexBind<number>("rowLimit"));
+      .limit(apexAdd(apexBind<number>("rowLimit"), 1));
 
     expect(query.compile().soql).toBe(
-      "SELECT COUNT() FROM Account WHERE ((Name = :accountName OR Id IN :accountIds) OR :accountType INCLUDES ('Partner')) WITH SYSTEM_MODE LIMIT :rowLimit",
+      "SELECT COUNT() FROM Account WHERE ((Name = :('Ac' + 'me') OR Id IN :accountIds) OR :accountType INCLUDES ('Partner')) WITH SYSTEM_MODE LIMIT :(rowLimit + 1)",
     );
   });
 
@@ -83,12 +87,12 @@ describe("Apex aggregate queries", () => {
       aggregate.where(apexBind<string>("accountType"), "includes", [
         "Partner",
       ]);
-      aggregate.limit(apexBind<number>("rowLimit"));
+      aggregate.limit(apexAdd(apexBind<number>("rowLimit"), 1));
       aggregate.offset(apexBind<number>("rowOffset"));
       aggregate.withUserMode();
       count.where("Name", "=", apexBind<string>("accountName"));
       count.where(apexBind<string>("accountType"), "includes", ["Partner"]);
-      count.limit(apexBind<number>("rowLimit"));
+      count.limit(apexAdd(apexBind<number>("rowLimit"), 1));
       count.withSystemMode();
 
       // @ts-expect-error Apex aggregate queries are compile-only.

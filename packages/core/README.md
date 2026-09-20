@@ -55,7 +55,7 @@ preserve field-value typing, and `IN` / `NOT IN` collection binds compile withou
 literal-list parentheses:
 
 ```ts
-import { apexBind } from "@kysoql/core";
+import { apexAdd, apexBind } from "@kysoql/core";
 
 const byName = db
   .selectFrom("Account")
@@ -69,6 +69,20 @@ const byName = db
   )
   .limit(apexBind<number>("rowLimit"))
   .offset(apexBind<number>("rowOffset"))
+  .compile();
+```
+
+Structured Apex addition uses `apexAdd(...)` instead of admitting arithmetic as a
+raw `apexBind(...)` string. It accepts matching string or numeric operands and can
+compose literals with existing binds:
+
+```ts
+const composed = db
+  .selectFrom("Account")
+  .select("Id")
+  .apex()
+  .where("Name", "=", apexAdd("x", "xx"))
+  .limit(apexAdd(apexBind<number>("baseLimit"), 1))
   .compile();
 ```
 
@@ -105,8 +119,10 @@ const withContacts = db
 Grouped Apex filters support `and` / `or` / `not`, while `LIMIT` and `OFFSET`
 accept numeric binds in addition to their validated literal forms. `apexBind<T>`
 accepts a simple identifier or a dotted member path such as `filters.accountName`
-and rejects calls, indexing, arithmetic, and other raw fragments. Bind expressions
-are intentionally unavailable on ordinary API-executable builders and as
+and rejects calls, indexing, arithmetic text, and other raw fragments. Structured
+`+` expressions are available separately through `apexAdd(...)`; method calls and
+query-result expressions remain outside the safe API. Bind expressions are
+intentionally unavailable on ordinary API-executable builders and as
 right-hand values for Kysoql's field-left `INCLUDES` / `EXCLUDES` form. The
 separate Apex-only bind-left `INCLUDES` overload keeps its right
 side as literal strings. Knowledge article Apex queries reject all bind forms.

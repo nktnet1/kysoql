@@ -1,7 +1,9 @@
-import type { ApexBindNode } from "#/operation-node/apex-bind-node";
+import type {
+  ApexBindExpressionNode,
+} from "#/operation-node/apex-expression-node";
 import { freeze } from "#/util/object-utils";
 
-type LimitValue = number | ApexBindNode;
+type LimitValue = number | ApexBindExpressionNode;
 
 export interface LimitNode<Value extends LimitValue = number> {
   readonly kind: "LimitNode";

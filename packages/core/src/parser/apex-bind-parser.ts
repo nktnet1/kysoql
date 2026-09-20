@@ -1,6 +1,6 @@
 import { isApexBindExpression, type ApexBindExpression } from "#/apex-bind";
 import type { AndNode } from "#/operation-node/and-node";
-import type { ApexBindNode } from "#/operation-node/apex-bind-node";
+import type { ApexBindExpressionNode } from "#/operation-node/apex-expression-node";
 import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 import { LimitNode } from "#/operation-node/limit-node";
 import type { NotNode } from "#/operation-node/not-node";
@@ -80,7 +80,7 @@ export type ApexOperandValueExpression<
 
 export function parseApexLimit(
   limit: number | ApexBindExpression<number>,
-): LimitNode<number | ApexBindNode> {
+): LimitNode<number | ApexBindExpressionNode> {
   return isApexBindExpression(limit)
     ? LimitNode.create(limit.toOperationNode())
     : parseLimit(limit);
@@ -88,7 +88,7 @@ export function parseApexLimit(
 
 export function parseApexOffset(
   offset: number | ApexBindExpression<number>,
-): OffsetNode<number | ApexBindNode> {
+): OffsetNode<number | ApexBindExpressionNode> {
   return isApexBindExpression(offset)
     ? OffsetNode.create(offset.toOperationNode())
     : parseOffset(offset);
@@ -129,6 +129,7 @@ export function parseApexFilterBinaryOperation(
 
 const containsApexBind = (node: OperationNode): boolean => {
   switch (node.kind) {
+    case "ApexAdditionNode":
     case "ApexBindNode":
       return true;
     case "AndNode": {
