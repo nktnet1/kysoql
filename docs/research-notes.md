@@ -564,6 +564,16 @@ different exact grouping identities. The intermediate builder deliberately has
 no aliasing API and cannot be selected or nested independently of a date
 function; runtime node validation mirrors those type-level boundaries.
 
+Implemented consequence in `v1.0.111`: ordinary `WHERE` expression callbacks
+now expose the same thirteen date functions through `eb.fn`, but gate direct
+field inputs with generated `filterable` date/datetime metadata rather than the
+grouping-only `groupable` capability. Numeric functions support equality,
+ordered, and `IN` / `NOT IN` comparisons with numeric operands; `DAY_ONLY`
+compares against explicit `soqlDate(...)` values. Filterable datetime fields can
+be wrapped in `eb.fn.convertTimezone(...)` before the date function. The
+existing `DateFunctionNode` / compiler path is reused, so this adds no raw
+expression escape hatch and does not weaken grouped-expression identity rules.
+
 ### Aggregate expression ordering
 
 Sources re-checked on 2026-09-18:

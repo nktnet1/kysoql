@@ -1,23 +1,35 @@
 import {
-  createGeolocationFilterExpressionBuilder,
+  createSelectExpressionBuilder,
+  type ConvertTimezoneFunctionBuilder,
+  type DateFunctionExpression,
+} from "#/expression/aggregate-function-builder";
+import {
   type DistanceFunctionExpression,
   type GeolocationFilterFunctionModule,
 } from "#/expression/geolocation-function-builder";
 import { AndNode } from "#/operation-node/and-node";
 import { NotNode } from "#/operation-node/not-node";
 import type { OperationNode } from "#/operation-node/operation-node";
-import type { ComparisonOperator } from "#/operation-node/operator-node";
-import { OrNode } from "#/operation-node/or-node";
 import type {
-  ComparisonOperatorExpression,
-  FilterableFieldName,
-  OperandValueExpression,
+  ComparisonOperator,
+  EqualityComparisonOperator,
+  OrderedComparisonOperator,
+  SetComparisonOperator,
+} from "#/operation-node/operator-node";
+import { OrNode } from "#/operation-node/or-node";
+import {
+  type ComparisonOperatorExpression,
+  type FilterableFieldName,
+  type OperandValueExpression,
+  parseOperationValueBinaryOperation,
 } from "#/parser/binary-operation-parser";
 import { parseFilterBinaryOperation } from "#/parser/filter-parser";
 import {
   type DistanceComparisonOperator,
   parseDistanceFilterBinaryOperation,
 } from "#/parser/geolocation-expression-parser";
+import type { FieldReferenceDefinition } from "#/parser/reference-parser";
+import type { SoqlDateLiteral } from "#/soql-temporal-literal";
 
 declare const expressionType: unique symbol;
 
@@ -35,6 +47,125 @@ type ExpressionSemiJoinFlag<Expression> = Expression extends {
 
 type CombinedSemiJoinFlag<Expressions extends readonly unknown[]> =
   true extends ExpressionSemiJoinFlag<Expressions[number]> ? true : false;
+
+type TemporalSalesforceType = "date" | "datetime";
+
+type DateFunctionComparisonOperator =
+  | EqualityComparisonOperator
+  | OrderedComparisonOperator
+  | SetComparisonOperator;
+
+type DateFilterFunctionInput = ConvertTimezoneFunctionBuilder<string> | string;
+
+type FilterableDateFieldReference<
+  DB,
+  TB extends keyof DB,
+  Reference extends string,
+  SalesforceType extends TemporalSalesforceType = TemporalSalesforceType,
+> = Reference extends unknown
+  ? [FieldReferenceDefinition<DB, TB, Reference>] extends [never]
+    ? never
+    : FieldReferenceDefinition<DB, TB, Reference> extends {
+          readonly filterable: true;
+          readonly salesforceType: SalesforceType;
+        }
+      ? Reference
+      : never
+  : never;
+
+type DateFilterFunctionArgument<
+  DB,
+  TB extends keyof DB,
+  Input extends DateFilterFunctionInput,
+  SalesforceType extends TemporalSalesforceType = TemporalSalesforceType,
+> = Input extends string
+  ? Input & FilterableDateFieldReference<DB, TB, Input, SalesforceType>
+  : Input;
+
+type NumericDateFilterFunctionExpression = DateFunctionExpression<
+  number | null,
+  number | null,
+  DateFunctionComparisonOperator,
+  string
+>;
+
+type DayOnlyDateFilterFunctionExpression = DateFunctionExpression<
+  string | null,
+  SoqlDateLiteral | null,
+  DateFunctionComparisonOperator,
+  string
+>;
+
+type DateFunctionOperandValue<
+  Value,
+  Operator extends ComparisonOperator,
+> = Operator extends OrderedComparisonOperator
+  ? NonNullable<Value>
+  : Operator extends SetComparisonOperator
+    ? readonly Value[]
+    : Value;
+
+interface DateFilterFunctionModule<DB, TB extends keyof DB> {
+  calendarMonth<Input extends DateFilterFunctionInput>(
+    field: Input & DateFilterFunctionArgument<DB, TB, Input>,
+  ): NumericDateFilterFunctionExpression;
+
+  calendarQuarter<Input extends DateFilterFunctionInput>(
+    field: Input & DateFilterFunctionArgument<DB, TB, Input>,
+  ): NumericDateFilterFunctionExpression;
+
+  calendarYear<Input extends DateFilterFunctionInput>(
+    field: Input & DateFilterFunctionArgument<DB, TB, Input>,
+  ): NumericDateFilterFunctionExpression;
+
+  dayInMonth<Input extends DateFilterFunctionInput>(
+    field: Input & DateFilterFunctionArgument<DB, TB, Input>,
+  ): NumericDateFilterFunctionExpression;
+
+  dayInWeek<Input extends DateFilterFunctionInput>(
+    field: Input & DateFilterFunctionArgument<DB, TB, Input>,
+  ): NumericDateFilterFunctionExpression;
+
+  dayInYear<Input extends DateFilterFunctionInput>(
+    field: Input & DateFilterFunctionArgument<DB, TB, Input>,
+  ): NumericDateFilterFunctionExpression;
+
+  dayOnly<Input extends DateFilterFunctionInput>(
+    field: Input & DateFilterFunctionArgument<DB, TB, Input, "datetime">,
+  ): DayOnlyDateFilterFunctionExpression;
+
+  fiscalMonth<Input extends DateFilterFunctionInput>(
+    field: Input & DateFilterFunctionArgument<DB, TB, Input>,
+  ): NumericDateFilterFunctionExpression;
+
+  fiscalQuarter<Input extends DateFilterFunctionInput>(
+    field: Input & DateFilterFunctionArgument<DB, TB, Input>,
+  ): NumericDateFilterFunctionExpression;
+
+  fiscalYear<Input extends DateFilterFunctionInput>(
+    field: Input & DateFilterFunctionArgument<DB, TB, Input>,
+  ): NumericDateFilterFunctionExpression;
+
+  hourInDay<Input extends DateFilterFunctionInput>(
+    field: Input & DateFilterFunctionArgument<DB, TB, Input, "datetime">,
+  ): NumericDateFilterFunctionExpression;
+
+  weekInMonth<Input extends DateFilterFunctionInput>(
+    field: Input & DateFilterFunctionArgument<DB, TB, Input>,
+  ): NumericDateFilterFunctionExpression;
+
+  weekInYear<Input extends DateFilterFunctionInput>(
+    field: Input & DateFilterFunctionArgument<DB, TB, Input>,
+  ): NumericDateFilterFunctionExpression;
+
+  convertTimezone<Reference extends string>(
+    field: Reference &
+      FilterableDateFieldReference<DB, TB, Reference, "datetime">,
+  ): ConvertTimezoneFunctionBuilder<Reference>;
+}
+
+type FilterFunctionModule<DB, TB extends keyof DB> =
+  DateFilterFunctionModule<DB, TB> & GeolocationFilterFunctionModule<DB, TB>;
 
 export interface ExpressionWrapper<
   DB,
@@ -59,6 +190,19 @@ export interface ExpressionBuilder<
     lhs: DistanceFunctionExpression<Output, true, Sortable>,
     op: DistanceComparisonOperator,
     rhs: number,
+  ): ExpressionWrapper<DB, TB, false>;
+
+  <
+    Output,
+    Value,
+    AllowedOperator extends ComparisonOperator,
+    Operator extends AllowedOperator,
+    Identity extends string,
+    Right extends DateFunctionOperandValue<Value, NoInfer<Operator>>,
+  >(
+    lhs: DateFunctionExpression<Output, Value, AllowedOperator, Identity>,
+    op: Operator,
+    rhs: Right,
   ): ExpressionWrapper<DB, TB, false>;
 
   <
@@ -93,7 +237,7 @@ export interface ExpressionBuilder<
     ],
   ): ExpressionWrapper<DB, TB, false>;
 
-  readonly fn: GeolocationFilterFunctionModule<DB, TB>;
+  readonly fn: FilterFunctionModule<DB, TB>;
 }
 
 export type WhereExpressionFactory<
@@ -140,23 +284,32 @@ export function createExpressionBuilder<
   options: ExpressionBuilderOptions<AllowSemiJoin> = {},
 ): ExpressionBuilder<DB, TB, AllowSemiJoin> {
   const expression = (
-    lhs: string | DistanceFunctionExpression<unknown, boolean, boolean>,
+    lhs:
+      | string
+      | DateFunctionExpression<unknown, unknown, ComparisonOperator, string>
+      | DistanceFunctionExpression<unknown, boolean, boolean>,
     op: ComparisonOperator,
     rhs: unknown,
   ): ExpressionWrapper<DB, TB, boolean> => {
-    const node =
-      typeof lhs === "string"
-        ? parseFilterBinaryOperation(lhs, op, rhs, {
-            allowSemiJoin: options.allowSemiJoin ?? true,
-            ...(options.outerObject
-              ? { outerObject: options.outerObject }
-              : {}),
-          })
-        : parseDistanceFilterBinaryOperation(
-            lhs,
-            op as DistanceComparisonOperator,
-            rhs,
-          );
+    let node: OperationNode;
+
+    if (typeof lhs === "string") {
+      node = parseFilterBinaryOperation(lhs, op, rhs, {
+        allowSemiJoin: options.allowSemiJoin ?? true,
+        ...(options.outerObject ? { outerObject: options.outerObject } : {}),
+      });
+    } else {
+      const operation = lhs.toOperationNode();
+
+      node =
+        operation.kind === "DateFunctionNode"
+          ? parseOperationValueBinaryOperation(operation, op, rhs)
+          : parseDistanceFilterBinaryOperation(
+              lhs as DistanceFunctionExpression<unknown, boolean, boolean>,
+              op as DistanceComparisonOperator,
+              rhs,
+            );
+    }
 
     return new ExpressionWrapperImpl<DB, TB, boolean>(node);
   };
@@ -208,7 +361,8 @@ export function createExpressionBuilder<
     return new ExpressionWrapperImpl<DB, TB, false>(operation);
   };
 
-  const fn = createGeolocationFilterExpressionBuilder<DB, TB>().fn;
+  const fn = createSelectExpressionBuilder<DB, TB>()
+    .fn as unknown as FilterFunctionModule<DB, TB>;
 
   return Object.assign(expression, { and, fn, not, or }) as ExpressionBuilder<
     DB,

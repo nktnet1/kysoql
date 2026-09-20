@@ -96,6 +96,22 @@ interface FixtureSchema {
         true,
         true
       >;
+      readonly FilterOnlyDate__c: CustomField<
+        string,
+        "date",
+        true,
+        true,
+        false,
+        false
+      >;
+      readonly InternalDate__c: CustomField<
+        string,
+        "date",
+        true,
+        false,
+        false,
+        false
+      >;
       readonly OpeningTime__c: CustomField<
         string,
         "time",
@@ -305,6 +321,8 @@ describe("SelectQueryBuilder", () => {
       readonly Satisfaction__c: number | null;
       readonly GrowthRate__c: number;
       readonly LastActivityAt__c: string | null;
+      readonly FilterOnlyDate__c: string | null;
+      readonly InternalDate__c: string | null;
       readonly OpeningTime__c: string | null;
       readonly Tags__c: string;
       readonly Internal_Note__c: string | null;
@@ -962,6 +980,61 @@ describe("SelectQueryBuilder", () => {
     });
   });
 
+  it("stores date-function WHERE expressions without requiring groupable fields", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .where((eb) =>
+        eb.and([
+          eb(eb.fn.calendarYear("FilterOnlyDate__c"), "=", 2026),
+          eb(
+            eb.fn.dayOnly(eb.fn.convertTimezone("LastActivityAt__c")),
+            ">=",
+            soqlDate("2026-09-20"),
+          ),
+        ]),
+      );
+
+    expect(query.toOperationNode().where).toEqual({
+      kind: "WhereNode",
+      where: {
+        kind: "AndNode",
+        left: {
+          kind: "BinaryOperationNode",
+          leftOperand: {
+            kind: "DateFunctionNode",
+            function: "calendarYear",
+            reference: {
+              kind: "ReferenceNode",
+              name: "FilterOnlyDate__c",
+            },
+          },
+          operator: { kind: "OperatorNode", operator: "=" },
+          rightOperand: { kind: "ValueNode", value: 2026 },
+        },
+        right: {
+          kind: "BinaryOperationNode",
+          leftOperand: {
+            kind: "DateFunctionNode",
+            function: "dayOnly",
+            reference: {
+              kind: "ConvertTimezoneFunctionNode",
+              reference: {
+                kind: "ReferenceNode",
+                name: "LastActivityAt__c",
+              },
+            },
+          },
+          operator: { kind: "OperatorNode", operator: ">=" },
+          rightOperand: {
+            kind: "ValueNode",
+            value: { kind: "SoqlDateLiteral", value: "2026-09-20" },
+          },
+        },
+      },
+    });
+  });
+
   it("preserves the selected output type after filtering", () => {
     const db = new Kysoql<FixtureSchema>();
     const query = db
@@ -1004,6 +1077,32 @@ describe("SelectQueryBuilder", () => {
     );
 
     query.where((eb) => eb.not(eb("Name", "=", "Acme")));
+
+    query.where((eb) => eb(eb.fn.calendarMonth("CloseDate"), "=", 9));
+    query.where((eb) => eb(eb.fn.calendarQuarter("CloseDate"), "=", 3));
+    query.where((eb) => eb(eb.fn.calendarYear("CloseDate"), ">=", 2026));
+    query.where((eb) => eb(eb.fn.dayInMonth("CloseDate"), "=", 20));
+    query.where((eb) => eb(eb.fn.dayInWeek("CloseDate"), "=", 1));
+    query.where((eb) => eb(eb.fn.dayInYear("CloseDate"), "=", 263));
+    query.where((eb) =>
+      eb(eb.fn.dayOnly("LastActivityAt__c"), "=", soqlDate("2026-09-20")),
+    );
+    query.where((eb) => eb(eb.fn.fiscalMonth("CloseDate"), "=", 9));
+    query.where((eb) => eb(eb.fn.fiscalQuarter("CloseDate"), "=", 3));
+    query.where((eb) => eb(eb.fn.fiscalYear("CloseDate"), "=", 2026));
+    query.where((eb) => eb(eb.fn.hourInDay("LastActivityAt__c"), "=", 14));
+    query.where((eb) => eb(eb.fn.weekInMonth("CloseDate"), "=", 3));
+    query.where((eb) => eb(eb.fn.weekInYear("CloseDate"), "=", 38));
+    query.where((eb) =>
+      eb(eb.fn.calendarYear("FilterOnlyDate__c"), "in", [2025, 2026]),
+    );
+    query.where((eb) =>
+      eb(
+        eb.fn.calendarYear(eb.fn.convertTimezone("LastActivityAt__c")),
+        "=",
+        2026,
+      ),
+    );
 
     query.where((eb) =>
       eb.or([
@@ -1070,6 +1169,49 @@ describe("SelectQueryBuilder", () => {
 
     // @ts-expect-error Salesforce field is not present on Account.
     query.where("Does_Not_Exist__c", "=", "value");
+
+    query.where((eb) => {
+      // @ts-expect-error Date functions require generated date/datetime fields.
+      const year = eb.fn.calendarYear("Name");
+      return eb(year, "=", 2026);
+    });
+
+    query.where((eb) => {
+      // @ts-expect-error Date functions require filterable fields in WHERE.
+      const year = eb.fn.calendarYear("InternalDate__c");
+      return eb(year, "=", 2026);
+    });
+
+    query.where((eb) => {
+      // @ts-expect-error DAY_ONLY accepts datetime fields only.
+      const day = eb.fn.dayOnly("CloseDate");
+      return eb(day, "=", soqlDate("2026-09-20"));
+    });
+
+    query.where((eb) => {
+      // @ts-expect-error convertTimezone accepts datetime fields only.
+      const local = eb.fn.convertTimezone("CloseDate");
+      return eb(eb.fn.calendarYear(local), "=", 2026);
+    });
+
+    query.where((eb) => {
+      const year = eb.fn.calendarYear("CloseDate");
+      // @ts-expect-error Numeric date functions require numeric comparison values.
+      return eb(year, "=", "2026");
+    });
+
+    query.where((eb) => {
+      const year = eb.fn.calendarYear("CloseDate");
+      // @ts-expect-error Ordered date-function comparisons reject null.
+      return eb(year, ">", null);
+    });
+
+    query.where((eb) => {
+      const day = eb.fn.dayOnly("LastActivityAt__c");
+      const dateTime = soqlDateTime("2026-09-20T00:00:00Z");
+      // @ts-expect-error DAY_ONLY requires a SOQL date literal comparison value.
+      return eb(day, "=", dateTime);
+    });
   });
 
   it("requires numeric LIMIT values at compile time", () => {

@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.110`
+## Current state after `v1.0.113`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -163,6 +163,9 @@ recent patch sequence:
 | `v1.0.108` | Fix codegen for repeated Salesforce child-relationship names by emitting one property whose type is the exact union of the concrete relationship metadata pairs; refresh the real-org fixture so test typechecking succeeds. |
 | `v1.0.109` | Align VS Code/tsserver with CLI test typechecking by moving test projects to editor-discoverable `tsconfig.json` files under each test tree and making `typecheck:test` compile those same projects. |
 | `v1.0.110` | Align VS Code with the repository-pinned TypeScript SDK and make Apex negative type assertions insensitive to compiler-version diagnostic span changes. |
+| `v1.0.111` | Add typed SOQL date-function predicates to ordinary `WHERE` expression callbacks, using generated `filterable` date/datetime metadata, typed operator/RHS constraints, and supported `convertTimezone()` composition without requiring `groupable`. |
+| `v1.0.112` | Fix the strict `FIELDS(CUSTOM)` output regression assertion to include the two custom date fields introduced by `v1.0.111`, keeping the fixture type-complete under `pnpm typecheck:test`. |
+| `v1.0.113` | Fix the date-function `WHERE` compiler regression expectation to follow the established compiler formatting contract: top-level `AND` expressions do not receive redundant outer parentheses. |
 
 ### Build/tooling state
 
@@ -453,7 +456,7 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The active feature and hardening roadmap is complete through `v1.0.110`.**
+**The follow-on SOQL completeness pass is active through `v1.0.113`.**
 `v1.0.104` closes the release-audit gap rather than adding more SOQL grammar,
 `v1.0.105` repairs that verifier for TypeScript 7, whose package root no longer
 exposes the historical compiler API, `v1.0.106` adds direct scanner regression
@@ -470,7 +473,17 @@ falls back to an inferred project without the package `#/*` aliases. `v1.0.110`
 closes the remaining editor/CLI drift: the workspace points VS Code at the pinned
 TypeScript SDK, and multiline negative Apex assertions no longer place
 `@ts-expect-error` inside an argument list where compiler versions can disagree
-about the diagnostic span.
+about the diagnostic span. A subsequent SOQL completeness audit found that date
+functions were still exposed only through grouping/HAVING-oriented expression
+surfaces even though Salesforce also supports them in ordinary filters.
+`v1.0.111` closes that gap: `WHERE` callbacks expose the complete thirteen-function
+date family, use generated `filterable` temporal metadata rather than `groupable`,
+preserve numeric/date operand typing, and support `convertTimezone()` around
+filterable datetime fields. `v1.0.112` fixes the strict `FIELDS(CUSTOM)`
+regression assertion exposed by that fixture expansion: the two custom date fields
+used to distinguish filterable/non-groupable and non-filterable metadata are real
+custom fields and therefore must also appear in the inferred `FIELDS(CUSTOM)` output.
+`v1.0.113` then fixes the new date-function compiler regression expectation itself: the compiler intentionally omits redundant parentheses around a top-level `AND`, matching the established boolean-expression formatting contract used by adjacent compiler tests.
 `pnpm verify:publish` treats each publishable package's `src/index.ts` barrel as the
 public contract and compares it with both the built runtime named exports and the
 generated declaration exports after build. This
@@ -486,12 +499,13 @@ and `pnpm salesforce:apex-binds` reruns it against an existing authenticated org
 The real-org fixture intentionally remains outside `pnpm validate` so local release
 validation never requires Salesforce credentials.
 
-There is no default `v1.0.110` feature slice. Continue only when local validation,
-publishing, or the real-org fixture exposes a concrete defect, or when one of the
-explicitly deferred tracks below gains the metadata / transport support needed for
-a sound implementation. Do not reopen ad-hoc Apex expression strings or infer new
-static-Apex bind positions without authoritative documentation or an org compile
-fixture.
+The next coherent SOQL slice is `v1.0.114`: add typed `toLabel()` predicates in
+ordinary `WHERE` callbacks while preserving Salesforce's documented restrictions
+and generated translatable-field metadata. After that, `v1.0.115` should add
+compiler validation for Salesforce relationship-count limits (20 parent-to-child
+subqueries and 55 child-to-parent relationships), taking care to count repeated
+paths correctly rather than simply counting reference nodes. Do not fold either
+slice into unrelated Apex/static-bind work.
 
 The `v1.0.84` specialist-object boundary remains unchanged: keep Big Object index
 validation, Data 360 relationship/query rules, external-object adapter-specific
@@ -505,18 +519,24 @@ The general REST/SOAP SOQL builder is now substantially complete. Remaining work
 should be treated as separate follow-on tracks rather than folded into the final
 consistency audit:
 
-1. **Data-category transport support when a stable path exists.** The public
+1. **Ordinary `WHERE toLabel(...)` predicates.** Reuse generated translatable
+   metadata and a dedicated filter-expression surface rather than exposing the
+   aliased SELECT-only builder directly.
+2. **Relationship-count validation.** Enforce Salesforce's documented 20
+   parent-to-child and 55 child-to-parent relationship limits at the compiler
+   boundary with path-aware counting.
+3. **Data-category transport support when a stable path exists.** The public
    codegen hook already accepts normalized `Question` taxonomy metadata; do not
    use JSforce's private SOAP invocation machinery solely to automate it.
-2. **Execution-context-specific syntax.** Re-evaluate `FOR UPDATE`,
+4. **Execution-context-specific syntax.** Re-evaluate `FOR UPDATE`,
    `WITH USER_MODE`, nested bind positions, and related Apex-context behavior
    separately from the transport-neutral REST/JSforce core. Do not reintroduce
    retired `WITH SECURITY_ENFORCED` syntax.
-3. **Capability-rich specialist objects.** Big-object index validation, Data 360
+5. **Capability-rich specialist objects.** Big-object index validation, Data 360
    object rules, external-adapter-specific limits, and permission/cardinality
    dependent caps need authoritative metadata or execution-context hooks before
    they can become sound static/compiler guarantees.
-4. **Release hardening.** The baseline audit is complete through `v1.0.110`: built
+6. **Release hardening.** The baseline audit is complete through `v1.0.113`: built
    runtime/declaration export parity is verified against source barrels without
    depending on TypeScript's removed root compiler API, and the scratch-org fixture
    exercises the completed static-Apex bind-expression families. Continue only for

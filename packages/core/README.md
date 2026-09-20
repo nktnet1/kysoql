@@ -30,6 +30,29 @@ const query = db
 const compiled = query.compile();
 ```
 
+Date functions are available in ordinary `WHERE` callbacks without requiring a
+grouped query. Inputs are restricted to generated filterable `date` / `datetime`
+fields, `dayOnly()` and `hourInDay()` remain datetime-only, and
+`convertTimezone()` can be composed around a filterable datetime field:
+
+```ts
+import { soqlDate } from "@kysoql/core";
+
+const recent = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where((eb) =>
+    eb.and([
+      eb(eb.fn.calendarYear("CreatedDate"), "=", 2026),
+      eb(
+        eb.fn.dayOnly(eb.fn.convertTimezone("CreatedDate")),
+        ">=",
+        soqlDate("2026-09-01"),
+      ),
+    ]),
+  );
+```
+
 Apex-only query syntax is isolated behind an explicit compile-only context. For
 example, `FOR UPDATE` is available only after switching a completed record query
 into `.apex()`, so it cannot be executed accidentally through an API executor:

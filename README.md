@@ -592,6 +592,32 @@ must be accumulated through ordinary `groupBy(...)` before it can be selected,
 used in `HAVING`, or used for ordering. Child-to-parent field references retain
 their generated temporal checks and relationship nullability.
 
+The same date-function family is available directly in `WHERE` expression
+callbacks. Filtering uses generated `filterable` metadata rather than requiring
+the field to be `groupable`, and the comparison operand stays tied to the
+function result (`number` for the numeric family and `soqlDate(...)` for
+`dayOnly()`). `convertTimezone()` can be composed around filterable `datetime`
+fields before applying the date function.
+
+```ts
+import { soqlDate } from "@kysoql/core";
+
+const currentYearActivity = await db
+  .selectFrom("Opportunity")
+  .select(["Id", "Name"])
+  .where((eb) =>
+    eb.and([
+      eb(eb.fn.calendarYear("CloseDate"), "=", 2026),
+      eb(
+        eb.fn.dayOnly(eb.fn.convertTimezone("CreatedDate")),
+        ">=",
+        soqlDate("2026-09-01"),
+      ),
+    ]),
+  )
+  .execute();
+```
+
 ```ts
 const revenueByCloseYear = await db
   .selectFrom("Opportunity")

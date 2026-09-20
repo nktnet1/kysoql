@@ -334,6 +334,27 @@ describe("DefaultQueryCompiler", () => {
     );
   });
 
+  it("compiles typed date functions in WHERE with timezone conversion", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .where((eb) =>
+        eb.and([
+          eb(eb.fn.calendarYear("CloseDate"), "=", 2026),
+          eb(
+            eb.fn.dayOnly(eb.fn.convertTimezone("LastActivityAt__c")),
+            ">=",
+            soqlDate("2026-09-20"),
+          ),
+        ]),
+      )
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT Id FROM Account WHERE CALENDAR_YEAR(CloseDate) = 2026 AND DAY_ONLY(convertTimezone(LastActivityAt__c)) >= 2026-09-20",
+    );
+  });
+
   it("compiles fixed relative date literals without quotes", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")

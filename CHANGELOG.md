@@ -59,9 +59,18 @@ version is cut.
   or build-only public API drift.
 - A real-org static-Apex bind-expression smoke fixture, run automatically by the
   scratch-org setup and independently through `pnpm salesforce:apex-binds`.
+- Typed SOQL date-function predicates in ordinary `WHERE` expression callbacks,
+  including all thirteen calendar/fiscal functions, filterable date/datetime
+  metadata gating, set/ordered operand typing, and `convertTimezone()` composition.
 
 ### Fixed
 
+- Match the date-function `WHERE` compiler regression expectation to the
+  existing top-level boolean formatting contract: redundant outer parentheses
+  are omitted while precedence-preserving nested groups remain parenthesised.
+- Keep the `FIELDS(CUSTOM)` output regression fixture in sync with the custom
+  date fields added for ordinary `WHERE` date-function capability tests, so the
+  strict test typecheck validates the complete generated custom-field shape.
 - Keep VS Code negative type-test diagnostics aligned with CLI typechecking by
   pointing the workspace at its pinned TypeScript SDK and avoiding
   diagnostic-location-sensitive `@ts-expect-error` placement in Apex bind tests.
