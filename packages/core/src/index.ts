@@ -136,6 +136,8 @@ export type { ApexOperandValueExpression } from "#/parser/apex-bind-parser";
 export type { DataCategoryInput } from "#/parser/data-category-parser";
 export type { DistanceComparisonOperator } from "#/parser/geolocation-expression-parser";
 export type { AggregateSelectQueryBuilder } from "#/query-builder/aggregate-select-query-builder";
+export type { ApexAggregateSelectQueryBuilder } from "#/query-builder/apex-aggregate-select-query-builder";
+export type { ApexCountQueryBuilder } from "#/query-builder/apex-count-query-builder";
 export type { ApexSelectQueryBuilder } from "#/query-builder/apex-select-query-builder";
 export type { CountQueryBuilder } from "#/query-builder/count-query-builder";
 export type { RelationshipSubqueryBuilder } from "#/query-builder/relationship-subquery-builder";

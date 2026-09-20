@@ -1412,3 +1412,13 @@ validation, while bound numeric values are runtime Apex inputs. Keep semi-joins
 subject to the existing top-level-only nesting rules, conservatively reject a
 bound `LIMIT` as proof for REST/SOAP `FIELDS(ALL|CUSTOM)` boundedness, and extend
 the Knowledge compiler guard to pagination binds as well as `WHERE` binds.
+
+Kysoql consequence for `v1.0.96`: extend the terminal compile-only `.apex()`
+boundary to row-producing aggregate and scalar bare-`COUNT()` builders. The same
+SELECT grammar permits Apex access modes and `WHERE` binds for those query forms,
+so reuse the existing access-mode, grouped-filter, and pagination-bind plumbing.
+Keep `.forUpdate()` exclusive to the row-producing record builder because an
+aggregate/count result does not represent lockable sObject rows. Aggregate
+`HAVING` bind expressions remain a separate follow-up so their aggregate/date
+expression typing can be extended deliberately rather than by widening `WHERE`
+operand types.

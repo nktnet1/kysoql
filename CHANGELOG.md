@@ -28,11 +28,15 @@ version is cut.
   `WHERE` composition, and numeric `LIMIT` / `OFFSET`, including
   relationship-field binds, validated bind identifiers, and Knowledge-article /
   multipicklist guardrails.
+- Compile-only Apex contexts for aggregate-result and bare `COUNT()` queries,
+  reusing typed `WHERE` binds, pagination binds, and explicit access modes while
+  keeping record locking record-only.
 - Release validation for built package exports, declaration files, CLI binaries,
   package metadata, package documentation, and changelog presence.
 
 ### Fixed
 
+- Mark the Apex aggregate test fixture's numeric revenue field as aggregatable so `SUM()` remains covered by the same generated-field capability gate used in production schemas.
 - Preserve the generic aggregate QueryAll executor contract in its regression test under TypeScript 7 and Vitest 5.
 
 ### Changed

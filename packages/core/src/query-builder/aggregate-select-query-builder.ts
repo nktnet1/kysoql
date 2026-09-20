@@ -77,6 +77,10 @@ import {
   parseUserProfileFeedWithUserId,
   type UserProfileFeedWithUserIdCheck,
 } from "#/parser/user-profile-feed-parser";
+import {
+  type ApexAggregateSelectQueryBuilder,
+  createApexAggregateSelectQueryBuilder,
+} from "#/query-builder/apex-aggregate-select-query-builder";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { QueryExecutor } from "#/query-executor";
@@ -270,6 +274,8 @@ export interface AggregateSelectQueryBuilder<
   execute(): Promise<readonly O[]>;
 
   executeAll(): Promise<readonly O[]>;
+
+  apex(): ApexAggregateSelectQueryBuilder<DB, TB, O>;
 
   forView(
     ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
@@ -694,6 +700,10 @@ class AggregateSelectQueryBuilderImpl<
     }
 
     return this.#props.queryExecutor.executeAllQuery(this.compile());
+  }
+
+  apex(): ApexAggregateSelectQueryBuilder<DB, TB, O> {
+    return createApexAggregateSelectQueryBuilder<DB, TB, O>(this.#props);
   }
 
   forView(

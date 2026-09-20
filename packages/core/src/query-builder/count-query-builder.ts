@@ -27,6 +27,10 @@ import {
   parseUserProfileFeedWithUserId,
   type UserProfileFeedWithUserIdCheck,
 } from "#/parser/user-profile-feed-parser";
+import {
+  type ApexCountQueryBuilder,
+  createApexCountQueryBuilder,
+} from "#/query-builder/apex-count-query-builder";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { QueryExecutor } from "#/query-executor";
@@ -44,6 +48,8 @@ export interface CountQueryBuilder<DB, TB extends keyof DB> {
   execute(): Promise<number>;
 
   executeAll(): Promise<number>;
+
+  apex(): ApexCountQueryBuilder<DB, TB>;
 
   limit(limit: number): CountQueryBuilder<DB, TB>;
 
@@ -142,6 +148,10 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
     }
 
     return this.#props.queryExecutor.executeAllCountQuery(this.compile());
+  }
+
+  apex(): ApexCountQueryBuilder<DB, TB> {
+    return createApexCountQueryBuilder<DB, TB>(this.#props);
   }
 
   limit(limit: number): CountQueryBuilder<DB, TB> {

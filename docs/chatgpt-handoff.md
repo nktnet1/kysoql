@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.95`, the next patch
-   is `v1.0.96`.
+   reuse or rewrite a version already handed off. After `v1.0.97`, the next patch
+   is `v1.0.98`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.95`
+## Current state after `v1.0.97`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -148,6 +148,8 @@ recent patch sequence:
 | `v1.0.93` | Add explicit Apex `WITH USER_MODE` / `WITH SYSTEM_MODE` access clauses with immutable replacement, competing-`WITH` rejection, and no inferred API-version default. |
 | `v1.0.94` | Add typed Apex `WHERE` bind expressions with validated identifiers, scalar and `IN` / `NOT IN` collection typing, relationship-field support, and Knowledge/multipicklist guardrails. |
 | `v1.0.95` | Complete the initial Apex bind ergonomics with grouped `WHERE` callbacks plus numeric `LIMIT` / `OFFSET` binds, preserving semi-join nesting rules and extending Knowledge bind rejection to pagination. |
+| `v1.0.96` | Extend the terminal compile-only Apex context to aggregate-result and bare-`COUNT()` builders, reusing typed `WHERE`/pagination binds and access modes while keeping `FOR UPDATE` record-only. |
+| `v1.0.97` | Fix the Apex aggregate regression fixture so `AnnualRevenue` explicitly carries the generated `aggregatable: true` capability required by typed `SUM()` selection. |
 
 ### Build/tooling state
 
@@ -378,19 +380,21 @@ Core currently has:
   and QueryAll execution for soft-deleted/archived records through root
   `.executeAll()`; JSforce v3 uses `query(soql, { scanAll: true })` for the first
   page and ordinary `queryMore` locators thereafter;
-- an explicit terminal `.apex()` context on row-producing root record queries;
-  the returned `ApexSelectQueryBuilder` is compile-only and adds typed
-  `.forUpdate()` locking, explicit `.withUserMode()` / `.withSystemMode()` access
-  clauses, typed direct and grouped `.where(...)` bind filters through
-  `apexBind<T>(name)`, and numeric bind support for `.limit(...)` / `.offset(...)`;
-  scalar binds follow generated field/relationship value types, `IN` / `NOT IN`
-  binds require readonly collections, grouped callbacks retain `and` / `or` /
-  `not` composition and existing semi-join nesting rules, bind identifiers are
-  validated, and ordinary REST/JSforce builders expose none of those Apex forms;
-  the type/parser surface rejects multipicklist bind use, while compilation
-  rejects `ORDER BY` on locking queries, competing `WITH` filtering forms
-  alongside an Apex access mode, and Knowledge-article Apex binds in either
-  filters or pagination;
+- an explicit terminal `.apex()` context on root record, aggregate-result, and
+  scalar bare-`COUNT()` queries; every Apex-context builder is compile-only,
+  exposes explicit `.withUserMode()` / `.withSystemMode()` access clauses plus
+  typed direct/grouped `.where(...)` binds through `apexBind<T>(name)`, and keeps
+  ordinary REST/JSforce execution methods unavailable; record queries additionally
+  expose `.forUpdate()` plus numeric bind support for `.limit(...)` / `.offset(...)`,
+  aggregate-result queries reuse the same pagination surface without locking, and
+  bare `COUNT()` keeps its existing `LIMIT`-only shape; scalar binds follow
+  generated field/relationship value types, `IN` / `NOT IN` binds require readonly
+  collections, grouped callbacks retain `and` / `or` / `not` composition and
+  existing semi-join nesting rules, bind identifiers are validated, and ordinary
+  REST/JSforce builders expose none of those Apex forms; the type/parser surface
+  rejects multipicklist bind use, while compilation rejects `ORDER BY` on locking
+  queries, competing `WITH` filtering forms alongside an Apex access mode, and
+  Knowledge-article Apex binds in either filters or pagination;
 - generated field metadata for filterable/sortable/groupable/aggregatable/custom
   flags, polymorphic-reference detection (`namePointing`,
   `polymorphicForeignKey`, and `referenceTo`), active picklist values, and
@@ -410,20 +414,19 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.96` and should continue feature work.**
-`v1.0.95` completes the first Apex bind-ergonomics pass on row-producing record
-queries: grouped `WHERE` callbacks can contain typed binds, numeric `LIMIT` /
-`OFFSET` clauses can bind Apex variables, literal pagination keeps its existing
-validation, semi-join nesting remains unchanged, and Knowledge article queries
-reject binds across both filtering and pagination positions.
+**The next patch should be `v1.0.98` and should continue feature work.**
+`v1.0.97` is a narrow validation fix for `v1.0.96`: the new Apex aggregate
+fixture now marks `AnnualRevenue` as explicitly aggregatable, matching the
+production schema capability that typed `SUM()` requires. No public API or
+runtime behavior changed.
 
-The next coherent Apex slice is to extend the explicit compile-only `.apex()`
-boundary to aggregate-result and bare-`COUNT()` query builders without leaking
-record-locking semantics into them. Reuse the existing access-mode and bind
-plumbing where Salesforce permits it, keep `.forUpdate()` record-only, and avoid
-adding executable methods to any Apex-context builder. Treat aggregate `HAVING`
-binds as a separate follow-up unless the type/AST path can be added without
-broadening this slice.
+The next coherent Apex slice remains typed bind expressions in aggregate `HAVING`
+conditions. Reuse the existing grouped/aggregate/date HAVING expression typing
+rather than routing binds through the ordinary field-only Apex `WHERE` parser,
+and keep the feature compile-only behind `.apex()`. Do not widen ordinary
+REST/JSforce HAVING operands or add raw SOQL fragments. If Salesforce semantics
+or the current HAVING AST require a broader redesign, stop at the narrow sound
+subset rather than weakening aggregate-expression type checks.
 
 The `v1.0.84` object-limit audit still defines the boundary for specialist-object
 work: do not infer big-object index rules from the `__b` suffix, do not encode
@@ -432,7 +435,7 @@ permission/cardinality-dependent feed/object caps as execution-context concerns.
 Automatic `Question` data-category taxonomy discovery also remains deferred until
 a stable public JSforce/Salesforce transport path exists.
 
-If the supplied bundle already contains `v1.0.95` or later, inspect the code and
+If the supplied bundle already contains `v1.0.97` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Follow-on roadmap after the consistency audit

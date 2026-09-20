@@ -685,9 +685,9 @@ Filters deliberately require `soqlDate(...)`, `soqlDateTime(...)`, or
 Salesforce literal shape and the compiler emits those values unquoted, avoiding
 the ambiguity between an ordinary SOQL string and a temporal literal.
 
-Apex-only query syntax is separated from API execution. Build the normal record
-query first, then switch to the compile-only `.apex()` context for clauses such
-as `FOR UPDATE`:
+Apex-only query syntax is separated from API execution. Build the normal query
+first, then switch to the compile-only `.apex()` context. Row-producing record
+queries can add locking clauses such as `FOR UPDATE`:
 
 ```ts
 const lockedAccountQuery = db
@@ -760,6 +760,31 @@ the Apex query runs. Salesforce does not allow bind expressions with `INCLUDES`
 / `EXCLUDES`, and KnowledgeArticleVersion / `__kav` Apex queries reject binds at
 compilation. Ordinary REST/JSforce builders continue to accept only escaped
 literal values and typed subqueries.
+
+Aggregate-result and bare `COUNT()` queries can switch to the same compile-only
+Apex context after their aggregate selection is built. They reuse typed Apex
+`WHERE` binds, explicit `USER_MODE` / `SYSTEM_MODE`, and supported pagination
+binds; aggregate queries retain `LIMIT` / `OFFSET`, while scalar `COUNT()` keeps
+its existing `LIMIT`-only surface. `FOR UPDATE` remains available only on the
+row-producing record Apex builder.
+
+```ts
+const apexTotal = db
+  .selectFrom("Opportunity")
+  .select(({ fn }) => fn.sum("Amount").as("totalAmount"))
+  .apex()
+  .where("Amount", ">=", apexBind<number>("minimumAmount"))
+  .withUserMode()
+  .compile();
+
+const apexCount = db
+  .selectFrom("Opportunity")
+  .select(({ fn }) => fn.count())
+  .apex()
+  .where("IsClosed", "=", apexBind<boolean>("isClosed"))
+  .limit(apexBind<number>("rowLimit"))
+  .compile();
+```
 
 Execution stays transport-neutral in core. Configure the JSforce adapter to run
 compiled SOQL through an existing JSforce connection:

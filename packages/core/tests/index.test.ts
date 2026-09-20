@@ -12,9 +12,11 @@ import {
   type AggregateSelectQueryBuilder,
   type ApexAccessMode,
   type ApexAccessModeNode,
+  type ApexAggregateSelectQueryBuilder,
   apexBind,
   type ApexBindExpression,
   type ApexBindNode,
+  type ApexCountQueryBuilder,
   type ApexOperandValueExpression,
   type ApexSelectQueryBuilder,
   type AliasedAggregateFunctionBuilder,
@@ -180,8 +182,14 @@ type PublicTypeSurface = {
   >;
   apexAccessMode: ApexAccessMode;
   apexAccessModeNode: ApexAccessModeNode;
+  apexAggregateSelectQueryBuilder: ApexAggregateSelectQueryBuilder<
+    Record<string, never>,
+    never,
+    Record<string, never>
+  >;
   apexBindExpression: ApexBindExpression<string>;
   apexBindNode: ApexBindNode;
+  apexCountQueryBuilder: ApexCountQueryBuilder<Record<string, never>, never>;
   apexOperandValueExpression: ApexOperandValueExpression<
     Record<string, never>,
     never,

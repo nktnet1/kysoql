@@ -77,6 +77,10 @@ accept numeric binds in addition to their validated literal forms. Bind
 expressions are intentionally unavailable on ordinary API-executable builders,
 with `INCLUDES` / `EXCLUDES`, and for Knowledge article Apex queries.
 
+Aggregate-result and bare `COUNT()` queries can also switch to `.apex()` after
+their aggregate selection is built. They reuse access modes and supported bind
+positions, remain compile-only, and intentionally do not expose record locking.
+
 Pass a `QueryExecutor` to `Kysoql` when queries should execute rather than only
 compile. Normal `.execute()` delegates to `QueryExecutor.executeQuery()` (or the
 dedicated count hook for bare `COUNT()`). Root query builders also expose
