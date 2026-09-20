@@ -1530,3 +1530,10 @@ API by scanning the limited public ESM/`.d.ts` export grammar Kysoql permits:
 named exports (including per-specifier `type`), namespace exports, direct exported
 declarations, and default exports. Continue rejecting bare wildcard exports because
 they cannot provide exact source/build parity without resolving another module.
+
+Kysoql correction for `v1.0.106`: keep the TypeScript-7 export scanner directly
+regression-tested because it now replaces compiler-AST parsing in the release gate.
+A default interface export is type-only even though it uses `export default`, so it
+must appear in declaration parity but not in the expected runtime export set. Keep
+script-to-script `.ts` imports explicit and enable `allowImportingTsExtensions` only
+in the no-emit scripts TypeScript project used by Node's direct TypeScript runtime.

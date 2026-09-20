@@ -62,6 +62,8 @@ version is cut.
 
 ### Fixed
 
+- Correct publish-shape runtime classification for type-only default interface
+  exports, and add direct regression coverage for the TypeScript-7 export scanner.
 - Keep `verify:publish` compatible with TypeScript 7 by parsing the package
   barrel export surface without relying on the removed `typescript` root compiler
   API.
