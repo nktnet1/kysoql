@@ -244,10 +244,7 @@ interface RepeatedChildRelationshipSchema {
     Record<string, never>,
     {
       readonly FinanceBalanceSnapshots:
-        | SalesforceChildRelationship<
-            "FinanceBalanceSnapshot",
-            "LegalEntityId"
-          >
+        | SalesforceChildRelationship<"FinanceBalanceSnapshot", "LegalEntityId">
         | SalesforceChildRelationship<
             "FinanceBalanceSnapshot",
             "ReferenceEntityId"

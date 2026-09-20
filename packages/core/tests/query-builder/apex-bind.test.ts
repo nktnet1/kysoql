@@ -289,10 +289,7 @@ describe("Apex bind expressions", () => {
       apexQueryField(functionSource, "total");
       // @ts-expect-error Query-result field values must still match the outer field value type.
       apex.where("AnnualRevenue", ">=", name);
-      const nullableRevenue = apexQueryField(
-        revenueSource,
-        "AnnualRevenue",
-      );
+      const nullableRevenue = apexQueryField(revenueSource, "AnnualRevenue");
       // @ts-expect-error Nullable query-result values cannot satisfy ordered non-null operands.
       apex.where("AnnualRevenue", ">=", nullableRevenue);
       // @ts-expect-error Nullable query-result values cannot be used as LIMIT binds.
