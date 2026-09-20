@@ -1,9 +1,9 @@
 import * as v from "valibot";
 
 import type { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
-import type { ApexBindNode } from "#/operation-node/apex-bind-node";
 import type { AliasNode } from "#/operation-node/alias-node";
 import type { AndNode } from "#/operation-node/and-node";
+import type { ApexBindNode } from "#/operation-node/apex-bind-node";
 import type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 import type { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
 import type { ConvertTimezoneFunctionNode } from "#/operation-node/convert-timezone-function-node";

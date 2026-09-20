@@ -1,7 +1,7 @@
 import type { ApexBindExpression } from "#/apex-bind";
 import {
-  createApexExpressionBuilder,
   type ApexWhereExpressionFactory,
+  createApexExpressionBuilder,
 } from "#/expression/apex-expression-builder";
 import {
   type ApexAccessMode,
@@ -43,10 +43,7 @@ export interface ApexSelectQueryBuilder<DB, TB extends keyof DB, O> {
     expression: ApexWhereExpressionFactory<DB, TB>,
   ): ApexSelectQueryBuilder<DB, TB, O>;
 
-  where<
-    RE extends string,
-    OP extends ComparisonOperatorExpression<DB, TB, RE>,
-  >(
+  where<RE extends string, OP extends ComparisonOperatorExpression<DB, TB, RE>>(
     lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
     op: OP,
     rhs: ApexOperandValueExpression<DB, TB, NoInfer<RE>, NoInfer<OP>>,
@@ -109,10 +106,7 @@ class ApexSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
   where(
     expression: ApexWhereExpressionFactory<DB, TB>,
   ): ApexSelectQueryBuilder<DB, TB, O>;
-  where<
-    RE extends string,
-    OP extends ComparisonOperatorExpression<DB, TB, RE>,
-  >(
+  where<RE extends string, OP extends ComparisonOperatorExpression<DB, TB, RE>>(
     lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
     op: OP,
     rhs: ApexOperandValueExpression<DB, TB, NoInfer<RE>, NoInfer<OP>>,
@@ -135,7 +129,10 @@ class ApexSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
             rhs,
             this.#props.queryNode.from.name,
           );
-    const queryNode = QueryNode.cloneWithWhere(this.#props.queryNode, operation);
+    const queryNode = QueryNode.cloneWithWhere(
+      this.#props.queryNode,
+      operation,
+    );
 
     validateSemiJoinWhere(queryNode.where?.where ?? operation);
 

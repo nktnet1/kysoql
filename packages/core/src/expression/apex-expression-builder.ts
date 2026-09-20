@@ -190,8 +190,10 @@ export function createApexExpressionBuilder<DB, TB extends keyof DB>(
 
   const fn = createGeolocationFilterExpressionBuilder<DB, TB>().fn;
 
-  return Object.assign(expression, { and, fn, not, or }) as ApexExpressionBuilder<
-    DB,
-    TB
-  >;
+  return Object.assign(expression, {
+    and,
+    fn,
+    not,
+    or,
+  }) as ApexExpressionBuilder<DB, TB>;
 }

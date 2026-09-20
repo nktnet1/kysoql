@@ -26,8 +26,9 @@ export type FieldName<DB, TB extends keyof DB> = NonNeverStringKey<
   FieldsOf<DB, TB>
 >;
 
-export type ParentRelationshipName<DB, TB extends keyof DB> =
-  NonNeverStringKey<ParentsOf<DB, TB>>;
+export type ParentRelationshipName<DB, TB extends keyof DB> = NonNeverStringKey<
+  ParentsOf<DB, TB>
+>;
 
 export type ChildRelationshipName<DB, TB extends keyof DB> = NonNeverStringKey<
   ChildrenOf<DB, TB>

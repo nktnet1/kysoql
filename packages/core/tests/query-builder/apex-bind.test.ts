@@ -108,13 +108,7 @@ describe("Apex bind expressions", () => {
       .where((eb) =>
         eb.or([
           eb("Name", "=", apexBind<string>("accountName")),
-          eb.not(
-            eb(
-              "AnnualRevenue",
-              "<",
-              apexBind<number>("minimumRevenue"),
-            ),
-          ),
+          eb.not(eb("AnnualRevenue", "<", apexBind<number>("minimumRevenue"))),
         ]),
       );
 

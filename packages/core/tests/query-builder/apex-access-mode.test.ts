@@ -3,10 +3,14 @@ import { describe, expect, it } from "vitest";
 import { Kysoql } from "#/kysoql";
 import type { SalesforceField, SalesforceObject } from "#/schema";
 
-type Field<
-  Value = string,
-  Type extends string = "string",
-> = SalesforceField<Value, Type, false, true, true, true>;
+type Field<Value = string, Type extends string = "string"> = SalesforceField<
+  Value,
+  Type,
+  false,
+  true,
+  true,
+  true
+>;
 
 type DataCategoryFixture = {
   readonly Geography__c: "All" | "usa__c";

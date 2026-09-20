@@ -1,7 +1,7 @@
 import type { ApexBindExpression } from "#/apex-bind";
 import {
-  createApexExpressionBuilder,
   type ApexWhereExpressionFactory,
+  createApexExpressionBuilder,
 } from "#/expression/apex-expression-builder";
 import {
   type ApexAccessMode,
@@ -40,10 +40,7 @@ export interface ApexCountQueryBuilder<DB, TB extends keyof DB> {
     expression: ApexWhereExpressionFactory<DB, TB>,
   ): ApexCountQueryBuilder<DB, TB>;
 
-  where<
-    RE extends string,
-    OP extends ComparisonOperatorExpression<DB, TB, RE>,
-  >(
+  where<RE extends string, OP extends ComparisonOperatorExpression<DB, TB, RE>>(
     lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
     op: OP,
     rhs: ApexOperandValueExpression<DB, TB, NoInfer<RE>, NoInfer<OP>>,
@@ -66,7 +63,9 @@ class ApexCountQueryBuilderImpl<DB, TB extends keyof DB>
   }
 
   compile(): CompiledQuery<number> {
-    return this.#props.queryCompiler.compileQuery<number>(this.#props.queryNode);
+    return this.#props.queryCompiler.compileQuery<number>(
+      this.#props.queryNode,
+    );
   }
 
   limit(
@@ -84,10 +83,7 @@ class ApexCountQueryBuilderImpl<DB, TB extends keyof DB>
   where(
     expression: ApexWhereExpressionFactory<DB, TB>,
   ): ApexCountQueryBuilder<DB, TB>;
-  where<
-    RE extends string,
-    OP extends ComparisonOperatorExpression<DB, TB, RE>,
-  >(
+  where<RE extends string, OP extends ComparisonOperatorExpression<DB, TB, RE>>(
     lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
     op: OP,
     rhs: ApexOperandValueExpression<DB, TB, NoInfer<RE>, NoInfer<OP>>,
@@ -110,7 +106,10 @@ class ApexCountQueryBuilderImpl<DB, TB extends keyof DB>
             rhs,
             this.#props.queryNode.from.name,
           );
-    const queryNode = QueryNode.cloneWithWhere(this.#props.queryNode, operation);
+    const queryNode = QueryNode.cloneWithWhere(
+      this.#props.queryNode,
+      operation,
+    );
 
     validateSemiJoinWhere(queryNode.where?.where ?? operation);
 

@@ -1,4 +1,4 @@
-import { isApexBindExpression, type ApexBindExpression } from "#/apex-bind";
+import { type ApexBindExpression, isApexBindExpression } from "#/apex-bind";
 import type { AndNode } from "#/operation-node/and-node";
 import type { ApexBindNode } from "#/operation-node/apex-bind-node";
 import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
@@ -32,8 +32,11 @@ const KNOWLEDGE_APEX_BIND_ERROR =
 const MULTISELECT_APEX_BIND_ERROR =
   "Apex SOQL bind expressions cannot be used with INCLUDES or EXCLUDES.";
 
-type ApexFieldValue<DB, TB extends keyof DB, RE extends string> =
-  SalesforceFieldValue<FieldReferenceDefinition<DB, TB, RE>>;
+type ApexFieldValue<
+  DB,
+  TB extends keyof DB,
+  RE extends string,
+> = SalesforceFieldValue<FieldReferenceDefinition<DB, TB, RE>>;
 
 type ApexScalarBindValue<
   DB,
