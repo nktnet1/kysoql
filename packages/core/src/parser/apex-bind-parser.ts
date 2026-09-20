@@ -1,6 +1,11 @@
 import { isApexBindExpression, type ApexBindExpression } from "#/apex-bind";
 import type { AndNode } from "#/operation-node/and-node";
-import type { ApexBindExpressionNode } from "#/operation-node/apex-expression-node";
+import type {
+  ApexAdditionNode,
+  ApexBindExpressionNode,
+  ApexQueryResultNode,
+  ApexSubstringNode,
+} from "#/operation-node/apex-expression-node";
 import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 import { LimitNode } from "#/operation-node/limit-node";
 import type { NotNode } from "#/operation-node/not-node";
@@ -129,9 +134,21 @@ export function parseApexFilterBinaryOperation(
 
 const containsApexBind = (node: OperationNode): boolean => {
   switch (node.kind) {
-    case "ApexAdditionNode":
+    case "ApexAdditionNode": {
+      const addition = node as ApexAdditionNode;
+      containsApexBind(addition.leftOperand);
+      containsApexBind(addition.rightOperand);
+      return true;
+    }
     case "ApexBindNode":
+      return true;
+    case "ApexQueryResultNode": {
+      const queryResult = node as ApexQueryResultNode;
+      validateApexBindQuery(queryResult.query);
+      return true;
+    }
     case "ApexSubstringNode":
+      containsApexBind((node as ApexSubstringNode).source);
       return true;
     case "AndNode": {
       const and = node as AndNode;

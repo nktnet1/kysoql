@@ -3,11 +3,15 @@ import * as v from "valibot";
 import { ApexBindNode } from "#/operation-node/apex-bind-node";
 import {
   ApexAdditionNode,
+  ApexQueryResultNode,
   ApexSubstringNode,
   type ApexBindExpressionNode,
   type ApexExpressionOperandNode,
 } from "#/operation-node/apex-expression-node";
 import { ApexLiteralNode } from "#/operation-node/apex-literal-node";
+import type {
+  ApexSelectQueryBuilder,
+} from "#/query-builder/apex-select-query-builder";
 
 const APEX_BIND_EXPRESSION_ERROR =
   "Apex bind expressions must be identifiers or dotted member paths containing only letters, numbers, and underscores, and no path segment can start with a number.";
@@ -17,12 +21,18 @@ const APEX_SUBSTRING_SOURCE_ERROR =
   "Apex substring sources must be strings or string-valued Apex bind expressions.";
 const APEX_SUBSTRING_INDEX_ERROR =
   "Apex substring indexes must be non-negative integers, and endIndex must be greater than or equal to beginIndex.";
+const APEX_QUERY_FIELD_ERROR =
+  "Apex query-result fields must be simple selected field names containing only letters, numbers, and underscores, and must not start with a number.";
 const apexBindExpressionSchema = v.pipe(
   v.string(),
   v.regex(
     /^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/,
     APEX_BIND_EXPRESSION_ERROR,
   ),
+);
+const apexQueryFieldSchema = v.pipe(
+  v.string(),
+  v.regex(/^[A-Za-z_][A-Za-z0-9_]*$/, APEX_QUERY_FIELD_ERROR),
 );
 
 declare const apexBindValueType: unique symbol;
@@ -136,6 +146,26 @@ export function apexSubstring(
       beginIndex,
       endIndex,
     ),
+  );
+}
+
+export function apexQueryField<
+  DB,
+  TB extends keyof DB,
+  Output,
+  Field extends Extract<keyof Output, string>,
+>(
+  query: ApexSelectQueryBuilder<DB, TB, Output, "plain">,
+  field: Field,
+): ApexBindExpression<Output[Field]> {
+  const result = v.safeParse(apexQueryFieldSchema, field);
+
+  if (!result.success) {
+    throw new TypeError(APEX_QUERY_FIELD_ERROR);
+  }
+
+  return new ApexBindExpressionImpl<Output[Field]>(
+    ApexQueryResultNode.create(query.toOperationNode(), field),
   );
 }
 

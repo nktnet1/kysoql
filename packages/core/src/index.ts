@@ -4,6 +4,7 @@ export {
   type ApexBindExpression,
   apexAdd,
   apexBind,
+  apexQueryField,
   apexSubstring,
 } from "#/apex-bind";
 export type {
@@ -76,6 +77,7 @@ export type {
   ApexAdditionNode,
   ApexBindExpressionNode,
   ApexExpressionOperandNode,
+  ApexQueryResultNode,
   ApexSubstringNode,
 } from "#/operation-node/apex-expression-node";
 export type { BinaryOperationNode } from "#/operation-node/binary-operation-node";

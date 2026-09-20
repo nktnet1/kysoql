@@ -1,6 +1,11 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import { apexAdd, apexBind, apexSubstring } from "#/apex-bind";
+import {
+  apexAdd,
+  apexBind,
+  apexQueryField,
+  apexSubstring,
+} from "#/apex-bind";
 import { Kysoql } from "#/kysoql";
 import type { ApexSelectQueryBuilder } from "#/query-builder/apex-select-query-builder";
 import type {
@@ -210,6 +215,123 @@ describe("Apex bind expressions", () => {
       // @ts-expect-error LIMIT binds must be numeric, not string-valued method results.
       apex.limit(apexSubstring("123", 0, 2));
     }
+  });
+
+  it("compiles structured Apex query-result field bind expressions", () => {
+    const sourceAccount = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Name")
+      .apex()
+      .where("Id", "=", apexBind<string>("sourceAccount.Id"));
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .apex()
+      .where("Name", "=", apexQueryField(sourceAccount, "Name"));
+
+    expect(query.compile().soql).toBe(
+      "SELECT Id FROM Account WHERE Name = :[SELECT Name FROM Account WHERE Id = :sourceAccount.Id].Name",
+    );
+  });
+
+  it("recursively validates binds inside Apex query-result expressions", () => {
+    const knowledgeStatus = new Kysoql<FixtureSchema>()
+      .selectFrom("KnowledgeArticleVersion")
+      .select("PublishStatus")
+      .apex()
+      .where("PublishStatus", "=", apexBind<string>("status"));
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .apex()
+      .where(
+        "Name",
+        "=",
+        apexAdd(apexQueryField(knowledgeStatus, "PublishStatus"), ""),
+      );
+
+    expect(() => query.compile()).toThrow(
+      "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.",
+    );
+  });
+
+  it("keeps query-result field expressions typed and Apex-only", () => {
+    const normal = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id");
+    const apex = normal.apex();
+    const nameSource = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Name")
+      .apex();
+    const revenueSource = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("AnnualRevenue")
+      .apex();
+    const apiSource = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Name");
+    const functionSource = nameSource as unknown as ApexSelectQueryBuilder<
+      FixtureSchema,
+      "Account",
+      { readonly total: number },
+      "function"
+    >;
+
+    if (false) {
+      const name = apexQueryField(nameSource, "Name");
+      apex.where("Name", "=", name);
+      apex.where(
+        "AnnualRevenue",
+        "=",
+        apexQueryField(revenueSource, "AnnualRevenue"),
+      );
+
+      // @ts-expect-error Structured query-result binds require the explicit Apex context.
+      normal.where("Name", "=", name);
+      // @ts-expect-error The nested query itself must be an Apex select builder.
+      apexQueryField(apiSource, "Name");
+      // @ts-expect-error The accessed field must be present in the nested query output.
+      apexQueryField(nameSource, "Id");
+      // @ts-expect-error Query-result field access requires a plain-mode sObject query.
+      apexQueryField(functionSource, "total");
+      // @ts-expect-error Query-result field values must still match the outer field value type.
+      apex.where("AnnualRevenue", ">=", name);
+      apex.where(
+        "AnnualRevenue",
+        ">=",
+        // @ts-expect-error Nullable query-result values cannot satisfy ordered non-null operands.
+        apexQueryField(revenueSource, "AnnualRevenue"),
+      );
+      // @ts-expect-error Nullable query-result values cannot be used as LIMIT binds.
+      apex.limit(apexQueryField(revenueSource, "AnnualRevenue"));
+    }
+  });
+
+  it("creates frozen query-result nodes and validates accessed field names", () => {
+    const sourceAccount = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Name")
+      .apex();
+    const result = apexQueryField(sourceAccount, "Name");
+    const node = result.toOperationNode();
+
+    expect(node).toEqual({
+      kind: "ApexQueryResultNode",
+      query: sourceAccount.toOperationNode(),
+      field: "Name",
+      cardinality: "single",
+    });
+    expect(Object.isFrozen(node)).toBe(true);
+    if (node.kind === "ApexQueryResultNode") {
+      expect(Object.isFrozen(node.query)).toBe(true);
+    }
+
+    expect(() =>
+      apexQueryField(sourceAccount, "Name; DELETE" as "Name"),
+    ).toThrow(
+      "Apex query-result fields must be simple selected field names containing only letters, numbers, and underscores, and must not start with a number.",
+    );
   });
 
   it("compiles collection binds for IN and NOT IN without literal-list parentheses", () => {

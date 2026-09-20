@@ -23,8 +23,10 @@ import {
   type ApexBindNode,
   type ApexCountQueryBuilder,
   type ApexOperandValueExpression,
+  type ApexQueryResultNode,
   type ApexSelectQueryBuilder,
   apexBind,
+  apexQueryField,
   type BinaryOperationNode,
   type ComparisonOperator,
   type CompiledQuery,
@@ -190,6 +192,7 @@ type PublicTypeSurface = {
   apexBindExpression: ApexBindExpression<string>;
   apexBindNode: ApexBindNode;
   apexCountQueryBuilder: ApexCountQueryBuilder<Record<string, never>, never>;
+  apexQueryResultNode: ApexQueryResultNode;
   apexOperandValueExpression: ApexOperandValueExpression<
     Record<string, never>,
     never,
@@ -524,6 +527,7 @@ describe("@kysoql/core public API", () => {
     expect(QueryCreator).toBeTypeOf("function");
     expect(DefaultQueryCompiler).toBeTypeOf("function");
     expect(apexBind).toBeTypeOf("function");
+    expect(apexQueryField).toBeTypeOf("function");
     expect(soqlDate).toBeTypeOf("function");
     expect(soqlDateTime).toBeTypeOf("function");
     expect(soqlRelativeDate).toBeTypeOf("function");

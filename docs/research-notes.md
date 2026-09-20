@@ -1496,3 +1496,17 @@ the begin index, and compile the method expression under the existing single bin
 colon. Include the method node in the bind-detection walk so Knowledge-article
 rejection remains recursive. Arbitrary method names/calls and the separately
 documented query-result bind expression remain outside this slice.
+
+Kysoql consequence for `v1.0.103`: Salesforce's current Apex Developer Guide also
+demonstrates a static bind whose expression is a SOQL query result followed by a
+field access, in the form `:[SELECT Name FROM Account WHERE Id = :A.Id].Name`.
+Represent this only as structured builder state: `apexQueryField(...)` accepts a
+plain-mode `ApexSelectQueryBuilder` and a selected output key, returns an
+`ApexBindExpression` of that field's output value type, and stores the nested
+`SelectQueryNode` with explicit single-result cardinality in a frozen expression
+node. The compiler may recursively compile that AST under the outer bind colon; it
+must not accept a raw nested-query string. Nested query-result nodes must also
+participate in recursive Apex-bind validation so an inner Knowledge article query
+cannot bypass the existing restriction. Apex determines the bracket query's exact
+single-row cardinality at runtime, so Kysoql should document that contract rather
+than silently injecting `LIMIT 1`.

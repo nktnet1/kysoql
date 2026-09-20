@@ -729,7 +729,12 @@ SOQL. The generic describes the Apex value shape, while the helper accepts only 
 simple identifier or a dotted member path such as `filters.accountName`:
 
 ```ts
-import { apexAdd, apexBind, apexSubstring } from "@kysoql/core";
+import {
+  apexAdd,
+  apexBind,
+  apexQueryField,
+  apexSubstring,
+} from "@kysoql/core";
 
 const apexQuery = db
   .selectFrom("Account")
@@ -791,6 +796,36 @@ const substringBindQuery = db
 // AND Name LIKE :(filters.name.substring(0, 2) + '%')
 ```
 
+Salesforce also documents a static-Apex bind whose expression is itself a query
+result. Build that form with `apexQueryField(query, field)`. The nested query must be
+a plain-mode Apex select builder and `field` must be one of its selected output keys,
+so both the nested SOQL and the accessed value remain typed builder state rather than
+raw Apex/SOQL text:
+
+```ts
+const sourceAccount = db
+  .selectFrom("Account")
+  .select("Name")
+  .apex()
+  .where("Id", "=", apexBind<string>("sourceAccount.Id"));
+
+const queryResultBind = db
+  .selectFrom("Account")
+  .select("Id")
+  .apex()
+  .where("Name", "=", apexQueryField(sourceAccount, "Name"))
+  .compile();
+
+// SELECT Id FROM Account
+// WHERE Name = :[SELECT Name FROM Account WHERE Id = :sourceAccount.Id].Name
+```
+
+`apexQueryField(...)` models the query expression as a single-record result access,
+matching Apex's bracket-query member-access semantics. Salesforce enforces that
+cardinality at runtime: zero rows or more than one row can fail before the field is
+read. Kysoql therefore does not silently add `LIMIT 1`; callers should constrain the
+nested query according to their data model.
+
 Salesforce static Apex also permits a bind expression on the left side of
 `INCLUDES`. Kysoql exposes that as a separate Apex-only overload; the right side
 remains a validated literal list rather than another bind:
@@ -840,7 +875,10 @@ the documented `String.substring(beginIndex, endIndex)` family uses
 `apexAdd(...)` currently accepts string-with-string or number-with-number operands,
 can nest, and can include existing typed bind expressions. `apexSubstring(...)`
 returns a string-valued bind expression, accepts another string bind expression as
-its receiver, and can therefore compose with `apexAdd(...)`. `IN` / `NOT IN` binds
+its receiver, and can therefore compose with `apexAdd(...)`. `apexQueryField(...)`
+returns the selected nested-query field value type, accepts only plain-mode Apex
+select builders, and stores the nested query as AST rather than raw SOQL text.
+`IN` / `NOT IN` binds
 represent collections, grouped Apex callbacks
 support the same `and` / `or` / `not` composition as ordinary filters, and
 `LIMIT` / `OFFSET` accept numeric binds. Literal pagination values retain the

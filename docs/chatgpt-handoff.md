@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.100`
+## Current state after `v1.0.103`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -155,6 +155,7 @@ recent patch sequence:
 | `v1.0.100` | Add the documented Apex bind-left `INCLUDES` form across record, aggregate, bare-`COUNT()`, grouped-expression, and Apex relationship-subquery `WHERE` surfaces while preserving field-left right-hand-bind rejection. |
 | `v1.0.101` | Add structured Apex `+` bind expressions through `apexAdd(...)`, using frozen addition/literal AST nodes with typed string or numeric operands while preserving the existing Apex-only bind-position and Knowledge-article guardrails. |
 | `v1.0.102` | Add the documented structured Apex `String.substring(beginIndex, endIndex)` bind-expression family through `apexSubstring(...)`, with frozen method nodes, validated non-negative integer indexes, safe receiver composition, and no raw method-call escape hatch. |
+| `v1.0.103` | Add the documented static-Apex query-result bind-expression family through `apexQueryField(...)`, storing a typed plain-mode nested select AST plus selected output key and explicit single-result cardinality while keeping nested query text builder-owned. |
 
 ### Build/tooling state
 
@@ -406,9 +407,11 @@ Core currently has:
   literalValues)`, while structured `+` bind expressions use `apexAdd(...)` with
   same-family string or numeric operands and frozen Apex-expression AST nodes;
   structured string substring expressions use `apexSubstring(...)` with a
-  string-valued receiver plus validated non-negative integer bounds; raw arithmetic
-  and arbitrary method-call text remain rejected by `apexBind(...)`, and the
-  type/parser surface
+  string-valued receiver plus validated non-negative integer bounds; structured
+  nested query-result field expressions use `apexQueryField(...)` with a plain-mode
+  Apex builder, selected output key, and explicit single-result AST cardinality; raw
+  arithmetic, arbitrary method-call text, and raw nested-query strings remain
+  rejected by `apexBind(...)`, and the type/parser surface
   continues to reject right-hand bind values for field-left `INCLUDES` /
   `EXCLUDES`; compilation rejects
   `ORDER BY` on locking queries,
@@ -436,32 +439,30 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.103` if structured Apex-expression feature work
-continues.** `v1.0.102` adds the documented string-method bind example through
-`apexSubstring(value, beginIndex, endIndex)`. The receiver is typed as a string
-literal or existing string-valued Apex bind expression (including `apexAdd(...)` /
-nested substring results), indexes must be non-negative integers with
-`endIndex >= beginIndex`, and the compiler renders the method call inside the one
-leading Apex bind colon. The new method node is frozen and participates in the same
-Knowledge-article and Apex-only guardrails as all other bind-expression nodes.
+**The documented static-Apex bind-expression feature roadmap is complete through
+`v1.0.103`.** `v1.0.103` adds the remaining query-result example through
+`apexQueryField(query, field)`. The helper accepts only a plain-mode
+`ApexSelectQueryBuilder`, restricts `field` to that builder's selected output keys,
+returns the corresponding value type, stores the nested `SelectQueryNode` instead of
+raw query text, and records `cardinality: "single"` in the expression node. The
+compiler emits the builder-owned AST as `:[SELECT ...].Field`; nested bind validation
+remains recursive, including the Knowledge-article guard.
 
-The remaining documented static-Apex expression example is a bind whose expression
-is itself a query result. Treat that as an optional `v1.0.103` only if its query
-result/cardinality/value typing can be represented explicitly in the AST and public
-types. Do not model it as raw query text, and do not loosen `apexBind(...)` into a
-generic Apex/SOQL escape hatch. If that result-expression family is intentionally
-left out, return to release hardening / real-org fixtures rather than adding more
-ad-hoc expression strings.
+Do not add more ad-hoc Apex expression strings. The next useful patch, if work
+continues, should be **release hardening / real-org fixture coverage**: validate the
+built package/declarations against the now-complete public surface, add or refresh
+real-org static-Apex fixtures for the structured expression families where practical,
+and close any documentation/export parity gaps discovered by that audit.
 
-There are still no remaining small bind-**position** gaps in the current static-Apex
-SELECT surface. The `v1.0.84` specialist-object boundary also remains unchanged:
-do not infer big-object index rules from the `__b` suffix, do not encode
-external-adapter-specific limits without adapter metadata, and keep
-permission/cardinality-dependent caps as execution-context concerns. Automatic
-`Question` data-category taxonomy discovery remains deferred until a stable public
-JSforce/Salesforce transport path exists.
+There are no remaining small bind-position or documented bind-expression gaps in the
+current static-Apex SELECT roadmap. The `v1.0.84` specialist-object boundary remains
+unchanged: keep Big Object index validation, Data 360 relationship/query rules,
+external-object adapter-specific limits, and other permission/cardinality-dependent
+caps as execution-context concerns. Automatic `Question` data-category taxonomy
+discovery remains deferred until a stable public JSforce/Salesforce transport path
+exists.
 
-If the supplied bundle already contains `v1.0.102` or later, inspect the code and
+If the supplied bundle already contains `v1.0.103` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Follow-on roadmap after the consistency audit

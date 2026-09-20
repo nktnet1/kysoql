@@ -8,6 +8,7 @@ import type {
   ApexAdditionNode,
   ApexBindExpressionNode,
   ApexExpressionOperandNode,
+  ApexQueryResultNode,
   ApexSubstringNode,
 } from "#/operation-node/apex-expression-node";
 import type { ApexLiteralNode } from "#/operation-node/apex-literal-node";
@@ -319,6 +320,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
         return this.#compileAnd(node as AndNode);
       case "ApexAdditionNode":
       case "ApexBindNode":
+      case "ApexQueryResultNode":
       case "ApexSubstringNode":
         return this.#compileApexBind(node as ApexBindExpressionNode);
       case "BinaryOperationNode":
@@ -374,6 +376,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
         return (node as ApexBindNode).name;
       case "ApexLiteralNode":
         return this.#compileApexLiteral(node as ApexLiteralNode);
+      case "ApexQueryResultNode": {
+        const queryResult = node as ApexQueryResultNode;
+        return `[${this.compileQuery(queryResult.query).soql}].${queryResult.field}`;
+      }
       case "ApexSubstringNode": {
         const substring = node as ApexSubstringNode;
         return `${this.#compileApexExpression(

@@ -48,6 +48,10 @@ version is cut.
   `apexSubstring(...)`, with validated non-negative integer indexes, frozen method
   AST nodes, and composition with existing string binds / `apexAdd(...)` without
   admitting arbitrary Apex method-call text.
+- Structured single-row Apex query-result field bind expressions through
+  `apexQueryField(...)`, accepting only typed plain-mode Apex builders plus selected
+  output keys and compiling builder-owned query AST as `:[SELECT ...].Field` without
+  exposing a raw nested-query string escape hatch.
 - Release validation for built package exports, declaration files, CLI binaries,
   package metadata, package documentation, and changelog presence.
 
