@@ -36,7 +36,7 @@
     "test": "vitest run --dir tests --passWithNoTests",
     "typecheck": "pnpm typecheck:source && pnpm typecheck:test",
     "typecheck:source": "tsc -p tsconfig.json --noEmit",
-    "typecheck:test": "tsc -p tsconfig.test.json",
+    "typecheck:test": "tsc -p tests/tsconfig.json",
     "clean": "rm -rf dist coverage"
   },
   "dependencies": {

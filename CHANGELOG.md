@@ -62,6 +62,7 @@ version is cut.
 
 ### Fixed
 
+- Align VS Code and CLI TypeScript project discovery by placing canonical `tsconfig.json` files in each test/tooling tree and making package test typechecks compile those same editor-discoverable projects.
 - Coalesce repeated Salesforce Describe child-relationship names into one generated
   property with an exact union of the concrete child-object / foreign-key pairs,
   avoiding duplicate TypeScript property declarations without discarding metadata.

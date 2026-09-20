@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.108`
+## Current state after `v1.0.109`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -161,6 +161,7 @@ recent patch sequence:
 | `v1.0.106` | Harden the TypeScript-7 publish export scanner with direct Vitest coverage and correct type-only handling for `export default interface`, while keeping direct Node execution through explicit `.ts` script imports. |
 | `v1.0.107` | Make validation explicitly type-check source and test code as separate phases, including package Vitest suites, root test tooling, and the generated Salesforce TypeScript fixture. |
 | `v1.0.108` | Fix codegen for repeated Salesforce child-relationship names by emitting one property whose type is the exact union of the concrete relationship metadata pairs; refresh the real-org fixture so test typechecking succeeds. |
+| `v1.0.109` | Align VS Code/tsserver with CLI test typechecking by moving test projects to editor-discoverable `tsconfig.json` files under each test tree and making `typecheck:test` compile those same projects. |
 
 ### Build/tooling state
 
@@ -186,6 +187,12 @@ recent patch sequence:
   workspace, enforces explicit Node/public-access/tree-shaking/keyword metadata,
   checks package READMEs, and requires an Unreleased changelog section. Biome is
   intentionally separate under `pnpm check`.
+- Test/editor TypeScript projects use conventional discoverable names: each
+  `packages/*/tests/` directory has its own `tsconfig.json`, as do root `scripts/`
+  and `test/`; root `tsconfig.json` covers `vitest.config.ts`. Package
+  `typecheck:test` scripts compile the same `tests/tsconfig.json` that VS Code
+  discovers, so editor diagnostics and CLI validation use the same strict options
+  and `#/*` source aliases.
 
 ### Package import/export convention
 
@@ -445,7 +452,7 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The active feature and hardening roadmap is complete through `v1.0.108`.**
+**The active feature and hardening roadmap is complete through `v1.0.109`.**
 `v1.0.104` closes the release-audit gap rather than adding more SOQL grammar,
 `v1.0.105` repairs that verifier for TypeScript 7, whose package root no longer
 exposes the historical compiler API, `v1.0.106` adds direct scanner regression
@@ -455,7 +462,10 @@ phases of the root typecheck gate. `v1.0.108` fixes the first real regression ex
 by that gate: some real-org Describe metadata repeats a child `relationshipName` for
 multiple foreign-key fields. Codegen now groups those rows under one property and
 preserves every concrete child-object / field pair as a union instead of emitting
-duplicate TypeScript property declarations.
+duplicate TypeScript property declarations. `v1.0.109` then aligns editor and CLI
+project discovery: test directories now contain conventional `tsconfig.json` files,
+and package `typecheck:test` scripts compile those exact configs so VS Code no longer
+falls back to an inferred project without the package `#/*` aliases.
 `pnpm verify:publish` treats each publishable package's `src/index.ts` barrel as the
 public contract and compares it with both the built runtime named exports and the
 generated declaration exports after build. This
@@ -501,7 +511,7 @@ consistency audit:
    object rules, external-adapter-specific limits, and permission/cardinality
    dependent caps need authoritative metadata or execution-context hooks before
    they can become sound static/compiler guarantees.
-4. **Release hardening.** The baseline audit is complete through `v1.0.108`: built
+4. **Release hardening.** The baseline audit is complete through `v1.0.109`: built
    runtime/declaration export parity is verified against source barrels without
    depending on TypeScript's removed root compiler API, and the scratch-org fixture
    exercises the completed static-Apex bind-expression families. Continue only for
@@ -522,9 +532,11 @@ Preferred local validation after every patch:
 pnpm validate
 ```
 
-`pnpm typecheck` now runs explicit source and test phases. Package Vitest files
-are checked with their package-local `tsconfig.test.json`; root test tooling and
-`test/salesforce/salesforce.generated.ts` are checked by the root `tsconfig.test.json`.
+`pnpm typecheck` runs explicit source and test phases. Package Vitest files are
+checked with the same editor-discoverable `packages/*/tests/tsconfig.json` projects
+that VS Code loads. Root `scripts/`, `test/`, and `vitest.config.ts` likewise have
+conventional `tsconfig.json` projects, preventing inferred-project diagnostics from
+drifting away from CLI validation.
 
 Formatting/linting is separate:
 
