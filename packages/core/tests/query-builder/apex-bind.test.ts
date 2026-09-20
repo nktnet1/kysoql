@@ -87,6 +87,21 @@ describe("Apex bind expressions", () => {
     );
   });
 
+  it("compiles safe dotted Apex member-path binds", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .apex()
+      .where("Name", "=", apexBind<string>("filters.accountName"))
+      .where("Id", "in", apexBind<readonly string[]>("filters.accountIds"))
+      .limit(apexBind<number>("page.rowLimit"))
+      .offset(apexBind<number>("page.rowOffset"));
+
+    expect(query.compile().soql).toBe(
+      "SELECT Id FROM Account WHERE Name = :filters.accountName AND Id IN :filters.accountIds LIMIT :page.rowLimit OFFSET :page.rowOffset",
+    );
+  });
+
   it("compiles collection binds for IN and NOT IN without literal-list parentheses", () => {
     const query = new Kysoql<FixtureSchema>()
       .selectFrom("Account")
@@ -205,20 +220,40 @@ describe("Apex bind expressions", () => {
     );
   });
 
-  it("creates frozen bind nodes and validates bind identifiers", () => {
+  it("creates frozen bind nodes and validates bind expressions", () => {
     const binding = apexBind<string>("accountName");
+    const memberBinding = apexBind<string>("context.account.Name");
 
     expect(binding.toOperationNode()).toEqual({
       kind: "ApexBindNode",
       name: "accountName",
     });
+    expect(memberBinding.toOperationNode()).toEqual({
+      kind: "ApexBindNode",
+      name: "context.account.Name",
+    });
     expect(Object.isFrozen(binding.toOperationNode())).toBe(true);
-    expect(() => apexBind<string>("account.Name")).toThrow(
-      "Apex bind names must be simple identifiers containing only letters, numbers, and underscores, and must not start with a number.",
-    );
-    expect(() => apexBind<string>("1accountName")).toThrow(
-      "Apex bind names must be simple identifiers containing only letters, numbers, and underscores, and must not start with a number.",
-    );
+    expect(Object.isFrozen(memberBinding.toOperationNode())).toBe(true);
+
+    const invalidExpressions = [
+      "1accountName",
+      "account.1Name",
+      ".accountName",
+      "accountName.",
+      "account..Name",
+      "account.Name()",
+      "accounts[0].Name",
+      "accountName + otherName",
+      ":accountName",
+      " accountName",
+      "accountName ",
+    ];
+
+    for (const expression of invalidExpressions) {
+      expect(() => apexBind<string>(expression)).toThrow(
+        "Apex bind expressions must be identifiers or dotted member paths containing only letters, numbers, and underscores, and no path segment can start with a number.",
+      );
+    }
   });
 
   it("rejects Apex binds for KnowledgeArticleVersion queries", () => {
@@ -294,7 +329,7 @@ describe("Apex bind expressions", () => {
       apex.where("Id", "in", apexBind<string>("accountIds"));
       // @ts-expect-error Scalar operators do not accept collection binds.
       apex.where("Name", "=", apexBind<readonly string[]>("accountNames"));
-      // @ts-expect-error Bind expressions are not supported with INCLUDES/EXCLUDES.
+      // @ts-expect-error Right-hand binds are not supported with INCLUDES/EXCLUDES.
       apex.where("Tags__c", "includes", apexBind<readonly string[]>("tags"));
       apex.where(
         // @ts-expect-error Apex filters still require generated filterable metadata.

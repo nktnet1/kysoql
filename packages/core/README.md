@@ -49,10 +49,10 @@ The same Apex-only surface supports explicit `.withUserMode()` and
 those methods is called, so the generated SOQL does not assume an Apex API
 version's default access behavior.
 
-Apex `WHERE` bind expressions use the typed `apexBind<T>(name)` helper. Bind
-names are validated as simple identifiers, scalar binds preserve field-value
-typing, and `IN` / `NOT IN` collection binds compile without literal-list
-parentheses:
+Apex `WHERE` bind expressions use the typed `apexBind<T>(expression)` helper.
+Expressions are restricted to identifiers or dotted member paths, scalar binds
+preserve field-value typing, and `IN` / `NOT IN` collection binds compile without
+literal-list parentheses:
 
 ```ts
 import { apexBind } from "@kysoql/core";
@@ -73,9 +73,12 @@ const byName = db
 ```
 
 Grouped Apex filters support `and` / `or` / `not`, while `LIMIT` and `OFFSET`
-accept numeric binds in addition to their validated literal forms. Bind
-expressions are intentionally unavailable on ordinary API-executable builders,
-with `INCLUDES` / `EXCLUDES`, and for Knowledge article Apex queries.
+accept numeric binds in addition to their validated literal forms. `apexBind<T>`
+accepts a simple identifier or a dotted member path such as `filters.accountName`
+and rejects calls, indexing, arithmetic, and other raw fragments. Bind expressions
+are intentionally unavailable on ordinary API-executable builders, as right-hand
+values for Kysoql's field-left `INCLUDES` / `EXCLUDES` form, and for Knowledge
+article Apex queries.
 
 Aggregate-result and bare `COUNT()` queries can also switch to `.apex()` after
 their aggregate selection is built. They reuse access modes and supported bind

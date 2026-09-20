@@ -724,9 +724,9 @@ Repeated access-mode calls replace the previous mode. `WITH USER_MODE` /
 such as `WITH DATA CATEGORY`. `FOR UPDATE` is also rejected if the underlying
 query already contains `ORDER BY`.
 
-Apex-only `WHERE` binds use `apexBind<T>(name)` rather than embedding raw SOQL.
-The generic describes the Apex variable's value shape, while the helper validates
-the emitted bind name as a simple identifier:
+Apex-only `WHERE` binds use `apexBind<T>(expression)` rather than embedding raw
+SOQL. The generic describes the Apex value shape, while the helper accepts only a
+simple identifier or a dotted member path such as `filters.accountName`:
 
 ```ts
 import { apexBind } from "@kysoql/core";
@@ -751,15 +751,17 @@ const apexQuery = db
 ```
 
 Scalar binds work with typed direct and child-to-parent relationship filters,
-including temporal fields without converting the variable name into a SOQL
-literal. `IN` / `NOT IN` binds represent collections, grouped Apex callbacks
+including temporal fields without converting the Apex expression into a SOQL
+literal. Dotted member paths compile as expressions such as `:filters.accountName`;
+method calls, indexing, arithmetic, whitespace, and other raw fragments remain
+rejected. `IN` / `NOT IN` binds represent collections, grouped Apex callbacks
 support the same `and` / `or` / `not` composition as ordinary filters, and
 `LIMIT` / `OFFSET` accept numeric binds. Literal pagination values retain the
 normal Kysoql validation; a bound Apex value is validated by Salesforce when
-the Apex query runs. Salesforce does not allow bind expressions with `INCLUDES`
-/ `EXCLUDES`, and KnowledgeArticleVersion / `__kav` Apex queries reject binds at
-compilation. Ordinary REST/JSforce builders continue to accept only escaped
-literal values and typed subqueries.
+the Apex query runs. Kysoql's field-left `INCLUDES` / `EXCLUDES` form does not
+accept an `apexBind` as its right-hand value, and KnowledgeArticleVersion / `__kav`
+Apex queries reject binds at compilation. Ordinary REST/JSforce builders continue
+to accept only escaped literal values and typed subqueries.
 
 Aggregate-result and bare `COUNT()` queries can switch to the same compile-only
 Apex context after their aggregate selection is built. They reuse typed Apex

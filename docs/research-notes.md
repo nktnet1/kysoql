@@ -1371,7 +1371,10 @@ default to the caller's Apex/API-version context. Do not expose
 
 Sources re-checked on 2026-09-20:
 
+- https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/langCon_apex_SOQL_variables.htm
+- https://resources.docs.salesforce.com/latest/latest/en-us/sfdc/pdf/salesforce_apex_developer_guide.pdf
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-having.html
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-limit.html
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-offset.html
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-limits.html
@@ -1379,19 +1382,38 @@ Sources re-checked on 2026-09-20:
 
 Useful findings:
 
-- Apex SOQL can reference Apex variables and expressions when they are preceded
-  by `:`. The documented bind positions include `WHERE` filter literals and the
-  value of `IN` / `NOT IN`, which can bind collections dynamically.
-- Bind expressions are not supported by every filtering clause. In particular,
-  Salesforce documents `INCLUDES` / `EXCLUDES` separately for multi-select
-  picklists and does not support bind expressions there.
+- Across its static SOQL/SOSL examples, the Apex Developer Guide enumerates bind
+  positions including FIND search strings, `WHERE` filter literals, `IN` /
+  `NOT IN` values in `WHERE`, SOSL `WITH DIVISION`, and numeric `LIMIT` /
+  `OFFSET` values. For Kysoql's SOQL-only SELECT surface, the documented positions
+  already modeled are `WHERE` (including `IN` / `NOT IN`), `LIMIT`, and `OFFSET`.
+- The same Apex guide shows member access inside a bind expression (for example,
+  `:A.Id`). A safe builder can support that useful subset by validating each dot-
+  separated segment as an identifier without admitting arbitrary Apex code.
+- The guide also demonstrates richer static bind expressions, including arithmetic,
+  method calls, and a nested query result. `v1.0.98` deliberately does not accept
+  those forms as raw strings; supporting them later should use structured, typed
+  Apex-expression nodes rather than turn `apexBind(...)` into an escape hatch.
+- The same examples show binds in both an outer query and a parent-to-child
+  relationship subquery `WHERE` clause. That is a separately useful Apex-only
+  builder gap after member paths.
+- Salesforce's SOQL `HAVING` reference says the clause is similar to `WHERE`, but
+  the Apex bind-expression guide does not list `HAVING` as a static bind position.
+  Do not infer HAVING bind support merely from the clause similarity; require
+  explicit Salesforce documentation or an org-level static-Apex compile fixture
+  before adding it.
+- The current Apex guide demonstrates an `INCLUDES` example with the bind on the
+  left side (`:A.Type INCLUDES (...)`). That does not justify accepting an
+  `ApexBindExpression` as the right-hand value of Kysoql's existing field-left
+  `where(field, "includes", value)` shape; modeling bind-left multipicklist syntax
+  would be a separate API/type-system feature.
 - Salesforce's object-limit reference explicitly states that binding variables
   are not supported in Apex SOQL statements for `KnowledgeArticleVersion`; the
   same Knowledge article family includes custom `__kav` article-version types.
 - A safe TypeScript builder cannot validate the contents of an Apex variable that
   exists outside JavaScript. It can still type the expected value shape, restrict
-  the bind to supported clause positions, and validate the emitted bind identifier
-  instead of accepting a raw SOQL fragment.
+  the bind to supported clause positions, and validate the emitted bind expression
+  shape instead of accepting a raw SOQL fragment.
 
 Kysoql consequence for `v1.0.94`: add public `apexBind<T>(name)` expressions backed
 by a frozen `ApexBindNode`, and allow them only on `.apex().where(...)`. Scalar
@@ -1400,9 +1422,9 @@ readonly collection bind; relationship references retain the existing generated
 field/path typing; and date/datetime binds use the generated returned-value type
 rather than the REST literal wrappers because Apex evaluates the variable at
 runtime. Bind names are limited to simple identifiers so the feature cannot become
-a raw-SOQL escape hatch. Keep ordinary executable builders unchanged, reject binds
-with `INCLUDES` / `EXCLUDES`, and reject Knowledge article Apex binds at the
-compiler boundary.
+a raw-SOQL escape hatch. Keep ordinary executable builders unchanged, reject
+right-hand bind values with `INCLUDES` / `EXCLUDES`, and reject Knowledge article
+Apex binds at the compiler boundary.
 
 Kysoql consequence for `v1.0.95`: reuse the same bind node in top-level Apex
 `LIMIT` / `OFFSET` values and add an Apex-specific grouped `WHERE` expression
@@ -1418,7 +1440,13 @@ boundary to row-producing aggregate and scalar bare-`COUNT()` builders. The same
 SELECT grammar permits Apex access modes and `WHERE` binds for those query forms,
 so reuse the existing access-mode, grouped-filter, and pagination-bind plumbing.
 Keep `.forUpdate()` exclusive to the row-producing record builder because an
-aggregate/count result does not represent lockable sObject rows. Aggregate
-`HAVING` bind expressions remain a separate follow-up so their aggregate/date
-expression typing can be extended deliberately rather than by widening `WHERE`
-operand types.
+aggregate/count result does not represent lockable sObject rows.
+
+Kysoql correction for `v1.0.98`: do **not** add the previously planned aggregate
+`HAVING` bind surface. The current Apex bind-expression guide enumerates the
+supported static bind positions and does not include `HAVING`; the general SOQL
+HAVING documentation is not enough to prove static-Apex bind grammar. Instead,
+extend `apexBind<T>(...)` only from a single identifier to a validated dotted Apex
+member path such as `record.Id`. Keep calls, indexing, arithmetic, whitespace, and
+other arbitrary expression syntax rejected so the helper remains a typed bind
+primitive rather than a raw-SOQL/Apex fragment escape hatch.

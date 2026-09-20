@@ -2,11 +2,14 @@ import * as v from "valibot";
 
 import { ApexBindNode } from "#/operation-node/apex-bind-node";
 
-const APEX_BIND_NAME_ERROR =
-  "Apex bind names must be simple identifiers containing only letters, numbers, and underscores, and must not start with a number.";
-const apexBindNameSchema = v.pipe(
+const APEX_BIND_EXPRESSION_ERROR =
+  "Apex bind expressions must be identifiers or dotted member paths containing only letters, numbers, and underscores, and no path segment can start with a number.";
+const apexBindExpressionSchema = v.pipe(
   v.string(),
-  v.regex(/^[A-Za-z_][A-Za-z0-9_]*$/, APEX_BIND_NAME_ERROR),
+  v.regex(
+    /^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$/,
+    APEX_BIND_EXPRESSION_ERROR,
+  ),
 );
 
 declare const apexBindValueType: unique symbol;
@@ -21,8 +24,8 @@ class ApexBindExpressionImpl<Value> implements ApexBindExpression<Value> {
 
   readonly #node: ApexBindNode;
 
-  constructor(name: string) {
-    this.#node = ApexBindNode.create(name);
+  constructor(expression: string) {
+    this.#node = ApexBindNode.create(expression);
   }
 
   toOperationNode(): ApexBindNode {
@@ -30,14 +33,14 @@ class ApexBindExpressionImpl<Value> implements ApexBindExpression<Value> {
   }
 }
 
-export function apexBind<Value>(name: string): ApexBindExpression<Value> {
-  const result = v.safeParse(apexBindNameSchema, name);
+export function apexBind<Value>(expression: string): ApexBindExpression<Value> {
+  const result = v.safeParse(apexBindExpressionSchema, expression);
 
   if (!result.success) {
-    throw new TypeError(APEX_BIND_NAME_ERROR);
+    throw new TypeError(APEX_BIND_EXPRESSION_ERROR);
   }
 
-  return new ApexBindExpressionImpl<Value>(name);
+  return new ApexBindExpressionImpl<Value>(expression);
 }
 
 export function isApexBindExpression(

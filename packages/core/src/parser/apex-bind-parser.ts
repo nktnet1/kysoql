@@ -30,7 +30,7 @@ import type { SalesforceFieldValue } from "#/schema";
 const KNOWLEDGE_APEX_BIND_ERROR =
   "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.";
 const MULTISELECT_APEX_BIND_ERROR =
-  "Apex SOQL bind expressions cannot be used with INCLUDES or EXCLUDES.";
+  "Apex SOQL bind expressions are not supported as INCLUDES or EXCLUDES values.";
 
 type ApexFieldValue<
   DB,

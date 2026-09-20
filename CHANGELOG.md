@@ -26,11 +26,14 @@ version is cut.
   inferred default mode.
 - Typed Apex bind expressions for scalar and `IN` / `NOT IN` filters, grouped
   `WHERE` composition, and numeric `LIMIT` / `OFFSET`, including
-  relationship-field binds, validated bind identifiers, and Knowledge-article /
+  relationship-field binds, validated bind expressions, and Knowledge-article /
   multipicklist guardrails.
 - Compile-only Apex contexts for aggregate-result and bare `COUNT()` queries,
   reusing typed `WHERE` binds, pagination binds, and explicit access modes while
   keeping record locking record-only.
+- Safe dotted Apex member-path bind expressions such as `:record.Id` across the
+  existing typed `WHERE`, `IN` / `NOT IN`, `LIMIT`, and `OFFSET` bind positions,
+  without opening a raw-SOQL expression escape hatch.
 - Release validation for built package exports, declaration files, CLI binaries,
   package metadata, package documentation, and changelog presence.
 
