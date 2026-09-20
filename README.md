@@ -750,6 +750,25 @@ const apexQuery = db
 // LIMIT :rowLimit OFFSET :rowOffset
 ```
 
+Parent-to-child relationship subqueries can use the same typed `WHERE` binds,
+but only after the root query has switched to the compile-only Apex context:
+
+```ts
+const accountsWithContacts = db
+  .selectFrom("Account")
+  .select("Id")
+  .apex()
+  .selectSubquery("Contacts", (contacts) =>
+    contacts
+      .select(["Id", "LastName"])
+      .where("LastName", "like", apexBind<string>("filters.lastName")),
+  )
+  .compile();
+
+// SELECT Id, (SELECT Id, LastName FROM Contacts
+// WHERE LastName LIKE :filters.lastName) FROM Account
+```
+
 Scalar binds work with typed direct and child-to-parent relationship filters,
 including temporal fields without converting the Apex expression into a SOQL
 literal. Dotted member paths compile as expressions such as `:filters.accountName`;
@@ -761,7 +780,8 @@ normal Kysoql validation; a bound Apex value is validated by Salesforce when
 the Apex query runs. Kysoql's field-left `INCLUDES` / `EXCLUDES` form does not
 accept an `apexBind` as its right-hand value, and KnowledgeArticleVersion / `__kav`
 Apex queries reject binds at compilation. Ordinary REST/JSforce builders continue
-to accept only escaped literal values and typed subqueries.
+to accept only escaped literal values and typed subqueries. Relationship
+subqueries also keep Salesforce's existing no-semi-join restriction in Apex mode.
 
 Aggregate-result and bare `COUNT()` queries can switch to the same compile-only
 Apex context after their aggregate selection is built. They reuse typed Apex

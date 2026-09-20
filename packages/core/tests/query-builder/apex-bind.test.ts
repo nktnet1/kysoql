@@ -1,12 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
 import { apexBind } from "#/apex-bind";
 import { Kysoql } from "#/kysoql";
+import type { ApexSelectQueryBuilder } from "#/query-builder/apex-select-query-builder";
 import type {
+  SalesforceChildRelationship,
   SalesforceField,
   SalesforceObject,
   SalesforceParentRelationship,
+  SalesforceQueryResult,
 } from "#/schema";
+import type { Simplify } from "#/util/type-utils";
 
 type Field<
   Value = string,
@@ -26,24 +30,31 @@ type Field<
 >;
 
 interface FixtureSchema {
-  readonly Account: SalesforceObject<{
-    readonly Id: Field<string, "id">;
-    readonly Name: Field;
-    readonly CreatedDate: Field<string, "datetime">;
-    readonly AnnualRevenue: Field<number, "currency", true>;
-    readonly Unfilterable__c: SalesforceField<
-      string,
-      "string",
-      false,
-      false,
-      true,
-      true
-    >;
-    readonly Tags__c: Field<string, "multipicklist", false, "A" | "B">;
-  }>;
+  readonly Account: SalesforceObject<
+    {
+      readonly Id: Field<string, "id">;
+      readonly Name: Field;
+      readonly CreatedDate: Field<string, "datetime">;
+      readonly AnnualRevenue: Field<number, "currency", true>;
+      readonly Unfilterable__c: SalesforceField<
+        string,
+        "string",
+        false,
+        false,
+        true,
+        true
+      >;
+      readonly Tags__c: Field<string, "multipicklist", false, "A" | "B">;
+    },
+    Record<string, never>,
+    {
+      readonly Contacts: SalesforceChildRelationship<"Contact", "AccountId">;
+    }
+  >;
   readonly Contact: SalesforceObject<
     {
       readonly Id: Field<string, "id">;
+      readonly LastName: Field;
       readonly AccountId: SalesforceField<
         string,
         "reference",
@@ -63,15 +74,31 @@ interface FixtureSchema {
       >;
     }
   >;
-  readonly KnowledgeArticleVersion: SalesforceObject<{
-    readonly Id: Field<string, "id">;
-    readonly PublishStatus: Field<string, "picklist">;
-  }>;
+  readonly KnowledgeArticleVersion: SalesforceObject<
+    {
+      readonly Id: Field<string, "id">;
+      readonly PublishStatus: Field<string, "picklist">;
+    },
+    Record<string, never>,
+    {
+      readonly Contacts: SalesforceChildRelationship<"Contact", "AccountId">;
+    }
+  >;
   readonly FAQ__kav: SalesforceObject<{
     readonly Id: Field<string, "id">;
     readonly PublishStatus: Field<string, "picklist">;
   }>;
 }
+
+type ApexOutputOf<Query> =
+  Query extends ApexSelectQueryBuilder<
+    infer _DB,
+    infer _TB,
+    infer Output,
+    infer _Mode
+  >
+    ? Output
+    : never;
 
 describe("Apex bind expressions", () => {
   it("compiles scalar bind expressions in Apex WHERE filters", () => {
@@ -113,6 +140,40 @@ describe("Apex bind expressions", () => {
     expect(query.compile().soql).toBe(
       "SELECT Id FROM Account WHERE Id IN :accountIds AND Name NOT IN :excludedNames",
     );
+  });
+
+  it("compiles Apex binds inside parent-to-child relationship subqueries", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .apex()
+      .selectSubquery("Contacts", (contacts) =>
+        contacts
+          .select(["Id", "LastName"])
+          .where("LastName", "like", apexBind<string>("filters.lastName"))
+          .where(
+            "Id",
+            "in",
+            apexBind<readonly string[]>("filters.contactIds"),
+          )
+          .where((eb) =>
+            eb.or([
+              eb("LastName", "=", apexBind<string>("filters.firstName")),
+              eb("LastName", "=", "Smith"),
+            ]),
+          ),
+      );
+
+    expect(query.compile().soql).toBe(
+      "SELECT Id, (SELECT Id, LastName FROM Contacts WHERE LastName LIKE :filters.lastName AND Id IN :filters.contactIds AND (LastName = :filters.firstName OR LastName = 'Smith')) FROM Account",
+    );
+    expectTypeOf<Simplify<ApexOutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly Id: string;
+      readonly Contacts: SalesforceQueryResult<{
+        readonly Id: string;
+        readonly LastName: string;
+      }>;
+    }>();
   });
 
   it("supports grouped Apex WHERE expressions containing binds", () => {
@@ -278,6 +339,15 @@ describe("Apex bind expressions", () => {
       .select("Id")
       .apex()
       .offset(apexBind<number>("rowOffset"));
+    const relationshipQuery = new Kysoql<FixtureSchema>()
+      .selectFrom("KnowledgeArticleVersion")
+      .select("Id")
+      .apex()
+      .selectSubquery("Contacts", (contacts) =>
+        contacts
+          .select("Id")
+          .where("LastName", "=", apexBind<string>("lastName")),
+      );
 
     expect(() => query.compile()).toThrow(
       "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.",
@@ -289,6 +359,9 @@ describe("Apex bind expressions", () => {
       "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.",
     );
     expect(() => offsetQuery.compile()).toThrow(
+      "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.",
+    );
+    expect(() => relationshipQuery.compile()).toThrow(
       "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.",
     );
   });
@@ -305,6 +378,12 @@ describe("Apex bind expressions", () => {
       normal.limit(apexBind<number>("rowLimit"));
       // @ts-expect-error OFFSET binds require the explicit Apex context.
       normal.offset(apexBind<number>("rowOffset"));
+      normal.selectSubquery("Contacts", (contacts) => {
+        // @ts-expect-error Relationship-subquery binds require the explicit Apex context.
+        contacts.where("LastName", "=", apexBind<string>("lastName"));
+
+        return contacts.select("Id");
+      });
 
       const apex = normal.apex();
       apex.where("Name", "=", apexBind<string>("accountName"));
@@ -318,6 +397,25 @@ describe("Apex bind expressions", () => {
       );
       apex.limit(apexBind<number>("rowLimit"));
       apex.offset(apexBind<number>("rowOffset"));
+      apex.selectSubquery("Contacts", (contacts) => {
+        contacts.where("LastName", "=", apexBind<string>("lastName"));
+        contacts.where(
+          "Id",
+          "in",
+          apexBind<readonly string[]>("contactIds"),
+        );
+        contacts.where((eb) =>
+          eb.and([
+            eb("LastName", "=", apexBind<string>("firstName")),
+            eb("LastName", "!=", apexBind<string>("excludedName")),
+          ]),
+        );
+
+        // @ts-expect-error Relationship subqueries still reject semi-joins in Apex mode.
+        contacts.where("AccountId", "in", () => null as never);
+
+        return contacts.select("Id");
+      });
 
       // @ts-expect-error LIMIT binds must be numeric.
       apex.limit(apexBind<string>("rowLimit"));

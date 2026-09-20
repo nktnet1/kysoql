@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.98`, the next patch
-   is `v1.0.99`.
+   reuse or rewrite a version already handed off. After `v1.0.99`, the next patch
+   is `v1.0.100`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.98`
+## Current state after `v1.0.99`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -151,6 +151,7 @@ recent patch sequence:
 | `v1.0.96` | Extend the terminal compile-only Apex context to aggregate-result and bare-`COUNT()` builders, reusing typed `WHERE`/pagination binds and access modes while keeping `FOR UPDATE` record-only. |
 | `v1.0.97` | Fix the Apex aggregate regression fixture so `AnnualRevenue` explicitly carries the generated `aggregatable: true` capability required by typed `SUM()` selection. |
 | `v1.0.98` | Correct the stale aggregate-HAVING bind plan against the current Apex bind grammar and add safe dotted `apexBind<T>` member paths such as `:record.Id` across the existing supported bind positions. |
+| `v1.0.99` | Add Apex-only `WHERE` binds inside parent-to-child relationship subqueries, preserving child selection/output typing, function-mode/depth rules, and the existing no-semi-join boundary while keeping API-executable relationship subqueries bind-free. |
 
 ### Build/tooling state
 
@@ -391,10 +392,13 @@ Core currently has:
   without locking, and bare `COUNT()` keeps its existing `LIMIT`-only shape;
   scalar binds follow generated field/relationship value types, `IN` / `NOT IN`
   binds require readonly collections, grouped callbacks retain `and` / `or` /
-  `not` composition and existing semi-join nesting rules, and bind expressions are
-  restricted to simple identifiers or dotted member paths (for example
-  `record.Id`) rather than arbitrary Apex/raw-SOQL fragments; ordinary REST/JSforce
-  builders expose none of those Apex forms; the type/parser surface rejects
+  `not` composition and existing semi-join nesting rules, row-producing Apex
+  queries can add parent-to-child `.selectSubquery(...)` selections whose child
+  `WHERE` clauses use the same bind types while retaining the relationship
+  subquery no-semi-join rule, and bind expressions are restricted to simple
+  identifiers or dotted member paths (for example `record.Id`) rather than
+  arbitrary Apex/raw-SOQL fragments; ordinary REST/JSforce builders expose none
+  of those Apex forms; the type/parser surface rejects
   right-hand bind values for field-left `INCLUDES` / `EXCLUDES`, while compilation
   rejects `ORDER BY` on locking queries,
   competing `WITH` filtering forms alongside an Apex access mode, and
@@ -420,24 +424,26 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.99` and should continue feature work.**
-`v1.0.98` corrects the prior handoff's aggregate-`HAVING` bind assumption after
-re-checking the current Apex Developer Guide. Static Apex bind positions are
-enumerated there and do not include `HAVING`, so `v1.0.98` does not widen the
-aggregate HAVING grammar. Instead, it adds the documented and safely representable
-`:record.Id`-style member-access subset to `apexBind<T>(...)`, while continuing to
-reject calls, indexing, arithmetic, whitespace, and arbitrary fragments.
+**The next patch should be `v1.0.100` if feature work continues.** `v1.0.99`
+closes the documented nested relationship-query bind gap by adding
+`.apex().selectSubquery(...)` to the row-producing Apex builder. The child builder
+inherits an Apex-only filter mode, so scalar/collection/grouped `WHERE` binds work
+inside parent-to-child subqueries without making ordinary REST/JSforce
+`RelationshipSubqueryBuilder` values accept `ApexBindExpression`. The existing
+four-child-depth limit, selection/output inference, SELECT-function compatibility,
+field capability checks, and relationship-subquery semi-join prohibition remain
+unchanged.
 
-The next documented Apex-bind gap is inside parent-to-child relationship subquery
-`WHERE` clauses: Salesforce's Apex guide shows binds in a nested relationship
-query as well as the outer query. Implement that only through an **Apex-only**
-subquery surface so ordinary REST/JSforce `RelationshipSubqueryBuilder` values
-continue to reject `ApexBindExpression`. Preserve the existing relationship-depth,
-selection-output, filterability, function-mode, and semi-join restrictions;
-do not solve it by making all relationship subqueries accept binds. If a clean
-Apex-only selection/subquery boundary requires a broader public-API redesign, stop
-at the smallest structural slice that establishes that boundary rather than
-leaking Apex syntax into executable builders.
+The remaining Apex-bind ideas are separate optional features rather than missing
+coverage in the current builder. The smallest documented candidate is Salesforce's
+bind-left multipicklist form (`:binding INCLUDES (...)` / `EXCLUDES` if confirmed
+by the same current static-Apex source). Model that as a distinct typed expression
+shape; do **not** reinterpret the existing field-left
+`where(field, "includes", value)` API or allow an `ApexBindExpression` as its
+right-hand value. Richer Apex expressions such as calls or arithmetic should stay
+deferred until they can be represented by structured typed nodes instead of raw
+strings. If neither optional feature is taken, move back to release hardening and
+real-org fixtures rather than inventing unsupported grammar.
 
 The `v1.0.84` object-limit audit still defines the boundary for specialist-object
 work: do not infer big-object index rules from the `__b` suffix, do not encode
@@ -446,7 +452,7 @@ permission/cardinality-dependent feed/object caps as execution-context concerns.
 Automatic `Question` data-category taxonomy discovery also remains deferred until
 a stable public JSforce/Salesforce transport path exists.
 
-If the supplied bundle already contains `v1.0.98` or later, inspect the code and
+If the supplied bundle already contains `v1.0.99` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Follow-on roadmap after the consistency audit

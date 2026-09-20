@@ -16,12 +16,17 @@ import {
 } from "#/operation-node/operator-node";
 import type { OrNode } from "#/operation-node/or-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
+import type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 import type { SelectQueryNode } from "#/operation-node/select-query-node";
+import type { SelectionNode } from "#/operation-node/selection-node";
 import type {
   ComparisonOperatorExpression,
   OperandValueExpression,
 } from "#/parser/binary-operation-parser";
-import { parseFilterBinaryOperation } from "#/parser/filter-parser";
+import {
+  type FilterBinaryOperationOptions,
+  parseFilterBinaryOperation,
+} from "#/parser/filter-parser";
 import { parseLimit } from "#/parser/limit-parser";
 import { parseOffset } from "#/parser/offset-parser";
 import type { FieldReferenceDefinition } from "#/parser/reference-parser";
@@ -65,8 +70,9 @@ export type ApexOperandValueExpression<
   TB extends keyof DB,
   RE extends string,
   OP extends ComparisonOperatorExpression<DB, TB, RE>,
+  AllowSemiJoin extends boolean = true,
 > =
-  | OperandValueExpression<DB, TB, RE, OP>
+  | OperandValueExpression<DB, TB, RE, OP, AllowSemiJoin>
   | ApexBindOperandValueExpression<DB, TB, RE, OP>;
 
 export function parseApexLimit(
@@ -89,10 +95,10 @@ export function parseApexFilterBinaryOperation(
   left: string,
   operator: ComparisonOperator,
   right: unknown,
-  outerObject: string,
+  options: FilterBinaryOperationOptions = {},
 ): BinaryOperationNode {
   if (!isApexBindExpression(right)) {
-    return parseFilterBinaryOperation(left, operator, right, { outerObject });
+    return parseFilterBinaryOperation(left, operator, right, options);
   }
 
   if (operator === "includes" || operator === "excludes") {
@@ -127,6 +133,16 @@ const containsApexBind = (node: OperationNode): boolean => {
       const or = node as OrNode;
       return containsApexBind(or.left) || containsApexBind(or.right);
     }
+    case "RelationshipSubqueryNode": {
+      const subquery = node as RelationshipSubqueryNode;
+
+      return (
+        (subquery.where ? containsApexBind(subquery.where.where) : false) ||
+        (subquery.selections?.some(containsApexBind) ?? false)
+      );
+    }
+    case "SelectionNode":
+      return containsApexBind((node as SelectionNode).selection);
     default:
       return false;
   }
@@ -143,6 +159,7 @@ const isKnowledgeArticleObject = (objectName: string): boolean => {
 export function validateApexBindQuery(query: SelectQueryNode): void {
   const hasBind =
     (query.where ? containsApexBind(query.where.where) : false) ||
+    (query.selections?.some(containsApexBind) ?? false) ||
     (query.limit ? typeof query.limit.limit !== "number" : false) ||
     (query.offset ? typeof query.offset.offset !== "number" : false);
 

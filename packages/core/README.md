@@ -72,13 +72,30 @@ const byName = db
   .compile();
 ```
 
+After `.apex()`, parent-to-child relationship subqueries can use the same typed
+scalar, collection, and grouped `WHERE` binds:
+
+```ts
+const withContacts = db
+  .selectFrom("Account")
+  .select("Id")
+  .apex()
+  .selectSubquery("Contacts", (contacts) =>
+    contacts
+      .select(["Id", "LastName"])
+      .where("LastName", "=", apexBind<string>("filters.lastName")),
+  )
+  .compile();
+```
+
 Grouped Apex filters support `and` / `or` / `not`, while `LIMIT` and `OFFSET`
 accept numeric binds in addition to their validated literal forms. `apexBind<T>`
 accepts a simple identifier or a dotted member path such as `filters.accountName`
 and rejects calls, indexing, arithmetic, and other raw fragments. Bind expressions
 are intentionally unavailable on ordinary API-executable builders, as right-hand
 values for Kysoql's field-left `INCLUDES` / `EXCLUDES` form, and for Knowledge
-article Apex queries.
+article Apex queries. Relationship subqueries remain bind-free outside the Apex
+context and continue to reject semi-joins.
 
 Aggregate-result and bare `COUNT()` queries can also switch to `.apex()` after
 their aggregate selection is built. They reuse access modes and supported bind

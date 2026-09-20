@@ -34,6 +34,9 @@ version is cut.
 - Safe dotted Apex member-path bind expressions such as `:record.Id` across the
   existing typed `WHERE`, `IN` / `NOT IN`, `LIMIT`, and `OFFSET` bind positions,
   without opening a raw-SOQL expression escape hatch.
+- Apex-only parent-to-child relationship subqueries can use typed scalar,
+  collection, and grouped `WHERE` binds after the root query switches to
+  `.apex()`, while API-executable relationship subqueries remain bind-free.
 - Release validation for built package exports, declaration files, CLI binaries,
   package metadata, package documentation, and changelog presence.
 

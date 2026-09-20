@@ -210,7 +210,7 @@ export interface SelectQueryBuilder<
 
   executeAll(): Promise<readonly O[]>;
 
-  apex(): ApexSelectQueryBuilder<DB, TB, O>;
+  apex(): ApexSelectQueryBuilder<DB, TB, O, Mode>;
 
   limit(limit: number): SelectQueryBuilder<DB, TB, O, Mode>;
 
@@ -422,8 +422,8 @@ class SelectQueryBuilderImpl<
     return this.#props.queryExecutor.executeAllQuery(this.compile());
   }
 
-  apex(): ApexSelectQueryBuilder<DB, TB, O> {
-    return createApexSelectQueryBuilder<DB, TB, O>(this.#props);
+  apex(): ApexSelectQueryBuilder<DB, TB, O, Mode> {
+    return createApexSelectQueryBuilder<DB, TB, O, Mode>(this.#props);
   }
 
   limit(limit: number): SelectQueryBuilder<DB, TB, O, Mode> {
@@ -857,6 +857,7 @@ class SelectQueryBuilderImpl<
         queryNode: RelationshipSubqueryNode.create(
           ReferenceNode.create(relationship),
         ),
+        apex: false,
       }),
     );
 

@@ -3,6 +3,10 @@ import {
   type SelectExpressionBuilder,
 } from "#/expression/aggregate-function-builder";
 import {
+  type ApexWhereExpressionFactory,
+  createApexExpressionBuilder,
+} from "#/expression/apex-expression-builder";
+import {
   createExpressionBuilder,
   type WhereExpressionFactory,
 } from "#/expression/expression-builder";
@@ -21,6 +25,10 @@ import { QueryNode } from "#/operation-node/query-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
 import { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 import { SelectionNode } from "#/operation-node/selection-node";
+import {
+  type ApexOperandValueExpression,
+  parseApexFilterBinaryOperation,
+} from "#/parser/apex-bind-parser";
 import {
   type ComparisonOperatorExpression,
   type FilterableFieldName,
@@ -110,42 +118,67 @@ type DistanceOrderByFactory<DB, TB extends keyof DB> = (
   eb: GeolocationExpressionBuilder<DB, TB>,
 ) => DistanceFunctionExpression<unknown, boolean, true>;
 
+type RelationshipWhereExpressionFactory<
+  DB,
+  TB extends keyof DB,
+  ApexMode extends boolean,
+> = ApexMode extends true
+  ? ApexWhereExpressionFactory<DB, TB, false>
+  : WhereExpressionFactory<DB, TB, false>;
+
+type RelationshipOperandValueExpression<
+  DB,
+  TB extends keyof DB,
+  RE extends string,
+  OP extends ComparisonOperatorExpression<DB, TB, RE>,
+  ApexMode extends boolean,
+> = ApexMode extends true
+  ? ApexOperandValueExpression<DB, TB, RE, OP, false>
+  : OperandValueExpression<DB, TB, RE, OP, false>;
+
 export interface RelationshipSubqueryBuilder<
   DB,
   TB extends keyof DB,
   O,
   Depth extends ParentToChildDepth = readonly [unknown],
   FunctionMode extends RelationshipSubqueryFunctionMode = "none",
+  ApexMode extends boolean = false,
 > {
   limit(
     limit: number,
-  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode>;
+  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
 
   orderBy(
     expression: DistanceOrderByFactory<DB, TB>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
-  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode>;
+  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
 
   orderBy<OE extends string>(
     field: OE & SortableFieldName<DB, TB, OE>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
-  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode>;
+  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
 
   where(
-    expression: WhereExpressionFactory<DB, TB, false>,
-  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode>;
+    expression: RelationshipWhereExpressionFactory<DB, TB, ApexMode>,
+  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
 
   where<
     RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
-    RHS extends OperandValueExpression<DB, TB, RE, NoInfer<OP>, false>,
+    RHS extends RelationshipOperandValueExpression<
+      DB,
+      TB,
+      RE,
+      NoInfer<OP>,
+      ApexMode
+    >,
   >(
     lhs: RE & FilterableFieldName<DB, TB, RE>,
     op: OP,
     rhs: RHS,
-  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode>;
+  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
 
   select<SE extends string>(
     selections: ReadonlyArray<
@@ -158,7 +191,8 @@ export interface RelationshipSubqueryBuilder<
     TB,
     O & Selection<DB, TB, SE>,
     Depth,
-    FunctionMode
+    FunctionMode,
+    ApexMode
   >;
 
   select<FunctionSelection extends SelectFunctionSelectionArg>(
@@ -171,7 +205,8 @@ export interface RelationshipSubqueryBuilder<
     TB,
     O & SelectFunctionSelection<FunctionSelection>,
     Depth,
-    "present"
+    "present",
+    ApexMode
   >;
 
   select<SE extends string>(
@@ -183,7 +218,8 @@ export interface RelationshipSubqueryBuilder<
     TB,
     O & Selection<DB, TB, SE>,
     Depth,
-    FunctionMode
+    FunctionMode,
+    ApexMode
   >;
 
   selectFields<Selector extends FieldsSelector>(
@@ -194,7 +230,8 @@ export interface RelationshipSubqueryBuilder<
     TB,
     O & FieldsSelection<DB, TB, Selector>,
     Depth,
-    FunctionMode
+    FunctionMode,
+    ApexMode
   >;
 
   selectSubquery<
@@ -210,14 +247,16 @@ export interface RelationshipSubqueryBuilder<
         ChildObjectForRelationship<DB, TB, Relationship>,
         unknown,
         NextParentToChildDepth<Depth>,
-        ChildFunctionMode<FunctionMode>
+        ChildFunctionMode<FunctionMode>,
+        ApexMode
       >,
     ) => RelationshipSubqueryBuilder<
       DB,
       ChildObjectForRelationship<DB, TB, Relationship>,
       SubqueryOutput,
       NextParentToChildDepth<Depth>,
-      SubqueryFunctionMode
+      SubqueryFunctionMode,
+      ApexMode
     >,
   ): RelationshipSubqueryBuilder<
     DB,
@@ -228,7 +267,8 @@ export interface RelationshipSubqueryBuilder<
       >;
     },
     Depth,
-    MergeFunctionMode<FunctionMode, SubqueryFunctionMode>
+    MergeFunctionMode<FunctionMode, SubqueryFunctionMode>,
+    ApexMode
   >;
 
   toOperationNode(): RelationshipSubqueryNode;
@@ -240,18 +280,26 @@ class RelationshipSubqueryBuilderImpl<
   O,
   Depth extends ParentToChildDepth,
   FunctionMode extends RelationshipSubqueryFunctionMode,
-> implements RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode>
+  ApexMode extends boolean,
+> implements RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>
 {
-  readonly #props: RelationshipSubqueryBuilderProps;
+  readonly #props: RelationshipSubqueryBuilderProps<ApexMode>;
 
-  constructor(props: RelationshipSubqueryBuilderProps) {
+  constructor(props: RelationshipSubqueryBuilderProps<ApexMode>) {
     this.#props = freeze(props);
   }
 
   limit(
     limit: number,
-  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode> {
-    return new RelationshipSubqueryBuilderImpl<DB, TB, O, Depth, FunctionMode>({
+  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode> {
+    return new RelationshipSubqueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      Depth,
+      FunctionMode,
+      ApexMode
+    >({
       ...this.#props,
       queryNode: RelationshipSubqueryNode.cloneWithLimit(
         this.#props.queryNode,
@@ -264,17 +312,17 @@ class RelationshipSubqueryBuilderImpl<
     expression: DistanceOrderByFactory<DB, TB>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
-  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode>;
+  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
   orderBy<OE extends string>(
     field: OE & SortableFieldName<DB, TB, OE>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
-  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode>;
+  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
   orderBy(
     fieldOrExpression: string | DistanceOrderByFactory<DB, TB>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
-  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode> {
+  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode> {
     const item =
       typeof fieldOrExpression === "function"
         ? parseDistanceOrderBy(
@@ -284,7 +332,14 @@ class RelationshipSubqueryBuilderImpl<
           )
         : parseOrderBy(fieldOrExpression, direction, nulls);
 
-    return new RelationshipSubqueryBuilderImpl<DB, TB, O, Depth, FunctionMode>({
+    return new RelationshipSubqueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      Depth,
+      FunctionMode,
+      ApexMode
+    >({
       ...this.#props,
       queryNode: RelationshipSubqueryNode.cloneWithOrderByItems(
         this.#props.queryNode,
@@ -294,22 +349,46 @@ class RelationshipSubqueryBuilderImpl<
   }
 
   where(
-    lhsOrExpression: string | WhereExpressionFactory<DB, TB, false>,
+    lhsOrExpression:
+      | string
+      | RelationshipWhereExpressionFactory<DB, TB, ApexMode>,
     op?: ComparisonOperator,
     rhs?: unknown,
-  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode> {
+  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode> {
     const operation =
       typeof lhsOrExpression === "function"
-        ? lhsOrExpression(
-            createExpressionBuilder<DB, TB, false>({ allowSemiJoin: false }),
-          ).toOperationNode()
-        : parseValueBinaryOperation(
-            lhsOrExpression,
-            op as ComparisonOperator,
-            rhs,
-          );
+        ? this.#props.apex
+          ? (
+              lhsOrExpression as ApexWhereExpressionFactory<DB, TB, false>
+            )(
+              createApexExpressionBuilder<DB, TB, false>({
+                allowSemiJoin: false,
+              }),
+            ).toOperationNode()
+          : (lhsOrExpression as WhereExpressionFactory<DB, TB, false>)(
+              createExpressionBuilder<DB, TB, false>({ allowSemiJoin: false }),
+            ).toOperationNode()
+        : this.#props.apex
+          ? parseApexFilterBinaryOperation(
+              lhsOrExpression,
+              op as ComparisonOperator,
+              rhs,
+              { allowSemiJoin: false },
+            )
+          : parseValueBinaryOperation(
+              lhsOrExpression,
+              op as ComparisonOperator,
+              rhs,
+            );
 
-    return new RelationshipSubqueryBuilderImpl<DB, TB, O, Depth, FunctionMode>({
+    return new RelationshipSubqueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      Depth,
+      FunctionMode,
+      ApexMode
+    >({
       ...this.#props,
       queryNode: QueryNode.cloneWithWhere(this.#props.queryNode, operation),
     });
@@ -325,7 +404,8 @@ class RelationshipSubqueryBuilderImpl<
     TB,
     O & SelectFunctionSelection<FunctionSelection>,
     Depth,
-    "present"
+    "present",
+    ApexMode
   >;
   select<SE extends string>(
     selections: ReadonlyArray<
@@ -338,7 +418,8 @@ class RelationshipSubqueryBuilderImpl<
     TB,
     O & Selection<DB, TB, SE>,
     Depth,
-    FunctionMode
+    FunctionMode,
+    ApexMode
   >;
   select<SE extends string>(
     selection: SE &
@@ -349,7 +430,8 @@ class RelationshipSubqueryBuilderImpl<
     TB,
     O & Selection<DB, TB, SE>,
     Depth,
-    FunctionMode
+    FunctionMode,
+    ApexMode
   >;
   select(
     selection:
@@ -361,7 +443,8 @@ class RelationshipSubqueryBuilderImpl<
     TB,
     unknown,
     Depth,
-    FunctionMode | "present"
+    FunctionMode | "present",
+    ApexMode
   > {
     const selections =
       typeof selection === "function"
@@ -380,7 +463,8 @@ class RelationshipSubqueryBuilderImpl<
       TB,
       unknown,
       Depth,
-      FunctionMode | "present"
+      FunctionMode | "present",
+      ApexMode
     >({
       ...this.#props,
       queryNode: RelationshipSubqueryNode.cloneWithSelections(
@@ -398,14 +482,16 @@ class RelationshipSubqueryBuilderImpl<
     TB,
     O & FieldsSelection<DB, TB, Selector>,
     Depth,
-    FunctionMode
+    FunctionMode,
+    ApexMode
   > {
     return new RelationshipSubqueryBuilderImpl<
       DB,
       TB,
       O & FieldsSelection<DB, TB, Selector>,
       Depth,
-      FunctionMode
+      FunctionMode,
+      ApexMode
     >({
       ...this.#props,
       queryNode: RelationshipSubqueryNode.cloneWithSelections(
@@ -428,14 +514,16 @@ class RelationshipSubqueryBuilderImpl<
         ChildObjectForRelationship<DB, TB, Relationship>,
         unknown,
         NextParentToChildDepth<Depth>,
-        ChildFunctionMode<FunctionMode>
+        ChildFunctionMode<FunctionMode>,
+        ApexMode
       >,
     ) => RelationshipSubqueryBuilder<
       DB,
       ChildObjectForRelationship<DB, TB, Relationship>,
       SubqueryOutput,
       NextParentToChildDepth<Depth>,
-      SubqueryFunctionMode
+      SubqueryFunctionMode,
+      ApexMode
     >,
   ): RelationshipSubqueryBuilder<
     DB,
@@ -446,7 +534,8 @@ class RelationshipSubqueryBuilderImpl<
       >;
     },
     Depth,
-    MergeFunctionMode<FunctionMode, SubqueryFunctionMode>
+    MergeFunctionMode<FunctionMode, SubqueryFunctionMode>,
+    ApexMode
   > {
     const subquery = callback(
       createRelationshipSubqueryBuilder<
@@ -454,11 +543,13 @@ class RelationshipSubqueryBuilderImpl<
         ChildObjectForRelationship<DB, TB, Relationship>,
         unknown,
         NextParentToChildDepth<Depth>,
-        ChildFunctionMode<FunctionMode>
+        ChildFunctionMode<FunctionMode>,
+        ApexMode
       >({
         queryNode: RelationshipSubqueryNode.create(
           ReferenceNode.create(relationship),
         ),
+        apex: this.#props.apex,
       }),
     );
 
@@ -471,7 +562,8 @@ class RelationshipSubqueryBuilderImpl<
         >;
       },
       Depth,
-      MergeFunctionMode<FunctionMode, SubqueryFunctionMode>
+      MergeFunctionMode<FunctionMode, SubqueryFunctionMode>,
+      ApexMode
     >({
       ...this.#props,
       queryNode: RelationshipSubqueryNode.cloneWithSelections(
@@ -486,8 +578,11 @@ class RelationshipSubqueryBuilderImpl<
   }
 }
 
-export interface RelationshipSubqueryBuilderProps {
+export interface RelationshipSubqueryBuilderProps<
+  ApexMode extends boolean = false,
+> {
   readonly queryNode: RelationshipSubqueryNode;
+  readonly apex: ApexMode;
 }
 
 export function createRelationshipSubqueryBuilder<
@@ -496,10 +591,16 @@ export function createRelationshipSubqueryBuilder<
   O,
   Depth extends ParentToChildDepth,
   FunctionMode extends RelationshipSubqueryFunctionMode = "none",
+  ApexMode extends boolean = false,
 >(
-  props: RelationshipSubqueryBuilderProps,
-): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode> {
-  return new RelationshipSubqueryBuilderImpl<DB, TB, O, Depth, FunctionMode>(
-    props,
-  );
+  props: RelationshipSubqueryBuilderProps<ApexMode>,
+): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode> {
+  return new RelationshipSubqueryBuilderImpl<
+    DB,
+    TB,
+    O,
+    Depth,
+    FunctionMode,
+    ApexMode
+  >(props);
 }

@@ -16,6 +16,7 @@ import type {
   ComparisonOperatorExpression,
   FilterableFieldName,
 } from "#/parser/binary-operation-parser";
+import type { FilterBinaryOperationOptions } from "#/parser/filter-parser";
 import {
   type DistanceComparisonOperator,
   parseDistanceFilterBinaryOperation,
@@ -52,7 +53,11 @@ export interface ApexExpressionWrapper<
   toOperationNode(): OperationNode;
 }
 
-export interface ApexExpressionBuilder<DB, TB extends keyof DB> {
+export interface ApexExpressionBuilder<
+  DB,
+  TB extends keyof DB,
+  AllowSemiJoin extends boolean = true,
+> {
   <Output, Sortable extends boolean>(
     lhs: DistanceFunctionExpression<Output, true, Sortable>,
     op: DistanceComparisonOperator,
@@ -62,7 +67,13 @@ export interface ApexExpressionBuilder<DB, TB extends keyof DB> {
   <
     RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
-    RHS extends ApexOperandValueExpression<DB, TB, RE, NoInfer<OP>>,
+    RHS extends ApexOperandValueExpression<
+      DB,
+      TB,
+      RE,
+      NoInfer<OP>,
+      AllowSemiJoin
+    >,
   >(
     lhs: RE & FilterableFieldName<DB, TB, RE>,
     op: OP,
@@ -94,8 +105,12 @@ export interface ApexExpressionBuilder<DB, TB extends keyof DB> {
   readonly fn: GeolocationFilterFunctionModule<DB, TB>;
 }
 
-export type ApexWhereExpressionFactory<DB, TB extends keyof DB> = (
-  eb: ApexExpressionBuilder<DB, TB>,
+export type ApexWhereExpressionFactory<
+  DB,
+  TB extends keyof DB,
+  AllowSemiJoin extends boolean = true,
+> = (
+  eb: ApexExpressionBuilder<DB, TB, AllowSemiJoin>,
 ) => ApexExpressionWrapper<DB, TB, boolean>;
 
 class ApexExpressionWrapperImpl<
@@ -121,9 +136,15 @@ class ApexExpressionWrapperImpl<
   }
 }
 
-export function createApexExpressionBuilder<DB, TB extends keyof DB>(
-  outerObject: string,
-): ApexExpressionBuilder<DB, TB> {
+export function createApexExpressionBuilder<
+  DB,
+  TB extends keyof DB,
+  AllowSemiJoin extends boolean = true,
+>(options: FilterBinaryOperationOptions = {}): ApexExpressionBuilder<
+  DB,
+  TB,
+  AllowSemiJoin
+> {
   const expression = (
     lhs: string | DistanceFunctionExpression<unknown, boolean, boolean>,
     op: ComparisonOperator,
@@ -131,7 +152,7 @@ export function createApexExpressionBuilder<DB, TB extends keyof DB>(
   ): ApexExpressionWrapper<DB, TB, boolean> => {
     const node =
       typeof lhs === "string"
-        ? parseApexFilterBinaryOperation(lhs, op, rhs, outerObject)
+        ? parseApexFilterBinaryOperation(lhs, op, rhs, options)
         : parseDistanceFilterBinaryOperation(
             lhs,
             op as DistanceComparisonOperator,
@@ -195,5 +216,5 @@ export function createApexExpressionBuilder<DB, TB extends keyof DB>(
     fn,
     not,
     or,
-  }) as ApexExpressionBuilder<DB, TB>;
+  }) as ApexExpressionBuilder<DB, TB, AllowSemiJoin>;
 }

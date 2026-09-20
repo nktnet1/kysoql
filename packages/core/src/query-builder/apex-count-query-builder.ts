@@ -96,15 +96,15 @@ class ApexCountQueryBuilderImpl<DB, TB extends keyof DB>
     const operation =
       typeof lhsOrExpression === "function"
         ? lhsOrExpression(
-            createApexExpressionBuilder<DB, TB>(
-              this.#props.queryNode.from.name,
-            ),
+            createApexExpressionBuilder<DB, TB>({
+              outerObject: this.#props.queryNode.from.name,
+            }),
           ).toOperationNode()
         : parseApexFilterBinaryOperation(
             lhsOrExpression,
             op as ComparisonOperator,
             rhs,
-            this.#props.queryNode.from.name,
+            { outerObject: this.#props.queryNode.from.name },
           );
     const queryNode = QueryNode.cloneWithWhere(
       this.#props.queryNode,

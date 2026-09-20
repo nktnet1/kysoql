@@ -1450,3 +1450,13 @@ extend `apexBind<T>(...)` only from a single identifier to a validated dotted Ap
 member path such as `record.Id`. Keep calls, indexing, arithmetic, whitespace, and
 other arbitrary expression syntax rejected so the helper remains a typed bind
 primitive rather than a raw-SOQL/Apex fragment escape hatch.
+
+Kysoql consequence for `v1.0.99`: expose relationship-subquery bind filters only
+from the row-producing Apex context. `.apex().selectSubquery(...)` creates the same
+typed parent-to-child selection builder with an Apex-only filter mode, so scalar,
+collection, member-path, and grouped `WHERE` binds compile inside the child query.
+Keep ordinary REST/JSforce relationship subqueries bind-free, preserve the existing
+four-child traversal limit and SELECT-function compatibility state, and keep
+semi/anti-joins disabled inside relationship subqueries. This closes the nested
+relationship-query bind position demonstrated by the Apex guide without widening
+`apexBind(...)` into arbitrary Apex expressions.
