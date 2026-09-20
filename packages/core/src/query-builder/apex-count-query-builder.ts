@@ -40,6 +40,12 @@ export interface ApexCountQueryBuilder<DB, TB extends keyof DB> {
     expression: ApexWhereExpressionFactory<DB, TB>,
   ): ApexCountQueryBuilder<DB, TB>;
 
+  where(
+    lhs: ApexBindExpression<string>,
+    op: "includes",
+    rhs: readonly string[],
+  ): ApexCountQueryBuilder<DB, TB>;
+
   where<RE extends string, OP extends ComparisonOperatorExpression<DB, TB, RE>>(
     lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
     op: OP,
@@ -83,13 +89,21 @@ class ApexCountQueryBuilderImpl<DB, TB extends keyof DB>
   where(
     expression: ApexWhereExpressionFactory<DB, TB>,
   ): ApexCountQueryBuilder<DB, TB>;
+  where(
+    lhs: ApexBindExpression<string>,
+    op: "includes",
+    rhs: readonly string[],
+  ): ApexCountQueryBuilder<DB, TB>;
   where<RE extends string, OP extends ComparisonOperatorExpression<DB, TB, RE>>(
     lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
     op: OP,
     rhs: ApexOperandValueExpression<DB, TB, NoInfer<RE>, NoInfer<OP>>,
   ): ApexCountQueryBuilder<DB, TB>;
   where(
-    lhsOrExpression: string | ApexWhereExpressionFactory<DB, TB>,
+    lhsOrExpression:
+      | string
+      | ApexBindExpression<string>
+      | ApexWhereExpressionFactory<DB, TB>,
     op?: ComparisonOperator,
     rhs?: unknown,
   ): ApexCountQueryBuilder<DB, TB> {

@@ -1,3 +1,4 @@
+import { isApexBindExpression, type ApexBindExpression } from "#/apex-bind";
 import {
   createGeolocationFilterExpressionBuilder,
   type DistanceFunctionExpression,
@@ -58,6 +59,12 @@ export interface ApexExpressionBuilder<
   TB extends keyof DB,
   AllowSemiJoin extends boolean = true,
 > {
+  (
+    lhs: ApexBindExpression<string>,
+    op: "includes",
+    rhs: readonly string[],
+  ): ApexExpressionWrapper<DB, TB, false>;
+
   <Output, Sortable extends boolean>(
     lhs: DistanceFunctionExpression<Output, true, Sortable>,
     op: DistanceComparisonOperator,
@@ -146,12 +153,15 @@ export function createApexExpressionBuilder<
   AllowSemiJoin
 > {
   const expression = (
-    lhs: string | DistanceFunctionExpression<unknown, boolean, boolean>,
+    lhs:
+      | string
+      | ApexBindExpression<string>
+      | DistanceFunctionExpression<unknown, boolean, boolean>,
     op: ComparisonOperator,
     rhs: unknown,
   ): ApexExpressionWrapper<DB, TB, boolean> => {
     const node =
-      typeof lhs === "string"
+      typeof lhs === "string" || isApexBindExpression(lhs)
         ? parseApexFilterBinaryOperation(lhs, op, rhs, options)
         : parseDistanceFilterBinaryOperation(
             lhs,

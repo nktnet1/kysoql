@@ -1,3 +1,4 @@
+import type { ApexBindExpression } from "#/apex-bind";
 import {
   createSelectExpressionBuilder,
   type SelectExpressionBuilder,
@@ -136,6 +137,9 @@ type RelationshipOperandValueExpression<
   ? ApexOperandValueExpression<DB, TB, RE, OP, false>
   : OperandValueExpression<DB, TB, RE, OP, false>;
 
+type RelationshipApexBindLeftExpression<ApexMode extends boolean> =
+  ApexMode extends true ? ApexBindExpression<string> : never;
+
 export interface RelationshipSubqueryBuilder<
   DB,
   TB extends keyof DB,
@@ -162,6 +166,12 @@ export interface RelationshipSubqueryBuilder<
 
   where(
     expression: RelationshipWhereExpressionFactory<DB, TB, ApexMode>,
+  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
+
+  where(
+    lhs: RelationshipApexBindLeftExpression<ApexMode>,
+    op: "includes",
+    rhs: readonly string[],
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
 
   where<
@@ -351,6 +361,7 @@ class RelationshipSubqueryBuilderImpl<
   where(
     lhsOrExpression:
       | string
+      | ApexBindExpression<string>
       | RelationshipWhereExpressionFactory<DB, TB, ApexMode>,
     op?: ComparisonOperator,
     rhs?: unknown,
@@ -376,7 +387,7 @@ class RelationshipSubqueryBuilderImpl<
               { allowSemiJoin: false },
             )
           : parseValueBinaryOperation(
-              lhsOrExpression,
+              lhsOrExpression as string,
               op as ComparisonOperator,
               rhs,
             );

@@ -72,6 +72,20 @@ const byName = db
   .compile();
 ```
 
+Salesforce's bind-left multipicklist form is exposed separately from ordinary
+field filters:
+
+```ts
+const byBoundType = db
+  .selectFrom("Account")
+  .select("Id")
+  .apex()
+  .where(apexBind<string>("account.Type"), "includes", [
+    "Customer - Direct; Customer - Channel",
+  ])
+  .compile();
+```
+
 After `.apex()`, parent-to-child relationship subqueries can use the same typed
 scalar, collection, and grouped `WHERE` binds:
 
@@ -92,10 +106,12 @@ Grouped Apex filters support `and` / `or` / `not`, while `LIMIT` and `OFFSET`
 accept numeric binds in addition to their validated literal forms. `apexBind<T>`
 accepts a simple identifier or a dotted member path such as `filters.accountName`
 and rejects calls, indexing, arithmetic, and other raw fragments. Bind expressions
-are intentionally unavailable on ordinary API-executable builders, as right-hand
-values for Kysoql's field-left `INCLUDES` / `EXCLUDES` form, and for Knowledge
-article Apex queries. Relationship subqueries remain bind-free outside the Apex
-context and continue to reject semi-joins.
+are intentionally unavailable on ordinary API-executable builders and as
+right-hand values for Kysoql's field-left `INCLUDES` / `EXCLUDES` form. The
+separate Apex-only bind-left `INCLUDES` overload keeps its right
+side as literal strings. Knowledge article Apex queries reject all bind forms.
+Relationship subqueries remain bind-free outside the Apex context and continue to
+reject semi-joins.
 
 Aggregate-result and bare `COUNT()` queries can also switch to `.apex()` after
 their aggregate selection is built. They reuse access modes and supported bind

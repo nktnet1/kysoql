@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.99`
+## Current state after `v1.0.100`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -152,6 +152,7 @@ recent patch sequence:
 | `v1.0.97` | Fix the Apex aggregate regression fixture so `AnnualRevenue` explicitly carries the generated `aggregatable: true` capability required by typed `SUM()` selection. |
 | `v1.0.98` | Correct the stale aggregate-HAVING bind plan against the current Apex bind grammar and add safe dotted `apexBind<T>` member paths such as `:record.Id` across the existing supported bind positions. |
 | `v1.0.99` | Add Apex-only `WHERE` binds inside parent-to-child relationship subqueries, preserving child selection/output typing, function-mode/depth rules, and the existing no-semi-join boundary while keeping API-executable relationship subqueries bind-free. |
+| `v1.0.100` | Add the documented Apex bind-left `INCLUDES` form across record, aggregate, bare-`COUNT()`, grouped-expression, and Apex relationship-subquery `WHERE` surfaces while preserving field-left right-hand-bind rejection. |
 
 ### Build/tooling state
 
@@ -398,9 +399,11 @@ Core currently has:
   subquery no-semi-join rule, and bind expressions are restricted to simple
   identifiers or dotted member paths (for example `record.Id`) rather than
   arbitrary Apex/raw-SOQL fragments; ordinary REST/JSforce builders expose none
-  of those Apex forms; the type/parser surface rejects
-  right-hand bind values for field-left `INCLUDES` / `EXCLUDES`, while compilation
-  rejects `ORDER BY` on locking queries,
+  of those Apex forms; Salesforce's documented bind-left multipicklist syntax is
+  exposed separately as `where(apexBind<string>(...), "includes",
+  literalValues)`, while the type/parser surface continues to reject right-hand
+  bind values for field-left `INCLUDES` / `EXCLUDES`; compilation rejects
+  `ORDER BY` on locking queries,
   competing `WITH` filtering forms alongside an Apex access mode, and
   Knowledge-article Apex binds in either filters or pagination; the current Apex
   bind-expression guide does not document static binds in `HAVING`, so Kysoql does
@@ -416,34 +419,34 @@ Important current filter typing rules:
 - operators remain constrained by Salesforce field type/capability metadata;
 - `IN` / `NOT IN` accept typed non-empty readonly value lists and, for direct
   filterable ID/reference fields, typed semi/anti-join subquery callbacks;
-- `INCLUDES` / `EXCLUDES` are available only on generated `multipicklist` fields
-  and their list members are constrained to the field's generated active
-  picklist-value union;
+- the ordinary field-left `INCLUDES` / `EXCLUDES` form is available only on
+  generated `multipicklist` fields and its list members are constrained to the
+  field's generated active picklist-value union; the separate Apex-only bind-left
+  form accepts a string-valued bind plus literal strings;
 - negative compile-time assertions that would intentionally throw at runtime
   should be placed inside an uninvoked function in Vitest files.
 
 ## Current next slice
 
-**The next patch should be `v1.0.100` if feature work continues.** `v1.0.99`
-closes the documented nested relationship-query bind gap by adding
-`.apex().selectSubquery(...)` to the row-producing Apex builder. The child builder
-inherits an Apex-only filter mode, so scalar/collection/grouped `WHERE` binds work
-inside parent-to-child subqueries without making ordinary REST/JSforce
-`RelationshipSubqueryBuilder` values accept `ApexBindExpression`. The existing
-four-child-depth limit, selection/output inference, SELECT-function compatibility,
-field capability checks, and relationship-subquery semi-join prohibition remain
-unchanged.
+**The next patch should be `v1.0.101` if feature work continues.** `v1.0.100`
+implements the last small documented static-Apex bind form identified in the
+current guide: bind-left `INCLUDES`. It is a distinct Apex-only
+`where(apexBind<string>(...), operator, literalValues)` overload across record,
+aggregate, bare-`COUNT()`, grouped-expression, and Apex relationship-subquery
+filters. The existing field-left multipicklist API still requires generated
+active picklist literals on the right and still rejects right-hand bind
+expressions. Empty bind-left literal lists reuse the existing runtime validation,
+and Knowledge-article bind rejection sees the left-hand bind through the normal
+AST traversal.
 
-The remaining Apex-bind ideas are separate optional features rather than missing
-coverage in the current builder. The smallest documented candidate is Salesforce's
-bind-left multipicklist form (`:binding INCLUDES (...)` / `EXCLUDES` if confirmed
-by the same current static-Apex source). Model that as a distinct typed expression
-shape; do **not** reinterpret the existing field-left
-`where(field, "includes", value)` API or allow an `ApexBindExpression` as its
-right-hand value. Richer Apex expressions such as calls or arithmetic should stay
-deferred until they can be represented by structured typed nodes instead of raw
-strings. If neither optional feature is taken, move back to release hardening and
-real-org fixtures rather than inventing unsupported grammar.
+There are no remaining **small, explicitly documented bind-position gaps** in the
+current static-Apex SELECT surface. Richer bind expressions shown by Salesforce
+(arithmetic, method calls, and nested-query-result expressions) remain an optional
+feature, but they should be modeled with structured typed Apex-expression nodes
+rather than raw strings. Do not relax `apexBind(...)` validation into a generic
+Apex/SOQL escape hatch just to cover them. If feature work continues, take one
+small structured-expression family at a time; otherwise return to release
+hardening and real-org fixtures.
 
 The `v1.0.84` object-limit audit still defines the boundary for specialist-object
 work: do not infer big-object index rules from the `__b` suffix, do not encode
@@ -452,7 +455,7 @@ permission/cardinality-dependent feed/object caps as execution-context concerns.
 Automatic `Question` data-category taxonomy discovery also remains deferred until
 a stable public JSforce/Salesforce transport path exists.
 
-If the supplied bundle already contains `v1.0.99` or later, inspect the code and
+If the supplied bundle already contains `v1.0.100` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Follow-on roadmap after the consistency audit

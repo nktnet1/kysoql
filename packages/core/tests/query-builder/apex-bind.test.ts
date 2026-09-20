@@ -142,6 +142,41 @@ describe("Apex bind expressions", () => {
     );
   });
 
+  it("compiles bind-left INCLUDES filters", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .apex()
+      .where(
+        apexBind<string>("filters.accountType"),
+        "includes",
+        ["Customer - Direct; Customer - Channel"],
+      )
+      .where((eb) =>
+        eb.or([
+          eb(apexBind<string>("filters.partnerType"), "includes", ["Partner"]),
+          eb("Name", "=", "Acme"),
+        ]),
+      );
+
+    expect(query.compile().soql).toBe(
+      "SELECT Id FROM Account WHERE :filters.accountType INCLUDES ('Customer - Direct; Customer - Channel') AND (:filters.partnerType INCLUDES ('Partner') OR Name = 'Acme')",
+    );
+  });
+
+  it("validates bind-left INCLUDES literal lists", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .apex();
+
+    expect(() =>
+      query.where(apexBind<string>("accountType"), "includes", []),
+    ).toThrow(
+      "SOQL INCLUDES/EXCLUDES value lists must contain at least one value.",
+    );
+  });
+
   it("compiles Apex binds inside parent-to-child relationship subqueries", () => {
     const query = new Kysoql<FixtureSchema>()
       .selectFrom("Account")
@@ -161,11 +196,14 @@ describe("Apex bind expressions", () => {
               eb("LastName", "=", apexBind<string>("filters.firstName")),
               eb("LastName", "=", "Smith"),
             ]),
-          ),
+          )
+          .where(apexBind<string>("filters.contactType"), "includes", [
+            "Primary",
+          ]),
       );
 
     expect(query.compile().soql).toBe(
-      "SELECT Id, (SELECT Id, LastName FROM Contacts WHERE LastName LIKE :filters.lastName AND Id IN :filters.contactIds AND (LastName = :filters.firstName OR LastName = 'Smith')) FROM Account",
+      "SELECT Id, (SELECT Id, LastName FROM Contacts WHERE LastName LIKE :filters.lastName AND Id IN :filters.contactIds AND (LastName = :filters.firstName OR LastName = 'Smith') AND :filters.contactType INCLUDES ('Primary')) FROM Account",
     );
     expectTypeOf<Simplify<ApexOutputOf<typeof query>>>().toEqualTypeOf<{
       readonly Id: string;
@@ -339,6 +377,11 @@ describe("Apex bind expressions", () => {
       .select("Id")
       .apex()
       .offset(apexBind<number>("rowOffset"));
+    const bindLeftQuery = new Kysoql<FixtureSchema>()
+      .selectFrom("KnowledgeArticleVersion")
+      .select("Id")
+      .apex()
+      .where(apexBind<string>("articleType"), "includes", ["FAQ"]);
     const relationshipQuery = new Kysoql<FixtureSchema>()
       .selectFrom("KnowledgeArticleVersion")
       .select("Id")
@@ -361,6 +404,9 @@ describe("Apex bind expressions", () => {
     expect(() => offsetQuery.compile()).toThrow(
       "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.",
     );
+    expect(() => bindLeftQuery.compile()).toThrow(
+      "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.",
+    );
     expect(() => relationshipQuery.compile()).toThrow(
       "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.",
     );
@@ -373,6 +419,8 @@ describe("Apex bind expressions", () => {
 
       // @ts-expect-error Bind expressions require the explicit Apex context.
       normal.where("Name", "=", apexBind<string>("accountName"));
+      // @ts-expect-error Bind-left INCLUDES requires the explicit Apex context.
+      normal.where(apexBind<string>("accountType"), "includes", ["Partner"]);
 
       // @ts-expect-error LIMIT binds require the explicit Apex context.
       normal.limit(apexBind<number>("rowLimit"));
@@ -381,6 +429,10 @@ describe("Apex bind expressions", () => {
       normal.selectSubquery("Contacts", (contacts) => {
         // @ts-expect-error Relationship-subquery binds require the explicit Apex context.
         contacts.where("LastName", "=", apexBind<string>("lastName"));
+        // @ts-expect-error Bind-left relationship-subquery filters are Apex-only.
+        contacts.where(apexBind<string>("contactType"), "includes", [
+          "Primary",
+        ]);
 
         return contacts.select("Id");
       });
@@ -389,10 +441,12 @@ describe("Apex bind expressions", () => {
       apex.where("Name", "=", apexBind<string>("accountName"));
       apex.where("Id", "in", apexBind<readonly string[]>("accountIds"));
       apex.where("CreatedDate", ">", apexBind<string>("createdAfter"));
+      apex.where(apexBind<string>("accountType"), "includes", ["Partner"]);
       apex.where((eb) =>
         eb.or([
           eb("Name", "=", apexBind<string>("firstName")),
           eb("Name", "=", apexBind<string>("secondName")),
+          eb(apexBind<string>("accountType"), "includes", ["Partner"]),
         ]),
       );
       apex.limit(apexBind<number>("rowLimit"));
@@ -404,6 +458,9 @@ describe("Apex bind expressions", () => {
           "in",
           apexBind<readonly string[]>("contactIds"),
         );
+        contacts.where(apexBind<string>("contactType"), "includes", [
+          "Primary",
+        ]);
         contacts.where((eb) =>
           eb.and([
             eb("LastName", "=", apexBind<string>("firstName")),
@@ -427,6 +484,14 @@ describe("Apex bind expressions", () => {
       apex.where("Id", "in", apexBind<string>("accountIds"));
       // @ts-expect-error Scalar operators do not accept collection binds.
       apex.where("Name", "=", apexBind<readonly string[]>("accountNames"));
+      // @ts-expect-error Bind-left INCLUDES requires a string-valued bind.
+      apex.where(apexBind<number>("accountType"), "includes", ["Partner"]);
+      // @ts-expect-error Bind-left EXCLUDES is not documented for static Apex SOQL.
+      apex.where(apexBind<string>("accountType"), "excludes", ["Former"]);
+      // @ts-expect-error Bind-left expressions do not support scalar operators.
+      apex.where(apexBind<string>("accountType"), "=", ["Partner"]);
+      // @ts-expect-error Bind-left INCLUDES requires string literal lists.
+      apex.where(apexBind<string>("accountType"), "includes", [1]);
       // @ts-expect-error Right-hand binds are not supported with INCLUDES/EXCLUDES.
       apex.where("Tags__c", "includes", apexBind<readonly string[]>("tags"));
       apex.where(

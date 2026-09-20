@@ -36,13 +36,14 @@ describe("Apex aggregate queries", () => {
       .select(({ fn }) => fn.sum("AnnualRevenue").as("totalRevenue"))
       .apex()
       .where("AnnualRevenue", ">=", apexBind<number>("minimumRevenue"))
+      .where(apexBind<string>("accountType"), "includes", ["Partner"])
       .withUserMode()
       .limit(apexBind<number>("rowLimit"))
       .offset(apexBind<number>("rowOffset"));
 
     expect(query.compile().soql).toContain("SUM(AnnualRevenue)");
     expect(query.compile().soql).toContain(
-      "WHERE AnnualRevenue >= :minimumRevenue WITH USER_MODE LIMIT :rowLimit OFFSET :rowOffset",
+      "WHERE AnnualRevenue >= :minimumRevenue AND :accountType INCLUDES ('Partner') WITH USER_MODE LIMIT :rowLimit OFFSET :rowOffset",
     );
   });
 
@@ -55,13 +56,14 @@ describe("Apex aggregate queries", () => {
         eb.or([
           eb("Name", "=", apexBind<string>("accountName")),
           eb("Id", "in", apexBind<readonly string[]>("accountIds")),
+          eb(apexBind<string>("accountType"), "includes", ["Partner"]),
         ]),
       )
       .withSystemMode()
       .limit(apexBind<number>("rowLimit"));
 
     expect(query.compile().soql).toBe(
-      "SELECT COUNT() FROM Account WHERE (Name = :accountName OR Id IN :accountIds) WITH SYSTEM_MODE LIMIT :rowLimit",
+      "SELECT COUNT() FROM Account WHERE ((Name = :accountName OR Id IN :accountIds) OR :accountType INCLUDES ('Partner')) WITH SYSTEM_MODE LIMIT :rowLimit",
     );
   });
 
@@ -78,10 +80,14 @@ describe("Apex aggregate queries", () => {
         .apex();
 
       aggregate.where("Name", "=", apexBind<string>("accountName"));
+      aggregate.where(apexBind<string>("accountType"), "includes", [
+        "Partner",
+      ]);
       aggregate.limit(apexBind<number>("rowLimit"));
       aggregate.offset(apexBind<number>("rowOffset"));
       aggregate.withUserMode();
       count.where("Name", "=", apexBind<string>("accountName"));
+      count.where(apexBind<string>("accountType"), "includes", ["Partner"]);
       count.limit(apexBind<number>("rowLimit"));
       count.withSystemMode();
 

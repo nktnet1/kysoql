@@ -1460,3 +1460,14 @@ four-child traversal limit and SELECT-function compatibility state, and keep
 semi/anti-joins disabled inside relationship subqueries. This closes the nested
 relationship-query bind position demonstrated by the Apex guide without widening
 `apexBind(...)` into arbitrary Apex expressions.
+
+Kysoql consequence for `v1.0.100`: model the Apex guide's documented bind-left
+`INCLUDES` form as a separate Apex-only binary-expression overload rather than
+loosening the ordinary field-left multipicklist filter. A string-valued
+`apexBind(...)` can be the left operand of `INCLUDES`, while the right
+operand remains a non-empty literal string list compiled by the existing
+`ValueListNode` path. Reuse that form across record, aggregate, bare-`COUNT()`,
+grouped-expression, and Apex relationship-subquery `WHERE` surfaces. Keep
+right-hand `ApexBindExpression` values rejected for field-left `INCLUDES` /
+`EXCLUDES`, and preserve Knowledge-article bind rejection through the existing AST
+walk.

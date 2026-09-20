@@ -124,6 +124,12 @@ export interface ApexSelectQueryBuilder<
     expression: ApexWhereExpressionFactory<DB, TB>,
   ): ApexSelectQueryBuilder<DB, TB, O, Mode>;
 
+  where(
+    lhs: ApexBindExpression<string>,
+    op: "includes",
+    rhs: readonly string[],
+  ): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+
   where<RE extends string, OP extends ComparisonOperatorExpression<DB, TB, RE>>(
     lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
     op: OP,
@@ -262,13 +268,21 @@ class ApexSelectQueryBuilderImpl<
   where(
     expression: ApexWhereExpressionFactory<DB, TB>,
   ): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+  where(
+    lhs: ApexBindExpression<string>,
+    op: "includes",
+    rhs: readonly string[],
+  ): ApexSelectQueryBuilder<DB, TB, O, Mode>;
   where<RE extends string, OP extends ComparisonOperatorExpression<DB, TB, RE>>(
     lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
     op: OP,
     rhs: ApexOperandValueExpression<DB, TB, NoInfer<RE>, NoInfer<OP>>,
   ): ApexSelectQueryBuilder<DB, TB, O, Mode>;
   where(
-    lhsOrExpression: string | ApexWhereExpressionFactory<DB, TB>,
+    lhsOrExpression:
+      | string
+      | ApexBindExpression<string>
+      | ApexWhereExpressionFactory<DB, TB>,
     op?: ComparisonOperator,
     rhs?: unknown,
   ): ApexSelectQueryBuilder<DB, TB, O, Mode> {

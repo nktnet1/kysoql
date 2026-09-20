@@ -45,6 +45,12 @@ export interface ApexAggregateSelectQueryBuilder<DB, TB extends keyof DB, O> {
     expression: ApexWhereExpressionFactory<DB, TB>,
   ): ApexAggregateSelectQueryBuilder<DB, TB, O>;
 
+  where(
+    lhs: ApexBindExpression<string>,
+    op: "includes",
+    rhs: readonly string[],
+  ): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+
   where<RE extends string, OP extends ComparisonOperatorExpression<DB, TB, RE>>(
     lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
     op: OP,
@@ -98,13 +104,21 @@ class ApexAggregateSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
   where(
     expression: ApexWhereExpressionFactory<DB, TB>,
   ): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+  where(
+    lhs: ApexBindExpression<string>,
+    op: "includes",
+    rhs: readonly string[],
+  ): ApexAggregateSelectQueryBuilder<DB, TB, O>;
   where<RE extends string, OP extends ComparisonOperatorExpression<DB, TB, RE>>(
     lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
     op: OP,
     rhs: ApexOperandValueExpression<DB, TB, NoInfer<RE>, NoInfer<OP>>,
   ): ApexAggregateSelectQueryBuilder<DB, TB, O>;
   where(
-    lhsOrExpression: string | ApexWhereExpressionFactory<DB, TB>,
+    lhsOrExpression:
+      | string
+      | ApexBindExpression<string>
+      | ApexWhereExpressionFactory<DB, TB>,
     op?: ComparisonOperator,
     rhs?: unknown,
   ): ApexAggregateSelectQueryBuilder<DB, TB, O> {

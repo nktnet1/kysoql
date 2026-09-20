@@ -37,6 +37,9 @@ version is cut.
 - Apex-only parent-to-child relationship subqueries can use typed scalar,
   collection, and grouped `WHERE` binds after the root query switches to
   `.apex()`, while API-executable relationship subqueries remain bind-free.
+- Apex-only bind-left `INCLUDES` filters, modeled separately from
+  Kysoql's existing field-left multipicklist API so right-hand bind values remain
+  rejected and literal-list validation/escaping is preserved.
 - Release validation for built package exports, declaration files, CLI binaries,
   package metadata, package documentation, and changelog presence.
 

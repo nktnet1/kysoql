@@ -1,4 +1,4 @@
-import { type ApexBindExpression, isApexBindExpression } from "#/apex-bind";
+import { isApexBindExpression, type ApexBindExpression } from "#/apex-bind";
 import type { AndNode } from "#/operation-node/and-node";
 import type { ApexBindNode } from "#/operation-node/apex-bind-node";
 import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
@@ -19,9 +19,10 @@ import { ReferenceNode } from "#/operation-node/reference-node";
 import type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 import type { SelectQueryNode } from "#/operation-node/select-query-node";
 import type { SelectionNode } from "#/operation-node/selection-node";
-import type {
-  ComparisonOperatorExpression,
-  OperandValueExpression,
+import {
+  type ComparisonOperatorExpression,
+  type OperandValueExpression,
+  parseOperationValueBinaryOperation,
 } from "#/parser/binary-operation-parser";
 import {
   type FilterBinaryOperationOptions,
@@ -36,6 +37,8 @@ const KNOWLEDGE_APEX_BIND_ERROR =
   "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.";
 const MULTISELECT_APEX_BIND_ERROR =
   "Apex SOQL bind expressions are not supported as INCLUDES or EXCLUDES values.";
+const APEX_BIND_LEFT_OPERATOR_ERROR =
+  "Left-hand Apex bind expressions are supported only with INCLUDES.";
 
 type ApexFieldValue<
   DB,
@@ -92,11 +95,23 @@ export function parseApexOffset(
 }
 
 export function parseApexFilterBinaryOperation(
-  left: string,
+  left: string | ApexBindExpression<string>,
   operator: ComparisonOperator,
   right: unknown,
   options: FilterBinaryOperationOptions = {},
 ): BinaryOperationNode {
+  if (isApexBindExpression(left)) {
+    if (operator !== "includes") {
+      throw new TypeError(APEX_BIND_LEFT_OPERATOR_ERROR);
+    }
+
+    return parseOperationValueBinaryOperation(
+      left.toOperationNode(),
+      operator,
+      right,
+    );
+  }
+
   if (!isApexBindExpression(right)) {
     return parseFilterBinaryOperation(left, operator, right, options);
   }

@@ -750,6 +750,26 @@ const apexQuery = db
 // LIMIT :rowLimit OFFSET :rowOffset
 ```
 
+Salesforce static Apex also permits a bind expression on the left side of
+`INCLUDES`. Kysoql exposes that as a separate Apex-only overload; the right side
+remains a validated literal list rather than another bind:
+
+```ts
+const byBoundType = db
+  .selectFrom("Account")
+  .select("Id")
+  .apex()
+  .where(
+    apexBind<string>("account.Type"),
+    "includes",
+    ["Customer - Direct; Customer - Channel"],
+  )
+  .compile();
+
+// SELECT Id FROM Account
+// WHERE :account.Type INCLUDES ('Customer - Direct; Customer - Channel')
+```
+
 Parent-to-child relationship subqueries can use the same typed `WHERE` binds,
 but only after the root query has switched to the compile-only Apex context:
 
@@ -777,9 +797,11 @@ rejected. `IN` / `NOT IN` binds represent collections, grouped Apex callbacks
 support the same `and` / `or` / `not` composition as ordinary filters, and
 `LIMIT` / `OFFSET` accept numeric binds. Literal pagination values retain the
 normal Kysoql validation; a bound Apex value is validated by Salesforce when
-the Apex query runs. Kysoql's field-left `INCLUDES` / `EXCLUDES` form does not
-accept an `apexBind` as its right-hand value, and KnowledgeArticleVersion / `__kav`
-Apex queries reject binds at compilation. Ordinary REST/JSforce builders continue
+the Apex query runs. Bind-left `INCLUDES` accepts a
+string-valued `apexBind` plus literal strings, while Kysoql's field-left
+`INCLUDES` / `EXCLUDES` form still does not accept an `apexBind` as its
+right-hand value. KnowledgeArticleVersion / `__kav` Apex queries reject binds at
+compilation. Ordinary REST/JSforce builders continue
 to accept only escaped literal values and typed subqueries. Relationship
 subqueries also keep Salesforce's existing no-semi-join restriction in Apex mode.
 
