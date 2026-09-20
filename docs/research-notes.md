@@ -1226,6 +1226,50 @@ relationship references do not satisfy the invariant. The validation applies to
 record, aggregate, and scalar `COUNT()` root queries without changing their
 public builder APIs.
 
+### Polymorphic relationship `Type` qualifier
+
+Sources re-checked on 2026-09-21:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-relationships-and-polymorph-keys.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-filtering-polymorphic-relationships.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-typeof.html
+
+Useful findings:
+
+- Salesforce exposes a virtual `Type` qualifier on confirmed polymorphic parent
+  relationships such as `Who.Type` and `What.Type`. It returns the referenced
+  object API name as a string and is usable directly in SELECT.
+- `Type` is also a documented WHERE operand. Salesforce describes object type
+  names as strings and permits normal comparison operators, including equality
+  and `LIKE`; set-list filtering therefore follows the ordinary typed string
+  comparison path.
+- The qualifier belongs to the polymorphic relationship, not to the concrete
+  target object's Describe field list. It can therefore be modeled from the
+  source reference field's `polymorphic` and `referenceTo` metadata even when one
+  or more target objects are not generated locally.
+- A relationship that merely has multiple `referenceTo` targets is insufficient:
+  Salesforce identifies a polymorphic relationship through the Describe flags
+  already preserved by codegen (`namePointing`, `polymorphicForeignKey`, and the
+  derived generated `polymorphic: true` marker).
+- Salesforce explicitly documents combining `TYPEOF` selection with a `Type`
+  filter on the same relationship. The existing prohibition against selecting
+  ordinary relationship fields through the same TYPEOF target remains separate.
+- The references above document `Type` for selection and filtering, but do not
+  establish an independent sortable/groupable/aggregate capability. Keep the
+  synthetic field conservative instead of inferring those capabilities.
+
+Implemented consequence in `v1.0.118`: `FieldReferenceDefinition` recognizes a
+terminal `.Type` only when the immediately preceding generated parent relationship
+is backed by a polymorphic source reference. The synthetic field carries the exact
+`referenceTo` target union, is selectable/filterable, propagates relationship
+nullability for filtering, and is deliberately non-sortable/non-groupable/
+non-aggregatable. SELECT inference places `Type` inside the normal nested parent
+result object and preserves the target-name union. Equality/ordered/set filters are
+restricted to generated target names while `LIKE` remains an arbitrary string
+pattern; Apex `LIKE` binds likewise stay string-typed. Parent paths such as
+`Event__r.What.Type` and `TYPEOF What ... WHERE What.Type ...` share the same
+reference/compiler path and require no new AST node.
+
 ### Vote required-filter shapes
 
 Source re-checked on 2026-09-19:
@@ -1248,9 +1292,10 @@ Useful findings:
   recursive root-WHERE inspection rather than inventing stricter `AND` / `OR`
   semantics.
 - `Parent.Type` is Salesforce's polymorphic relationship type qualifier. The
-  compiler validator must recognize that documented reference even though the
-  current generated ordinary-field reference surface does not synthesize a
-  `.Type` field.
+  `v1.0.81` compiler-boundary test constructs that reference directly to isolate
+  Vote's object-specific invariant; `v1.0.118` later adds the same qualifier to
+  the ordinary typed reference surface whenever generated polymorphic metadata is
+  available.
 
 Kysoql consequence in `v1.0.81`: extend the shared object-query-limit compiler
 validator with a Vote-specific predicate matcher. Accept only non-empty scalar

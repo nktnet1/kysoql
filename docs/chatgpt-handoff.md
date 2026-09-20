@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.116`
+## Current state after `v1.0.119`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -170,6 +170,8 @@ recent patch sequence:
 | `v1.0.115` | Keep negative `toLabel()` WHERE type assertions compile-time-only after invalid function calls so strict test typechecking does not cascade diagnostics through deliberately-invalid expressions. |
 | `v1.0.116` | Enforce Salesforce's query-wide relationship-count limits at compile time: 20 parent-to-child and 55 child-to-parent relationships, with path-prefix deduplication and explicit polymorphic `TYPEOF` target counting. |
 | `v1.0.117` | Model Salesforce's raw-date-field GROUP BY exception for grouped SELECT date functions: a grouped generated `date` field can back selected date functions without exact function grouping, while datetime/ROLLUP/CUBE/HAVING/ORDER BY stay strict. |
+| `v1.0.118` | Add typed polymorphic relationship `.Type` qualifiers to ordinary SELECT/WHERE references, with exact generated target-name unions, nested parent paths, conservative capabilities, and `TYPEOF` filter compatibility. |
+| `v1.0.119` | Fix the new polymorphic `.Type` null-filter test expectation to match the existing scalar compiler contract (`null`); no production behavior changes. |
 
 ### Build/tooling state
 
@@ -250,6 +252,10 @@ Core currently has:
   metadata, available in selection/filtering/ordering up to Salesforce's five-level
   traversal limit; related selections infer nested output objects and lookup
   nullability; traversed target objects must be present in the generated schema;
+  confirmed polymorphic relationships additionally synthesize Salesforce's
+  virtual `.Type` qualifier from source-reference metadata, so SELECT/WHERE can
+  use exact generated target-name unions even when a target object is not locally
+  generated; `.Type` is intentionally non-sortable/non-groupable/non-aggregatable;
 - typed `.selectTypeOf(relationship, callback)` for Describe-confirmed polymorphic
   parent relationships, including child-to-parent target paths; generated
   `referenceTo`, `namePointing`, and `polymorphicForeignKey` metadata constrain
@@ -460,7 +466,7 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The follow-on SOQL completeness pass is active through `v1.0.117`.**
+**The follow-on SOQL completeness pass is active through `v1.0.119`.**
 `v1.0.104` closes the release-audit gap rather than adding more SOQL grammar,
 `v1.0.105` repairs that verifier for TypeScript 7, whose package root no longer
 exposes the historical compiler API, `v1.0.106` adds direct scanner regression
@@ -532,7 +538,23 @@ models that exception for ordinary grouped selection while retaining exact
 function identity for `HAVING` and date-function `ORDER BY`, and keeping
 ROLLUP/CUBE outside the exception.
 
-There is no precommitted next ordinary REST/SOAP SOQL slice after `v1.0.117`. The
+`v1.0.118` closes another ordinary polymorphic-reference gap that had previously
+been modeled only inside the Vote compiler guard: Salesforce's virtual
+relationship `Type` qualifier. Confirmed generated polymorphic references now
+support typed `What.Type` / `Who.Type`-style selection and filtering, including
+nested parent paths, exact `referenceTo` target unions for equality/set operands,
+arbitrary string `LIKE` patterns, nullable-vs-required reference behavior, and
+the documented `TYPEOF ... WHERE <relationship>.Type ...` combination. The
+qualifier depends only on source-reference metadata, so it remains available when
+some concrete target objects are not generated; no synthetic sort/group/aggregate
+capabilities are inferred.
+
+`v1.0.119` fixes the accompanying nullable `.Type` compiler regression test:
+the existing scalar literal compiler serialises JavaScript `null` as lowercase
+SOQL `null`, so the test now follows that established output contract. No
+production compiler or type behavior changes.
+
+There is no precommitted next ordinary REST/SOAP SOQL slice after `v1.0.119`. The
 remaining items below require either narrower metadata/execution-context support or
 a separately verified completeness decision; do not invent a generic raw-SOQL
 escape hatch to chase them.
@@ -560,7 +582,7 @@ consistency audit:
    object rules, external-adapter-specific limits, and permission/cardinality
    dependent caps need authoritative metadata or execution-context hooks before
    they can become sound static/compiler guarantees.
-4. **Release hardening.** The baseline audit is complete through `v1.0.117`: built
+4. **Release hardening.** The baseline audit is complete through `v1.0.119`: built
    runtime/declaration export parity is verified against source barrels without
    depending on TypeScript's removed root compiler API, and the scratch-org fixture
    exercises the completed static-Apex bind-expression families. Continue only for

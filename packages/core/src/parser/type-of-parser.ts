@@ -1,12 +1,10 @@
 import type { SelectQueryNode } from "#/operation-node/select-query-node";
 import type { SelectionNode } from "#/operation-node/selection-node";
 import type {
-  FieldDefinition,
-  FieldName,
   ParentObjectName,
-  ParentRelationshipFieldName,
   ParentRelationshipName,
   ParentRelationshipNullable,
+  PolymorphicRelationshipTypeTargets,
 } from "#/parser/reference-parser";
 import type { SelectExpression, Selection } from "#/parser/select-parser";
 import type { SalesforceRecordAttributes } from "#/schema";
@@ -23,18 +21,7 @@ type DirectPolymorphicRelationshipTargets<
   Relationship extends string,
 > =
   Relationship extends ParentRelationshipName<DB, TB>
-    ? ParentRelationshipFieldName<
-        DB,
-        TB,
-        Relationship
-      > extends infer SourceField extends FieldName<DB, TB>
-      ? FieldDefinition<DB, TB, SourceField> extends {
-          readonly polymorphic: true;
-          readonly referenceTo: infer Targets extends string;
-        }
-        ? Targets
-        : never
-      : never
+    ? PolymorphicRelationshipTypeTargets<DB, TB, Relationship>
     : never;
 
 export type PolymorphicRelationshipTargets<

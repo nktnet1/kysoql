@@ -307,7 +307,8 @@ terminal related field keeps its generated value/operator/capability checks, and
 traversal is limited to Salesforce's five child-to-parent relationship levels.
 Selected relationship fields infer the nested object shape returned by Salesforce,
 including `null` when the generated lookup metadata is nullable. Every traversed
-parent object must be present in the generated schema so its fields can be checked.
+parent object must be present in the generated schema so its fields can be checked,
+except for the polymorphic `.Type` qualifier described below.
 
 ```ts
 const records = await db
@@ -317,6 +318,27 @@ const records = await db
   .orderBy("Account__r.Name")
   .execute();
 ```
+
+Polymorphic parent relationships also expose Salesforce's virtual `.Type`
+qualifier. Its selected value is inferred from the generated `referenceTo`
+target union, while filters accept only those target names for equality/set
+comparisons and ordinary string patterns for `LIKE`. The qualifier can be used
+without generating every referenced target object because it depends only on the
+polymorphic reference metadata.
+
+```ts
+const accountEvents = await db
+  .selectFrom("Event")
+  .select(["Id", "What.Type"])
+  .where("What.Type", "in", ["Account", "Opportunity"])
+  .where("What.Type", "like", "Acc%")
+  .execute();
+```
+
+Kysoql exposes `.Type` only for references explicitly generated as polymorphic;
+a multi-target reference without Salesforce's polymorphic metadata does not gain
+the qualifier. The virtual field is selectable and filterable, but is not
+synthesized as sortable, groupable, or aggregatable.
 
 Generated polymorphic-reference metadata also enables typed `TYPEOF` selections.
 Use the Salesforce relationship name such as `What` or `Who`, not the underlying
@@ -351,7 +373,8 @@ than modeling Salesforce's broader `Name` pseudo-object surface. Salesforce also
 forbids combining `TYPEOF` with SELECT-function expressions, aggregate/grouping
 forms, or selecting fields through the same polymorphic relationship in the
 ordinary field list; kysoql enforces those boundaries at the typed API and
-compiler validation layers.
+compiler validation layers. A `.Type` filter on that relationship remains valid,
+so queries can combine `TYPEOF What ...` with `WHERE What.Type ...`.
 
 Salesforce Describe `supportedScopes` metadata is generated per object. Root
 queries can use `.usingScope(...)`, with the accepted value restricted to the

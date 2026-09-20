@@ -36,7 +36,7 @@ import {
 import { parseLimit } from "#/parser/limit-parser";
 import { parseOffset } from "#/parser/offset-parser";
 import type { FieldReferenceDefinition } from "#/parser/reference-parser";
-import type { SalesforceFieldValue } from "#/schema";
+import type { SalesforceField, SalesforceFieldValue } from "#/schema";
 
 const KNOWLEDGE_APEX_BIND_ERROR =
   "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.";
@@ -51,13 +51,36 @@ type ApexFieldValue<
   RE extends string,
 > = SalesforceFieldValue<FieldReferenceDefinition<DB, TB, RE>>;
 
+type ApexFieldSalesforceType<
+  DB,
+  TB extends keyof DB,
+  RE extends string,
+> = FieldReferenceDefinition<DB, TB, RE> extends SalesforceField<
+  unknown,
+  infer SalesforceType,
+  boolean,
+  boolean,
+  boolean,
+  boolean,
+  string,
+  string,
+  string,
+  boolean,
+  boolean,
+  boolean
+>
+  ? SalesforceType
+  : never;
+
 type ApexScalarBindValue<
   DB,
   TB extends keyof DB,
   RE extends string,
   OP extends ComparisonOperatorExpression<DB, TB, RE>,
 > = OP extends LikeComparisonOperator
-  ? Extract<NonNullable<ApexFieldValue<DB, TB, RE>>, string>
+  ? ApexFieldSalesforceType<DB, TB, RE> extends "polymorphicType"
+    ? string
+    : Extract<NonNullable<ApexFieldValue<DB, TB, RE>>, string>
   : OP extends OrderedComparisonOperator
     ? NonNullable<ApexFieldValue<DB, TB, RE>>
     : ApexFieldValue<DB, TB, RE>;

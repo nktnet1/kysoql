@@ -81,6 +81,7 @@ type OrderedSalesforceType =
   | "int"
   | "percent"
   | "phone"
+  | "polymorphicType"
   | "reference"
   | "string"
   | "textarea"
@@ -92,6 +93,7 @@ type LikeSalesforceType =
   | "email"
   | "phone"
   | "picklist"
+  | "polymorphicType"
   | "string"
   | "textarea"
   | "url";
@@ -144,7 +146,9 @@ export type OperandValueExpression<
   OP extends ComparisonOperatorExpression<DB, TB, RE>,
   AllowSemiJoin extends boolean = true,
 > = OP extends LikeComparisonOperator
-  ? Extract<NonNullable<FieldValueExpression<DB, TB, RE>>, string>
+  ? SalesforceTypeOfField<DB, TB, RE> extends "polymorphicType"
+    ? string
+    : Extract<NonNullable<FieldValueExpression<DB, TB, RE>>, string>
   : OP extends OrderedComparisonOperator
     ? NonNullable<FieldValueExpression<DB, TB, RE>>
     : OP extends SetComparisonOperator

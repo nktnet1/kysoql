@@ -74,9 +74,16 @@ version is cut.
   generated raw `date` field can select date functions over that field without
   separately grouping the function expression, while `datetime`, ROLLUP/CUBE,
   HAVING, and date-function ORDER BY retain their stricter boundaries.
+- Typed polymorphic relationship `.Type` qualifiers in ordinary SELECT/WHERE
+  surfaces, inferred from generated polymorphic `referenceTo` metadata with exact
+  target-name equality/set operands, string `LIKE` patterns, parent-path support,
+  nullability, and compatibility with `TYPEOF` filters.
 
 ### Fixed
 
+- Correct the polymorphic `.Type` null-filter regression expectation to match
+  the established scalar compiler output (`null`), without changing compiler
+  behavior.
 - Keep negative `toLabel()` WHERE type tests compile-time-only after an
   expected invalid function call, avoiding follow-on diagnostics from
   deliberately poisoned expressions during strict test typechecking.

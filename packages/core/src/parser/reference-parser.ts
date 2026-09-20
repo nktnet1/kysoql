@@ -1,5 +1,6 @@
 import type {
   SalesforceChildRelationship,
+  SalesforceField,
   SalesforceParentRelationship,
 } from "#/schema";
 import type { NonNeverStringKey } from "#/util/type-utils";
@@ -119,6 +120,38 @@ export type ParentRelationshipNullable<
   ParentRelationshipDefinition<DB, TB, Relationship>
 >;
 
+export type PolymorphicRelationshipTypeTargets<
+  DB,
+  TB extends keyof DB,
+  Relationship extends ParentRelationshipName<DB, TB>,
+> = ParentRelationshipFieldName<DB, TB, Relationship> extends infer SourceField extends
+  FieldName<DB, TB>
+  ? FieldDefinition<DB, TB, SourceField> extends {
+      readonly polymorphic: true;
+      readonly referenceTo: infer Targets extends string;
+    }
+    ? Targets
+    : never
+  : never;
+
+type PolymorphicTypeQualifierDefinition<
+  DB,
+  TB extends keyof DB,
+  Relationship extends ParentRelationshipName<DB, TB>,
+> = PolymorphicRelationshipTypeTargets<DB, TB, Relationship> extends infer Targets extends
+  string
+  ? [Targets] extends [never]
+    ? never
+    : SalesforceField<
+        Targets,
+        "polymorphicType",
+        ParentRelationshipNullable<DB, TB, Relationship>,
+        true,
+        false,
+        false
+      >
+  : never;
+
 export type ChildObjectName<
   DB,
   TB extends keyof DB,
@@ -157,9 +190,26 @@ export type FieldReferenceDefinition<
   ? Depth["length"] extends 5
     ? never
     : Relationship extends ParentRelationshipName<DB, TB>
-      ? ParentObjectName<DB, TB, Relationship> extends infer ParentTB extends
-          keyof DB
-        ? ParentReference extends string
+      ? ParentReference extends "Type"
+        ? PolymorphicTypeQualifierDefinition<
+            DB,
+            TB,
+            Relationship
+          > extends infer TypeQualifier
+          ? [TypeQualifier] extends [never]
+            ? ParentObjectName<DB, TB, Relationship> extends infer ParentTB extends
+                keyof DB
+              ? FieldReferenceDefinition<
+                  DB,
+                  ParentTB,
+                  ParentReference,
+                  NextRelationshipDepth<Depth>
+                >
+              : never
+            : TypeQualifier
+          : never
+        : ParentObjectName<DB, TB, Relationship> extends infer ParentTB extends
+            keyof DB
           ? FieldReferenceDefinition<
               DB,
               ParentTB,
@@ -167,7 +217,6 @@ export type FieldReferenceDefinition<
               NextRelationshipDepth<Depth>
             >
           : never
-        : never
       : never
   : Reference extends FieldName<DB, TB>
     ? FieldDefinition<DB, TB, Reference>
@@ -182,17 +231,31 @@ export type FieldReferenceNullable<
   ? Depth["length"] extends 5
     ? never
     : Relationship extends ParentRelationshipName<DB, TB>
-      ? ParentObjectName<DB, TB, Relationship> extends infer ParentTB extends
-          keyof DB
-        ? true extends ParentRelationshipNullable<DB, TB, Relationship>
-          ? true
-          : FieldReferenceNullable<
-              DB,
-              ParentTB,
-              ParentReference,
-              NextRelationshipDepth<Depth>
-            >
-        : never
+      ? true extends ParentRelationshipNullable<DB, TB, Relationship>
+        ? true
+        : ParentReference extends "Type"
+          ? [
+              PolymorphicRelationshipTypeTargets<DB, TB, Relationship>,
+            ] extends [never]
+            ? ParentObjectName<DB, TB, Relationship> extends infer ParentTB extends
+                keyof DB
+              ? FieldReferenceNullable<
+                  DB,
+                  ParentTB,
+                  ParentReference,
+                  NextRelationshipDepth<Depth>
+                >
+              : never
+            : false
+          : ParentObjectName<DB, TB, Relationship> extends infer ParentTB extends
+              keyof DB
+            ? FieldReferenceNullable<
+                DB,
+                ParentTB,
+                ParentReference,
+                NextRelationshipDepth<Depth>
+              >
+            : never
       : never
   : Reference extends FieldName<DB, TB>
     ? FieldDefinition<DB, TB, Reference> extends {

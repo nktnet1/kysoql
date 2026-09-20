@@ -7,6 +7,7 @@ import type {
   ParentObjectName,
   ParentRelationshipName,
   ParentRelationshipNullable,
+  PolymorphicRelationshipTypeTargets,
 } from "#/parser/reference-parser";
 import type { SalesforceFieldValue } from "#/schema";
 import type { Simplify } from "#/util/type-utils";
@@ -36,6 +37,63 @@ type ParentSelectionReference<
   Relationship extends string,
 > = SE extends `${Relationship}.${infer Reference}` ? Reference : never;
 
+type PolymorphicTypeSelection<
+  DB,
+  TB extends keyof DB,
+  Relationship extends ParentRelationshipName<DB, TB>,
+  Reference,
+> = PolymorphicRelationshipTypeTargets<
+  DB,
+  TB,
+  Relationship
+> extends infer Targets extends string
+  ? [Targets] extends [never]
+    ? unknown
+    : "Type" extends Reference
+      ? { readonly Type: Targets }
+      : unknown
+  : unknown;
+
+type RegularParentSelectionReference<
+  DB,
+  TB extends keyof DB,
+  Relationship extends ParentRelationshipName<DB, TB>,
+  Reference,
+> = [PolymorphicRelationshipTypeTargets<DB, TB, Relationship>] extends [never]
+  ? Reference
+  : Exclude<Reference, "Type">;
+
+type RegularParentSelection<
+  DB,
+  TB extends keyof DB,
+  Relationship extends ParentRelationshipName<DB, TB>,
+  Reference,
+  ForceNullable extends boolean,
+> = RegularParentSelectionReference<
+  DB,
+  TB,
+  Relationship,
+  Reference
+> extends infer RegularReference
+  ? [RegularReference] extends [never]
+    ? unknown
+    : ParentObjectName<DB, TB, Relationship> extends infer ParentTB extends
+          keyof DB
+      ? Selection<DB, ParentTB, RegularReference, ForceNullable>
+      : never
+  : never;
+
+type ParentSelectionValue<
+  DB,
+  TB extends keyof DB,
+  Relationship extends ParentRelationshipName<DB, TB>,
+  Reference,
+  ForceNullable extends boolean,
+> = Simplify<
+  PolymorphicTypeSelection<DB, TB, Relationship, Reference> &
+    RegularParentSelection<DB, TB, Relationship, Reference, ForceNullable>
+>;
+
 type ParentSelection<
   DB,
   TB extends keyof DB,
@@ -46,22 +104,21 @@ type ParentSelection<
     DB,
     TB,
     SE
-  >]: ParentObjectName<DB, TB, Relationship> extends infer ParentTB extends
-    keyof DB
-    ? true extends ParentRelationshipNullable<DB, TB, Relationship>
-      ? Selection<
-          DB,
-          ParentTB,
-          ParentSelectionReference<SE, Relationship>,
-          ForceNullable
-        > | null
-      : Selection<
-          DB,
-          ParentTB,
-          ParentSelectionReference<SE, Relationship>,
-          ForceNullable
-        >
-    : never;
+  >]: true extends ParentRelationshipNullable<DB, TB, Relationship>
+    ? ParentSelectionValue<
+        DB,
+        TB,
+        Relationship,
+        ParentSelectionReference<SE, Relationship>,
+        ForceNullable
+      > | null
+    : ParentSelectionValue<
+        DB,
+        TB,
+        Relationship,
+        ParentSelectionReference<SE, Relationship>,
+        ForceNullable
+      >;
 };
 
 export type Selection<
