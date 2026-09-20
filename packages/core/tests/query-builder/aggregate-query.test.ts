@@ -342,6 +342,44 @@ describe("aggregate queries", () => {
     expect(Object.isFrozen(query.toOperationNode().groupBy?.items)).toBe(true);
   });
 
+  it("selects date functions when their raw date field is grouped", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupBy("CloseDate")
+      .select(({ fn }) => [
+        fn.calendarYear("CloseDate").as("closeYear"),
+        fn.calendarMonth("CloseDate").as("closeMonth"),
+      ]);
+
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly rowCount: number;
+      readonly closeYear: number | null;
+      readonly closeMonth: number | null;
+    }>();
+    expect(query.compile().soql).toBe(
+      "SELECT COUNT(Id) rowCount, CALENDAR_YEAR(CloseDate) closeYear, CALENDAR_MONTH(CloseDate) closeMonth FROM Account GROUP BY CloseDate",
+    );
+    expect(() =>
+      query.having((eb) =>
+        eb(eb.fn.calendarYear("CloseDate") as never, "=", 2026),
+      ),
+    ).toThrow("SOQL date function expressions must also appear in GROUP BY.");
+    expect(() =>
+      query.orderBy(({ fn }) => fn.calendarYear("CloseDate") as never),
+    ).toThrow("SOQL date function expressions must also appear in GROUP BY.");
+
+    const rollup = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupByRollup("CloseDate");
+    expect(() =>
+      rollup.select(
+        ({ fn }) => fn.calendarYear("CloseDate").as("closeYear") as never,
+      ),
+    ).toThrow("SOQL date function expressions must also appear in GROUP BY.");
+  });
+
   it("composes convertTimezone with grouped date functions", () => {
     const query = new Kysoql<FixtureSchema>()
       .selectFrom("Account")
@@ -986,6 +1024,30 @@ describe("aggregate queries", () => {
       });
       // @ts-expect-error ORDER BY date functions must be exact GROUP BY members.
       dateGroupedQuery.orderBy(({ fn }) => fn.calendarMonth("CloseDate"));
+
+      const rawDateGroupedQuery = aggregateQuery.groupBy("CloseDate");
+      rawDateGroupedQuery.select(({ fn }) => [
+        fn.calendarYear("CloseDate").as("closeYear"),
+        fn.calendarMonth("CloseDate").as("closeMonth"),
+      ]);
+      rawDateGroupedQuery.having((eb) => {
+        // @ts-expect-error HAVING still requires exact date-function grouping.
+        return eb(eb.fn.calendarYear("CloseDate"), "=", 2026);
+      });
+      // @ts-expect-error ORDER BY still requires exact date-function grouping.
+      rawDateGroupedQuery.orderBy(({ fn }) => fn.calendarYear("CloseDate"));
+
+      const rawDatetimeGroupedQuery = aggregateQuery.groupBy("CreatedDate");
+      // @ts-expect-error The raw-field GROUP BY exception applies to date fields, not datetime fields.
+      rawDatetimeGroupedQuery.select(({ fn }) => {
+        return fn.calendarYear("CreatedDate").as("createdYear");
+      });
+
+      const rollupDateGroupedQuery = aggregateQuery.groupByRollup("CloseDate");
+      // @ts-expect-error The raw-date-field exception is scoped to ordinary GROUP BY.
+      rollupDateGroupedQuery.select(({ fn }) => {
+        return fn.calendarYear("CloseDate").as("closeYear");
+      });
 
       const timezoneGroupedQuery = aggregateQuery.groupBy(({ fn }) =>
         fn.calendarYear(fn.convertTimezone("CreatedDate")),

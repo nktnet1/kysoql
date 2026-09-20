@@ -69,13 +69,31 @@ export function validateGroupedDateFunctionNode(
 export function validateDateFunctionSelections(
   selections: readonly SelectionNode[],
   groupedBy: readonly string[],
+  allowGroupedDateField = false,
 ): void {
   for (const selection of selections) {
-    if (
-      selection.selection.kind === "AliasNode" &&
-      selection.selection.node.kind === "DateFunctionNode"
-    ) {
-      validateGroupedDateFunctionNode(selection.selection.node, groupedBy);
+    const aliasedNode = selection.selection;
+    if (aliasedNode.kind !== "AliasNode") {
+      continue;
     }
+
+    if (aliasedNode.node.kind !== "DateFunctionNode") {
+      continue;
+    }
+
+    const node = aliasedNode.node as DateFunctionNode;
+    if (groupedBy.includes(dateFunctionIdentity(node))) {
+      continue;
+    }
+
+    if (
+      allowGroupedDateField &&
+      node.reference.kind === "ReferenceNode" &&
+      groupedBy.includes(node.reference.name)
+    ) {
+      continue;
+    }
+
+    throw new TypeError(DATE_FUNCTION_GROUP_ERROR);
   }
 }

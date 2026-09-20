@@ -613,10 +613,14 @@ const largestStages = await db
 
 SOQL's complete date grouping family is available through the same `fn` module.
 Date functions accept generated `date` or `datetime` fields, while `dayOnly()`
-and `hourInDay()` are restricted to `datetime`. The exact function expression
-must be accumulated through ordinary `groupBy(...)` before it can be selected,
-used in `HAVING`, or used for ordering. Child-to-parent field references retain
-their generated temporal checks and relationship nullability.
+and `hourInDay()` are restricted to `datetime`. Normally the exact function
+expression must be accumulated through ordinary `groupBy(...)` before it can be
+selected, used in `HAVING`, or used for ordering. Salesforce has one SELECT-only
+exception: when the function input is a generated `date` field, grouping by that
+raw field also permits selecting date functions over it. The exception does not
+apply to `datetime`, `ROLLUP` / `CUBE`, `HAVING`, or date-function ordering.
+Child-to-parent field references retain their generated temporal checks and
+relationship nullability.
 
 The same date-function family is available directly in `WHERE` expression
 callbacks. Filtering uses generated `filterable` metadata rather than requiring
@@ -645,6 +649,15 @@ const currentYearActivity = await db
 ```
 
 ```ts
+const revenueByExactCloseDate = await db
+  .selectFrom("Opportunity")
+  .select(({ fn }) => fn.count("Id").as("opportunityCount"))
+  .groupBy("CloseDate")
+  .select(({ fn }) => fn.calendarYear("CloseDate").as("closeYear"))
+  .execute();
+// SELECT COUNT(Id) opportunityCount, CALENDAR_YEAR(CloseDate) closeYear
+// FROM Opportunity GROUP BY CloseDate
+
 const revenueByCloseYear = await db
   .selectFrom("Opportunity")
   .select(({ fn }) => fn.sum("Amount").as("totalAmount"))

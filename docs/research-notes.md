@@ -533,7 +533,7 @@ ordering yet.
 
 ### Date grouping functions
 
-Sources re-checked on 2026-09-19:
+Sources re-checked on 2026-09-21:
 
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-date-functions.html
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-convert-time-zone.html
@@ -551,9 +551,10 @@ Useful findings:
 - `DAY_ONLY` and `HOUR_IN_DAY` accept only dateTime fields. `DAY_ONLY` returns a
   date value, while `HOUR_IN_DAY` returns a number.
 - A date function selected by a grouped query must participate in `GROUP BY`.
-  Salesforce permits grouping by the underlying date field as an exception for
-  date (not dateTime) inputs, but exact expression membership is the uniform,
-  conservative safe-builder rule.
+  Salesforce explicitly permits grouping by the underlying field instead of the
+  function when that field is a `date`; the exception does not apply to
+  `dateTime`. The documentation states this exception for `SELECT`, so Kysoql
+  keeps `HAVING` and date-function `ORDER BY` on exact grouped-function identity.
 - Client-query dateTime behavior is UTC unless `convertTimezone()` is applied.
   Salesforce permits `convertTimezone(datetimeField)` only inside a date
   function, so timezone conversion is an explicit nested-expression slice rather
@@ -573,6 +574,15 @@ runtime boundaries. Numeric outputs preserve source/relationship nullability;
 `DAY_ONLY` returns the generated API date representation (`string`) and compares
 against `soqlDate(...)`. ROLLUP/CUBE remain field-only, preserving
 `GROUPING(field)`'s documented field argument and existing subtotal semantics.
+
+Implemented consequence in `v1.0.117`: ordinary grouped SELECT now models the
+documented raw-date-field exception. If a generated `date` reference is itself
+accumulated with `.groupBy(field)`, aliased date functions over that exact raw
+reference can be selected without separately grouping the function expression.
+The type surface excludes `datetime` inputs and advanced ROLLUP/CUBE modes;
+`HAVING` and date-function ORDER BY retain exact expression membership. Runtime
+selection validation recognizes the corresponding raw-reference grouping shape
+without introducing a raw-expression API.
 
 Implemented consequence in `v1.0.71`: `fn.convertTimezone(...)` creates a
 dedicated frozen intermediate node restricted to generated, groupable

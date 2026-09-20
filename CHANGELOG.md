@@ -70,6 +70,10 @@ version is cut.
   most 20 parent-to-child relationships and 55 child-to-parent relationships per
   query, with repeated relationship paths deduplicated and polymorphic `TYPEOF`
   targets counted according to Salesforce's documented rules.
+- The documented grouped-date SELECT exception: ordinary queries grouped by a
+  generated raw `date` field can select date functions over that field without
+  separately grouping the function expression, while `datetime`, ROLLUP/CUBE,
+  HAVING, and date-function ORDER BY retain their stricter boundaries.
 
 ### Fixed
 

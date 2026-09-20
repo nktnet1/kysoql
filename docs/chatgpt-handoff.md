@@ -169,6 +169,7 @@ recent patch sequence:
 | `v1.0.114` | Add typed `toLabel()` predicates to ordinary `WHERE` callbacks with filterable generated picklist metadata, translated-string/nullability-aware operands, regular-picklist `LIKE`, child-to-parent paths, and Salesforce's documented `Division` / `CurrencyIsoCode` / external-object restrictions. |
 | `v1.0.115` | Keep negative `toLabel()` WHERE type assertions compile-time-only after invalid function calls so strict test typechecking does not cascade diagnostics through deliberately-invalid expressions. |
 | `v1.0.116` | Enforce Salesforce's query-wide relationship-count limits at compile time: 20 parent-to-child and 55 child-to-parent relationships, with path-prefix deduplication and explicit polymorphic `TYPEOF` target counting. |
+| `v1.0.117` | Model Salesforce's raw-date-field GROUP BY exception for grouped SELECT date functions: a grouped generated `date` field can back selected date functions without exact function grouping, while datetime/ROLLUP/CUBE/HAVING/ORDER BY stay strict. |
 
 ### Build/tooling state
 
@@ -459,7 +460,7 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The follow-on SOQL completeness pass is active through `v1.0.115`.**
+**The follow-on SOQL completeness pass is active through `v1.0.117`.**
 `v1.0.104` closes the release-audit gap rather than adding more SOQL grammar,
 `v1.0.105` repairs that verifier for TypeScript 7, whose package root no longer
 exposes the historical compiler API, `v1.0.106` adds direct scanner regression
@@ -524,7 +525,14 @@ polymorphic `TYPEOF` targets also consume separate relationship slots as documen
 by Salesforce, except for the documented single-root-record `Id = ...` case where
 those explicit target counts collapse.
 
-There is no precommitted next ordinary REST/SOAP SOQL slice after `v1.0.116`. The
+`v1.0.117` closes one final documented date-grouping mismatch found during the
+follow-on audit. Salesforce allows a date function in grouped SELECT when its raw
+input field is itself grouped, but only for `date`, not `datetime`. Kysoql now
+models that exception for ordinary grouped selection while retaining exact
+function identity for `HAVING` and date-function `ORDER BY`, and keeping
+ROLLUP/CUBE outside the exception.
+
+There is no precommitted next ordinary REST/SOAP SOQL slice after `v1.0.117`. The
 remaining items below require either narrower metadata/execution-context support or
 a separately verified completeness decision; do not invent a generic raw-SOQL
 escape hatch to chase them.
@@ -552,7 +560,7 @@ consistency audit:
    object rules, external-adapter-specific limits, and permission/cardinality
    dependent caps need authoritative metadata or execution-context hooks before
    they can become sound static/compiler guarantees.
-4. **Release hardening.** The baseline audit is complete through `v1.0.116`: built
+4. **Release hardening.** The baseline audit is complete through `v1.0.117`: built
    runtime/declaration export parity is verified against source barrels without
    depending on TypeScript's removed root compiler API, and the scratch-org fixture
    exercises the completed static-Apex bind-expression families. Continue only for

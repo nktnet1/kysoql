@@ -234,6 +234,22 @@ describe("aggregate query compilation", () => {
     );
   });
 
+  it("compiles date functions selected from a raw grouped date field", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupBy("CloseDate")
+      .select(({ fn }) => [
+        fn.calendarYear("CloseDate").as("closeYear"),
+        fn.calendarMonth("CloseDate").as("closeMonth"),
+      ])
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT COUNT(Id) rowCount, CALENDAR_YEAR(CloseDate) closeYear, CALENDAR_MONTH(CloseDate) closeMonth FROM Account GROUP BY CloseDate",
+    );
+  });
+
   it("compiles convertTimezone only as a nested date-function argument", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")

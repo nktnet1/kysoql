@@ -61,6 +61,7 @@ import {
 } from "#/parser/group-by-parser";
 import { validateGroupingSelections } from "#/parser/grouping-expression-parser";
 import type { KnowledgeArticleUpdateCheck } from "#/parser/knowledge-update-parser";
+import type { FieldReferenceDefinition } from "#/parser/reference-parser";
 import { parseLimit } from "#/parser/limit-parser";
 import {
   parseAggregateOrderBy,
@@ -130,14 +131,48 @@ type DateFunctionIdentityOf<Expression> =
     ? Identity
     : never;
 
+type DateFunctionArgumentReference<Identity extends string> =
+  Identity extends `${string}(${infer Reference})`
+    ? Reference extends `${string}(${string})`
+      ? never
+      : Reference
+    : never;
+
+type SelectableGroupedDateFunctionIdentity<
+  DB,
+  TB extends keyof DB,
+  GroupedBy extends string,
+  GroupMode extends AggregateGroupMode,
+  Identity extends string,
+> = Identity extends GroupedBy
+  ? Identity
+  : GroupMode extends "ordinary"
+    ? DateFunctionArgumentReference<Identity> extends infer Reference extends
+        string
+      ? Reference extends GroupedBy
+        ? FieldReferenceDefinition<DB, TB, Reference> extends {
+            readonly salesforceType: "date";
+          }
+          ? Identity
+          : never
+        : never
+      : never
+    : never;
+
 type GroupedFunctionSelection<
+  DB,
+  TB extends keyof DB,
   Selection,
   GroupedBy extends string,
+  GroupMode extends AggregateGroupMode,
 > = Selection extends readonly unknown[]
   ? {
       readonly [Index in keyof Selection]: GroupedFunctionSelection<
+        DB,
+        TB,
         Selection[Index],
-        GroupedBy
+        GroupedBy,
+        GroupMode
       >;
     }
   : Selection extends AliasedDateFunctionBuilder<
@@ -145,7 +180,13 @@ type GroupedFunctionSelection<
         string,
         infer Identity
       >
-    ? Identity extends GroupedBy
+    ? Identity extends SelectableGroupedDateFunctionIdentity<
+        DB,
+        TB,
+        GroupedBy,
+        GroupMode,
+        Identity
+      >
       ? Selection
       : never
     : Selection;
@@ -584,7 +625,9 @@ export interface AggregateSelectQueryBuilder<
         TB,
         AdvancedGroupingFields<GroupedBy, GroupMode>
       >,
-    ) => Selection & GroupedFunctionSelection<Selection, GroupedBy>,
+    ) =>
+      Selection &
+        GroupedFunctionSelection<DB, TB, Selection, GroupedBy, GroupMode>,
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -1352,7 +1395,9 @@ class AggregateSelectQueryBuilderImpl<
         TB,
         AdvancedGroupingFields<GroupedBy, GroupMode>
       >,
-    ) => Selection & GroupedFunctionSelection<Selection, GroupedBy>,
+    ) =>
+      Selection &
+        GroupedFunctionSelection<DB, TB, Selection, GroupedBy, GroupMode>,
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -1437,6 +1482,7 @@ class AggregateSelectQueryBuilderImpl<
     validateDateFunctionSelections(
       parsedSelections,
       getGroupedByIdentities(this.#props.queryNode),
+      this.#props.queryNode.groupBy?.mode === undefined,
     );
 
     return new AggregateSelectQueryBuilderImpl<
