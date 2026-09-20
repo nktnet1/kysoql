@@ -55,7 +55,7 @@ preserve field-value typing, and `IN` / `NOT IN` collection binds compile withou
 literal-list parentheses:
 
 ```ts
-import { apexAdd, apexBind, apexSubstring } from "@kysoql/core";
+import { apexAdd, apexBind, apexQueryField, apexSubstring } from "@kysoql/core";
 
 const byName = db
   .selectFrom("Account")
@@ -103,6 +103,28 @@ const substring = db
   .compile();
 ```
 
+Salesforce's documented single-row query-result bind expression is also structured
+through a builder rather than raw SOQL. `apexQueryField(query, field)` requires a
+plain-mode Apex select builder and restricts `field` to its selected output keys:
+
+```ts
+const sourceAccount = db
+  .selectFrom("Account")
+  .select("Name")
+  .apex()
+  .where("Id", "=", apexBind<string>("sourceAccount.Id"));
+
+const bySourceName = db
+  .selectFrom("Account")
+  .select("Id")
+  .apex()
+  .where("Name", "=", apexQueryField(sourceAccount, "Name"))
+  .compile();
+```
+
+Kysoql models this as single-record field access and does not silently inject
+`LIMIT 1`; Salesforce enforces the bracket query's runtime cardinality.
+
 Salesforce's bind-left multipicklist form is exposed separately from ordinary
 field filters:
 
@@ -139,8 +161,9 @@ accepts a simple identifier or a dotted member path such as `filters.accountName
 and rejects calls, indexing, arithmetic text, and other raw fragments. Structured
 `+` expressions are available separately through `apexAdd(...)`; the documented
 `String.substring(beginIndex, endIndex)` method family is available through
-`apexSubstring(...)`. Arbitrary method calls and query-result expressions remain
-outside the safe API. Bind expressions are
+`apexSubstring(...)`, and single-row query-result field access is available through
+`apexQueryField(...)`. Arbitrary method calls remain outside the safe API. Bind
+expressions are
 intentionally unavailable on ordinary API-executable builders and as
 right-hand values for Kysoql's field-left `INCLUDES` / `EXCLUDES` form. The
 separate Apex-only bind-left `INCLUDES` overload keeps its right

@@ -44,9 +44,13 @@ The script safely performs the complete fixture setup:
 5. creates a scratch org without changing your default target org;
 6. deploys fixture metadata;
 7. assigns the `Kysoql_Test` permission set;
-8. runs the idempotent Apex seed script; and
-9. checks that all three custom fixture records are queryable, including their
-   parent Account relationship.
+8. runs the idempotent Apex seed script;
+9. executes a static-Apex bind-expression smoke fixture covering member paths,
+   collection binds, bind-left `INCLUDES`, relationship-subquery binds, structured
+   addition / substring
+   expressions, query-result field access, and bound pagination; and
+10. checks that all three custom fixture records are queryable, including their
+    parent Account relationship.
 
 Useful options:
 
@@ -138,6 +142,28 @@ pnpm sf apex run \
 ```
 
 It creates two Accounts, three Contacts, and three `Kysoql_Record__c` records.
+
+### Verify static Apex bind expressions
+
+The setup command automatically runs `scripts/apex/static-bind-smoke.apex` after
+seeding. Re-run only that fixture against an existing authenticated org with:
+
+```bash
+pnpm salesforce:apex-binds
+```
+
+Override the target org without changing Salesforce CLI defaults:
+
+```bash
+pnpm salesforce:apex-binds -- --target-org my-scratch-org
+# or
+KYSOQL_TARGET_ORG=my-scratch-org pnpm salesforce:apex-binds
+```
+
+This fixture is deliberately separate from `pnpm validate`: it exercises static
+Apex grammar on a real Salesforce runtime and therefore requires org credentials.
+It covers the bind-expression families represented by Kysoql's Apex AST rather than
+using dynamic SOQL strings.
 
 ## Smoke-test SOQL
 

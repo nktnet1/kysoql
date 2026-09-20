@@ -1,4 +1,4 @@
-import { isApexBindExpression, type ApexBindExpression } from "#/apex-bind";
+import { type ApexBindExpression, isApexBindExpression } from "#/apex-bind";
 import type { AndNode } from "#/operation-node/and-node";
 import type {
   ApexAdditionNode,

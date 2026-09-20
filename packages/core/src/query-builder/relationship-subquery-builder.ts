@@ -291,7 +291,8 @@ class RelationshipSubqueryBuilderImpl<
   Depth extends ParentToChildDepth,
   FunctionMode extends RelationshipSubqueryFunctionMode,
   ApexMode extends boolean,
-> implements RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>
+> implements
+    RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>
 {
   readonly #props: RelationshipSubqueryBuilderProps<ApexMode>;
 
@@ -369,9 +370,7 @@ class RelationshipSubqueryBuilderImpl<
     const operation =
       typeof lhsOrExpression === "function"
         ? this.#props.apex
-          ? (
-              lhsOrExpression as ApexWhereExpressionFactory<DB, TB, false>
-            )(
+          ? (lhsOrExpression as ApexWhereExpressionFactory<DB, TB, false>)(
               createApexExpressionBuilder<DB, TB, false>({
                 allowSemiJoin: false,
               }),

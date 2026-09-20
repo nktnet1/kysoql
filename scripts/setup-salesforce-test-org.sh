@@ -172,6 +172,11 @@ sf apex run \
   --target-org "$SCRATCH_ALIAS" \
   --file scripts/apex/seed.apex
 
+printf 'Running static Apex bind smoke test...\n'
+sf apex run \
+  --target-org "$SCRATCH_ALIAS" \
+  --file scripts/apex/static-bind-smoke.apex
+
 printf 'Running fixture smoke test...\n'
 SMOKE_JSON="$(sf data query \
   --target-org "$SCRATCH_ALIAS" \

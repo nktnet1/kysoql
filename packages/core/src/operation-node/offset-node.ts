@@ -1,6 +1,4 @@
-import type {
-  ApexBindExpressionNode,
-} from "#/operation-node/apex-expression-node";
+import type { ApexBindExpressionNode } from "#/operation-node/apex-expression-node";
 import { freeze } from "#/util/object-utils";
 
 type OffsetValue = number | ApexBindExpressionNode;

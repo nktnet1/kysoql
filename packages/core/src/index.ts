@@ -70,16 +70,16 @@ export type {
 } from "#/operation-node/apex-access-mode-node";
 export type { ApexBindNode } from "#/operation-node/apex-bind-node";
 export type {
-  ApexLiteralNode,
-  ApexLiteralValue,
-} from "#/operation-node/apex-literal-node";
-export type {
   ApexAdditionNode,
   ApexBindExpressionNode,
   ApexExpressionOperandNode,
   ApexQueryResultNode,
   ApexSubstringNode,
 } from "#/operation-node/apex-expression-node";
+export type {
+  ApexLiteralNode,
+  ApexLiteralValue,
+} from "#/operation-node/apex-literal-node";
 export type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 export type { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
 export type { ConvertTimezoneFunctionNode } from "#/operation-node/convert-timezone-function-node";

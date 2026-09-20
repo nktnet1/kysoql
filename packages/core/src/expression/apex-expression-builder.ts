@@ -1,4 +1,4 @@
-import { isApexBindExpression, type ApexBindExpression } from "#/apex-bind";
+import { type ApexBindExpression, isApexBindExpression } from "#/apex-bind";
 import {
   createGeolocationFilterExpressionBuilder,
   type DistanceFunctionExpression,
@@ -147,11 +147,9 @@ export function createApexExpressionBuilder<
   DB,
   TB extends keyof DB,
   AllowSemiJoin extends boolean = true,
->(options: FilterBinaryOperationOptions = {}): ApexExpressionBuilder<
-  DB,
-  TB,
-  AllowSemiJoin
-> {
+>(
+  options: FilterBinaryOperationOptions = {},
+): ApexExpressionBuilder<DB, TB, AllowSemiJoin> {
   const expression = (
     lhs:
       | string

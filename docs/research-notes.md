@@ -1510,3 +1510,23 @@ participate in recursive Apex-bind validation so an inner Knowledge article quer
 cannot bypass the existing restriction. Apex determines the bracket query's exact
 single-row cardinality at runtime, so Kysoql should document that contract rather
 than silently injecting `LIMIT 1`.
+
+Kysoql hardening consequence for `v1.0.104`: the static-Apex expression roadmap is
+closed, so release validation should now prove that the built package actually
+preserves the public source contract. Treat each publishable package's
+`src/index.ts` as authoritative, compare its complete named export set with the
+generated declaration bundle, and compare its runtime-value export set with the
+built JavaScript module. Keep this check after `pnpm build` inside the existing
+`verify:publish` stage. In parallel, maintain an API 67 scratch-org Apex fixture
+that executes representative scalar/collection/member-path, bind-left `INCLUDES`,
+relationship-subquery, addition, substring, query-result, and pagination bind forms against deterministic
+seed data. Real-org grammar validation requires credentials and therefore remains
+part of `salesforce:setup` / `salesforce:apex-binds`, not `pnpm validate`.
+
+Kysoql correction for `v1.0.105`: TypeScript 7 no longer exposes the historical
+compiler API (`Node`, `createSourceFile`, `SyntaxKind`, and related helpers) from
+the `typescript` package root. Keep publish-shape verification independent of that
+API by scanning the limited public ESM/`.d.ts` export grammar Kysoql permits:
+named exports (including per-specifier `type`), namespace exports, direct exported
+declarations, and default exports. Continue rejecting bare wildcard exports because
+they cannot provide exact source/build parity without resolving another module.

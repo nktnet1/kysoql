@@ -342,8 +342,6 @@ export function createApexSelectQueryBuilder<
   TB extends keyof DB,
   O,
   Mode extends SelectQueryMode,
->(
-  props: SelectQueryBuilderProps,
-): ApexSelectQueryBuilder<DB, TB, O, Mode> {
+>(props: SelectQueryBuilderProps): ApexSelectQueryBuilder<DB, TB, O, Mode> {
   return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode>(props);
 }

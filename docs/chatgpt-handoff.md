@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.103`
+## Current state after `v1.0.105`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -156,6 +156,8 @@ recent patch sequence:
 | `v1.0.101` | Add structured Apex `+` bind expressions through `apexAdd(...)`, using frozen addition/literal AST nodes with typed string or numeric operands while preserving the existing Apex-only bind-position and Knowledge-article guardrails. |
 | `v1.0.102` | Add the documented structured Apex `String.substring(beginIndex, endIndex)` bind-expression family through `apexSubstring(...)`, with frozen method nodes, validated non-negative integer indexes, safe receiver composition, and no raw method-call escape hatch. |
 | `v1.0.103` | Add the documented static-Apex query-result bind-expression family through `apexQueryField(...)`, storing a typed plain-mode nested select AST plus selected output key and explicit single-result cardinality while keeping nested query text builder-owned. |
+| `v1.0.104` | Close the active roadmap with release hardening: verify exact source-barrel vs built runtime/declaration export parity for publishable packages, add a real-org static-Apex bind smoke fixture, run it from scratch-org setup, fix package README parity for `apexQueryField(...)`, and keep compile-only Apex type assertions Biome-clean without executing invalid calls. |
+| `v1.0.105` | Fix TypeScript 7 release verification by replacing the removed root compiler-API dependency with a version-stable scanner for Kysoql's supported public ESM / declaration export grammar while preserving exact source/build parity checks. |
 
 ### Build/tooling state
 
@@ -439,31 +441,36 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The documented static-Apex bind-expression feature roadmap is complete through
-`v1.0.103`.** `v1.0.103` adds the remaining query-result example through
-`apexQueryField(query, field)`. The helper accepts only a plain-mode
-`ApexSelectQueryBuilder`, restricts `field` to that builder's selected output keys,
-returns the corresponding value type, stores the nested `SelectQueryNode` instead of
-raw query text, and records `cardinality: "single"` in the expression node. The
-compiler emits the builder-owned AST as `:[SELECT ...].Field`; nested bind validation
-remains recursive, including the Knowledge-article guard.
+**The active feature and hardening roadmap is complete through `v1.0.105`.**
+`v1.0.104` closes the release-audit gap rather than adding more SOQL grammar, and
+`v1.0.105` repairs that verifier for TypeScript 7, whose package root no longer
+exposes the historical compiler API. `pnpm verify:publish` treats each publishable
+package's `src/index.ts` barrel as the public contract and compares it with both the
+built runtime named exports and the generated declaration exports after build. This
+catches source-only exports, build-only exports, and declaration drift before
+publish without depending on TypeScript's programmatic AST surface.
 
-Do not add more ad-hoc Apex expression strings. The next useful patch, if work
-continues, should be **release hardening / real-org fixture coverage**: validate the
-built package/declarations against the now-complete public surface, add or refresh
-real-org static-Apex fixtures for the structured expression families where practical,
-and close any documentation/export parity gaps discovered by that audit.
+The Salesforce DX fixture now includes `scripts/apex/static-bind-smoke.apex`, which
+executes the representative static-Apex bind forms modeled by the completed Apex
+AST: scalar / collection / dotted-member binds, bind-left `INCLUDES`,
+relationship-subquery binds, structured addition, structured substring, query-result field access, and bound
+`LIMIT` / `OFFSET`. `pnpm salesforce:setup` runs it automatically after seeding,
+and `pnpm salesforce:apex-binds` reruns it against an existing authenticated org.
+The real-org fixture intentionally remains outside `pnpm validate` so local release
+validation never requires Salesforce credentials.
 
-There are no remaining small bind-position or documented bind-expression gaps in the
-current static-Apex SELECT roadmap. The `v1.0.84` specialist-object boundary remains
-unchanged: keep Big Object index validation, Data 360 relationship/query rules,
-external-object adapter-specific limits, and other permission/cardinality-dependent
-caps as execution-context concerns. Automatic `Question` data-category taxonomy
-discovery remains deferred until a stable public JSforce/Salesforce transport path
-exists.
+There is no default `v1.0.106` feature slice. Continue only when local validation,
+publishing, or the real-org fixture exposes a concrete defect, or when one of the
+explicitly deferred tracks below gains the metadata / transport support needed for
+a sound implementation. Do not reopen ad-hoc Apex expression strings or infer new
+static-Apex bind positions without authoritative documentation or an org compile
+fixture.
 
-If the supplied bundle already contains `v1.0.103` or later, inspect the code and
-advance from the actual state instead of reimplementing this section.
+The `v1.0.84` specialist-object boundary remains unchanged: keep Big Object index
+validation, Data 360 relationship/query rules, external-object adapter-specific
+limits, and other permission/cardinality-dependent caps as execution-context
+concerns. Automatic `Question` data-category taxonomy discovery remains deferred
+until a stable public JSforce/Salesforce transport path exists.
 
 ## Follow-on roadmap after the consistency audit
 
@@ -482,11 +489,12 @@ consistency audit:
    object rules, external-adapter-specific limits, and permission/cardinality
    dependent caps need authoritative metadata or execution-context hooks before
    they can become sound static/compiler guarantees.
-4. **Release hardening.** Release metadata and publish-shape verification are in
-   place. Continue with broader Salesforce-org fixtures and concrete
-   API/package defects when validation or publishing exposes them, but do not use
-   this track as the default next slice while the user is asking for feature
-   development.
+4. **Release hardening.** The baseline audit is complete through `v1.0.105`: built
+   runtime/declaration export parity is verified against source barrels without
+   depending on TypeScript's removed root compiler API, and the scratch-org fixture
+   exercises the completed static-Apex bind-expression families. Continue only for
+   concrete API/package defects or additional real-org regressions discovered by
+   validation or publishing.
 
 The aggregate-selection, grouping/HAVING, relationship traversal, polymorphic
 selection, function-expression, pagination, scope/category, MRU, Knowledge,

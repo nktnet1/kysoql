@@ -54,9 +54,18 @@ version is cut.
   exposing a raw nested-query string escape hatch.
 - Release validation for built package exports, declaration files, CLI binaries,
   package metadata, package documentation, and changelog presence.
+- Publish-shape parity checks that compare each publishable package's source barrel
+  with its built runtime named exports and declaration exports, preventing source-only
+  or build-only public API drift.
+- A real-org static-Apex bind-expression smoke fixture, run automatically by the
+  scratch-org setup and independently through `pnpm salesforce:apex-binds`.
 
 ### Fixed
 
+- Keep `verify:publish` compatible with TypeScript 7 by parsing the package
+  barrel export surface without relying on the removed `typescript` root compiler
+  API.
+- Keep compile-only Apex substring and query-result type assertions lint-clean by wrapping them in uninvoked arrow expressions instead of constant-false branches.
 - Mark the Apex aggregate test fixture's numeric revenue field as aggregatable so `SUM()` remains covered by the same generated-field capability gate used in production schemas.
 - Preserve the generic aggregate QueryAll executor contract in its regression test under TypeScript 7 and Vitest 5.
 

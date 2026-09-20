@@ -1,11 +1,6 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import {
-  apexAdd,
-  apexBind,
-  apexQueryField,
-  apexSubstring,
-} from "#/apex-bind";
+import { apexAdd, apexBind, apexQueryField, apexSubstring } from "#/apex-bind";
 import { Kysoql } from "#/kysoql";
 import type { ApexSelectQueryBuilder } from "#/query-builder/apex-select-query-builder";
 import type {
@@ -165,10 +160,7 @@ describe("Apex bind expressions", () => {
       .where(
         "Name",
         "like",
-        apexAdd(
-          apexSubstring(apexBind<string>("filters.name"), 0, 2),
-          "%",
-        ),
+        apexAdd(apexSubstring(apexBind<string>("filters.name"), 0, 2), "%"),
       );
 
     expect(query.compile().soql).toBe(
@@ -197,7 +189,7 @@ describe("Apex bind expressions", () => {
       .select("Id")
       .apex();
 
-    if (false) {
+    void (() => {
       // @ts-expect-error Structured method bind expressions require the explicit Apex context.
       normal.where("Name", "=", apexSubstring("XXXX", 0, 3));
 
@@ -214,7 +206,7 @@ describe("Apex bind expressions", () => {
       apex.where("AnnualRevenue", ">=", apexSubstring("123", 0, 2));
       // @ts-expect-error LIMIT binds must be numeric, not string-valued method results.
       apex.limit(apexSubstring("123", 0, 2));
-    }
+    });
   });
 
   it("compiles structured Apex query-result field bind expressions", () => {
@@ -278,7 +270,7 @@ describe("Apex bind expressions", () => {
       "function"
     >;
 
-    if (false) {
+    void (() => {
       const name = apexQueryField(nameSource, "Name");
       apex.where("Name", "=", name);
       apex.where(
@@ -305,7 +297,7 @@ describe("Apex bind expressions", () => {
       );
       // @ts-expect-error Nullable query-result values cannot be used as LIMIT binds.
       apex.limit(apexQueryField(revenueSource, "AnnualRevenue"));
-    }
+    });
   });
 
   it("creates frozen query-result nodes and validates accessed field names", () => {
@@ -352,11 +344,9 @@ describe("Apex bind expressions", () => {
       .selectFrom("Account")
       .select("Id")
       .apex()
-      .where(
-        apexBind<string>("filters.accountType"),
-        "includes",
-        ["Customer - Direct; Customer - Channel"],
-      )
+      .where(apexBind<string>("filters.accountType"), "includes", [
+        "Customer - Direct; Customer - Channel",
+      ])
       .where((eb) =>
         eb.or([
           eb(apexBind<string>("filters.partnerType"), "includes", ["Partner"]),
@@ -391,11 +381,7 @@ describe("Apex bind expressions", () => {
         contacts
           .select(["Id", "LastName"])
           .where("LastName", "like", apexBind<string>("filters.lastName"))
-          .where(
-            "Id",
-            "in",
-            apexBind<readonly string[]>("filters.contactIds"),
-          )
+          .where("Id", "in", apexBind<readonly string[]>("filters.contactIds"))
           .where((eb) =>
             eb.or([
               eb("LastName", "=", apexBind<string>("filters.firstName")),
@@ -739,11 +725,7 @@ describe("Apex bind expressions", () => {
       apex.offset(apexAdd(5, 5));
       apex.selectSubquery("Contacts", (contacts) => {
         contacts.where("LastName", "=", apexBind<string>("lastName"));
-        contacts.where(
-          "Id",
-          "in",
-          apexBind<readonly string[]>("contactIds"),
-        );
+        contacts.where("Id", "in", apexBind<readonly string[]>("contactIds"));
         contacts.where(apexBind<string>("contactType"), "includes", [
           "Primary",
         ]);

@@ -84,9 +84,7 @@ describe("Apex aggregate queries", () => {
         .apex();
 
       aggregate.where("Name", "=", apexBind<string>("accountName"));
-      aggregate.where(apexBind<string>("accountType"), "includes", [
-        "Partner",
-      ]);
+      aggregate.where(apexBind<string>("accountType"), "includes", ["Partner"]);
       aggregate.limit(apexAdd(apexBind<number>("rowLimit"), 1));
       aggregate.offset(apexBind<number>("rowOffset"));
       aggregate.withUserMode();
