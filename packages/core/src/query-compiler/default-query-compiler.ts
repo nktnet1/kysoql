@@ -55,6 +55,7 @@ import { validateFieldsSelections } from "#/parser/fields-selection-parser";
 import { validateForUpdateQuery } from "#/parser/for-update-parser";
 import { validateKnowledgeUpdateQuery } from "#/parser/knowledge-update-parser";
 import { validateObjectQueryLimits } from "#/parser/object-query-limit-parser";
+import { validateRelationshipQueryLimits } from "#/parser/relationship-query-limit-parser";
 import { validateTypeOfSelections } from "#/parser/type-of-parser";
 import { validateUserProfileFeedQuery } from "#/parser/user-profile-feed-parser";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
@@ -89,6 +90,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
     validateTypeOfSelections(query);
     validateKnowledgeUpdateQuery(query);
     validateUserProfileFeedQuery(query);
+    validateRelationshipQueryLimits(query);
     validateObjectQueryLimits(query);
 
     let soql = `SELECT ${query.selections.map((selection) => this.#compileSelection(selection)).join(", ")} FROM ${query.from.name}`;

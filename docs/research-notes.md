@@ -298,6 +298,15 @@ Useful findings:
   parent-to-child levels: the root is level one and child relationships can nest
   four levels beneath it. Salesforce allows at most 20 parent-to-child
   relationships in one query.
+- A query can specify at most 55 child-to-parent relationships. Reusing the same
+  relationship path multiple times counts once, so counting dotted field-reference
+  nodes directly would overcount. Each traversed prefix is a relationship: for
+  example, `Owner.Manager.Name` consumes `Owner` and `Owner.Manager`.
+- Polymorphic relationship queries can consume multiple child-to-parent slots. In
+  Salesforce's documented `TYPEOF What WHEN Account ... WHEN Opportunity ...`
+  example, `What`, `Account`, and `Opportunity` count as three relationships. The
+  same documented TYPEOF query counts only the polymorphic relationship itself when
+  a direct root `WHERE Id = ...` filter constrains the query to one record.
 - Relationship query results are nested objects. Nullable lookup relationships can
   produce a null parent while the driving record is still returned. A selected
   parent-to-child relationship contains its own query-result envelope with record
@@ -323,6 +332,16 @@ child traversals below the root. Selected child relationships infer
 `SalesforceQueryResult<Row>` with `totalSize`, `done`, `records`, and optional
 `nextRecordsUrl`. Subquery `OFFSET`, aggregates, and raw SOQL fragments remain
 outside this slice.
+
+Implemented consequence in `v1.0.116`: the compiler validates both query-wide
+relationship cardinality limits before rendering SOQL. Parent-to-child subqueries
+are deduplicated by their scoped relationship path. Child-to-parent references are
+deduplicated by every traversed path prefix within the relevant root/child query
+scope, including references used in filters, ordering, grouping/functions, and
+semi-join filters. Explicit `TYPEOF` relationships and `WHEN` target objects count
+separately to match Salesforce's polymorphic example, except when a direct root
+`Id = ...` predicate guarantees one record and Salesforce collapses the explicit
+target counts.
 
 ### Semi-joins and anti-joins
 

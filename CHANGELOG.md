@@ -66,6 +66,10 @@ version is cut.
   with generated filterable picklist/multipicklist metadata, translated-string
   operands, nullability-aware equality, picklist `LIKE`, child-to-parent paths,
   and documented `Division` / `CurrencyIsoCode` / external-object restrictions.
+- Compiler validation for Salesforce relationship-query cardinality limits: at
+  most 20 parent-to-child relationships and 55 child-to-parent relationships per
+  query, with repeated relationship paths deduplicated and polymorphic `TYPEOF`
+  targets counted according to Salesforce's documented rules.
 
 ### Fixed
 

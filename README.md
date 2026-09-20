@@ -522,6 +522,15 @@ the relationship value contains `totalSize`, `done`, `records`, and an optional
 still documents it as a conditional pilot feature rather than a general
 production child-query clause.
 
+Compilation also enforces Salesforce's query-wide relationship cardinality limits:
+no more than 20 parent-to-child relationships and 55 child-to-parent relationships.
+Child-to-parent counting is path-aware, so repeated uses of `Owner` count once while
+`Owner.Manager` adds a second relationship. Nested child-query scopes are counted
+across the complete query, and explicit polymorphic `TYPEOF` targets consume the
+additional relationship slots documented by Salesforce. When a root query is
+constrained to one record by direct `Id = ...` equality, Salesforce collapses those
+explicit polymorphic target counts; the compiler mirrors that exception.
+
 `IN` and `NOT IN` also accept typed semi-join/anti-join subqueries when the left
 operand is a direct ID/reference field. The subquery uses a dedicated builder so
 it can select exactly one compatible ID/reference field and apply scalar filters

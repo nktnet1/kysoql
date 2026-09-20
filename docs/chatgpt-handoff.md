@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.115`
+## Current state after `v1.0.116`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -168,6 +168,7 @@ recent patch sequence:
 | `v1.0.113` | Fix the date-function `WHERE` compiler regression expectation to follow the established compiler formatting contract: top-level `AND` expressions do not receive redundant outer parentheses. |
 | `v1.0.114` | Add typed `toLabel()` predicates to ordinary `WHERE` callbacks with filterable generated picklist metadata, translated-string/nullability-aware operands, regular-picklist `LIKE`, child-to-parent paths, and Salesforce's documented `Division` / `CurrencyIsoCode` / external-object restrictions. |
 | `v1.0.115` | Keep negative `toLabel()` WHERE type assertions compile-time-only after invalid function calls so strict test typechecking does not cascade diagnostics through deliberately-invalid expressions. |
+| `v1.0.116` | Enforce Salesforce's query-wide relationship-count limits at compile time: 20 parent-to-child and 55 child-to-parent relationships, with path-prefix deduplication and explicit polymorphic `TYPEOF` target counting. |
 
 ### Build/tooling state
 
@@ -514,11 +515,19 @@ and `pnpm salesforce:apex-binds` reruns it against an existing authenticated org
 The real-org fixture intentionally remains outside `pnpm validate` so local release
 validation never requires Salesforce credentials.
 
-The next coherent SOQL slice is `v1.0.116`: add compiler validation for
-Salesforce relationship-count limits (20 parent-to-child subqueries and 55
-child-to-parent relationships), taking care to count repeated paths correctly
-rather than simply counting reference nodes. Do not fold the slice into unrelated
-Apex/static-bind work.
+`v1.0.116` closes the remaining ordinary relationship-limit gap. The compiler now
+enforces Salesforce's query-wide maximum of 20 parent-to-child relationships and
+55 child-to-parent relationships. Counting is based on unique scoped relationship
+paths rather than raw reference-node occurrences, so repeated use of the same
+parent relationship counts once while deeper prefixes count independently. Explicit
+polymorphic `TYPEOF` targets also consume separate relationship slots as documented
+by Salesforce, except for the documented single-root-record `Id = ...` case where
+those explicit target counts collapse.
+
+There is no precommitted next ordinary REST/SOAP SOQL slice after `v1.0.116`. The
+remaining items below require either narrower metadata/execution-context support or
+a separately verified completeness decision; do not invent a generic raw-SOQL
+escape hatch to chase them.
 
 The `v1.0.84` specialist-object boundary remains unchanged: keep Big Object index
 validation, Data 360 relationship/query rules, external-object adapter-specific
@@ -532,21 +541,18 @@ The general REST/SOAP SOQL builder is now substantially complete. Remaining work
 should be treated as separate follow-on tracks rather than folded into the final
 consistency audit:
 
-1. **Relationship-count validation.** Enforce Salesforce's documented 20
-   parent-to-child and 55 child-to-parent relationship limits at the compiler
-   boundary with path-aware counting.
-2. **Data-category transport support when a stable path exists.** The public
+1. **Data-category transport support when a stable path exists.** The public
    codegen hook already accepts normalized `Question` taxonomy metadata; do not
    use JSforce's private SOAP invocation machinery solely to automate it.
-3. **Execution-context-specific syntax.** Re-evaluate `FOR UPDATE`,
+2. **Execution-context-specific syntax.** Re-evaluate `FOR UPDATE`,
    `WITH USER_MODE`, nested bind positions, and related Apex-context behavior
    separately from the transport-neutral REST/JSforce core. Do not reintroduce
    retired `WITH SECURITY_ENFORCED` syntax.
-4. **Capability-rich specialist objects.** Big-object index validation, Data 360
+3. **Capability-rich specialist objects.** Big-object index validation, Data 360
    object rules, external-adapter-specific limits, and permission/cardinality
    dependent caps need authoritative metadata or execution-context hooks before
    they can become sound static/compiler guarantees.
-5. **Release hardening.** The baseline audit is complete through `v1.0.115`: built
+4. **Release hardening.** The baseline audit is complete through `v1.0.116`: built
    runtime/declaration export parity is verified against source barrels without
    depending on TypeScript's removed root compiler API, and the scratch-org fixture
    exercises the completed static-Apex bind-expression families. Continue only for
