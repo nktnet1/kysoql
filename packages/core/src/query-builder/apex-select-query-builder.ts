@@ -1,3 +1,8 @@
+import type { ApexBindExpression } from "#/apex-bind";
+import {
+  createApexExpressionBuilder,
+  type ApexWhereExpressionFactory,
+} from "#/expression/apex-expression-builder";
 import {
   type ApexAccessMode,
   ApexAccessModeNode,
@@ -9,6 +14,8 @@ import { SelectQueryNode } from "#/operation-node/select-query-node";
 import {
   type ApexOperandValueExpression,
   parseApexFilterBinaryOperation,
+  parseApexLimit,
+  parseApexOffset,
 } from "#/parser/apex-bind-parser";
 import type {
   ComparisonOperatorExpression,
@@ -23,6 +30,18 @@ export interface ApexSelectQueryBuilder<DB, TB extends keyof DB, O> {
   compile(): CompiledQuery<O>;
 
   forUpdate(): ApexSelectQueryBuilder<DB, TB, O>;
+
+  limit(
+    limit: number | ApexBindExpression<number>,
+  ): ApexSelectQueryBuilder<DB, TB, O>;
+
+  offset(
+    offset: number | ApexBindExpression<number>,
+  ): ApexSelectQueryBuilder<DB, TB, O>;
+
+  where(
+    expression: ApexWhereExpressionFactory<DB, TB>,
+  ): ApexSelectQueryBuilder<DB, TB, O>;
 
   where<
     RE extends string,
@@ -63,6 +82,33 @@ class ApexSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     });
   }
 
+  limit(
+    limit: number | ApexBindExpression<number>,
+  ): ApexSelectQueryBuilder<DB, TB, O> {
+    return new ApexSelectQueryBuilderImpl<DB, TB, O>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithLimit(
+        this.#props.queryNode,
+        parseApexLimit(limit),
+      ),
+    });
+  }
+
+  offset(
+    offset: number | ApexBindExpression<number>,
+  ): ApexSelectQueryBuilder<DB, TB, O> {
+    return new ApexSelectQueryBuilderImpl<DB, TB, O>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithOffset(
+        this.#props.queryNode,
+        parseApexOffset(offset),
+      ),
+    });
+  }
+
+  where(
+    expression: ApexWhereExpressionFactory<DB, TB>,
+  ): ApexSelectQueryBuilder<DB, TB, O>;
   where<
     RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
@@ -72,16 +118,23 @@ class ApexSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     rhs: ApexOperandValueExpression<DB, TB, NoInfer<RE>, NoInfer<OP>>,
   ): ApexSelectQueryBuilder<DB, TB, O>;
   where(
-    lhs: string,
-    op: ComparisonOperator,
-    rhs: unknown,
+    lhsOrExpression: string | ApexWhereExpressionFactory<DB, TB>,
+    op?: ComparisonOperator,
+    rhs?: unknown,
   ): ApexSelectQueryBuilder<DB, TB, O> {
-    const operation = parseApexFilterBinaryOperation(
-      lhs,
-      op,
-      rhs,
-      this.#props.queryNode.from.name,
-    );
+    const operation =
+      typeof lhsOrExpression === "function"
+        ? lhsOrExpression(
+            createApexExpressionBuilder<DB, TB>(
+              this.#props.queryNode.from.name,
+            ),
+          ).toOperationNode()
+        : parseApexFilterBinaryOperation(
+            lhsOrExpression,
+            op as ComparisonOperator,
+            rhs,
+            this.#props.queryNode.from.name,
+          );
     const queryNode = QueryNode.cloneWithWhere(this.#props.queryNode, operation);
 
     validateSemiJoinWhere(queryNode.where?.where ?? operation);

@@ -1,4 +1,5 @@
 import type { ApexAccessModeNode } from "#/operation-node/apex-access-mode-node";
+import type { ApexBindNode } from "#/operation-node/apex-bind-node";
 import type { DateFunctionNode } from "#/operation-node/date-function-node";
 import type { ForUpdateNode } from "#/operation-node/for-update-node";
 import type { ForViewReferenceNode } from "#/operation-node/for-view-reference-node";
@@ -40,8 +41,8 @@ export interface SelectQueryNode {
   readonly groupBy?: GroupByNode;
   readonly having?: HavingNode;
   readonly orderBy?: OrderByNode;
-  readonly limit?: LimitNode;
-  readonly offset?: OffsetNode;
+  readonly limit?: LimitNode<number | ApexBindNode>;
+  readonly offset?: OffsetNode<number | ApexBindNode>;
   readonly forViewReference?: ForViewReferenceNode;
   readonly knowledgeUpdate?: KnowledgeUpdateNode;
   readonly forUpdate?: ForUpdateNode;
@@ -137,7 +138,10 @@ export const SelectQueryNode = {
     });
   },
 
-  cloneWithLimit(select: SelectQueryNode, limit: LimitNode): SelectQueryNode {
+  cloneWithLimit(
+    select: SelectQueryNode,
+    limit: LimitNode<number | ApexBindNode>,
+  ): SelectQueryNode {
     return freeze({
       ...select,
       limit,
@@ -146,7 +150,7 @@ export const SelectQueryNode = {
 
   cloneWithOffset(
     select: SelectQueryNode,
-    offset: OffsetNode,
+    offset: OffsetNode<number | ApexBindNode>,
   ): SelectQueryNode {
     return freeze({
       ...select,

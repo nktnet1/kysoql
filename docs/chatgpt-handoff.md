@@ -25,8 +25,8 @@ Kysely findings that support the architecture below.
    near-identical patches. Do not bundle the next major roadmap item, cleanup, or
    unrelated refactors into the same patch.
 6. Patch filenames are sequential: `v1.0.<n>-<short-description>.patch`. Never
-   reuse or rewrite a version already handed off. After `v1.0.94`, the next patch
-   is `v1.0.95`.
+   reuse or rewrite a version already handed off. After `v1.0.95`, the next patch
+   is `v1.0.96`.
 7. Before handing off a patch, at minimum run:
 
    ```bash
@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.93`
+## Current state after `v1.0.95`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -147,6 +147,7 @@ recent patch sequence:
 | `v1.0.92` | Add an explicit compile-only Apex query context and typed root record `FOR UPDATE`, with immutable AST/compiler support and rejection of the Salesforce-invalid `ORDER BY` combination. |
 | `v1.0.93` | Add explicit Apex `WITH USER_MODE` / `WITH SYSTEM_MODE` access clauses with immutable replacement, competing-`WITH` rejection, and no inferred API-version default. |
 | `v1.0.94` | Add typed Apex `WHERE` bind expressions with validated identifiers, scalar and `IN` / `NOT IN` collection typing, relationship-field support, and Knowledge/multipicklist guardrails. |
+| `v1.0.95` | Complete the initial Apex bind ergonomics with grouped `WHERE` callbacks plus numeric `LIMIT` / `OFFSET` binds, preserving semi-join nesting rules and extending Knowledge bind rejection to pagination. |
 
 ### Build/tooling state
 
@@ -380,13 +381,16 @@ Core currently has:
 - an explicit terminal `.apex()` context on row-producing root record queries;
   the returned `ApexSelectQueryBuilder` is compile-only and adds typed
   `.forUpdate()` locking, explicit `.withUserMode()` / `.withSystemMode()` access
-  clauses, and typed `.where(...)` bind filters through `apexBind<T>(name)`;
+  clauses, typed direct and grouped `.where(...)` bind filters through
+  `apexBind<T>(name)`, and numeric bind support for `.limit(...)` / `.offset(...)`;
   scalar binds follow generated field/relationship value types, `IN` / `NOT IN`
-  binds require readonly collections, bind identifiers are validated, ordinary
-  REST/JSforce builders expose none of those Apex forms; the type/parser surface
-  rejects multipicklist bind use, while compilation rejects `ORDER BY` on locking
-  queries, competing `WITH` filtering forms alongside an Apex access mode, and
-  Knowledge-article Apex binds;
+  binds require readonly collections, grouped callbacks retain `and` / `or` /
+  `not` composition and existing semi-join nesting rules, bind identifiers are
+  validated, and ordinary REST/JSforce builders expose none of those Apex forms;
+  the type/parser surface rejects multipicklist bind use, while compilation
+  rejects `ORDER BY` on locking queries, competing `WITH` filtering forms
+  alongside an Apex access mode, and Knowledge-article Apex binds in either
+  filters or pagination;
 - generated field metadata for filterable/sortable/groupable/aggregatable/custom
   flags, polymorphic-reference detection (`namePointing`,
   `polymorphicForeignKey`, and `referenceTo`), active picklist values, and
@@ -406,21 +410,20 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.95` and should continue feature work.**
-`v1.0.94` adds a conservative Apex-only bind surface for direct `WHERE` filters:
-`apexBind<T>(name)` compiles to a validated `:name` AST node, scalar binds are
-field-value typed, `IN` / `NOT IN` binds require collections, relationship fields
-work through the existing generated reference surface, and unsupported
-Knowledge/multipicklist cases are rejected.
+**The next patch should be `v1.0.96` and should continue feature work.**
+`v1.0.95` completes the first Apex bind-ergonomics pass on row-producing record
+queries: grouped `WHERE` callbacks can contain typed binds, numeric `LIMIT` /
+`OFFSET` clauses can bind Apex variables, literal pagination keeps its existing
+validation, semi-join nesting remains unchanged, and Knowledge article queries
+reject binds across both filtering and pagination positions.
 
-The next coherent Apex slice is to complete bind ergonomics without opening a raw
-SOQL escape hatch. Reuse the same `ApexBindNode` for the remaining documented
-bind positions that fit the current AST, especially numeric `LIMIT` / `OFFSET`,
-and consider an Apex-specific grouped-WHERE expression callback so bind filters
-can participate in `OR` / `NOT` groups rather than only repeated top-level `AND`
-terms. Keep ordinary REST/JSforce builders unchanged, preserve semi-join nesting
-rules, and do not broaden bind names from simple identifiers unless an
-authoritative Apex grammar can be validated safely.
+The next coherent Apex slice is to extend the explicit compile-only `.apex()`
+boundary to aggregate-result and bare-`COUNT()` query builders without leaking
+record-locking semantics into them. Reuse the existing access-mode and bind
+plumbing where Salesforce permits it, keep `.forUpdate()` record-only, and avoid
+adding executable methods to any Apex-context builder. Treat aggregate `HAVING`
+binds as a separate follow-up unless the type/AST path can be added without
+broadening this slice.
 
 The `v1.0.84` object-limit audit still defines the boundary for specialist-object
 work: do not infer big-object index rules from the `__b` suffix, do not encode
@@ -429,7 +432,7 @@ permission/cardinality-dependent feed/object caps as execution-context concerns.
 Automatic `Question` data-category taxonomy discovery also remains deferred until
 a stable public JSforce/Salesforce transport path exists.
 
-If the supplied bundle already contains `v1.0.94` or later, inspect the code and
+If the supplied bundle already contains `v1.0.95` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Follow-on roadmap after the consistency audit

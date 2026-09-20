@@ -735,20 +735,31 @@ const apexQuery = db
   .selectFrom("Account")
   .select(["Id", "Name"])
   .apex()
-  .where("Name", "=", apexBind<string>("accountName"))
-  .where("Id", "in", apexBind<readonly string[]>("accountIds"))
+  .where((eb) =>
+    eb.or([
+      eb("Name", "=", apexBind<string>("accountName")),
+      eb("Id", "in", apexBind<readonly string[]>("accountIds")),
+    ]),
+  )
+  .limit(apexBind<number>("rowLimit"))
+  .offset(apexBind<number>("rowOffset"))
   .compile();
 
 // SELECT Id, Name FROM Account
-// WHERE Name = :accountName AND Id IN :accountIds
+// WHERE (Name = :accountName OR Id IN :accountIds)
+// LIMIT :rowLimit OFFSET :rowOffset
 ```
 
 Scalar binds work with typed direct and child-to-parent relationship filters,
 including temporal fields without converting the variable name into a SOQL
-literal. `IN` / `NOT IN` binds represent collections. Salesforce does not allow
-bind expressions with `INCLUDES` / `EXCLUDES`, and KnowledgeArticleVersion /
-`__kav` Apex queries reject binds at compilation. Ordinary REST/JSforce builders
-continue to accept only escaped literal values and typed subqueries.
+literal. `IN` / `NOT IN` binds represent collections, grouped Apex callbacks
+support the same `and` / `or` / `not` composition as ordinary filters, and
+`LIMIT` / `OFFSET` accept numeric binds. Literal pagination values retain the
+normal Kysoql validation; a bound Apex value is validated by Salesforce when
+the Apex query runs. Salesforce does not allow bind expressions with `INCLUDES`
+/ `EXCLUDES`, and KnowledgeArticleVersion / `__kav` Apex queries reject binds at
+compilation. Ordinary REST/JSforce builders continue to accept only escaped
+literal values and typed subqueries.
 
 Execution stays transport-neutral in core. Configure the JSforce adapter to run
 compiled SOQL through an existing JSforce connection:

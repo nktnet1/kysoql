@@ -1,7 +1,10 @@
 import { isApexBindExpression, type ApexBindExpression } from "#/apex-bind";
 import type { AndNode } from "#/operation-node/and-node";
+import type { ApexBindNode } from "#/operation-node/apex-bind-node";
 import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
+import { LimitNode } from "#/operation-node/limit-node";
 import type { NotNode } from "#/operation-node/not-node";
+import { OffsetNode } from "#/operation-node/offset-node";
 import type { OperationNode } from "#/operation-node/operation-node";
 import {
   type ComparisonOperator,
@@ -19,6 +22,8 @@ import type {
   OperandValueExpression,
 } from "#/parser/binary-operation-parser";
 import { parseFilterBinaryOperation } from "#/parser/filter-parser";
+import { parseLimit } from "#/parser/limit-parser";
+import { parseOffset } from "#/parser/offset-parser";
 import type { FieldReferenceDefinition } from "#/parser/reference-parser";
 import type { SalesforceFieldValue } from "#/schema";
 
@@ -60,6 +65,22 @@ export type ApexOperandValueExpression<
 > =
   | OperandValueExpression<DB, TB, RE, OP>
   | ApexBindOperandValueExpression<DB, TB, RE, OP>;
+
+export function parseApexLimit(
+  limit: number | ApexBindExpression<number>,
+): LimitNode<number | ApexBindNode> {
+  return isApexBindExpression(limit)
+    ? LimitNode.create(limit.toOperationNode())
+    : parseLimit(limit);
+}
+
+export function parseApexOffset(
+  offset: number | ApexBindExpression<number>,
+): OffsetNode<number | ApexBindNode> {
+  return isApexBindExpression(offset)
+    ? OffsetNode.create(offset.toOperationNode())
+    : parseOffset(offset);
+}
 
 export function parseApexFilterBinaryOperation(
   left: string,
@@ -117,11 +138,12 @@ const isKnowledgeArticleObject = (objectName: string): boolean => {
 };
 
 export function validateApexBindQuery(query: SelectQueryNode): void {
-  if (
-    isKnowledgeArticleObject(query.from.name) &&
-    query.where &&
-    containsApexBind(query.where.where)
-  ) {
+  const hasBind =
+    (query.where ? containsApexBind(query.where.where) : false) ||
+    (query.limit ? typeof query.limit.limit !== "number" : false) ||
+    (query.offset ? typeof query.offset.offset !== "number" : false);
+
+  if (isKnowledgeArticleObject(query.from.name) && hasBind) {
     throw new TypeError(KNOWLEDGE_APEX_BIND_ERROR);
   }
 }

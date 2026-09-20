@@ -24,9 +24,10 @@ version is cut.
 - Explicit Apex `WITH USER_MODE` / `WITH SYSTEM_MODE` access clauses on the
   compile-only Apex query surface, with immutable replacement semantics and no
   inferred default mode.
-- Typed Apex `WHERE` bind expressions for scalar and `IN` / `NOT IN` filters,
-  including relationship-field binds, validated bind identifiers, and
-  Knowledge-article / multipicklist guardrails.
+- Typed Apex bind expressions for scalar and `IN` / `NOT IN` filters, grouped
+  `WHERE` composition, and numeric `LIMIT` / `OFFSET`, including
+  relationship-field binds, validated bind identifiers, and Knowledge-article /
+  multipicklist guardrails.
 - Release validation for built package exports, declaration files, CLI binaries,
   package metadata, package documentation, and changelog presence.
 

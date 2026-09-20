@@ -236,16 +236,20 @@ export class DefaultQueryCompiler implements QueryCompiler {
     return `${node.group} ${selector} ${categories}`;
   }
 
-  #compileLimit(limit: LimitNode): string {
-    return String(limit.limit);
+  #compileLimit(limit: LimitNode<number | ApexBindNode>): string {
+    return typeof limit.limit === "number"
+      ? String(limit.limit)
+      : this.#compileApexBind(limit.limit);
   }
 
   #compileFieldsFunction(node: FieldsFunctionNode): string {
     return `FIELDS(${node.selector.toUpperCase()})`;
   }
 
-  #compileOffset(offset: OffsetNode): string {
-    return String(offset.offset);
+  #compileOffset(offset: OffsetNode<number | ApexBindNode>): string {
+    return typeof offset.offset === "number"
+      ? String(offset.offset)
+      : this.#compileApexBind(offset.offset);
   }
 
   #compileUsingScope(usingScope: UsingScopeNode): string {

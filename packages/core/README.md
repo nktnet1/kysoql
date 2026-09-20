@@ -61,13 +61,21 @@ const byName = db
   .selectFrom("Account")
   .select(["Id", "Name"])
   .apex()
-  .where("Name", "=", apexBind<string>("accountName"))
-  .where("Id", "in", apexBind<readonly string[]>("accountIds"))
+  .where((eb) =>
+    eb.or([
+      eb("Name", "=", apexBind<string>("accountName")),
+      eb("Id", "in", apexBind<readonly string[]>("accountIds")),
+    ]),
+  )
+  .limit(apexBind<number>("rowLimit"))
+  .offset(apexBind<number>("rowOffset"))
   .compile();
 ```
 
-Bind expressions are intentionally unavailable on ordinary API-executable
-builders, with `INCLUDES` / `EXCLUDES`, and for Knowledge article Apex queries.
+Grouped Apex filters support `and` / `or` / `not`, while `LIMIT` and `OFFSET`
+accept numeric binds in addition to their validated literal forms. Bind
+expressions are intentionally unavailable on ordinary API-executable builders,
+with `INCLUDES` / `EXCLUDES`, and for Knowledge article Apex queries.
 
 Pass a `QueryExecutor` to `Kysoql` when queries should execute rather than only
 compile. Normal `.execute()` delegates to `QueryExecutor.executeQuery()` (or the

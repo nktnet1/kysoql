@@ -1,3 +1,4 @@
+import type { ApexBindNode } from "#/operation-node/apex-bind-node";
 import {
   FieldsFunctionNode,
   type FieldsSelector,
@@ -70,7 +71,7 @@ const DUPLICATE_FIELDS_ERROR =
 
 export function validateFieldsSelections(
   selections: readonly SelectionNode[],
-  limit: LimitNode | undefined,
+  limit: LimitNode<number | ApexBindNode> | undefined,
 ): void {
   const selectors = selections.flatMap((selection) =>
     selection.selection.kind === "FieldsFunctionNode"
@@ -91,9 +92,12 @@ export function validateFieldsSelections(
     throw new TypeError(DUPLICATE_FIELDS_ERROR);
   }
 
+  const literalLimit =
+    limit && typeof limit.limit === "number" ? limit.limit : undefined;
+
   if (
     (selectors.includes("all") || selectors.includes("custom")) &&
-    (limit === undefined || limit.limit > 200)
+    (literalLimit === undefined || literalLimit > 200)
   ) {
     throw new RangeError(UNBOUNDED_FIELDS_ERROR);
   }

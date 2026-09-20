@@ -1372,6 +1372,8 @@ default to the caller's Apex/API-version context. Do not expose
 Sources re-checked on 2026-09-20:
 
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-limit.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-offset.html
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-limits.html
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-querying-multiselect-picklists.html
 
@@ -1401,3 +1403,12 @@ runtime. Bind names are limited to simple identifiers so the feature cannot beco
 a raw-SOQL escape hatch. Keep ordinary executable builders unchanged, reject binds
 with `INCLUDES` / `EXCLUDES`, and reject Knowledge article Apex binds at the
 compiler boundary.
+
+Kysoql consequence for `v1.0.95`: reuse the same bind node in top-level Apex
+`LIMIT` / `OFFSET` values and add an Apex-specific grouped `WHERE` expression
+builder so bind filters can participate in `AND` / `OR` / `NOT` composition.
+Literal pagination values retain the existing non-negative / maximum-offset
+validation, while bound numeric values are runtime Apex inputs. Keep semi-joins
+subject to the existing top-level-only nesting rules, conservatively reject a
+bound `LIMIT` as proof for REST/SOAP `FIELDS(ALL|CUSTOM)` boundedness, and extend
+the Knowledge compiler guard to pagination binds as well as `WHERE` binds.

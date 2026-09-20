@@ -100,6 +100,81 @@ describe("Apex bind expressions", () => {
     );
   });
 
+  it("supports grouped Apex WHERE expressions containing binds", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .apex()
+      .where((eb) =>
+        eb.or([
+          eb("Name", "=", apexBind<string>("accountName")),
+          eb.not(
+            eb(
+              "AnnualRevenue",
+              "<",
+              apexBind<number>("minimumRevenue"),
+            ),
+          ),
+        ]),
+      );
+
+    expect(query.compile().soql).toBe(
+      "SELECT Id FROM Account WHERE (Name = :accountName OR NOT (AnnualRevenue < :minimumRevenue))",
+    );
+  });
+
+  it("keeps semi-joins top-level when grouped Apex filters use binds", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .apex()
+      .where((eb) =>
+        eb.and([
+          eb("Id", "in", (subquery) =>
+            subquery.selectFrom("Contact").select("AccountId"),
+          ),
+          eb("Name", "=", apexBind<string>("accountName")),
+        ]),
+      );
+
+    expect(query.compile().soql).toBe(
+      "SELECT Id FROM Account WHERE Id IN (SELECT AccountId FROM Contact) AND Name = :accountName",
+    );
+  });
+
+  it("compiles numeric LIMIT and OFFSET binds with replacement semantics", () => {
+    const literal = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .apex()
+      .limit(25)
+      .offset(5);
+    const bound = literal
+      .limit(apexBind<number>("rowLimit"))
+      .offset(apexBind<number>("rowOffset"));
+
+    expect(literal.compile().soql).toBe(
+      "SELECT Id FROM Account LIMIT 25 OFFSET 5",
+    );
+    expect(bound.compile().soql).toBe(
+      "SELECT Id FROM Account LIMIT :rowLimit OFFSET :rowOffset",
+    );
+  });
+
+  it("validates literal Apex LIMIT and OFFSET values", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .apex();
+
+    expect(() => query.limit(-1)).toThrow(
+      "SOQL LIMIT must be a non-negative safe integer.",
+    );
+    expect(() => query.offset(2001)).toThrow(
+      "SOQL OFFSET must be a safe integer between 0 and 2000.",
+    );
+  });
+
   it("supports relationship and temporal filter binds", () => {
     const relationshipQuery = new Kysoql<FixtureSchema>()
       .selectFrom("Contact")
@@ -164,11 +239,27 @@ describe("Apex bind expressions", () => {
       .select("Id")
       .apex()
       .where("PublishStatus", "=", apexBind<string>("publishStatus"));
+    const limitQuery = new Kysoql<FixtureSchema>()
+      .selectFrom("KnowledgeArticleVersion")
+      .select("Id")
+      .apex()
+      .limit(apexBind<number>("rowLimit"));
+    const offsetQuery = new Kysoql<FixtureSchema>()
+      .selectFrom("FAQ__kav")
+      .select("Id")
+      .apex()
+      .offset(apexBind<number>("rowOffset"));
 
     expect(() => query.compile()).toThrow(
       "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.",
     );
     expect(() => customQuery.compile()).toThrow(
+      "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.",
+    );
+    expect(() => limitQuery.compile()).toThrow(
+      "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.",
+    );
+    expect(() => offsetQuery.compile()).toThrow(
       "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.",
     );
   });
@@ -181,11 +272,28 @@ describe("Apex bind expressions", () => {
       // @ts-expect-error Bind expressions require the explicit Apex context.
       normal.where("Name", "=", apexBind<string>("accountName"));
 
+      // @ts-expect-error LIMIT binds require the explicit Apex context.
+      normal.limit(apexBind<number>("rowLimit"));
+      // @ts-expect-error OFFSET binds require the explicit Apex context.
+      normal.offset(apexBind<number>("rowOffset"));
+
       const apex = normal.apex();
       apex.where("Name", "=", apexBind<string>("accountName"));
       apex.where("Id", "in", apexBind<readonly string[]>("accountIds"));
       apex.where("CreatedDate", ">", apexBind<string>("createdAfter"));
+      apex.where((eb) =>
+        eb.or([
+          eb("Name", "=", apexBind<string>("firstName")),
+          eb("Name", "=", apexBind<string>("secondName")),
+        ]),
+      );
+      apex.limit(apexBind<number>("rowLimit"));
+      apex.offset(apexBind<number>("rowOffset"));
 
+      // @ts-expect-error LIMIT binds must be numeric.
+      apex.limit(apexBind<string>("rowLimit"));
+      // @ts-expect-error OFFSET binds must be numeric.
+      apex.offset(apexBind<string>("rowOffset"));
       // @ts-expect-error Scalar field binds must match the field value type.
       apex.where("Name", "=", apexBind<number>("accountName"));
       // @ts-expect-error IN binds must represent a collection of field values.
