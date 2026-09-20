@@ -61,6 +61,7 @@ import {
   type FieldsFunctionNode,
   type FieldsSelector,
   type FilterableLocationFieldReference,
+  type FilterableToLabelFieldReference,
   type FormatFunctionBuilder,
   type FormatFunctionNode,
   type FormattableFieldReference,
@@ -148,6 +149,8 @@ import {
   soqlRelativeDate,
   soqlTime,
   type ToLabelFunctionBuilder,
+  type ToLabelFilterComparisonOperator,
+  type ToLabelFilterFunctionExpression,
   type ToLabelFunctionNode,
   type TranslatableFieldReference,
   type TypeOfBuilder,
@@ -489,6 +492,13 @@ type PublicTypeSurface = {
   soqlTemporalLiteral: SoqlTemporalLiteral;
   soqlTimeLiteral: SoqlTimeLiteral;
   toLabelFunctionBuilder: ToLabelFunctionBuilder<string>;
+  toLabelFilterComparisonOperator: ToLabelFilterComparisonOperator;
+  toLabelFilterFunctionExpression: ToLabelFilterFunctionExpression<"Status">;
+  filterableToLabelFieldReference: FilterableToLabelFieldReference<
+    Record<string, never>,
+    never,
+    "Status"
+  >;
   toLabelFunctionNode: ToLabelFunctionNode;
   translatableFieldReference: TranslatableFieldReference<
     Record<string, never>,

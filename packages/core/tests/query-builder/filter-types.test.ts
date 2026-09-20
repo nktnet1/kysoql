@@ -28,6 +28,18 @@ interface FilterTypeSchema {
     readonly Percent__c: Field<number, "percent">;
     readonly Phone__c: Field<string, "phone">;
     readonly Picklist__c: Field<string, "picklist">;
+    readonly NonNullablePicklist__c: Field<string, "picklist", false>;
+    readonly CurrencyIsoCode: Field<string, "picklist">;
+    readonly Division: Field<string, "picklist">;
+    readonly Division__c: Field<string, "picklist">;
+    readonly InternalPicklist__c: SalesforceField<
+      string,
+      "picklist",
+      true,
+      false,
+      true,
+      true
+    >;
     readonly Reference__c: Field<string, "reference">;
     readonly String__c: Field<string, "string">;
     readonly Textarea__c: Field<string, "textarea">;
@@ -35,6 +47,85 @@ interface FilterTypeSchema {
     readonly Url__c: Field<string, "url">;
   }>;
 }
+
+it("filters translated picklist labels with typed toLabel expressions", () => {
+  const query = new Kysoql<FilterTypeSchema>().selectFrom("Fixture__c");
+
+  query.where((eb) => eb(eb.fn.toLabel("Picklist__c"), "=", "Translated"));
+  query.where((eb) => eb(eb.fn.toLabel("Picklist__c"), "!=", null));
+  query.where((eb) => eb(eb.fn.toLabel("Picklist__c"), "like", "Trans%"));
+  query.where((eb) => eb(eb.fn.toLabel("Division__c"), "=", "Translated"));
+  query.where((eb) =>
+    eb(eb.fn.toLabel("MultiPicklist__c"), "=", "Translated A;Translated B"),
+  );
+
+  query.where((eb) => {
+    const translated = eb.fn.toLabel("Picklist__c");
+    // @ts-expect-error WHERE toLabel expressions are not aliased SELECT expressions.
+    translated.as("translated");
+    return eb(translated, "=", "Translated");
+  });
+
+  query.where((eb) => {
+    // @ts-expect-error toLabel WHERE predicates require picklist or multipicklist fields.
+    eb.fn.toLabel("String__c");
+    return eb("Picklist__c", "=", "value");
+  });
+
+  query.where((eb) => {
+    // @ts-expect-error toLabel WHERE predicates require filterable generated fields.
+    eb.fn.toLabel("InternalPicklist__c");
+    return eb("Picklist__c", "=", "value");
+  });
+
+  query.where((eb) => {
+    // @ts-expect-error Salesforce forbids filtering toLabel(CurrencyIsoCode) in WHERE.
+    eb.fn.toLabel("CurrencyIsoCode");
+    return eb("Picklist__c", "=", "value");
+  });
+
+  query.where((eb) => {
+    // @ts-expect-error Salesforce forbids filtering toLabel(Division) in WHERE.
+    eb.fn.toLabel("Division");
+    return eb("Picklist__c", "=", "value");
+  });
+
+  query.where((eb) => {
+    const translated = eb.fn.toLabel("NonNullablePicklist__c");
+    // @ts-expect-error Non-nullable translated fields reject null equality operands.
+    return eb(translated, "=", null);
+  });
+
+  query.where((eb) => {
+    const translated = eb.fn.toLabel("Picklist__c");
+    // @ts-expect-error toLabel comparisons use translated string labels.
+    return eb(translated, "=", 1);
+  });
+
+  query.where((eb) => {
+    const translated = eb.fn.toLabel("Picklist__c");
+    // @ts-expect-error Salesforce doesn't expose ordered comparisons on translated picklist labels.
+    return eb(translated, ">", "Translated");
+  });
+
+  query.where((eb) => {
+    const translated = eb.fn.toLabel("Picklist__c");
+    // @ts-expect-error toLabel WHERE predicates intentionally expose only documented equality/LIKE comparisons.
+    return eb(translated, "in", ["Translated"]);
+  });
+
+  query.where((eb) => {
+    const translated = eb.fn.toLabel("MultiPicklist__c");
+    // @ts-expect-error Multipicklist toLabel filters don't expose LIKE.
+    return eb(translated, "like", "Translated%");
+  });
+
+  query.where((eb) => {
+    const translated = eb.fn.toLabel("MultiPicklist__c");
+    // @ts-expect-error toLabel expressions don't expose raw multipicklist INCLUDES semantics.
+    return eb(translated, "includes", ["Translated A"]);
+  });
+});
 
 it("accepts equality values for every supported Salesforce scalar field type", () => {
   const query = new Kysoql<FilterTypeSchema>().selectFrom("Fixture__c");

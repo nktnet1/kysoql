@@ -37,6 +37,9 @@ export type {
 export type {
   ExpressionBuilder,
   ExpressionWrapper,
+  FilterableToLabelFieldReference,
+  ToLabelFilterComparisonOperator,
+  ToLabelFilterFunctionExpression,
   WhereExpressionFactory,
 } from "#/expression/expression-builder";
 export type {

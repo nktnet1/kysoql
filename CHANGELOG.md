@@ -62,9 +62,16 @@ version is cut.
 - Typed SOQL date-function predicates in ordinary `WHERE` expression callbacks,
   including all thirteen calendar/fiscal functions, filterable date/datetime
   metadata gating, set/ordered operand typing, and `convertTimezone()` composition.
+- Typed SOQL `toLabel()` predicates in ordinary `WHERE` expression callbacks,
+  with generated filterable picklist/multipicklist metadata, translated-string
+  operands, nullability-aware equality, picklist `LIKE`, child-to-parent paths,
+  and documented `Division` / `CurrencyIsoCode` / external-object restrictions.
 
 ### Fixed
 
+- Keep negative `toLabel()` WHERE type tests compile-time-only after an
+  expected invalid function call, avoiding follow-on diagnostics from
+  deliberately poisoned expressions during strict test typechecking.
 - Match the date-function `WHERE` compiler regression expectation to the
   existing top-level boolean formatting contract: redundant outer parentheses
   are omitted while precedence-preserving nested groups remain parenthesised.

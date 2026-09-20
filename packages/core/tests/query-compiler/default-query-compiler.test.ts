@@ -355,6 +355,23 @@ describe("DefaultQueryCompiler", () => {
     );
   });
 
+  it("compiles translated picklist filters with toLabel in WHERE", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .where((eb) =>
+        eb.and([
+          eb(eb.fn.toLabel("Industry"), "=", "Technologie"),
+          eb(eb.fn.toLabel("Industry"), "like", "Tech%"),
+        ]),
+      )
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT Id FROM Account WHERE toLabel(Industry) = 'Technologie' AND toLabel(Industry) LIKE 'Tech%'",
+    );
+  });
+
   it("compiles fixed relative date literals without quotes", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")

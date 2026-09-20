@@ -2,6 +2,7 @@ import {
   createSelectExpressionBuilder,
   type ConvertTimezoneFunctionBuilder,
   type DateFunctionExpression,
+  type TranslatableFieldReference,
 } from "#/expression/aggregate-function-builder";
 import {
   type DistanceFunctionExpression,
@@ -13,10 +14,12 @@ import type { OperationNode } from "#/operation-node/operation-node";
 import type {
   ComparisonOperator,
   EqualityComparisonOperator,
+  LikeComparisonOperator,
   OrderedComparisonOperator,
   SetComparisonOperator,
 } from "#/operation-node/operator-node";
 import { OrNode } from "#/operation-node/or-node";
+import type { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
 import {
   type ComparisonOperatorExpression,
   type FilterableFieldName,
@@ -28,10 +31,14 @@ import {
   type DistanceComparisonOperator,
   parseDistanceFilterBinaryOperation,
 } from "#/parser/geolocation-expression-parser";
-import type { FieldReferenceDefinition } from "#/parser/reference-parser";
+import type {
+  FieldReferenceDefinition,
+  FieldReferenceNullable,
+} from "#/parser/reference-parser";
 import type { SoqlDateLiteral } from "#/soql-temporal-literal";
 
 declare const expressionType: unique symbol;
+declare const toLabelFilterExpressionType: unique symbol;
 
 type SemiJoinFlag<Value> = Value extends (...args: never[]) => unknown
   ? true
@@ -105,6 +112,62 @@ type DateFunctionOperandValue<
     ? readonly Value[]
     : Value;
 
+export type ToLabelFilterComparisonOperator =
+  | EqualityComparisonOperator
+  | LikeComparisonOperator;
+
+type TerminalFieldName<Reference extends string> =
+  Reference extends `${string}.${infer Tail}`
+    ? TerminalFieldName<Tail>
+    : Reference;
+
+type UnsupportedToLabelWhereFieldName = "CurrencyIsoCode" | "Division";
+
+export type FilterableToLabelFieldReference<
+  DB,
+  TB extends keyof DB,
+  Reference extends string,
+> = Reference extends TranslatableFieldReference<DB, TB, Reference>
+  ? Reference extends FilterableFieldName<DB, TB, Reference>
+    ? TerminalFieldName<Reference> extends UnsupportedToLabelWhereFieldName
+      ? never
+      : Reference
+    : never
+  : never;
+
+type ToLabelFilterOperatorForReference<
+  DB,
+  TB extends keyof DB,
+  Reference extends string,
+> = Reference extends FilterableToLabelFieldReference<DB, TB, Reference>
+  ? FieldReferenceDefinition<DB, TB, Reference> extends {
+      readonly salesforceType: "picklist";
+    }
+    ? ToLabelFilterComparisonOperator
+    : EqualityComparisonOperator
+  : never;
+
+type ToLabelFilterValue<
+  DB,
+  TB extends keyof DB,
+  Reference extends string,
+> = true extends FieldReferenceNullable<DB, TB, Reference>
+  ? string | null
+  : string;
+
+type ToLabelFilterOperandValue<
+  Value,
+  Operator extends ToLabelFilterComparisonOperator,
+> = Operator extends LikeComparisonOperator ? string : Value;
+
+export interface ToLabelFilterFunctionExpression<Reference extends string> {
+  readonly [toLabelFilterExpressionType]: {
+    readonly reference: Reference;
+  };
+
+  toOperationNode(): ToLabelFunctionNode;
+}
+
 interface DateFilterFunctionModule<DB, TB extends keyof DB> {
   calendarMonth<Input extends DateFilterFunctionInput>(
     field: Input & DateFilterFunctionArgument<DB, TB, Input>,
@@ -164,8 +227,16 @@ interface DateFilterFunctionModule<DB, TB extends keyof DB> {
   ): ConvertTimezoneFunctionBuilder<Reference>;
 }
 
+interface ToLabelFilterFunctionModule<DB, TB extends keyof DB> {
+  toLabel<Reference extends string>(
+    field: Reference & FilterableToLabelFieldReference<DB, TB, Reference>,
+  ): ToLabelFilterFunctionExpression<Reference>;
+}
+
 type FilterFunctionModule<DB, TB extends keyof DB> =
-  DateFilterFunctionModule<DB, TB> & GeolocationFilterFunctionModule<DB, TB>;
+  DateFilterFunctionModule<DB, TB> &
+    GeolocationFilterFunctionModule<DB, TB> &
+    ToLabelFilterFunctionModule<DB, TB>;
 
 export interface ExpressionWrapper<
   DB,
@@ -201,6 +272,19 @@ export interface ExpressionBuilder<
     Right extends DateFunctionOperandValue<Value, NoInfer<Operator>>,
   >(
     lhs: DateFunctionExpression<Output, Value, AllowedOperator, Identity>,
+    op: Operator,
+    rhs: Right,
+  ): ExpressionWrapper<DB, TB, false>;
+
+  <
+    Reference extends string,
+    Operator extends ToLabelFilterOperatorForReference<DB, TB, Reference>,
+    Right extends ToLabelFilterOperandValue<
+      ToLabelFilterValue<DB, TB, Reference>,
+      NoInfer<Operator>
+    >,
+  >(
+    lhs: ToLabelFilterFunctionExpression<Reference>,
     op: Operator,
     rhs: Right,
   ): ExpressionWrapper<DB, TB, false>;
@@ -287,7 +371,8 @@ export function createExpressionBuilder<
     lhs:
       | string
       | DateFunctionExpression<unknown, unknown, ComparisonOperator, string>
-      | DistanceFunctionExpression<unknown, boolean, boolean>,
+      | DistanceFunctionExpression<unknown, boolean, boolean>
+      | ToLabelFilterFunctionExpression<string>,
     op: ComparisonOperator,
     rhs: unknown,
   ): ExpressionWrapper<DB, TB, boolean> => {
@@ -302,7 +387,8 @@ export function createExpressionBuilder<
       const operation = lhs.toOperationNode();
 
       node =
-        operation.kind === "DateFunctionNode"
+        operation.kind === "DateFunctionNode" ||
+        operation.kind === "ToLabelFunctionNode"
           ? parseOperationValueBinaryOperation(operation, op, rhs)
           : parseDistanceFilterBinaryOperation(
               lhs as DistanceFunctionExpression<unknown, boolean, boolean>,

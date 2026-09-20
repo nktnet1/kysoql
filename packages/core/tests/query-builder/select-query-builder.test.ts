@@ -1103,6 +1103,12 @@ describe("SelectQueryBuilder", () => {
         2026,
       ),
     );
+    query.where((eb) =>
+      eb(eb.fn.toLabel("Industry"), "=", "Translated Technology"),
+    );
+    query.where((eb) =>
+      eb(eb.fn.toLabel("Owner.Region__c"), "like", "Austr%"),
+    );
 
     query.where((eb) =>
       eb.or([

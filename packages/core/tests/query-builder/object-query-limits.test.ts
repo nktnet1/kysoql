@@ -132,6 +132,7 @@ interface FixtureSchema {
       readonly Id: Field<string, "id">;
       readonly DeveloperName: Field;
       readonly Priority__c: Field<number, "int">;
+      readonly Status__c: Field<string, "picklist">;
       readonly Parent__c: ReferenceField<"ParentConfig__mdt">;
     },
     {
@@ -635,6 +636,20 @@ describe("object-specific SOQL query limits", () => {
     ).toBe(
       "SELECT Id FROM Config__mdt WHERE DeveloperName IN ('Primary', 'Secondary') AND Parent__r.DeveloperName NOT IN ('Hidden')",
     );
+    expect(
+      db
+        .selectFrom("Config__mdt")
+        .select("Id")
+        .where((eb) =>
+          eb.or([
+            eb(eb.fn.toLabel("Status__c"), "=", "Translated Active"),
+            eb(eb.fn.toLabel("Status__c"), "like", "Translated%"),
+          ]),
+        )
+        .compile().soql,
+    ).toBe(
+      "SELECT Id FROM Config__mdt WHERE (toLabel(Status__c) = 'Translated Active' OR toLabel(Status__c) LIKE 'Translated%')",
+    );
 
     expect(() =>
       base
@@ -740,6 +755,12 @@ describe("object-specific SOQL query limits", () => {
     expect(() =>
       base
         .select(({ fn }) => fn.toLabel("Status__c").as("statusLabel"))
+        .compile(),
+    ).toThrow(error);
+    expect(() =>
+      base
+        .select("Id")
+        .where((eb) => eb(eb.fn.toLabel("Status__c"), "=", "Open"))
         .compile(),
     ).toThrow(error);
     expect(() => base.select("Id").forView().compile()).toThrow(error);

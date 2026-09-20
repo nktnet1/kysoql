@@ -231,6 +231,23 @@ const opportunities = await db
   .execute();
 ```
 
+Ordinary `WHERE` callbacks can also compare translated picklist labels. The
+filter form accepts generated filterable `picklist` / `multipicklist` fields and
+child-to-parent paths, compares against translated string labels rather than the
+field's API-value union, and preserves nullable-field `null` comparisons.
+Regular picklists expose equality and `LIKE`; multipicklists expose equality.
+Salesforce's documented `WHERE` exclusions for `Division` and
+`CurrencyIsoCode` are enforced statically, and external-object queries that use
+`toLabel()` are rejected during query compilation.
+
+```ts
+const translatedOpportunities = await db
+  .selectFrom("Opportunity")
+  .select(["Id", "StageName"])
+  .where((eb) => eb(eb.fn.toLabel("StageName"), "=", "Fermé gagné"))
+  .execute();
+```
+
 Currency fields can be converted to the querying user's currency with an
 aliased `convertCurrency()` selection. Inputs are restricted to generated
 `currency` fields, including child-to-parent paths, and outputs remain numeric

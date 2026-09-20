@@ -608,9 +608,11 @@ their focused validation paths.
 
 ### Translated SELECT values with toLabel()
 
-Sources re-checked on 2026-09-18:
+Sources re-checked on 2026-09-21:
 
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-tolabel.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-comparisonoperators.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-querying-multiselect-picklists.html
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-functions.html
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select.html
 
@@ -629,7 +631,7 @@ Useful findings:
   transport-specific names.
 - Salesforce does not permit `toLabel()` in `ORDER BY`; picklist ordering always
   follows the picklist's defined order. Translated-value filtering is documented
-  separately and is not part of this SELECT-only slice.
+  separately; it was intentionally outside the original `v1.0.65` SELECT slice.
 
 Implemented consequence in `v1.0.65`: record and parent-to-child relationship
 subquery builders accept aliased `fn.toLabel(...)` selections for generated
@@ -640,6 +642,21 @@ additive alongside ordinary fields, duplicate aliases are rejected, invalid
 unaliased nodes are rejected at runtime, and `ORDER BY` has no function overload.
 The conservative field gate intentionally excludes special Salesforce cases
 that current generated metadata cannot prove safely.
+
+Implemented consequence in `v1.0.114`: ordinary `WHERE` expression callbacks
+also expose a dedicated `fn.toLabel(...)` filter expression. It accepts only
+generated filterable picklist/multipicklist references, including parent paths,
+and compares translated labels as strings rather than reusing the generated
+API-name union. Nullable translated values retain `null` equality support.
+Regular picklists expose `=` / `!=` and `LIKE`; multipicklists conservatively
+expose `=` / `!=` only, leaving less clearly documented function/operator
+combinations out of the typed surface. The terminal fields `Division` and
+`CurrencyIsoCode` are excluded from `WHERE toLabel(...)` exactly as Salesforce
+documents, while custom fields with similar names remain valid. External-object
+queries reject `toLabel()` in `WHERE` at the compiler boundary, matching the
+existing SELECT restriction. Record-type-name, data-category, and History
+special cases remain outside this generated-field slice because current schema
+metadata cannot prove them soundly.
 
 ### Currency conversion with convertCurrency()
 

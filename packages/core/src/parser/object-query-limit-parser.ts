@@ -9,6 +9,7 @@ import type { OperatorNode } from "#/operation-node/operator-node";
 import type { OrNode } from "#/operation-node/or-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { SelectQueryNode } from "#/operation-node/select-query-node";
+import type { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
 import type { ValueListNode } from "#/operation-node/value-list-node";
 import type { ValueNode } from "#/operation-node/value-node";
 
@@ -374,15 +375,23 @@ const validateUserRecordAccessQuery = (query: SelectQueryNode): void => {
 const binaryReferenceAndOperator = (
   node: BinaryOperationNode,
 ): readonly [string, string] | undefined => {
-  if (
-    node.leftOperand.kind !== "ReferenceNode" ||
-    node.operator.kind !== "OperatorNode"
-  ) {
+  if (node.operator.kind !== "OperatorNode") {
+    return undefined;
+  }
+
+  const reference =
+    node.leftOperand.kind === "ReferenceNode"
+      ? (node.leftOperand as ReferenceNode)
+      : node.leftOperand.kind === "ToLabelFunctionNode"
+        ? (node.leftOperand as ToLabelFunctionNode).reference
+        : undefined;
+
+  if (!reference) {
     return undefined;
   }
 
   return [
-    (node.leftOperand as ReferenceNode).name.toLowerCase(),
+    reference.name.toLowerCase(),
     (node.operator as OperatorNode).operator,
   ];
 };
@@ -493,6 +502,28 @@ const whereUsesOperator = (
   }
 };
 
+const whereUsesToLabel = (node: OperationNode): boolean => {
+  switch (node.kind) {
+    case "AndNode": {
+      const and = node as AndNode;
+      return whereUsesToLabel(and.left) || whereUsesToLabel(and.right);
+    }
+    case "BinaryOperationNode":
+      return (
+        (node as BinaryOperationNode).leftOperand.kind ===
+        "ToLabelFunctionNode"
+      );
+    case "NotNode":
+      return whereUsesToLabel((node as NotNode).operand);
+    case "OrNode": {
+      const or = node as OrNode;
+      return whereUsesToLabel(or.left) || whereUsesToLabel(or.right);
+    }
+    default:
+      return false;
+  }
+};
+
 const externalSelectionIsUnsupported = (node: OperationNode): boolean => {
   switch (node.kind) {
     case "AggregateFunctionNode": {
@@ -528,10 +559,11 @@ const validateExternalObjectQuery = (query: SelectQueryNode): void => {
       externalSelectionIsUnsupported(selection.selection),
     ) ||
     (query.where &&
-      whereUsesOperator(
+      (whereUsesOperator(
         query.where.where,
         EXTERNAL_OBJECT_UNSUPPORTED_OPERATORS,
-      ))
+      ) ||
+        whereUsesToLabel(query.where.where)))
   ) {
     throw new TypeError(EXTERNAL_OBJECT_QUERY_ERROR);
   }
