@@ -3,6 +3,7 @@ import * as v from "valibot";
 import { ApexBindNode } from "#/operation-node/apex-bind-node";
 import {
   ApexAdditionNode,
+  ApexSubstringNode,
   type ApexBindExpressionNode,
   type ApexExpressionOperandNode,
 } from "#/operation-node/apex-expression-node";
@@ -12,6 +13,10 @@ const APEX_BIND_EXPRESSION_ERROR =
   "Apex bind expressions must be identifiers or dotted member paths containing only letters, numbers, and underscores, and no path segment can start with a number.";
 const APEX_ADDITION_OPERAND_ERROR =
   "Apex addition operands must be strings, numbers, or Apex bind expressions.";
+const APEX_SUBSTRING_SOURCE_ERROR =
+  "Apex substring sources must be strings or string-valued Apex bind expressions.";
+const APEX_SUBSTRING_INDEX_ERROR =
+  "Apex substring indexes must be non-negative integers, and endIndex must be greater than or equal to beginIndex.";
 const apexBindExpressionSchema = v.pipe(
   v.string(),
   v.regex(
@@ -86,6 +91,50 @@ export function apexAdd(
     ApexAdditionNode.create(
       parseApexAdditionOperand(left),
       parseApexAdditionOperand(right),
+    ),
+  );
+}
+
+function parseApexSubstringSource(
+  source: string | ApexBindExpression<string>,
+): ApexExpressionOperandNode {
+  if (isApexBindExpression(source)) {
+    return source.toOperationNode();
+  }
+
+  if (typeof source !== "string") {
+    throw new TypeError(APEX_SUBSTRING_SOURCE_ERROR);
+  }
+
+  return ApexLiteralNode.create(source);
+}
+
+function validateApexSubstringIndexes(
+  beginIndex: number,
+  endIndex: number,
+): void {
+  if (
+    !Number.isInteger(beginIndex) ||
+    beginIndex < 0 ||
+    !Number.isInteger(endIndex) ||
+    endIndex < beginIndex
+  ) {
+    throw new TypeError(APEX_SUBSTRING_INDEX_ERROR);
+  }
+}
+
+export function apexSubstring(
+  source: string | ApexBindExpression<string>,
+  beginIndex: number,
+  endIndex: number,
+): ApexBindExpression<string> {
+  validateApexSubstringIndexes(beginIndex, endIndex);
+
+  return new ApexBindExpressionImpl<string>(
+    ApexSubstringNode.create(
+      parseApexSubstringSource(source),
+      beginIndex,
+      endIndex,
     ),
   );
 }

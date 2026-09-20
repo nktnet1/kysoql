@@ -8,6 +8,7 @@ import type {
   ApexAdditionNode,
   ApexBindExpressionNode,
   ApexExpressionOperandNode,
+  ApexSubstringNode,
 } from "#/operation-node/apex-expression-node";
 import type { ApexLiteralNode } from "#/operation-node/apex-literal-node";
 import type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
@@ -318,6 +319,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
         return this.#compileAnd(node as AndNode);
       case "ApexAdditionNode":
       case "ApexBindNode":
+      case "ApexSubstringNode":
         return this.#compileApexBind(node as ApexBindExpressionNode);
       case "BinaryOperationNode":
         return this.#compileBinaryOperation(node as BinaryOperationNode);
@@ -372,6 +374,14 @@ export class DefaultQueryCompiler implements QueryCompiler {
         return (node as ApexBindNode).name;
       case "ApexLiteralNode":
         return this.#compileApexLiteral(node as ApexLiteralNode);
+      case "ApexSubstringNode": {
+        const substring = node as ApexSubstringNode;
+        return `${this.#compileApexExpression(
+          substring.source,
+        )}.substring(${this.#compileNumericLiteral(
+          substring.beginIndex,
+        )}, ${this.#compileNumericLiteral(substring.endIndex)})`;
+      }
       default:
         throw new Error("Unsupported Apex expression node.");
     }

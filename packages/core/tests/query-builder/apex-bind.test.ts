@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import { apexAdd, apexBind } from "#/apex-bind";
+import { apexAdd, apexBind, apexSubstring } from "#/apex-bind";
 import { Kysoql } from "#/kysoql";
 import type { ApexSelectQueryBuilder } from "#/query-builder/apex-select-query-builder";
 import type {
@@ -149,6 +149,67 @@ describe("Apex bind expressions", () => {
     expect(query.compile().soql).toBe(
       "SELECT Id FROM Account WHERE Name = :('x' + 'xx') AND Name LIKE :(filters.prefix + ('%' + filters.suffix)) LIMIT :(page.baseLimit + 1) OFFSET :(2 + 3)",
     );
+  });
+
+  it("compiles structured Apex substring bind expressions", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .apex()
+      .where("Name", "=", apexSubstring("XXXX", 0, 3))
+      .where(
+        "Name",
+        "like",
+        apexAdd(
+          apexSubstring(apexBind<string>("filters.name"), 0, 2),
+          "%",
+        ),
+      );
+
+    expect(query.compile().soql).toBe(
+      "SELECT Id FROM Account WHERE Name = :'XXXX'.substring(0, 3) AND Name LIKE :(filters.name.substring(0, 2) + '%')",
+    );
+  });
+
+  it("treats substring expressions as binds for Knowledge articles", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("KnowledgeArticleVersion")
+      .select("Id")
+      .apex()
+      .where("PublishStatus", "=", apexSubstring("Draft", 0, 5));
+
+    expect(() => query.compile()).toThrow(
+      "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.",
+    );
+  });
+
+  it("keeps substring expressions typed and Apex-only", () => {
+    const normal = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id");
+    const apex = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .apex();
+
+    if (false) {
+      // @ts-expect-error Structured method bind expressions require the explicit Apex context.
+      normal.where("Name", "=", apexSubstring("XXXX", 0, 3));
+
+      apex.where("Name", "=", apexSubstring("XXXX", 0, 3));
+      apex.where(
+        "Name",
+        "like",
+        apexAdd(apexSubstring(apexBind<string>("name"), 0, 2), "%"),
+      );
+
+      // @ts-expect-error Substring receivers must be string-valued.
+      apexSubstring(apexBind<number>("amount"), 0, 1);
+      // @ts-expect-error String-valued substring binds must still match the field value type.
+      apex.where("AnnualRevenue", ">=", apexSubstring("123", 0, 2));
+      // @ts-expect-error LIMIT binds must be numeric, not string-valued method results.
+      apex.limit(apexSubstring("123", 0, 2));
+    }
   });
 
   it("compiles collection binds for IN and NOT IN without literal-list parentheses", () => {
@@ -371,6 +432,36 @@ describe("Apex bind expressions", () => {
 
     expect(query.compile().soql).toBe(
       "SELECT Id FROM Account WHERE Name = :('O\\'Brien' + (filters.suffix + '!'))",
+    );
+  });
+
+  it("creates frozen substring nodes and validates literal indexes", () => {
+    const substring = apexSubstring(apexAdd("AB", "CD"), 1, 3);
+    const node = substring.toOperationNode();
+
+    expect(node).toEqual({
+      kind: "ApexSubstringNode",
+      source: {
+        kind: "ApexAdditionNode",
+        leftOperand: { kind: "ApexLiteralNode", value: "AB" },
+        rightOperand: { kind: "ApexLiteralNode", value: "CD" },
+      },
+      beginIndex: 1,
+      endIndex: 3,
+    });
+    expect(Object.isFrozen(node)).toBe(true);
+    if (node.kind === "ApexSubstringNode") {
+      expect(Object.isFrozen(node.source)).toBe(true);
+    }
+
+    expect(() => apexSubstring("XXXX", -1, 3)).toThrow(
+      "Apex substring indexes must be non-negative integers, and endIndex must be greater than or equal to beginIndex.",
+    );
+    expect(() => apexSubstring("XXXX", 0.5, 3)).toThrow(
+      "Apex substring indexes must be non-negative integers, and endIndex must be greater than or equal to beginIndex.",
+    );
+    expect(() => apexSubstring("XXXX", 3, 2)).toThrow(
+      "Apex substring indexes must be non-negative integers, and endIndex must be greater than or equal to beginIndex.",
     );
   });
 

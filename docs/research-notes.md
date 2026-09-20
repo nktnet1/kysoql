@@ -1485,3 +1485,14 @@ reuse the existing clause-position and Knowledge-article guards. Raw arithmetic,
 method calls, indexing, and query-result expressions remain rejected by
 `apexBind(...)`; method calls and nested-query-result binds are separate future
 structured families.
+
+Kysoql consequence for `v1.0.102`: add only the explicitly demonstrated Apex
+`String.substring(beginIndex, endIndex)` bind-expression family as a structured
+`apexSubstring(...)` helper/node. Salesforce's current Apex guide demonstrates
+`:'XXXX'.substring(0,3)` as a static SOQL bind expression. Keep the receiver typed
+as a string literal or an existing string-valued `ApexBindExpression`, validate
+both indexes as non-negative integers and reject a literal end index smaller than
+the begin index, and compile the method expression under the existing single bind
+colon. Include the method node in the bind-detection walk so Knowledge-article
+rejection remains recursive. Arbitrary method names/calls and the separately
+documented query-result bind expression remain outside this slice.

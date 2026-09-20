@@ -44,6 +44,10 @@ version is cut.
   addition/literal AST nodes, typed string or numeric operands, nested bind
   expressions, and support across the existing Apex `WHERE`, `LIMIT`, and `OFFSET`
   bind positions without allowing raw Apex fragments.
+- Structured Apex `String.substring(beginIndex, endIndex)` bind expressions through
+  `apexSubstring(...)`, with validated non-negative integer indexes, frozen method
+  AST nodes, and composition with existing string binds / `apexAdd(...)` without
+  admitting arbitrary Apex method-call text.
 - Release validation for built package exports, declaration files, CLI binaries,
   package metadata, package documentation, and changelog presence.
 

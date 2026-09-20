@@ -154,6 +154,7 @@ recent patch sequence:
 | `v1.0.99` | Add Apex-only `WHERE` binds inside parent-to-child relationship subqueries, preserving child selection/output typing, function-mode/depth rules, and the existing no-semi-join boundary while keeping API-executable relationship subqueries bind-free. |
 | `v1.0.100` | Add the documented Apex bind-left `INCLUDES` form across record, aggregate, bare-`COUNT()`, grouped-expression, and Apex relationship-subquery `WHERE` surfaces while preserving field-left right-hand-bind rejection. |
 | `v1.0.101` | Add structured Apex `+` bind expressions through `apexAdd(...)`, using frozen addition/literal AST nodes with typed string or numeric operands while preserving the existing Apex-only bind-position and Knowledge-article guardrails. |
+| `v1.0.102` | Add the documented structured Apex `String.substring(beginIndex, endIndex)` bind-expression family through `apexSubstring(...)`, with frozen method nodes, validated non-negative integer indexes, safe receiver composition, and no raw method-call escape hatch. |
 
 ### Build/tooling state
 
@@ -403,8 +404,11 @@ Core currently has:
   of those Apex forms; Salesforce's documented bind-left multipicklist syntax is
   exposed separately as `where(apexBind<string>(...), "includes",
   literalValues)`, while structured `+` bind expressions use `apexAdd(...)` with
-  same-family string or numeric operands and frozen Apex-expression AST nodes; raw
-  arithmetic text remains rejected by `apexBind(...)`, and the type/parser surface
+  same-family string or numeric operands and frozen Apex-expression AST nodes;
+  structured string substring expressions use `apexSubstring(...)` with a
+  string-valued receiver plus validated non-negative integer bounds; raw arithmetic
+  and arbitrary method-call text remain rejected by `apexBind(...)`, and the
+  type/parser surface
   continues to reject right-hand bind values for field-left `INCLUDES` /
   `EXCLUDES`; compilation rejects
   `ORDER BY` on locking queries,
@@ -432,23 +436,22 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The next patch should be `v1.0.102` if structured Apex-expression feature work
-continues.** `v1.0.101` adds the first structured bind-expression family with
-`apexAdd(...)`, matching Salesforce's documented static bind example
-`:('x' + 'xx')` while keeping `apexBind(...)` limited to validated identifier/member
-paths. Addition operands are typed conservatively as string-with-string or
-number-with-number; each side can be a literal, an existing bind expression, or a
-nested addition. The compiler renders one leading bind colon for the whole
-expression, escapes string literals through the existing safe string path, validates
-numeric literals as finite values, and treats the structured node as a bind for
-Knowledge-article rejection and bounded-`FIELDS()` checks.
+**The next patch should be `v1.0.103` if structured Apex-expression feature work
+continues.** `v1.0.102` adds the documented string-method bind example through
+`apexSubstring(value, beginIndex, endIndex)`. The receiver is typed as a string
+literal or existing string-valued Apex bind expression (including `apexAdd(...)` /
+nested substring results), indexes must be non-negative integers with
+`endIndex >= beginIndex`, and the compiler renders the method call inside the one
+leading Apex bind colon. The new method node is frozen and participates in the same
+Knowledge-article and Apex-only guardrails as all other bind-expression nodes.
 
-The next smallest documented structured family is the Apex string-method example
-shown by Salesforce (`'XXXX'.substring(0, 3)`). If implemented, model only a
-well-defined typed method helper/node rather than accepting arbitrary method-call
-text. The guide also shows a bind whose expression is itself a query result; keep
-that deferred until its result/cardinality/type semantics can be represented safely.
-Do not loosen `apexBind(...)` validation into a generic Apex/SOQL escape hatch.
+The remaining documented static-Apex expression example is a bind whose expression
+is itself a query result. Treat that as an optional `v1.0.103` only if its query
+result/cardinality/value typing can be represented explicitly in the AST and public
+types. Do not model it as raw query text, and do not loosen `apexBind(...)` into a
+generic Apex/SOQL escape hatch. If that result-expression family is intentionally
+left out, return to release hardening / real-org fixtures rather than adding more
+ad-hoc expression strings.
 
 There are still no remaining small bind-**position** gaps in the current static-Apex
 SELECT surface. The `v1.0.84` specialist-object boundary also remains unchanged:
@@ -458,7 +461,7 @@ permission/cardinality-dependent caps as execution-context concerns. Automatic
 `Question` data-category taxonomy discovery remains deferred until a stable public
 JSforce/Salesforce transport path exists.
 
-If the supplied bundle already contains `v1.0.101` or later, inspect the code and
+If the supplied bundle already contains `v1.0.102` or later, inspect the code and
 advance from the actual state instead of reimplementing this section.
 
 ## Follow-on roadmap after the consistency audit

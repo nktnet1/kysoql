@@ -4,6 +4,7 @@ export {
   type ApexBindExpression,
   apexAdd,
   apexBind,
+  apexSubstring,
 } from "#/apex-bind";
 export type {
   AggregatableFieldReference,
@@ -75,6 +76,7 @@ export type {
   ApexAdditionNode,
   ApexBindExpressionNode,
   ApexExpressionOperandNode,
+  ApexSubstringNode,
 } from "#/operation-node/apex-expression-node";
 export type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 export type { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";

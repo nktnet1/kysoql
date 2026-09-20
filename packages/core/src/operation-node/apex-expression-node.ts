@@ -5,6 +5,7 @@ import { freeze } from "#/util/object-utils";
 export type ApexExpressionOperandNode =
   | ApexBindNode
   | ApexAdditionNode
+  | ApexSubstringNode
   | ApexLiteralNode;
 
 export interface ApexAdditionNode {
@@ -13,7 +14,17 @@ export interface ApexAdditionNode {
   readonly rightOperand: ApexExpressionOperandNode;
 }
 
-export type ApexBindExpressionNode = ApexBindNode | ApexAdditionNode;
+export interface ApexSubstringNode {
+  readonly kind: "ApexSubstringNode";
+  readonly source: ApexExpressionOperandNode;
+  readonly beginIndex: number;
+  readonly endIndex: number;
+}
+
+export type ApexBindExpressionNode =
+  | ApexBindNode
+  | ApexAdditionNode
+  | ApexSubstringNode;
 
 export const ApexAdditionNode = {
   create(
@@ -24,6 +35,21 @@ export const ApexAdditionNode = {
       kind: "ApexAdditionNode",
       leftOperand,
       rightOperand,
+    });
+  },
+};
+
+export const ApexSubstringNode = {
+  create(
+    source: ApexExpressionOperandNode,
+    beginIndex: number,
+    endIndex: number,
+  ): ApexSubstringNode {
+    return freeze({
+      kind: "ApexSubstringNode",
+      source,
+      beginIndex,
+      endIndex,
     });
   },
 };

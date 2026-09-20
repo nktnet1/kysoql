@@ -131,6 +131,7 @@ const containsApexBind = (node: OperationNode): boolean => {
   switch (node.kind) {
     case "ApexAdditionNode":
     case "ApexBindNode":
+    case "ApexSubstringNode":
       return true;
     case "AndNode": {
       const and = node as AndNode;

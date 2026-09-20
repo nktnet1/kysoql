@@ -55,7 +55,7 @@ preserve field-value typing, and `IN` / `NOT IN` collection binds compile withou
 literal-list parentheses:
 
 ```ts
-import { apexAdd, apexBind } from "@kysoql/core";
+import { apexAdd, apexBind, apexSubstring } from "@kysoql/core";
 
 const byName = db
   .selectFrom("Account")
@@ -83,6 +83,23 @@ const composed = db
   .apex()
   .where("Name", "=", apexAdd("x", "xx"))
   .limit(apexAdd(apexBind<number>("baseLimit"), 1))
+  .compile();
+```
+
+The documented Apex string-method bind form is available as a structured helper
+rather than raw method-call text:
+
+```ts
+const substring = db
+  .selectFrom("Account")
+  .select("Id")
+  .apex()
+  .where("Name", "=", apexSubstring("XXXX", 0, 3))
+  .where(
+    "Name",
+    "like",
+    apexAdd(apexSubstring(apexBind<string>("filters.name"), 0, 2), "%"),
+  )
   .compile();
 ```
 
@@ -120,8 +137,10 @@ Grouped Apex filters support `and` / `or` / `not`, while `LIMIT` and `OFFSET`
 accept numeric binds in addition to their validated literal forms. `apexBind<T>`
 accepts a simple identifier or a dotted member path such as `filters.accountName`
 and rejects calls, indexing, arithmetic text, and other raw fragments. Structured
-`+` expressions are available separately through `apexAdd(...)`; method calls and
-query-result expressions remain outside the safe API. Bind expressions are
+`+` expressions are available separately through `apexAdd(...)`; the documented
+`String.substring(beginIndex, endIndex)` method family is available through
+`apexSubstring(...)`. Arbitrary method calls and query-result expressions remain
+outside the safe API. Bind expressions are
 intentionally unavailable on ordinary API-executable builders and as
 right-hand values for Kysoql's field-left `INCLUDES` / `EXCLUDES` form. The
 separate Apex-only bind-left `INCLUDES` overload keeps its right

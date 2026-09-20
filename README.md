@@ -729,7 +729,7 @@ SOQL. The generic describes the Apex value shape, while the helper accepts only 
 simple identifier or a dotted member path such as `filters.accountName`:
 
 ```ts
-import { apexAdd, apexBind } from "@kysoql/core";
+import { apexAdd, apexBind, apexSubstring } from "@kysoql/core";
 
 const apexQuery = db
   .selectFrom("Account")
@@ -766,6 +766,29 @@ const composedBindQuery = db
 // SELECT Id FROM Account
 // WHERE Name = :('x' + 'xx')
 // LIMIT :(page.baseLimit + 1)
+```
+
+For Salesforce's documented static-Apex string-expression form, use
+`apexSubstring(value, beginIndex, endIndex)`. The receiver can be a string
+literal or another string-valued Apex bind expression, while indexes are
+validated as non-negative integers before the AST is created:
+
+```ts
+const substringBindQuery = db
+  .selectFrom("Account")
+  .select("Id")
+  .apex()
+  .where("Name", "=", apexSubstring("XXXX", 0, 3))
+  .where(
+    "Name",
+    "like",
+    apexAdd(apexSubstring(apexBind<string>("filters.name"), 0, 2), "%"),
+  )
+  .compile();
+
+// SELECT Id FROM Account
+// WHERE Name = :'XXXX'.substring(0, 3)
+// AND Name LIKE :(filters.name.substring(0, 2) + '%')
 ```
 
 Salesforce static Apex also permits a bind expression on the left side of
@@ -811,9 +834,13 @@ Scalar binds work with typed direct and child-to-parent relationship filters,
 including temporal fields without converting the Apex expression into a SOQL
 literal. Dotted member paths compile as expressions such as `:filters.accountName`. Raw
 method calls, indexing, arithmetic text, whitespace, and other fragments remain
-rejected by `apexBind(...)`; structured `+` expressions use `apexAdd(...)` instead.
+rejected by `apexBind(...)`; structured `+` expressions use `apexAdd(...)`, and
+the documented `String.substring(beginIndex, endIndex)` family uses
+`apexSubstring(...)` instead.
 `apexAdd(...)` currently accepts string-with-string or number-with-number operands,
-can nest, and can include existing typed bind expressions. `IN` / `NOT IN` binds
+can nest, and can include existing typed bind expressions. `apexSubstring(...)`
+returns a string-valued bind expression, accepts another string bind expression as
+its receiver, and can therefore compose with `apexAdd(...)`. `IN` / `NOT IN` binds
 represent collections, grouped Apex callbacks
 support the same `and` / `or` / `not` composition as ordinary filters, and
 `LIMIT` / `OFFSET` accept numeric binds. Literal pagination values retain the
