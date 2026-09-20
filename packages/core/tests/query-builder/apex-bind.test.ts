@@ -289,12 +289,12 @@ describe("Apex bind expressions", () => {
       apexQueryField(functionSource, "total");
       // @ts-expect-error Query-result field values must still match the outer field value type.
       apex.where("AnnualRevenue", ">=", name);
-      apex.where(
+      const nullableRevenue = apexQueryField(
+        revenueSource,
         "AnnualRevenue",
-        ">=",
-        // @ts-expect-error Nullable query-result values cannot satisfy ordered non-null operands.
-        apexQueryField(revenueSource, "AnnualRevenue"),
       );
+      // @ts-expect-error Nullable query-result values cannot satisfy ordered non-null operands.
+      apex.where("AnnualRevenue", ">=", nullableRevenue);
       // @ts-expect-error Nullable query-result values cannot be used as LIMIT binds.
       apex.limit(apexQueryField(revenueSource, "AnnualRevenue"));
     });
@@ -771,12 +771,9 @@ describe("Apex bind expressions", () => {
       apex.where(apexBind<string>("accountType"), "includes", [1]);
       // @ts-expect-error Right-hand binds are not supported with INCLUDES/EXCLUDES.
       apex.where("Tags__c", "includes", apexBind<readonly string[]>("tags"));
-      apex.where(
-        // @ts-expect-error Apex filters still require generated filterable metadata.
-        "Unfilterable__c",
-        "=",
-        apexBind<string>("unfilterableValue"),
-      );
+      const unfilterableValue = apexBind<string>("unfilterableValue");
+      // @ts-expect-error Apex filters still require generated filterable metadata.
+      apex.where("Unfilterable__c", "=", unfilterableValue);
     };
 
     expect(typeAssertions).toBeTypeOf("function");

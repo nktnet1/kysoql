@@ -66,6 +66,13 @@ checks those test files with their package-specific TypeScript configs and also
 checks root test tooling plus the generated Salesforce fixture under `test/`.
 V8 coverage output is written to `coverage/`.
 
+The workspace pins TypeScript in `devDependencies`, and `.vscode/settings.json`
+points VS Code at that installation. After the first `pnpm install`, select
+**TypeScript: Select TypeScript Version** -> **Use Workspace Version** once for
+the repository. Keeping the editor language service on the same TypeScript
+version as `pnpm typecheck` prevents version-specific diagnostic placement from
+turning valid negative `@ts-expect-error` assertions into editor-only errors.
+
 To inspect the query builder at runtime without connecting to Salesforce, run:
 
 ```bash

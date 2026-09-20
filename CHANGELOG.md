@@ -62,6 +62,9 @@ version is cut.
 
 ### Fixed
 
+- Keep VS Code negative type-test diagnostics aligned with CLI typechecking by
+  pointing the workspace at its pinned TypeScript SDK and avoiding
+  diagnostic-location-sensitive `@ts-expect-error` placement in Apex bind tests.
 - Align VS Code and CLI TypeScript project discovery by placing canonical `tsconfig.json` files in each test/tooling tree and making package test typechecks compile those same editor-discoverable projects.
 - Coalesce repeated Salesforce Describe child-relationship names into one generated
   property with an exact union of the concrete child-object / foreign-key pairs,

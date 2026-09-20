@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.109`
+## Current state after `v1.0.110`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -162,6 +162,7 @@ recent patch sequence:
 | `v1.0.107` | Make validation explicitly type-check source and test code as separate phases, including package Vitest suites, root test tooling, and the generated Salesforce TypeScript fixture. |
 | `v1.0.108` | Fix codegen for repeated Salesforce child-relationship names by emitting one property whose type is the exact union of the concrete relationship metadata pairs; refresh the real-org fixture so test typechecking succeeds. |
 | `v1.0.109` | Align VS Code/tsserver with CLI test typechecking by moving test projects to editor-discoverable `tsconfig.json` files under each test tree and making `typecheck:test` compile those same projects. |
+| `v1.0.110` | Align VS Code with the repository-pinned TypeScript SDK and make Apex negative type assertions insensitive to compiler-version diagnostic span changes. |
 
 ### Build/tooling state
 
@@ -452,7 +453,7 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The active feature and hardening roadmap is complete through `v1.0.109`.**
+**The active feature and hardening roadmap is complete through `v1.0.110`.**
 `v1.0.104` closes the release-audit gap rather than adding more SOQL grammar,
 `v1.0.105` repairs that verifier for TypeScript 7, whose package root no longer
 exposes the historical compiler API, `v1.0.106` adds direct scanner regression
@@ -465,7 +466,11 @@ preserves every concrete child-object / field pair as a union instead of emittin
 duplicate TypeScript property declarations. `v1.0.109` then aligns editor and CLI
 project discovery: test directories now contain conventional `tsconfig.json` files,
 and package `typecheck:test` scripts compile those exact configs so VS Code no longer
-falls back to an inferred project without the package `#/*` aliases.
+falls back to an inferred project without the package `#/*` aliases. `v1.0.110`
+closes the remaining editor/CLI drift: the workspace points VS Code at the pinned
+TypeScript SDK, and multiline negative Apex assertions no longer place
+`@ts-expect-error` inside an argument list where compiler versions can disagree
+about the diagnostic span.
 `pnpm verify:publish` treats each publishable package's `src/index.ts` barrel as the
 public contract and compares it with both the built runtime named exports and the
 generated declaration exports after build. This
@@ -481,7 +486,7 @@ and `pnpm salesforce:apex-binds` reruns it against an existing authenticated org
 The real-org fixture intentionally remains outside `pnpm validate` so local release
 validation never requires Salesforce credentials.
 
-There is no default `v1.0.109` feature slice. Continue only when local validation,
+There is no default `v1.0.110` feature slice. Continue only when local validation,
 publishing, or the real-org fixture exposes a concrete defect, or when one of the
 explicitly deferred tracks below gains the metadata / transport support needed for
 a sound implementation. Do not reopen ad-hoc Apex expression strings or infer new
@@ -511,7 +516,7 @@ consistency audit:
    object rules, external-adapter-specific limits, and permission/cardinality
    dependent caps need authoritative metadata or execution-context hooks before
    they can become sound static/compiler guarantees.
-4. **Release hardening.** The baseline audit is complete through `v1.0.109`: built
+4. **Release hardening.** The baseline audit is complete through `v1.0.110`: built
    runtime/declaration export parity is verified against source barrels without
    depending on TypeScript's removed root compiler API, and the scratch-org fixture
    exercises the completed static-Apex bind-expression families. Continue only for
@@ -536,7 +541,11 @@ pnpm validate
 checked with the same editor-discoverable `packages/*/tests/tsconfig.json` projects
 that VS Code loads. Root `scripts/`, `test/`, and `vitest.config.ts` likewise have
 conventional `tsconfig.json` projects, preventing inferred-project diagnostics from
-drifting away from CLI validation.
+drifting away from CLI validation. `.vscode/settings.json` points the editor at
+`node_modules/typescript/lib`; after install, select the workspace TypeScript
+version once in VS Code so editor diagnostics use the same pinned compiler as the
+CLI. Keep negative `@ts-expect-error` assertions on the line immediately before a
+complete invalid statement rather than inside a multiline argument list.
 
 Formatting/linting is separate:
 
