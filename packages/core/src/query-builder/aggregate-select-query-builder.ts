@@ -1821,6 +1821,24 @@ export function createAggregateSelectQueryBuilder<DB, TB extends keyof DB, O>(
   );
 }
 
+export function createGroupedSelectQueryBuilder<
+  DB,
+  TB extends keyof DB,
+  O,
+  GroupedBy extends string,
+>(
+  props: AggregateSelectQueryBuilderProps,
+): AggregateSelectQueryBuilder<DB, TB, O, GroupedBy, "ordinary", 0> {
+  return new AggregateSelectQueryBuilderImpl<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    "ordinary",
+    0
+  >(props);
+}
+
 function validateUniqueAliases(
   queryNode: SelectQueryNode,
   selections: readonly SelectionNode[],

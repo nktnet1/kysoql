@@ -38,6 +38,11 @@ interface FixtureSchema {
       readonly CloseDate: AggregatableField<string, "date", true>;
       readonly CreatedDate: AggregatableField<string, "datetime", false>;
       readonly OwnerId: AggregatableField<string, "reference", false>;
+      readonly CustomOwner__c: AggregatableField<
+        string,
+        "reference",
+        true
+      >;
       readonly ParentAccountId: AggregatableField<string, "reference", true>;
       readonly Active__c: SalesforceField<
         boolean,
@@ -66,6 +71,11 @@ interface FixtureSchema {
     },
     {
       readonly Owner: SalesforceParentRelationship<"User", "OwnerId", true>;
+      readonly CustomOwner__r: SalesforceParentRelationship<
+        "User",
+        "CustomOwner__c",
+        true
+      >;
     }
   >;
   readonly User: SalesforceObject<{
@@ -177,6 +187,35 @@ describe("aggregate queries", () => {
       readonly rowCount: number;
       readonly totalRevenue: number | null;
     }>();
+  });
+
+  it("groups distinct values without requiring an aggregate selection", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .where("Name", "!=", null)
+      .groupBy(["Name", "Active__c"])
+      .select(["Name", "Active__c"])
+      .orderBy("Name")
+      .limit(20);
+
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly Name: string | null;
+      readonly Active__c: boolean;
+    }>();
+    expect(query.compile().soql).toBe(
+      "SELECT Name, Active__c FROM Account WHERE Name != null GROUP BY Name, Active__c ORDER BY Name LIMIT 20",
+    );
+  });
+
+  it("supports date grouping without requiring an aggregate selection", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .groupBy(({ fn }) => fn.calendarYear("CloseDate"))
+      .select(({ fn }) => fn.calendarYear("CloseDate").as("closeYear"));
+
+    expect(query.compile().soql).toBe(
+      "SELECT CALENDAR_YEAR(CloseDate) closeYear FROM Account GROUP BY CALENDAR_YEAR(CloseDate)",
+    );
   });
 
   it("adds typed grouping and accumulates grouped fields into aggregate output", () => {
@@ -940,6 +979,13 @@ describe("aggregate queries", () => {
       const scalarQuery = db.selectFrom("Account").select("Id");
       // @ts-expect-error Aggregate mode cannot begin after record selections.
       scalarQuery.select(({ fn }) => fn.count("Id").as("rowCount"));
+      // @ts-expect-error Direct GROUP BY must be introduced before ordinary selections.
+      scalarQuery.groupBy("Id");
+
+      const directGroupedQuery = db.selectFrom("Account").groupBy("Owner.Name");
+      directGroupedQuery.select("Owner.Name");
+      // @ts-expect-error Custom relationship expressions using __r cannot be grouped.
+      db.selectFrom("Account").groupBy("CustomOwner__r.Name");
 
       const aggregateQuery = db
         .selectFrom("Account")
@@ -949,6 +995,8 @@ describe("aggregate queries", () => {
 
       // @ts-expect-error GROUP BY requires a generated groupable field.
       aggregateQuery.groupBy("Internal_Note__c");
+      // @ts-expect-error GROUP BY forbids custom relationship expressions using __r.
+      aggregateQuery.groupBy("CustomOwner__r.Name");
 
       // @ts-expect-error LIMIT is available only after GROUP BY.
       aggregateQuery.limit(1);

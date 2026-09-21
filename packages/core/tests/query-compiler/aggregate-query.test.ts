@@ -35,9 +35,19 @@ interface FixtureSchema {
       readonly CloseDate: AggregatableField<string, "date", true>;
       readonly CreatedDate: AggregatableField<string, "datetime", false>;
       readonly OwnerId: AggregatableField<string, "reference", false>;
+      readonly CustomOwner__c: AggregatableField<
+        string,
+        "reference",
+        true
+      >;
     },
     {
       readonly Owner: SalesforceParentRelationship<"User", "OwnerId", true>;
+      readonly CustomOwner__r: SalesforceParentRelationship<
+        "User",
+        "CustomOwner__c",
+        true
+      >;
     }
   >;
   readonly User: SalesforceObject<{
@@ -62,6 +72,31 @@ describe("aggregate query compilation", () => {
 
     expect(compiled.soql).toBe(
       "SELECT COUNT(Id) rowCount, COUNT_DISTINCT(Name) distinctNames, SUM(AnnualRevenue) totalRevenue, AVG(EmployeeCount__c) averageEmployees, MIN(CloseDate) firstCloseDate, MAX(Name) lastName FROM Account",
+    );
+  });
+
+  it("compiles GROUP BY without an aggregate selection", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .groupBy("Name")
+      .select("Name")
+      .orderBy("Name")
+      .limit(10)
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT Name FROM Account GROUP BY Name ORDER BY Name LIMIT 10",
+    );
+  });
+
+  it("rejects custom relationship expressions in grouped queries at compile time", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupBy("CustomOwner__r.Name" as never);
+
+    expect(() => query.compile()).toThrow(
+      "SOQL queries using GROUP BY cannot use custom relationship expressions with __r.",
     );
   });
 

@@ -1,6 +1,7 @@
 import {
   type CountAllFunctionBuilder,
   createSelectExpressionBuilder,
+  type DateFunctionExpression,
   type SelectExpressionBuilder,
 } from "#/expression/aggregate-function-builder";
 import {
@@ -42,7 +43,10 @@ import {
   type DataCategorySelector,
   parseDataCategorySelection,
 } from "#/parser/data-category-parser";
-import { validateDateFunctionSelections } from "#/parser/date-function-parser";
+import {
+  parseDateGroupByExpression,
+  validateDateFunctionSelections,
+} from "#/parser/date-function-parser";
 import {
   type AvailableSelectExpression,
   type FieldsSelection,
@@ -53,6 +57,10 @@ import {
   parseFilterBinaryOperation,
   validateSemiJoinWhere,
 } from "#/parser/filter-parser";
+import {
+  type GroupableFieldName,
+  parseGroupBy,
+} from "#/parser/group-by-parser";
 import { validateGroupingSelections } from "#/parser/grouping-expression-parser";
 import type { KnowledgeArticleUpdateCheck } from "#/parser/knowledge-update-parser";
 import { parseLimit } from "#/parser/limit-parser";
@@ -98,6 +106,7 @@ import {
 import {
   type AggregateSelectQueryBuilder,
   createAggregateSelectQueryBuilder,
+  createGroupedSelectQueryBuilder,
 } from "#/query-builder/aggregate-select-query-builder";
 import {
   type ApexSelectQueryBuilder,
@@ -162,6 +171,16 @@ type SelectFunctionSelectionFactory<
 type DistanceOrderByFactory<DB, TB extends keyof DB> = (
   eb: GeolocationExpressionBuilder<DB, TB>,
 ) => DistanceFunctionExpression<unknown, boolean, true>;
+
+type DateFunctionIdentityOf<Expression> =
+  Expression extends DateFunctionExpression<
+    unknown,
+    unknown,
+    ComparisonOperator,
+    infer Identity
+  >
+    ? Identity
+    : never;
 
 export type SelectQueryMode = "plain" | "function" | "typeof";
 
@@ -237,6 +256,38 @@ export interface SelectQueryBuilder<
   limit(limit: number): SelectQueryBuilder<DB, TB, O, Mode>;
 
   offset(offset: number): SelectQueryBuilder<DB, TB, O, Mode>;
+
+  groupBy<GE extends string>(
+    field: UnselectedOnly<O, GE & GroupableFieldName<DB, TB, GE>>,
+  ): AggregateSelectQueryBuilder<DB, TB, O, GE, "ordinary", 0>;
+
+  groupBy<GE extends string>(
+    fields: UnselectedOnly<
+      O,
+      ReadonlyArray<GE & GroupableFieldName<DB, TB, GE>>
+    >,
+  ): AggregateSelectQueryBuilder<DB, TB, O, GE, "ordinary", 0>;
+
+  groupBy<
+    Expression extends DateFunctionExpression<
+      unknown,
+      unknown,
+      ComparisonOperator,
+      string
+    >,
+  >(
+    expression: UnselectedOnly<
+      O,
+      (eb: SelectExpressionBuilder<DB, TB>) => Expression
+    >,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    DateFunctionIdentityOf<Expression>,
+    "ordinary",
+    0
+  >;
 
   forView(
     ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
@@ -519,6 +570,68 @@ class SelectQueryBuilderImpl<
       queryNode: SelectQueryNode.cloneWithOffset(
         this.#props.queryNode,
         parseOffset(offset),
+      ),
+    });
+  }
+
+  groupBy<GE extends string>(
+    field: UnselectedOnly<O, GE & GroupableFieldName<DB, TB, GE>>,
+  ): AggregateSelectQueryBuilder<DB, TB, O, GE, "ordinary", 0>;
+  groupBy<GE extends string>(
+    fields: UnselectedOnly<
+      O,
+      ReadonlyArray<GE & GroupableFieldName<DB, TB, GE>>
+    >,
+  ): AggregateSelectQueryBuilder<DB, TB, O, GE, "ordinary", 0>;
+  groupBy<
+    Expression extends DateFunctionExpression<
+      unknown,
+      unknown,
+      ComparisonOperator,
+      string
+    >,
+  >(
+    expression: UnselectedOnly<
+      O,
+      (eb: SelectExpressionBuilder<DB, TB>) => Expression
+    >,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    DateFunctionIdentityOf<Expression>,
+    "ordinary",
+    0
+  >;
+  groupBy<GE extends string>(
+    groupBy:
+      | (GE & GroupableFieldName<DB, TB, GE>)
+      | ReadonlyArray<GE & GroupableFieldName<DB, TB, GE>>
+      | ((
+          eb: SelectExpressionBuilder<DB, TB>,
+        ) => DateFunctionExpression<
+          unknown,
+          unknown,
+          ComparisonOperator,
+          string
+        >),
+  ): AggregateSelectQueryBuilder<DB, TB, O, GE, "ordinary", 0> {
+    assertDirectGroupByState(this.#props.queryNode);
+
+    const parsed =
+      typeof groupBy === "function"
+        ? [
+            parseDateGroupByExpression(
+              groupBy(createSelectExpressionBuilder<DB, TB>()) as never,
+            ),
+          ]
+        : parseGroupBy(groupBy);
+
+    return createGroupedSelectQueryBuilder<DB, TB, O, GE>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithGroupByItems(
+        this.#props.queryNode,
+        parsed,
       ),
     });
   }
@@ -991,6 +1104,16 @@ export function createSelectQueryBuilder<
   return new SelectQueryBuilderImpl<DB, TB, O, Mode>(props);
 }
 
+function assertDirectGroupByState(queryNode: SelectQueryNode): void {
+  assertNoExistingSelections(queryNode);
+
+  if (queryNode.orderBy || queryNode.offset) {
+    throw new TypeError(
+      "SOQL direct GROUP BY must be added before ORDER BY or OFFSET.",
+    );
+  }
+}
+
 function assertNoTypeOfSelections(queryNode: SelectQueryNode): void {
   if (
     queryNode.selections?.some(
@@ -1039,7 +1162,7 @@ function isCountAllFunctionBuilder(
 function assertNoExistingSelections(queryNode: SelectQueryNode): void {
   if (queryNode.selections?.length) {
     throw new TypeError(
-      "Start SOQL aggregate mode before selecting grouped record fields.",
+      "Start SOQL grouping or aggregate mode before selecting grouped record fields.",
     );
   }
 }

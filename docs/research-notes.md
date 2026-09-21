@@ -187,11 +187,11 @@ Settled findings:
 - Aggregate queries have a distinct result shape; generated `aggregatable` /
   `groupable` metadata must gate safe function/grouping use.
 - Salesforce also permits `GROUP BY` without any aggregate function to return
-  the distinct grouped values, including `null`; this needs a direct root-builder
-  surface rather than an aggregate-only transition.
+  the distinct grouped values, including `null`; kysoql exposes this directly from
+  an unselected root builder and then reuses the grouped-result builder.
 - Queries using `GROUP BY` cannot use child relationship expressions written with
-  custom `__r` syntax. This is an explicit Salesforce restriction in addition to
-  each field's generated `groupable` capability.
+  custom `__r` syntax. Kysoql enforces this in typed grouping references and again
+  at the compiler boundary, while keeping standard relationship paths valid.
 - `HAVING` filters grouped results and supports boolean composition, but should
   not inherit unsupported `WHERE` features by analogy alone.
 - `ROLLUP` / `CUBE`, `GROUPING()`, date grouping functions, and aggregate ordering

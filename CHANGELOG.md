@@ -87,6 +87,9 @@ version is cut.
   including immutable clause removal, selection-type reset, Apex pagination/order/
   grouping cleanup, and guards against clearing grouping when grouped-only SOQL
   state would remain.
+- Direct non-aggregate `GROUP BY` from unselected root builders, including typed
+  field lists and date grouping functions, so distinct grouped values can be
+  queried without introducing a dummy aggregate selection.
 - Typed SOQL `toLabel()` predicates in ordinary `WHERE` expression callbacks,
   with generated filterable picklist/multipicklist metadata, translated-string
   operands, nullability-aware equality, picklist `LIKE`, child-to-parent paths,
@@ -106,6 +109,10 @@ version is cut.
 
 ### Fixed
 
+- Enforce Salesforce's grouped-query restriction on custom relationship
+  expressions using `__r` at both the typed grouping surface and compiler
+  boundary, while preserving valid standard relationship grouping such as
+  `Owner.Name`.
 - Prevent typed root, grouped, and relationship-subquery `orderBy()` calls from
   accepting explicit `NULLS FIRST` / `NULLS LAST` on nullable Salesforce
   reference fields, while preserving null placement for ordinary sortable fields

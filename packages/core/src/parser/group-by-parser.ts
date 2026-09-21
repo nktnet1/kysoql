@@ -5,22 +5,30 @@ import { ReferenceNode } from "#/operation-node/reference-node";
 import type { SelectQueryNode } from "#/operation-node/select-query-node";
 import type { FieldReferenceDefinition } from "#/parser/reference-parser";
 
+type HasCustomRelationshipSegment<Reference extends string> =
+  Lowercase<Reference> extends `${string}__r.${string}` ? true : false;
+
 export type GroupableFieldName<
   DB,
   TB extends keyof DB,
   Reference extends string,
 > = Reference extends unknown
-  ? [FieldReferenceDefinition<DB, TB, Reference>] extends [never]
+  ? HasCustomRelationshipSegment<Reference> extends true
     ? never
-    : FieldReferenceDefinition<DB, TB, Reference> extends {
-          readonly groupable: true;
-          readonly salesforceType: infer SalesforceType extends string;
-        }
-      ? SalesforceType extends "location"
-        ? never
-        : Reference
-      : never
+    : [FieldReferenceDefinition<DB, TB, Reference>] extends [never]
+      ? never
+      : FieldReferenceDefinition<DB, TB, Reference> extends {
+            readonly groupable: true;
+            readonly salesforceType: infer SalesforceType extends string;
+          }
+        ? SalesforceType extends "location"
+          ? never
+          : Reference
+        : never
   : never;
+
+const CUSTOM_RELATIONSHIP_GROUP_BY_ERROR =
+  "SOQL queries using GROUP BY cannot use custom relationship expressions with __r.";
 
 const EMPTY_GROUP_BY_ERROR =
   "SOQL GROUP BY field lists must contain at least one field.";
@@ -51,6 +59,45 @@ export function parseAdvancedGroupBy(
   }
 
   return items;
+}
+
+export function validateGroupByQuery(queryNode: SelectQueryNode): void {
+  if (!queryNode.groupBy) {
+    return;
+  }
+
+  if (containsCustomRelationshipExpression(queryNode)) {
+    throw new TypeError(CUSTOM_RELATIONSHIP_GROUP_BY_ERROR);
+  }
+}
+
+function containsCustomRelationshipExpression(value: unknown): boolean {
+  if (Array.isArray(value)) {
+    return value.some(containsCustomRelationshipExpression);
+  }
+
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const node = value as Record<string, unknown>;
+
+  if (node.kind === "ValueNode" || node.kind === "ApexLiteralNode") {
+    return false;
+  }
+
+  if (
+    node.kind === "ReferenceNode" &&
+    typeof node.name === "string" &&
+    node.name
+      .toLowerCase()
+      .split(".")
+      .some((segment) => segment.endsWith("__r"))
+  ) {
+    return true;
+  }
+
+  return Object.values(node).some(containsCustomRelationshipExpression);
 }
 
 export function assertCanClearGroupBy(queryNode: SelectQueryNode): void {

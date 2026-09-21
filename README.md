@@ -647,11 +647,29 @@ const totals = await db
   .execute();
 ```
 
-Grouped aggregate queries add `.groupBy(...)` before selecting ordinary result
-fields. Grouping is restricted to generated `groupable` fields, grouped fields
-can be added incrementally (including supported child-to-parent references), and
-ordinary selected fields must already be present in the accumulated grouping set.
-Grouped queries can also order by grouped sortable fields and use `LIMIT`.
+SOQL also permits ordinary `GROUP BY` without an aggregate function to return
+the distinct grouped values, including `null`. Start grouping from the unselected
+root builder, then select from the accumulated grouping set. This keeps the same
+generated `groupable` checks and grouped result typing without forcing a dummy
+aggregate selection.
+
+```ts
+const distinctStages = await db
+  .selectFrom("Opportunity")
+  .groupBy("StageName")
+  .select("StageName")
+  .orderBy("StageName")
+  .execute();
+```
+
+Grouped queries add `.groupBy(...)` before selecting ordinary result fields.
+Grouping is restricted to generated `groupable` fields, grouped fields can be
+added incrementally, and ordinary selected fields must already be present in the
+accumulated grouping set. Standard child-to-parent references such as
+`Owner.Name` remain supported when their target field is groupable; Salesforce's
+documented custom relationship-expression restriction means paths using `__r`
+are rejected whenever the query uses `GROUP BY`. Grouped queries can also order
+by grouped sortable fields and use `LIMIT`.
 
 ```ts
 const byStage = await db

@@ -55,6 +55,7 @@ import { validateApexBindQuery } from "#/parser/apex-bind-parser";
 import { validateDataCategoryQuery } from "#/parser/data-category-parser";
 import { validateFieldsSelections } from "#/parser/fields-selection-parser";
 import { validateForUpdateQuery } from "#/parser/for-update-parser";
+import { validateGroupByQuery } from "#/parser/group-by-parser";
 import { validateKnowledgeUpdateQuery } from "#/parser/knowledge-update-parser";
 import { validateObjectQueryLimits } from "#/parser/object-query-limit-parser";
 import { validateRecordVisibilityContextQuery } from "#/parser/record-visibility-context-parser";
@@ -104,6 +105,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
     validateApexAccessModeQuery(query);
     validateApexBindQuery(query);
     validateForUpdateQuery(query);
+    validateGroupByQuery(query);
     validateTypeOfSelections(query);
     validateKnowledgeUpdateQuery(query);
     validateRecordVisibilityContextQuery(query);

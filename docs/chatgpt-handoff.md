@@ -48,11 +48,12 @@ SQL escape hatch.
 
 ## Current baseline
 
-The accepted continuation baseline is through **`v1.0.131`**. In addition to the
+The accepted continuation baseline is through **`v1.0.132`**. In addition to the
 completed Kysely-neutral builder audit and bounded `FIELDS(ALL|CUSTOM)` alignment,
-typed root, grouped, and relationship-subquery ordering now prevents explicit
-`NULLS FIRST` / `NULLS LAST` on nullable Salesforce reference fields, matching
-Salesforce's documented relationship-field restriction.
+root builders can now start ordinary `GROUP BY` without an aggregate selection,
+and grouped queries reject custom relationship expressions using `__r` while
+preserving valid standard relationship grouping. Typed ordering also prevents
+explicit `NULLS FIRST` / `NULLS LAST` on nullable Salesforce reference fields.
 
 The implementation already covers the broad production SOQL surface:
 
@@ -66,8 +67,9 @@ The implementation already covers the broad production SOQL surface:
 - child-to-parent traversal, parent-to-child relationship subqueries, semi-joins,
   anti-joins, relationship-count limits, and polymorphic `.Type` qualifiers;
 - `TYPEOF` with generated target typing and its SOQL compatibility restrictions;
-- aggregate selection, bare `COUNT()`, `GROUP BY`, `ROLLUP`, `CUBE`, `HAVING`,
-  aggregate ordering, `GROUPING()`, and date grouping/filter functions;
+- aggregate selection, bare `COUNT()`, direct non-aggregate `GROUP BY`, `ROLLUP`,
+  `CUBE`, `HAVING`, aggregate ordering, `GROUPING()`, and date grouping/filter
+  functions;
 - `toLabel()`, `convertCurrency()`, `convertTimezone()`, `FORMAT()`, geolocation
   expressions, and `FIELDS(STANDARD|CUSTOM|ALL)`;
 - `USING SCOPE`, `WITH DATA CATEGORY`, structured `WITH RecordVisibilityContext`,
@@ -116,25 +118,19 @@ correctness mismatch, or an explicit verification target. Remove an item when it
 is implemented or deliberately closed. Kysely parity is otherwise considered
 complete.
 
-1. **Direct non-aggregate `GROUP BY`.** Salesforce supports `GROUP BY` without an
-   aggregate function to return distinct values, including `null`. Root record
-   builders currently require an aggregate transition before grouping.
-2. **Custom `__r` grouping restriction.** Salesforce forbids child relationship
-   expressions using `__r` in any query that uses `GROUP BY`. Add a typed/compiler
-   guard without blocking valid standard relationship grouping.
-3. **Aggregate `OFFSET` verification.** Salesforce documents top-level `OFFSET`
+1. **Aggregate `OFFSET` verification.** Salesforce documents top-level `OFFSET`
    for REST, SOAP, and Apex without explicitly excluding grouped queries, while
    kysoql currently exposes aggregate `OFFSET` only in Apex. Verify the exact
    REST/SOAP behavior against the Salesforce fixture before changing the API.
-4. **Typed `SET OPTIONS`.** Summer '26 documents production `SET OPTIONS` support
+2. **Typed `SET OPTIONS`.** Summer '26 documents production `SET OPTIONS` support
    for Data 360 DLO/DMO behavior and managed dynamic Apex namespace resolution.
    Design capability metadata first; do not add an untyped option bag or raw
    clause escape hatch.
-5. **`FORMULA()` in `WHERE` pilot.** Salesforce currently labels this Summer '26
+3. **`FORMULA()` in `WHERE` pilot.** Salesforce currently labels this Summer '26
    feature a pilot, limited to `WHERE` rather than `HAVING`. Keep it omitted from
    the production-safe builder unless the project explicitly opts into pilot
    syntax.
-6. **Relationship-subquery `OFFSET` pilot.** Salesforce permits it only when the
+4. **Relationship-subquery `OFFSET` pilot.** Salesforce permits it only when the
    parent query has `LIMIT 1` and still says the feature is not intended for
    production. Keep it omitted unless its status changes or pilot syntax is
    explicitly enabled.
