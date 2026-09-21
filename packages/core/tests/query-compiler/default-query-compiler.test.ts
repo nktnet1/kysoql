@@ -134,8 +134,9 @@ describe("DefaultQueryCompiler", () => {
 
   it("rejects FIELDS groups that are not bounded to 200 result rows", () => {
     const db = new Kysoql<FixtureSchema>();
-    const tooManyIds = Array.from({ length: 201 }, (_, index) =>
-      `001${String(index).padStart(3, "0")}`,
+    const tooManyIds = Array.from(
+      { length: 201 },
+      (_, index) => `001${String(index).padStart(3, "0")}`,
     );
     const error =
       "SOQL FIELDS(ALL) and FIELDS(CUSTOM) require LIMIT 200 or less or a WHERE Id filter bounded to 200 IDs or fewer.";
@@ -157,9 +158,7 @@ describe("DefaultQueryCompiler", () => {
       db
         .selectFrom("Account")
         .selectFields("all")
-        .where((eb) =>
-          eb.or([eb("Id", "=", "001A"), eb("Name", "=", "Acme")]),
-        )
+        .where((eb) => eb.or([eb("Id", "=", "001A"), eb("Name", "=", "Acme")]))
         .compile(),
     ).toThrow(error);
     expect(() =>
@@ -171,11 +170,7 @@ describe("DefaultQueryCompiler", () => {
             eb("Id", "=", "001000"),
             eb("Id", "=", "001001"),
             ...Array.from({ length: 199 }, (_, index) =>
-              eb(
-                "Id",
-                "=",
-                `001${String(index + 2).padStart(3, "0")}`,
-              ),
+              eb("Id", "=", `001${String(index + 2).padStart(3, "0")}`),
             ),
           ]),
         )
@@ -189,12 +184,7 @@ describe("DefaultQueryCompiler", () => {
       "SOQL FIELDS(ALL) and FIELDS(CUSTOM) are not supported in Apex.";
 
     expect(() =>
-      db
-        .selectFrom("Account")
-        .selectFields("all")
-        .limit(200)
-        .apex()
-        .compile(),
+      db.selectFrom("Account").selectFields("all").limit(200).apex().compile(),
     ).toThrow(error);
     expect(() =>
       db

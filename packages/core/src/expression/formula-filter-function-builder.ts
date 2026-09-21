@@ -32,22 +32,23 @@ type FormulaSalesforceTypeOfReference<
   DB,
   TB extends keyof DB,
   Reference extends string,
-> = FieldReferenceDefinition<DB, TB, Reference> extends SalesforceField<
-  unknown,
-  infer SalesforceType,
-  boolean,
-  boolean,
-  boolean,
-  boolean,
-  string,
-  string,
-  string,
-  boolean,
-  boolean,
-  boolean
->
-  ? SalesforceType
-  : never;
+> =
+  FieldReferenceDefinition<DB, TB, Reference> extends SalesforceField<
+    unknown,
+    infer SalesforceType,
+    boolean,
+    boolean,
+    boolean,
+    boolean,
+    string,
+    string,
+    string,
+    boolean,
+    boolean,
+    boolean
+  >
+    ? SalesforceType
+    : never;
 
 export type FilterableFormulaFieldReference<
   DB,
@@ -71,31 +72,32 @@ type FormulaResultValue<
   Left extends string,
   Operator extends FormulaArithmeticOperator,
   Right extends string,
-> = FormulaSalesforceTypeOfReference<DB, TB, Left> extends infer LeftType
-  ? FormulaSalesforceTypeOfReference<DB, TB, Right> extends infer RightType
-    ? LeftType extends FormulaNumericSalesforceType
-      ? RightType extends FormulaNumericSalesforceType
-        ? number
-        : never
-      : LeftType extends "date"
-        ? RightType extends "date"
-          ? Operator extends "-"
-            ? number
-            : never
-          : RightType extends FormulaNumericSalesforceType
-            ? SoqlDateLiteral
-            : never
-        : LeftType extends "datetime"
-          ? RightType extends "datetime"
+> =
+  FormulaSalesforceTypeOfReference<DB, TB, Left> extends infer LeftType
+    ? FormulaSalesforceTypeOfReference<DB, TB, Right> extends infer RightType
+      ? LeftType extends FormulaNumericSalesforceType
+        ? RightType extends FormulaNumericSalesforceType
+          ? number
+          : never
+        : LeftType extends "date"
+          ? RightType extends "date"
             ? Operator extends "-"
               ? number
               : never
             : RightType extends FormulaNumericSalesforceType
-              ? SoqlDateTimeLiteral
+              ? SoqlDateLiteral
               : never
-          : never
-    : never
-  : never;
+          : LeftType extends "datetime"
+            ? RightType extends "datetime"
+              ? Operator extends "-"
+                ? number
+                : never
+              : RightType extends FormulaNumericSalesforceType
+                ? SoqlDateTimeLiteral
+                : never
+            : never
+      : never
+    : never;
 
 type FormulaRightFieldReference<
   DB,
@@ -103,11 +105,12 @@ type FormulaRightFieldReference<
   Left extends string,
   Operator extends FormulaArithmeticOperator,
   Right extends string,
-> = Right extends FilterableFormulaFieldReference<DB, TB, Right>
-  ? [FormulaResultValue<DB, TB, Left, Operator, Right>] extends [never]
-    ? never
-    : Right
-  : never;
+> =
+  Right extends FilterableFormulaFieldReference<DB, TB, Right>
+    ? [FormulaResultValue<DB, TB, Left, Operator, Right>] extends [never]
+      ? never
+      : Right
+    : never;
 
 export interface FormulaFilterFunctionExpression<Value> {
   readonly [formulaFilterExpressionType]: {

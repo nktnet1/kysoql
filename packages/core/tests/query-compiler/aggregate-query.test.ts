@@ -35,11 +35,7 @@ interface FixtureSchema {
       readonly CloseDate: AggregatableField<string, "date", true>;
       readonly CreatedDate: AggregatableField<string, "datetime", false>;
       readonly OwnerId: AggregatableField<string, "reference", false>;
-      readonly CustomOwner__c: AggregatableField<
-        string,
-        "reference",
-        true
-      >;
+      readonly CustomOwner__c: AggregatableField<string, "reference", true>;
     },
     {
       readonly Owner: SalesforceParentRelationship<"User", "OwnerId", true>;

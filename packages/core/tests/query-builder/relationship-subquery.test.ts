@@ -448,9 +448,7 @@ describe("parent-to-child relationship subqueries", () => {
       .selectFrom("Account")
       .select("Id")
       .selectSubquery("Contacts", (contacts) =>
-        contacts
-          .selectFields("custom")
-          .where("Id", "in", ["003A", "003B"]),
+        contacts.selectFields("custom").where("Id", "in", ["003A", "003B"]),
       );
 
     expect(query.compile().soql).toBe(
@@ -661,9 +659,11 @@ describe("parent-to-child relationship subqueries", () => {
       .selectFrom("Account")
       .select("Id")
       .selectSubquery("Contacts", (contacts) =>
-        contacts.select("Id").selectSubquery("Cases", (cases) =>
-          cases.select("Id").pilot.offset(2),
-        ),
+        contacts
+          .select("Id")
+          .selectSubquery("Cases", (cases) =>
+            cases.select("Id").pilot.offset(2),
+          ),
       );
 
     expect(valid.compile().soql).toBe(

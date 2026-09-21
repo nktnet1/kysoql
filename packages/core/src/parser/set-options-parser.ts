@@ -61,11 +61,17 @@ const dataspaceSchema = v.pipe(
   v.minLength(1, DATASPACE_ERROR),
 );
 
-const validateOptions = (options: unknown): {
+const validateOptions = (
+  options: unknown,
+): {
   readonly dataspace?: string;
   readonly honorEmptyStrings?: boolean;
 } => {
-  if (typeof options !== "object" || options === null || Array.isArray(options)) {
+  if (
+    typeof options !== "object" ||
+    options === null ||
+    Array.isArray(options)
+  ) {
     throw new TypeError(KEYS_ERROR);
   }
 

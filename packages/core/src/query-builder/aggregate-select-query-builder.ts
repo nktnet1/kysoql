@@ -75,16 +75,16 @@ import {
   parseRecordVisibilityContext,
   type RecordVisibilityContextOptions,
 } from "#/parser/record-visibility-context-parser";
-import {
-  type Data360AggregateSetOptionsFor,
-  parseSetOptions,
-} from "#/parser/set-options-parser";
 import type { FieldReferenceDefinition } from "#/parser/reference-parser";
 import {
   parseSelectArg,
   type SelectExpression,
   type Selection,
 } from "#/parser/select-parser";
+import {
+  type Data360AggregateSetOptionsFor,
+  parseSetOptions,
+} from "#/parser/set-options-parser";
 import {
   parseUserProfileFeedWithUserId,
   type UserProfileFeedWithUserIdCheck,
@@ -1015,9 +1015,7 @@ class AggregateSelectQueryBuilderImpl<
   }
 
   dynamicApex(): ApexAggregateSelectQueryBuilder<DB, TB, O, "dynamic"> {
-    return createDynamicApexAggregateSelectQueryBuilder<DB, TB, O>(
-      this.#props,
-    );
+    return createDynamicApexAggregateSelectQueryBuilder<DB, TB, O>(this.#props);
   }
 
   forView(

@@ -1,7 +1,4 @@
-import type {
-  ApexBindExpression,
-  ApexDatabaseQueryOptions,
-} from "#/apex-bind";
+import type { ApexBindExpression, ApexDatabaseQueryOptions } from "#/apex-bind";
 import {
   type ApexWhereExpressionFactory,
   createApexExpressionBuilder,

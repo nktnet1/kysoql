@@ -161,7 +161,8 @@ export type SalesforceObjectSupportedScope<ObjectType> = ObjectType extends {
 
 export type SalesforceObjectSetOptionsCapability<ObjectType> =
   ObjectType extends {
-    readonly setOptionsCapability: infer Capability extends SalesforceSetOptionsCapability;
+    readonly setOptionsCapability: infer Capability extends
+      SalesforceSetOptionsCapability;
   }
     ? Capability
     : "none";

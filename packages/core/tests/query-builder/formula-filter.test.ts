@@ -9,14 +9,7 @@ type Field<
   Value,
   SalesforceType extends string,
   Filterable extends boolean = true,
-> = SalesforceField<
-  Value,
-  SalesforceType,
-  true,
-  Filterable,
-  true,
-  true
->;
+> = SalesforceField<Value, SalesforceType, true, Filterable, true, true>;
 
 interface FormulaSchema {
   readonly Order__c: SalesforceObject<{
@@ -144,9 +137,13 @@ describe("FORMULA() WHERE filters", () => {
   });
 
   it("supports documented numeric-family combinations", () => {
-    const query = new Kysoql<FormulaSchema>().selectFrom("Order__c").select("Id");
+    const query = new Kysoql<FormulaSchema>()
+      .selectFrom("Order__c")
+      .select("Id");
 
-    query.where((eb) => eb(eb.beta.formula("Score__c", "+", "Units__c"), "=", 10));
+    query.where((eb) =>
+      eb(eb.beta.formula("Score__c", "+", "Units__c"), "=", 10),
+    );
     query.where((eb) =>
       eb(eb.beta.formula("Revenue__c", "-", "Score__c"), ">=", 100),
     );

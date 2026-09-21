@@ -276,9 +276,8 @@ type RelationshipSubqueryParentLimit =
 // A bound Apex LIMIT could evaluate to 1 at runtime, but that cannot be proven
 // while compiling. Keep this pilot boundary intentionally stricter and require
 // the documented parent LIMIT 1 to be a literal.
-const hasLiteralLimitOne = (
-  limit: RelationshipSubqueryParentLimit,
-): boolean => limit?.limit === 1;
+const hasLiteralLimitOne = (limit: RelationshipSubqueryParentLimit): boolean =>
+  limit?.limit === 1;
 
 const validateRelationshipSubqueryOffsetSelections = (
   selections: ReadonlyArray<SelectionNode> | undefined,

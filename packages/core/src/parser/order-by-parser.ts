@@ -31,9 +31,10 @@ export type OrderByNullsForReference<
   DB,
   TB extends keyof DB,
   Reference extends string,
-> = true extends IsNullableReferenceField<DB, TB, Reference>
-  ? never
-  : OrderByNulls;
+> =
+  true extends IsNullableReferenceField<DB, TB, Reference>
+    ? never
+    : OrderByNulls;
 
 export type SortableFieldName<
   DB,

@@ -296,10 +296,7 @@ export interface ExpressionBuilder<
     rhs: Right,
   ): ExpressionWrapper<DB, TB, false>;
 
-  <
-    Value,
-    Operator extends FormulaFilterComparisonOperator,
-  >(
+  <Value, Operator extends FormulaFilterComparisonOperator>(
     lhs: FormulaFilterFunctionExpression<Value>,
     op: Operator,
     rhs: Value,

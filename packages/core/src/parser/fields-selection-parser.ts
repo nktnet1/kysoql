@@ -65,20 +65,22 @@ export type FieldsSelectionCheck<
   TB extends keyof DB,
   O,
   Selector extends FieldsSelector,
-> = Extract<keyof O, keyof FieldsSelection<DB, TB, Selector>> extends never
-  ? EmptyCustomSelectionCheck<DB, TB, O, Selector>
-  : readonly [overlappingFields: never];
+> =
+  Extract<keyof O, keyof FieldsSelection<DB, TB, Selector>> extends never
+    ? EmptyCustomSelectionCheck<DB, TB, O, Selector>
+    : readonly [overlappingFields: never];
 
 export type AvailableSelectExpression<
   DB,
   TB extends keyof DB,
   O,
   Selection extends string,
-> = Extract<Selection, FieldName<DB, TB> & keyof O> extends never
-  ? TraversesTypeOfRelationship<O, Selection> extends true
-    ? never
-    : unknown
-  : never;
+> =
+  Extract<Selection, FieldName<DB, TB> & keyof O> extends never
+    ? TraversesTypeOfRelationship<O, Selection> extends true
+      ? never
+      : unknown
+    : never;
 
 export function parseFieldsSelection(selector: FieldsSelector): SelectionNode {
   return SelectionNode.create(FieldsFunctionNode.create(selector));
@@ -186,7 +188,6 @@ function getMaximumIdBound(node: OperationNode): number | undefined {
       return undefined;
   }
 }
-
 
 function countDirectIdTests(node: OperationNode): number {
   switch (node.kind) {

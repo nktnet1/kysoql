@@ -1,7 +1,4 @@
-import type {
-  ApexBindExpression,
-  ApexDatabaseQueryOptions,
-} from "#/apex-bind";
+import type { ApexBindExpression, ApexDatabaseQueryOptions } from "#/apex-bind";
 import {
   type ApexWhereExpressionFactory,
   createApexExpressionBuilder,
@@ -226,7 +223,9 @@ class ApexCountQueryBuilderImpl<
     return this.#withAccessMode("user");
   }
 
-  #withAccessMode(mode: ApexAccessMode): ApexCountQueryBuilder<DB, TB, Context> {
+  #withAccessMode(
+    mode: ApexAccessMode,
+  ): ApexCountQueryBuilder<DB, TB, Context> {
     return new ApexCountQueryBuilderImpl<DB, TB, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithApexAccessMode(

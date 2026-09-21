@@ -334,9 +334,10 @@ describe("dynamic Apex SET OPTIONS", () => {
 
     expect(() =>
       dynamicApex.setOptions(
-        apexAdd("query", "Options") as unknown as ApexBindExpression<
-          ApexDatabaseQueryOptions
-        >,
+        apexAdd(
+          "query",
+          "Options",
+        ) as unknown as ApexBindExpression<ApexDatabaseQueryOptions>,
       ),
     ).toThrow(
       "Dynamic Apex SET OPTIONS requires a Database.QueryOptions bind variable.",

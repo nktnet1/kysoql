@@ -1,7 +1,4 @@
-import type {
-  ApexBindExpression,
-  ApexDatabaseQueryOptions,
-} from "#/apex-bind";
+import type { ApexBindExpression, ApexDatabaseQueryOptions } from "#/apex-bind";
 import {
   type ApexWhereExpressionFactory,
   createApexExpressionBuilder,
@@ -29,12 +26,12 @@ import type {
   FilterableFieldName,
 } from "#/parser/binary-operation-parser";
 import { validateSemiJoinWhere } from "#/parser/filter-parser";
-import { parseDynamicApexSetOptions } from "#/parser/set-options-parser";
 import type {
   ChildObjectName,
   ChildRelationshipName,
   ChildRelationshipReference,
 } from "#/parser/reference-parser";
+import { parseDynamicApexSetOptions } from "#/parser/set-options-parser";
 import { validateTypeOfSelections } from "#/parser/type-of-parser";
 import type {
   ApexQueryContext,

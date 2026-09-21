@@ -153,8 +153,8 @@ export type { ReferenceNode } from "#/operation-node/reference-node";
 export type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 export type { SelectQueryNode } from "#/operation-node/select-query-node";
 export type { SelectionNode } from "#/operation-node/selection-node";
-export type { SetOptionsNode } from "#/operation-node/set-options-node";
 export type { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
+export type { SetOptionsNode } from "#/operation-node/set-options-node";
 export type { SObjectNode } from "#/operation-node/sobject-node";
 export type { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
 export type { TypeOfNode, TypeOfWhenNode } from "#/operation-node/type-of-node";
@@ -180,8 +180,8 @@ export type {
 } from "#/parser/set-options-parser";
 export type { AggregateSelectQueryBuilder } from "#/query-builder/aggregate-select-query-builder";
 export type { ApexAggregateSelectQueryBuilder } from "#/query-builder/apex-aggregate-select-query-builder";
-export type { ApexQueryContext } from "#/query-builder/apex-query-context";
 export type { ApexCountQueryBuilder } from "#/query-builder/apex-count-query-builder";
+export type { ApexQueryContext } from "#/query-builder/apex-query-context";
 export type { ApexSelectQueryBuilder } from "#/query-builder/apex-select-query-builder";
 export type { CountQueryBuilder } from "#/query-builder/count-query-builder";
 export type {

@@ -202,12 +202,12 @@ it("preserves object-specific SET OPTIONS capability metadata", () => {
     "data360-dmo"
   >;
 
-  expectTypeOf<DloObject["setOptionsCapability"]>().toEqualTypeOf<
-    "data360-dlo"
-  >();
-  expectTypeOf<DmoObject["setOptionsCapability"]>().toEqualTypeOf<
-    "data360-dmo"
-  >();
+  expectTypeOf<
+    DloObject["setOptionsCapability"]
+  >().toEqualTypeOf<"data360-dlo">();
+  expectTypeOf<
+    DmoObject["setOptionsCapability"]
+  >().toEqualTypeOf<"data360-dmo">();
   expectTypeOf<
     SalesforceObjectSetOptionsCapability<DloObject>
   >().toEqualTypeOf<"data360-dlo">();

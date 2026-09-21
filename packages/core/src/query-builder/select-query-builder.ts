@@ -75,10 +75,6 @@ import {
   parseRecordVisibilityContext,
   type RecordVisibilityContextOptions,
 } from "#/parser/record-visibility-context-parser";
-import {
-  type Data360SetOptionsFor,
-  parseSetOptions,
-} from "#/parser/set-options-parser";
 import type {
   ChildObjectName,
   ChildRelationshipName,
@@ -96,6 +92,10 @@ import {
   type SelectExpression,
   type Selection,
 } from "#/parser/select-parser";
+import {
+  type Data360SetOptionsFor,
+  parseSetOptions,
+} from "#/parser/set-options-parser";
 import {
   type AvailableTypeOfReference,
   type PolymorphicRelationshipReference,

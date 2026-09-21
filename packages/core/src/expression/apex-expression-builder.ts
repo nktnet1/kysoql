@@ -25,14 +25,14 @@ import type {
   FilterableFieldName,
 } from "#/parser/binary-operation-parser";
 import type { FilterBinaryOperationOptions } from "#/parser/filter-parser";
-import type {
-  SoqlDateLiteral,
-  SoqlDateTimeLiteral,
-} from "#/soql-temporal-literal";
 import {
   type DistanceComparisonOperator,
   parseDistanceFilterBinaryOperation,
 } from "#/parser/geolocation-expression-parser";
+import type {
+  SoqlDateLiteral,
+  SoqlDateTimeLiteral,
+} from "#/soql-temporal-literal";
 
 declare const apexExpressionType: unique symbol;
 
