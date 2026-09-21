@@ -44,6 +44,7 @@ import {
 } from "#/parser/fields-selection-parser";
 import { parseLimit } from "#/parser/limit-parser";
 import {
+  type OrderByNullsForReference,
   parseDistanceOrderBy,
   parseOrderBy,
   type SortableFieldName,
@@ -223,7 +224,7 @@ export interface RelationshipSubqueryBuilder<
   orderBy<OE extends string>(
     field: OE & SortableFieldName<DB, TB, OE>,
     direction?: OrderByDirection,
-    nulls?: OrderByNulls,
+    nulls?: OrderByNullsForReference<DB, TB, OE>,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
 
   where(
@@ -513,7 +514,7 @@ class RelationshipSubqueryBuilderImpl<
   orderBy<OE extends string>(
     field: OE & SortableFieldName<DB, TB, OE>,
     direction?: OrderByDirection,
-    nulls?: OrderByNulls,
+    nulls?: OrderByNullsForReference<DB, TB, OE>,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
   orderBy(
     fieldOrExpression: string | DistanceOrderByFactory<DB, TB>,

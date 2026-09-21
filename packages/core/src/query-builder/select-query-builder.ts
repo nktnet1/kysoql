@@ -58,6 +58,7 @@ import type { KnowledgeArticleUpdateCheck } from "#/parser/knowledge-update-pars
 import { parseLimit } from "#/parser/limit-parser";
 import { parseOffset } from "#/parser/offset-parser";
 import {
+  type OrderByNullsForReference,
   parseDistanceOrderBy,
   parseOrderBy,
   type SortableFieldName,
@@ -285,7 +286,7 @@ export interface SelectQueryBuilder<
   orderBy<OE extends string>(
     field: OE & SortableFieldName<DB, TB, OE>,
     direction?: OrderByDirection,
-    nulls?: OrderByNulls,
+    nulls?: OrderByNullsForReference<DB, TB, OE>,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
   where(
@@ -633,7 +634,7 @@ class SelectQueryBuilderImpl<
   orderBy<OE extends string>(
     field: OE & SortableFieldName<DB, TB, OE>,
     direction?: OrderByDirection,
-    nulls?: OrderByNulls,
+    nulls?: OrderByNullsForReference<DB, TB, OE>,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
   orderBy(
     fieldOrExpression: string | DistanceOrderByFactory<DB, TB>,

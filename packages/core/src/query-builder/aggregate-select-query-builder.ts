@@ -64,6 +64,7 @@ import { validateGroupingSelections } from "#/parser/grouping-expression-parser"
 import type { KnowledgeArticleUpdateCheck } from "#/parser/knowledge-update-parser";
 import { parseLimit } from "#/parser/limit-parser";
 import {
+  type OrderByNullsForReference,
   parseAggregateOrderBy,
   parseGroupingOrderBy,
   parseOrderBy,
@@ -614,7 +615,7 @@ export interface AggregateSelectQueryBuilder<
     field: OE &
       GroupedOnly<GroupedBy, GroupedSortableFieldName<DB, TB, GroupedBy, OE>>,
     direction?: OrderByDirection,
-    nulls?: OrderByNulls,
+    nulls?: OrderByNullsForReference<DB, TB, OE>,
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -1463,7 +1464,7 @@ class AggregateSelectQueryBuilderImpl<
     field: OE &
       GroupedOnly<GroupedBy, GroupedSortableFieldName<DB, TB, GroupedBy, OE>>,
     direction?: OrderByDirection,
-    nulls?: OrderByNulls,
+    nulls?: OrderByNullsForReference<DB, TB, OE>,
   ): AggregateSelectQueryBuilder<
     DB,
     TB,

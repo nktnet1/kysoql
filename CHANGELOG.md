@@ -106,6 +106,10 @@ version is cut.
 
 ### Fixed
 
+- Prevent typed root, grouped, and relationship-subquery `orderBy()` calls from
+  accepting explicit `NULLS FIRST` / `NULLS LAST` on nullable Salesforce
+  reference fields, while preserving null placement for ordinary sortable fields
+  and non-nullable references.
 - Align unbounded `FIELDS(ALL)` / `FIELDS(CUSTOM)` validation with Salesforce:
   accept REST/SOAP-style queries bounded to at most 200 rows by `LIMIT` or direct
   `Id` tests, reject both selectors in Apex, propagate Apex compile context into

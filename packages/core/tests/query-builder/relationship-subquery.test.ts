@@ -621,6 +621,31 @@ describe("parent-to-child relationship subqueries", () => {
     });
   });
 
+  it("rejects explicit null placement for nullable reference ordering", () => {
+    const db = new Kysoql<RelationshipSubquerySchema>();
+    const contacts = db.selectFrom("Contact").select("Id");
+
+    contacts.orderBy("AccountId");
+    contacts.orderBy("CreatedById", "asc", "last");
+    contacts.orderBy("Account.Name", "desc", "first");
+
+    contacts.selectSubquery("Cases", (cases) => {
+      cases.orderBy("ContactId");
+      return cases.select("Id");
+    });
+
+    void (() => {
+      // @ts-expect-error Salesforce does not support explicit NULLS placement for nullable reference fields.
+      contacts.orderBy("AccountId", "asc", "last");
+
+      contacts.selectSubquery("Cases", (cases) => {
+        // @ts-expect-error Nullable relationship-subquery reference fields have the same NULLS restriction.
+        cases.orderBy("ContactId", "desc", "first");
+        return cases.select("Id");
+      });
+    });
+  });
+
   it("requires each relationship subquery to select something", () => {
     const query = new Kysoql<RelationshipSubquerySchema>()
       .selectFrom("Account")

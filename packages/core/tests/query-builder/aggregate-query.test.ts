@@ -38,6 +38,7 @@ interface FixtureSchema {
       readonly CloseDate: AggregatableField<string, "date", true>;
       readonly CreatedDate: AggregatableField<string, "datetime", false>;
       readonly OwnerId: AggregatableField<string, "reference", false>;
+      readonly ParentAccountId: AggregatableField<string, "reference", true>;
       readonly Active__c: SalesforceField<
         boolean,
         "boolean",
@@ -989,6 +990,15 @@ describe("aggregate queries", () => {
         undefined,
         "last",
       );
+
+      const requiredReferenceGroup = aggregateQuery.groupBy("OwnerId");
+      requiredReferenceGroup.orderBy("OwnerId", "asc", "last");
+
+      const nullableReferenceGroup = aggregateQuery.groupBy("ParentAccountId");
+      nullableReferenceGroup.orderBy("ParentAccountId", "asc");
+      // @ts-expect-error Salesforce does not support explicit NULLS placement for nullable reference fields.
+      nullableReferenceGroup.orderBy("ParentAccountId", "asc", "last");
+
       // @ts-expect-error Bare COUNT() cannot be used in ORDER BY.
       groupedQuery.orderBy(({ fn }) => fn.count());
       // @ts-expect-error Aggregate ORDER BY expressions must be unaliased.

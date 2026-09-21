@@ -119,7 +119,9 @@ Settled findings:
 - `ORDER BY` supports `ASC` / `DESC` and explicit `NULLS FIRST` / `NULLS LAST`.
 - Salesforce does not support explicit `NULLS FIRST` / `NULLS LAST` when ordering
   by a relationship/reference field that can contain null. Generated nullable
-  reference metadata is sufficient to prevent that invalid combination.
+  reference metadata is sufficient to prevent that invalid combination; kysoql
+  uses it to remove the null-placement argument from nullable reference-field
+  `orderBy()` calls while leaving ordinary nullable sortable fields unchanged.
 - `OFFSET` is bounded to `0..2000` and is a top-level production feature for
   REST, SOAP, and Apex query contexts.
 - Parent-to-child subquery `OFFSET` is allowed only when the parent has `LIMIT 1`
