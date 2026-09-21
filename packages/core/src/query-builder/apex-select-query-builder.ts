@@ -1,4 +1,7 @@
-import type { ApexBindExpression } from "#/apex-bind";
+import type {
+  ApexBindExpression,
+  ApexDatabaseQueryOptions,
+} from "#/apex-bind";
 import {
   type ApexWhereExpressionFactory,
   createApexExpressionBuilder,
@@ -26,12 +29,17 @@ import type {
   FilterableFieldName,
 } from "#/parser/binary-operation-parser";
 import { validateSemiJoinWhere } from "#/parser/filter-parser";
+import { parseDynamicApexSetOptions } from "#/parser/set-options-parser";
 import type {
   ChildObjectName,
   ChildRelationshipName,
   ChildRelationshipReference,
 } from "#/parser/reference-parser";
 import { validateTypeOfSelections } from "#/parser/type-of-parser";
+import type {
+  ApexQueryContext,
+  DynamicApexOnly,
+} from "#/query-builder/apex-query-context";
 import {
   createRelationshipSubqueryBuilder,
   type RelationshipSubqueryBuilder,
@@ -68,40 +76,45 @@ type AfterSubqueryMode<
 type InitialSubqueryFunctionMode<Mode extends SelectQueryMode> =
   Mode extends "typeof" ? "forbidden" : "none";
 
+interface ApexSelectQueryBuilderProps extends SelectQueryBuilderProps {
+  readonly apexContext: ApexQueryContext;
+}
+
 export interface ApexSelectQueryBuilder<
   DB,
   TB extends keyof DB,
   O,
   Mode extends SelectQueryMode = SelectQueryMode,
+  Context extends ApexQueryContext = "static",
 > {
   $call<T>(func: (qb: this) => T): T;
 
   $if<O2>(
     condition: boolean,
-    func: (qb: this) => ApexSelectQueryBuilder<DB, TB, O & O2, Mode>,
-  ): ApexSelectQueryBuilder<DB, TB, ConditionalOutput<O, O2>, Mode>;
+    func: (qb: this) => ApexSelectQueryBuilder<DB, TB, O & O2, Mode, Context>,
+  ): ApexSelectQueryBuilder<DB, TB, ConditionalOutput<O, O2>, Mode, Context>;
 
-  clearLimit(): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+  clearLimit(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
-  clearOffset(): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+  clearOffset(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
-  clearOrderBy(): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+  clearOrderBy(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
-  clearWhere(): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+  clearWhere(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
   compile(): CompiledQuery<O>;
 
-  allRows(): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+  allRows(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
-  forUpdate(): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+  forUpdate(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
   limit(
     limit: number | ApexBindExpression<number>,
-  ): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+  ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
   offset(
     offset: number | ApexBindExpression<number>,
-  ): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+  ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
   selectSubquery<
     Relationship extends string,
@@ -135,28 +148,36 @@ export interface ApexSelectQueryBuilder<
         Simplify<SubqueryOutput>
       >;
     },
-    AfterSubqueryMode<Mode, SubqueryFunctionMode>
+    AfterSubqueryMode<Mode, SubqueryFunctionMode>,
+    Context
   >;
 
   where(
     expression: ApexWhereExpressionFactory<DB, TB>,
-  ): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+  ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
   where(
     lhs: ApexBindExpression<string>,
     op: "includes",
     rhs: readonly string[],
-  ): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+  ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
   where<RE extends string, OP extends ComparisonOperatorExpression<DB, TB, RE>>(
     lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
     op: OP,
     rhs: ApexOperandValueExpression<DB, TB, NoInfer<RE>, NoInfer<OP>>,
-  ): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+  ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
-  withSystemMode(): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+  setOptions(
+    options: DynamicApexOnly<
+      Context,
+      ApexBindExpression<ApexDatabaseQueryOptions>
+    >,
+  ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
-  withUserMode(): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+  withSystemMode(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
+
+  withUserMode(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
   toOperationNode(): SelectQueryNode;
 }
@@ -166,11 +187,12 @@ class ApexSelectQueryBuilderImpl<
   TB extends keyof DB,
   O,
   Mode extends SelectQueryMode,
-> implements ApexSelectQueryBuilder<DB, TB, O, Mode>
+  Context extends ApexQueryContext,
+> implements ApexSelectQueryBuilder<DB, TB, O, Mode, Context>
 {
-  readonly #props: SelectQueryBuilderProps;
+  readonly #props: ApexSelectQueryBuilderProps;
 
-  constructor(props: SelectQueryBuilderProps) {
+  constructor(props: ApexSelectQueryBuilderProps) {
     this.#props = freeze(props);
   }
 
@@ -180,39 +202,40 @@ class ApexSelectQueryBuilderImpl<
 
   $if<O2>(
     condition: boolean,
-    func: (qb: this) => ApexSelectQueryBuilder<DB, TB, O & O2, Mode>,
-  ): ApexSelectQueryBuilder<DB, TB, ConditionalOutput<O, O2>, Mode> {
+    func: (qb: this) => ApexSelectQueryBuilder<DB, TB, O & O2, Mode, Context>,
+  ): ApexSelectQueryBuilder<DB, TB, ConditionalOutput<O, O2>, Mode, Context> {
     return (condition ? func(this) : this) as ApexSelectQueryBuilder<
       DB,
       TB,
       ConditionalOutput<O, O2>,
-      Mode
+      Mode,
+      Context
     >;
   }
 
-  clearLimit(): ApexSelectQueryBuilder<DB, TB, O, Mode> {
-    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode>({
+  clearLimit(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context> {
+    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithoutLimit(this.#props.queryNode),
     });
   }
 
-  clearOffset(): ApexSelectQueryBuilder<DB, TB, O, Mode> {
-    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode>({
+  clearOffset(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context> {
+    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithoutOffset(this.#props.queryNode),
     });
   }
 
-  clearOrderBy(): ApexSelectQueryBuilder<DB, TB, O, Mode> {
-    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode>({
+  clearOrderBy(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context> {
+    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithoutOrderBy(this.#props.queryNode),
     });
   }
 
-  clearWhere(): ApexSelectQueryBuilder<DB, TB, O, Mode> {
-    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode>({
+  clearWhere(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context> {
+    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode, Context>({
       ...this.#props,
       queryNode: QueryNode.cloneWithoutWhere(this.#props.queryNode),
     });
@@ -221,11 +244,12 @@ class ApexSelectQueryBuilderImpl<
   compile(): CompiledQuery<O> {
     return this.#props.queryCompiler.compileQuery<O>(this.#props.queryNode, {
       apex: true,
+      dynamicApex: this.#props.apexContext === "dynamic",
     });
   }
 
-  allRows(): ApexSelectQueryBuilder<DB, TB, O, Mode> {
-    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode>({
+  allRows(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context> {
+    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithAllRows(
         this.#props.queryNode,
@@ -234,8 +258,8 @@ class ApexSelectQueryBuilderImpl<
     });
   }
 
-  forUpdate(): ApexSelectQueryBuilder<DB, TB, O, Mode> {
-    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode>({
+  forUpdate(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context> {
+    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithForUpdate(
         this.#props.queryNode,
@@ -246,8 +270,8 @@ class ApexSelectQueryBuilderImpl<
 
   limit(
     limit: number | ApexBindExpression<number>,
-  ): ApexSelectQueryBuilder<DB, TB, O, Mode> {
-    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode>({
+  ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context> {
+    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithLimit(
         this.#props.queryNode,
@@ -258,8 +282,8 @@ class ApexSelectQueryBuilderImpl<
 
   offset(
     offset: number | ApexBindExpression<number>,
-  ): ApexSelectQueryBuilder<DB, TB, O, Mode> {
-    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode>({
+  ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context> {
+    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithOffset(
         this.#props.queryNode,
@@ -300,7 +324,8 @@ class ApexSelectQueryBuilderImpl<
         Simplify<SubqueryOutput>
       >;
     },
-    AfterSubqueryMode<Mode, SubqueryFunctionMode>
+    AfterSubqueryMode<Mode, SubqueryFunctionMode>,
+    Context
   > {
     const subquery = callback(
       createRelationshipSubqueryBuilder<
@@ -332,7 +357,8 @@ class ApexSelectQueryBuilderImpl<
           Simplify<SubqueryOutput>
         >;
       },
-      AfterSubqueryMode<Mode, SubqueryFunctionMode>
+      AfterSubqueryMode<Mode, SubqueryFunctionMode>,
+      Context
     >({
       ...this.#props,
       queryNode,
@@ -341,17 +367,17 @@ class ApexSelectQueryBuilderImpl<
 
   where(
     expression: ApexWhereExpressionFactory<DB, TB>,
-  ): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+  ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
   where(
     lhs: ApexBindExpression<string>,
     op: "includes",
     rhs: readonly string[],
-  ): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+  ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
   where<RE extends string, OP extends ComparisonOperatorExpression<DB, TB, RE>>(
     lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
     op: OP,
     rhs: ApexOperandValueExpression<DB, TB, NoInfer<RE>, NoInfer<OP>>,
-  ): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+  ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
   where(
     lhsOrExpression:
       | string
@@ -359,7 +385,7 @@ class ApexSelectQueryBuilderImpl<
       | ApexWhereExpressionFactory<DB, TB>,
     op?: ComparisonOperator,
     rhs?: unknown,
-  ): ApexSelectQueryBuilder<DB, TB, O, Mode> {
+  ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context> {
     const operation =
       typeof lhsOrExpression === "function"
         ? lhsOrExpression(
@@ -380,24 +406,39 @@ class ApexSelectQueryBuilderImpl<
 
     validateSemiJoinWhere(queryNode.where?.where ?? operation);
 
-    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode>({
+    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode, Context>({
       ...this.#props,
       queryNode,
     });
   }
 
-  withSystemMode(): ApexSelectQueryBuilder<DB, TB, O, Mode> {
+  setOptions(
+    options: DynamicApexOnly<
+      Context,
+      ApexBindExpression<ApexDatabaseQueryOptions>
+    >,
+  ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context> {
+    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode, Context>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithSetOptions(
+        this.#props.queryNode,
+        parseDynamicApexSetOptions(options),
+      ),
+    });
+  }
+
+  withSystemMode(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context> {
     return this.#withAccessMode("system");
   }
 
-  withUserMode(): ApexSelectQueryBuilder<DB, TB, O, Mode> {
+  withUserMode(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context> {
     return this.#withAccessMode("user");
   }
 
   #withAccessMode(
     mode: ApexAccessMode,
-  ): ApexSelectQueryBuilder<DB, TB, O, Mode> {
-    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode>({
+  ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context> {
+    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithApexAccessMode(
         this.#props.queryNode,
@@ -416,6 +457,25 @@ export function createApexSelectQueryBuilder<
   TB extends keyof DB,
   O,
   Mode extends SelectQueryMode,
->(props: SelectQueryBuilderProps): ApexSelectQueryBuilder<DB, TB, O, Mode> {
-  return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode>(props);
+>(
+  props: SelectQueryBuilderProps,
+): ApexSelectQueryBuilder<DB, TB, O, Mode, "static"> {
+  return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode, "static">({
+    ...props,
+    apexContext: "static",
+  });
+}
+
+export function createDynamicApexSelectQueryBuilder<
+  DB,
+  TB extends keyof DB,
+  O,
+  Mode extends SelectQueryMode,
+>(
+  props: SelectQueryBuilderProps,
+): ApexSelectQueryBuilder<DB, TB, O, Mode, "dynamic"> {
+  return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode, "dynamic">({
+    ...props,
+    apexContext: "dynamic",
+  });
 }

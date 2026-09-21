@@ -1,5 +1,10 @@
 import * as v from "valibot";
 
+import {
+  type ApexBindExpression,
+  type ApexDatabaseQueryOptions,
+  isApexBindExpression,
+} from "#/apex-bind";
 import type { SelectQueryNode } from "#/operation-node/select-query-node";
 import {
   SetOptionsNode,
@@ -46,6 +51,10 @@ const PLATFORM_ERROR =
   "SOQL literal SET OPTIONS is valid only for Data 360 DLO or DMO queries.";
 const DMO_SIMPLE_QUERY_ERROR =
   "SOQL SET OPTIONS honorEmptyStrings on Data 360 DMOs supports only simple non-aggregate queries.";
+const DYNAMIC_APEX_OPTIONS_ERROR =
+  "Dynamic Apex SET OPTIONS requires a Database.QueryOptions bind variable.";
+const STATIC_APEX_OPTIONS_ERROR =
+  "Bound SOQL SET OPTIONS is valid only in the dynamic Apex query context.";
 
 const dataspaceSchema = v.pipe(
   v.string(DATASPACE_ERROR),
@@ -98,6 +107,21 @@ export const parseSetOptions = (
   options: Data360DloSetOptions | Data360DmoSetOptions,
 ): SetOptionsNodeType => SetOptionsNode.create(validateOptions(options));
 
+export const parseDynamicApexSetOptions = (
+  options: ApexBindExpression<ApexDatabaseQueryOptions>,
+): SetOptionsNodeType => {
+  if (!isApexBindExpression(options)) {
+    throw new TypeError(DYNAMIC_APEX_OPTIONS_ERROR);
+  }
+
+  const node = options.toOperationNode();
+  if (node.kind !== "ApexBindNode" || node.name.includes(".")) {
+    throw new TypeError(DYNAMIC_APEX_OPTIONS_ERROR);
+  }
+
+  return SetOptionsNode.createApexQueryOptions(node);
+};
+
 const capabilityFromObjectName = (
   objectName: string,
 ): SalesforceSetOptionsCapability => {
@@ -137,9 +161,26 @@ const hasAggregateSelection = (query: SelectQueryNode): boolean =>
     containsAggregateFunction(selection),
   ) === true;
 
-export const validateSetOptionsQuery = (query: SelectQueryNode): void => {
+export const validateSetOptionsQuery = (
+  query: SelectQueryNode,
+  dynamicApex = false,
+): void => {
   const options = query.setOptions;
   if (!options) {
+    return;
+  }
+
+  if (options.apexQueryOptions) {
+    if (!dynamicApex) {
+      throw new TypeError(STATIC_APEX_OPTIONS_ERROR);
+    }
+    if (
+      options.apexQueryOptions.name.includes(".") ||
+      options.dataspace !== undefined ||
+      options.honorEmptyStrings !== undefined
+    ) {
+      throw new TypeError(DYNAMIC_APEX_OPTIONS_ERROR);
+    }
     return;
   }
 

@@ -165,6 +165,11 @@ Apex grammar on a real Salesforce runtime and therefore requires org credentials
 It covers the bind-expression families represented by Kysoql's Apex AST rather than
 using dynamic SOQL strings.
 
+The managed dynamic-Apex `SET OPTIONS :queryOptions` path is not part of this
+generic scratch-org fixture. Salesforce scopes `Database.QueryOptions`
+`explicitNamespace` to managed Apex, so meaningful runtime verification requires a
+managed-package namespace rather than an ordinary unmanaged scratch org.
+
 ## Smoke-test SOQL
 
 A basic custom-object query:

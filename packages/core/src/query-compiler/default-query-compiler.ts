@@ -114,7 +114,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
     validateUserProfileFeedQuery(query);
     validateRelationshipQueryLimits(query);
     validateObjectQueryLimits(query);
-    validateSetOptionsQuery(query);
+    validateSetOptionsQuery(
+      query,
+      context.apex === true && context.dynamicApex === true,
+    );
 
     let soql = `SELECT ${query.selections
       .map((selection) => this.#compileSelection(selection, context))
@@ -278,6 +281,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
   }
 
   #compileSetOptions(node: SetOptionsNode): string {
+    if (node.apexQueryOptions) {
+      return this.#compileApexBind(node.apexQueryOptions);
+    }
+
     const options: string[] = [];
 
     if (node.dataspace) {

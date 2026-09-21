@@ -496,6 +496,29 @@ const modelRows = await db
   .execute();
 ```
 
+Managed-package dynamic Apex has a separate bound `SET OPTIONS` form. Use
+`.dynamicApex()` plus a typed `Database.QueryOptions` marker when the Apex caller
+will supply the actual option object. This remains compile-only and is distinct
+from the existing static `.apex()` surface.
+
+```ts
+import {
+  type ApexDatabaseQueryOptions,
+  apexBind,
+} from "@kysoql/core";
+
+const managedDynamicQuery = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .dynamicApex()
+  .setOptions(apexBind<ApexDatabaseQueryOptions>("queryOptions"))
+  .compile();
+// SELECT Id, Name FROM Account SET OPTIONS :queryOptions
+```
+
+Kysoql does not construct the Apex `Database.QueryOptions` instance or execute
+the dynamic query; those remain responsibilities of the managed Apex caller.
+
 Salesforce Describe also exposes each object's `mruEnabled` capability. Generated
 schemas preserve that flag so root queries can use `.forView()` /
 `.forReference()` only when the object is known to participate in Most Recently

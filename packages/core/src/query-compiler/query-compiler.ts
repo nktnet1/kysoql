@@ -3,6 +3,7 @@ import type { CompiledQuery } from "#/query-compiler/compiled-query";
 
 export interface QueryCompileContext {
   readonly apex?: boolean;
+  readonly dynamicApex?: boolean;
 }
 
 export interface QueryCompiler {

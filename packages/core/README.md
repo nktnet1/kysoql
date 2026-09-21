@@ -131,6 +131,31 @@ const data360Rows = db
   .setOptions({ dataspace: "default", honorEmptyStrings: true });
 ```
 
+Managed-package dynamic SOQL uses a separate compile-only `.dynamicApex()`
+context. Pass a direct `apexBind<ApexDatabaseQueryOptions>(...)` when the Apex
+caller supplies a `Database.QueryOptions` value such as one built with
+`withExplicitNamespace(true)`. The existing `.apex()` context remains the static
+Apex surface and does not accept this bound form.
+
+```ts
+import {
+  type ApexDatabaseQueryOptions,
+  apexBind,
+} from "@kysoql/core";
+
+const managedDynamicQuery = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .dynamicApex()
+  .setOptions(apexBind<ApexDatabaseQueryOptions>("queryOptions"))
+  .compile();
+
+// SELECT Id, Name FROM Account SET OPTIONS :queryOptions
+```
+
+Kysoql compiles the SOQL only; the Apex caller is responsible for constructing
+the `Database.QueryOptions` instance and executing the dynamic query.
+
 Apex-only query syntax is isolated behind an explicit compile-only context. For
 example, `FOR UPDATE` is available only after switching a completed record query
 into `.apex()`, so it cannot be executed accidentally through an API executor:

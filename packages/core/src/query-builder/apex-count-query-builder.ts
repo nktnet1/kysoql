@@ -1,4 +1,7 @@
-import type { ApexBindExpression } from "#/apex-bind";
+import type {
+  ApexBindExpression,
+  ApexDatabaseQueryOptions,
+} from "#/apex-bind";
 import {
   type ApexWhereExpressionFactory,
   createApexExpressionBuilder,
@@ -21,6 +24,11 @@ import type {
   FilterableFieldName,
 } from "#/parser/binary-operation-parser";
 import { validateSemiJoinWhere } from "#/parser/filter-parser";
+import { parseDynamicApexSetOptions } from "#/parser/set-options-parser";
+import type {
+  ApexQueryContext,
+  DynamicApexOnly,
+} from "#/query-builder/apex-query-context";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import { freeze } from "#/util/object-utils";
@@ -28,50 +36,65 @@ import { freeze } from "#/util/object-utils";
 interface ApexCountQueryBuilderProps {
   readonly queryNode: SelectQueryNode;
   readonly queryCompiler: QueryCompiler;
+  readonly apexContext: ApexQueryContext;
 }
 
-export interface ApexCountQueryBuilder<DB, TB extends keyof DB> {
+export interface ApexCountQueryBuilder<
+  DB,
+  TB extends keyof DB,
+  Context extends ApexQueryContext = "static",
+> {
   $call<T>(func: (qb: this) => T): T;
 
   $if(condition: boolean, func: (qb: this) => this): this;
 
-  clearLimit(): ApexCountQueryBuilder<DB, TB>;
+  clearLimit(): ApexCountQueryBuilder<DB, TB, Context>;
 
-  clearWhere(): ApexCountQueryBuilder<DB, TB>;
+  clearWhere(): ApexCountQueryBuilder<DB, TB, Context>;
 
   compile(): CompiledQuery<number>;
 
-  allRows(): ApexCountQueryBuilder<DB, TB>;
+  allRows(): ApexCountQueryBuilder<DB, TB, Context>;
 
   limit(
     limit: number | ApexBindExpression<number>,
-  ): ApexCountQueryBuilder<DB, TB>;
+  ): ApexCountQueryBuilder<DB, TB, Context>;
 
   where(
     expression: ApexWhereExpressionFactory<DB, TB>,
-  ): ApexCountQueryBuilder<DB, TB>;
+  ): ApexCountQueryBuilder<DB, TB, Context>;
 
   where(
     lhs: ApexBindExpression<string>,
     op: "includes",
     rhs: readonly string[],
-  ): ApexCountQueryBuilder<DB, TB>;
+  ): ApexCountQueryBuilder<DB, TB, Context>;
 
   where<RE extends string, OP extends ComparisonOperatorExpression<DB, TB, RE>>(
     lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
     op: OP,
     rhs: ApexOperandValueExpression<DB, TB, NoInfer<RE>, NoInfer<OP>>,
-  ): ApexCountQueryBuilder<DB, TB>;
+  ): ApexCountQueryBuilder<DB, TB, Context>;
 
-  withSystemMode(): ApexCountQueryBuilder<DB, TB>;
+  setOptions(
+    options: DynamicApexOnly<
+      Context,
+      ApexBindExpression<ApexDatabaseQueryOptions>
+    >,
+  ): ApexCountQueryBuilder<DB, TB, Context>;
 
-  withUserMode(): ApexCountQueryBuilder<DB, TB>;
+  withSystemMode(): ApexCountQueryBuilder<DB, TB, Context>;
+
+  withUserMode(): ApexCountQueryBuilder<DB, TB, Context>;
 
   toOperationNode(): SelectQueryNode;
 }
 
-class ApexCountQueryBuilderImpl<DB, TB extends keyof DB>
-  implements ApexCountQueryBuilder<DB, TB>
+class ApexCountQueryBuilderImpl<
+  DB,
+  TB extends keyof DB,
+  Context extends ApexQueryContext,
+> implements ApexCountQueryBuilder<DB, TB, Context>
 {
   readonly #props: ApexCountQueryBuilderProps;
 
@@ -87,15 +110,15 @@ class ApexCountQueryBuilderImpl<DB, TB extends keyof DB>
     return condition ? func(this) : this;
   }
 
-  clearLimit(): ApexCountQueryBuilder<DB, TB> {
-    return new ApexCountQueryBuilderImpl<DB, TB>({
+  clearLimit(): ApexCountQueryBuilder<DB, TB, Context> {
+    return new ApexCountQueryBuilderImpl<DB, TB, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithoutLimit(this.#props.queryNode),
     });
   }
 
-  clearWhere(): ApexCountQueryBuilder<DB, TB> {
-    return new ApexCountQueryBuilderImpl<DB, TB>({
+  clearWhere(): ApexCountQueryBuilder<DB, TB, Context> {
+    return new ApexCountQueryBuilderImpl<DB, TB, Context>({
       ...this.#props,
       queryNode: QueryNode.cloneWithoutWhere(this.#props.queryNode),
     });
@@ -104,12 +127,15 @@ class ApexCountQueryBuilderImpl<DB, TB extends keyof DB>
   compile(): CompiledQuery<number> {
     return this.#props.queryCompiler.compileQuery<number>(
       this.#props.queryNode,
-      { apex: true },
+      {
+        apex: true,
+        dynamicApex: this.#props.apexContext === "dynamic",
+      },
     );
   }
 
-  allRows(): ApexCountQueryBuilder<DB, TB> {
-    return new ApexCountQueryBuilderImpl<DB, TB>({
+  allRows(): ApexCountQueryBuilder<DB, TB, Context> {
+    return new ApexCountQueryBuilderImpl<DB, TB, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithAllRows(
         this.#props.queryNode,
@@ -120,8 +146,8 @@ class ApexCountQueryBuilderImpl<DB, TB extends keyof DB>
 
   limit(
     limit: number | ApexBindExpression<number>,
-  ): ApexCountQueryBuilder<DB, TB> {
-    return new ApexCountQueryBuilderImpl<DB, TB>({
+  ): ApexCountQueryBuilder<DB, TB, Context> {
+    return new ApexCountQueryBuilderImpl<DB, TB, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithLimit(
         this.#props.queryNode,
@@ -132,17 +158,17 @@ class ApexCountQueryBuilderImpl<DB, TB extends keyof DB>
 
   where(
     expression: ApexWhereExpressionFactory<DB, TB>,
-  ): ApexCountQueryBuilder<DB, TB>;
+  ): ApexCountQueryBuilder<DB, TB, Context>;
   where(
     lhs: ApexBindExpression<string>,
     op: "includes",
     rhs: readonly string[],
-  ): ApexCountQueryBuilder<DB, TB>;
+  ): ApexCountQueryBuilder<DB, TB, Context>;
   where<RE extends string, OP extends ComparisonOperatorExpression<DB, TB, RE>>(
     lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
     op: OP,
     rhs: ApexOperandValueExpression<DB, TB, NoInfer<RE>, NoInfer<OP>>,
-  ): ApexCountQueryBuilder<DB, TB>;
+  ): ApexCountQueryBuilder<DB, TB, Context>;
   where(
     lhsOrExpression:
       | string
@@ -150,7 +176,7 @@ class ApexCountQueryBuilderImpl<DB, TB extends keyof DB>
       | ApexWhereExpressionFactory<DB, TB>,
     op?: ComparisonOperator,
     rhs?: unknown,
-  ): ApexCountQueryBuilder<DB, TB> {
+  ): ApexCountQueryBuilder<DB, TB, Context> {
     const operation =
       typeof lhsOrExpression === "function"
         ? lhsOrExpression(
@@ -171,22 +197,37 @@ class ApexCountQueryBuilderImpl<DB, TB extends keyof DB>
 
     validateSemiJoinWhere(queryNode.where?.where ?? operation);
 
-    return new ApexCountQueryBuilderImpl<DB, TB>({
+    return new ApexCountQueryBuilderImpl<DB, TB, Context>({
       ...this.#props,
       queryNode,
     });
   }
 
-  withSystemMode(): ApexCountQueryBuilder<DB, TB> {
+  setOptions(
+    options: DynamicApexOnly<
+      Context,
+      ApexBindExpression<ApexDatabaseQueryOptions>
+    >,
+  ): ApexCountQueryBuilder<DB, TB, Context> {
+    return new ApexCountQueryBuilderImpl<DB, TB, Context>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithSetOptions(
+        this.#props.queryNode,
+        parseDynamicApexSetOptions(options),
+      ),
+    });
+  }
+
+  withSystemMode(): ApexCountQueryBuilder<DB, TB, Context> {
     return this.#withAccessMode("system");
   }
 
-  withUserMode(): ApexCountQueryBuilder<DB, TB> {
+  withUserMode(): ApexCountQueryBuilder<DB, TB, Context> {
     return this.#withAccessMode("user");
   }
 
-  #withAccessMode(mode: ApexAccessMode): ApexCountQueryBuilder<DB, TB> {
-    return new ApexCountQueryBuilderImpl<DB, TB>({
+  #withAccessMode(mode: ApexAccessMode): ApexCountQueryBuilder<DB, TB, Context> {
+    return new ApexCountQueryBuilderImpl<DB, TB, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithApexAccessMode(
         this.#props.queryNode,
@@ -201,7 +242,19 @@ class ApexCountQueryBuilderImpl<DB, TB extends keyof DB>
 }
 
 export function createApexCountQueryBuilder<DB, TB extends keyof DB>(
-  props: ApexCountQueryBuilderProps,
-): ApexCountQueryBuilder<DB, TB> {
-  return new ApexCountQueryBuilderImpl<DB, TB>(props);
+  props: Omit<ApexCountQueryBuilderProps, "apexContext">,
+): ApexCountQueryBuilder<DB, TB, "static"> {
+  return new ApexCountQueryBuilderImpl<DB, TB, "static">({
+    ...props,
+    apexContext: "static",
+  });
+}
+
+export function createDynamicApexCountQueryBuilder<DB, TB extends keyof DB>(
+  props: Omit<ApexCountQueryBuilderProps, "apexContext">,
+): ApexCountQueryBuilder<DB, TB, "dynamic"> {
+  return new ApexCountQueryBuilderImpl<DB, TB, "dynamic">({
+    ...props,
+    apexContext: "dynamic",
+  });
 }

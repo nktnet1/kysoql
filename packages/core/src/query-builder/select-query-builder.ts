@@ -115,6 +115,7 @@ import {
 import {
   type ApexSelectQueryBuilder,
   createApexSelectQueryBuilder,
+  createDynamicApexSelectQueryBuilder,
 } from "#/query-builder/apex-select-query-builder";
 import {
   type CountQueryBuilder,
@@ -255,7 +256,9 @@ export interface SelectQueryBuilder<
 
   executeAll(): Promise<readonly O[]>;
 
-  apex(): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+  apex(): ApexSelectQueryBuilder<DB, TB, O, Mode, "static">;
+
+  dynamicApex(): ApexSelectQueryBuilder<DB, TB, O, Mode, "dynamic">;
 
   limit(limit: number): SelectQueryBuilder<DB, TB, O, Mode>;
 
@@ -558,8 +561,12 @@ class SelectQueryBuilderImpl<
     return this.#props.queryExecutor.executeAllQuery(this.compile());
   }
 
-  apex(): ApexSelectQueryBuilder<DB, TB, O, Mode> {
+  apex(): ApexSelectQueryBuilder<DB, TB, O, Mode, "static"> {
     return createApexSelectQueryBuilder<DB, TB, O, Mode>(this.#props);
+  }
+
+  dynamicApex(): ApexSelectQueryBuilder<DB, TB, O, Mode, "dynamic"> {
+    return createDynamicApexSelectQueryBuilder<DB, TB, O, Mode>(this.#props);
   }
 
   limit(limit: number): SelectQueryBuilder<DB, TB, O, Mode> {

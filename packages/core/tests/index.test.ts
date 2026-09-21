@@ -23,7 +23,9 @@ import {
   type ApexBindExpression,
   type ApexBindNode,
   type ApexCountQueryBuilder,
+  type ApexDatabaseQueryOptions,
   type ApexOperandValueExpression,
+  type ApexQueryContext,
   type ApexQueryResultNode,
   type ApexSelectQueryBuilder,
   apexBind,
@@ -207,6 +209,8 @@ type PublicTypeSurface = {
   apexBindExpression: ApexBindExpression<string>;
   apexBindNode: ApexBindNode;
   apexCountQueryBuilder: ApexCountQueryBuilder<Record<string, never>, never>;
+  apexDatabaseQueryOptions: ApexDatabaseQueryOptions;
+  apexQueryContext: ApexQueryContext;
   apexQueryResultNode: ApexQueryResultNode;
   apexOperandValueExpression: ApexOperandValueExpression<
     Record<string, never>,

@@ -48,13 +48,14 @@ SQL escape hatch.
 
 ## Current baseline
 
-The accepted continuation baseline is through **`v1.0.133`**. In addition to the
+The accepted continuation baseline is through **`v1.0.134`**. In addition to the
 completed Kysely-neutral builder audit and bounded `FIELDS(ALL|CUSTOM)` alignment,
 root builders can now start ordinary `GROUP BY` without an aggregate selection,
 grouped queries reject custom relationship expressions using `__r`, and typed
 ordering prevents explicit null placement on nullable reference fields. Generated
-Data 360 DLO/DMO capability metadata now drives typed literal `SET OPTIONS` for
-dataspace and empty-string semantics.
+Data 360 DLO/DMO capability metadata drives typed literal `SET OPTIONS`, while a
+distinct compile-only `.dynamicApex()` context supports the managed dynamic-Apex
+`SET OPTIONS :queryOptions` form without widening the static `.apex()` surface.
 
 The implementation already covers the broad production SOQL surface:
 
@@ -81,7 +82,8 @@ The implementation already covers the broad production SOQL surface:
 - compile-only Apex query contexts with `FOR UPDATE`, `ALL ROWS`, explicit
   `WITH USER_MODE` / `WITH SYSTEM_MODE`, typed bind expressions, relationship
   subquery binds, bind-left `INCLUDES`, structured addition/substring expressions,
-  and structured nested query-result field binds;
+  structured nested query-result field binds, and a distinct managed dynamic-Apex
+  context for bound `Database.QueryOptions`;
 - Describe-driven code generation, oclif CLI packaging, release/export parity
   checks, and Salesforce scratch-org fixtures.
 
@@ -103,7 +105,9 @@ Preserve these unless a change is explicitly justified:
 - core execution remains transport-neutral and `@kysoql/core` never imports
   JSforce;
 - JSforce execution must not silently truncate paginated results;
-- Apex-only syntax stays behind the compile-only `.apex()` boundary;
+- Apex-only syntax stays behind compile-only Apex boundaries: `.apex()` models
+  static Apex SOQL, while `.dynamicApex()` is reserved for documented dynamic-only
+  forms and must not silently widen static-Apex semantics;
 - no raw SOQL escape hatch and no arbitrary SQL joins;
 - source imports inside a package use `#/...`; cross-package imports use workspace
   package names rather than another package's `src`/`dist` internals;
@@ -123,17 +127,11 @@ complete.
    for REST, SOAP, and Apex without explicitly excluding grouped queries, while
    kysoql currently exposes aggregate `OFFSET` only in Apex. Verify the exact
    REST/SOAP behavior against the Salesforce fixture before changing the API.
-2. **Managed dynamic Apex `SET OPTIONS`.** Data 360 literal `SET OPTIONS` is now
-   modeled through generated DLO/DMO capability metadata. The remaining documented
-   form is `SET OPTIONS :queryOptions` for managed dynamic Apex
-   `Database.QueryOptions.explicitNamespace`. Do not force this dynamic-only form
-   into the existing static-Apex builder; introduce an honest dynamic-query context
-   first if the project chooses to support it.
-3. **`FORMULA()` in `WHERE` pilot.** Salesforce currently labels this Summer '26
+2. **`FORMULA()` in `WHERE` pilot.** Salesforce currently labels this Summer '26
    feature a pilot, limited to `WHERE` rather than `HAVING`. Keep it omitted from
    the production-safe builder unless the project explicitly opts into pilot
    syntax.
-4. **Relationship-subquery `OFFSET` pilot.** Salesforce permits it only when the
+3. **Relationship-subquery `OFFSET` pilot.** Salesforce permits it only when the
    parent query has `LIMIT 1` and still says the feature is not intended for
    production. Keep it omitted unless its status changes or pilot syntax is
    explicitly enabled.

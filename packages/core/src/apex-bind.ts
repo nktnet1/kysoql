@@ -35,6 +35,19 @@ const apexQueryFieldSchema = v.pipe(
 
 declare const apexBindValueType: unique symbol;
 
+declare const apexDatabaseQueryOptionsType: unique symbol;
+
+/**
+ * Compile-time marker for Salesforce `Database.QueryOptions`.
+ *
+ * Kysoql never constructs this Apex value. Use it only as the value type for
+ * an `apexBind()` that names the `Database.QueryOptions` variable available to
+ * the generated dynamic SOQL.
+ */
+export interface ApexDatabaseQueryOptions {
+  readonly [apexDatabaseQueryOptionsType]: true;
+}
+
 export interface ApexBindExpression<Value> {
   readonly [apexBindValueType]: Value;
   toOperationNode(): ApexBindExpressionNode;

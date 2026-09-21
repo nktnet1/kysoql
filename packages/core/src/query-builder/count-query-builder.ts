@@ -38,6 +38,7 @@ import {
 import {
   type ApexCountQueryBuilder,
   createApexCountQueryBuilder,
+  createDynamicApexCountQueryBuilder,
 } from "#/query-builder/apex-count-query-builder";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
@@ -65,7 +66,9 @@ export interface CountQueryBuilder<DB, TB extends keyof DB> {
 
   executeAll(): Promise<number>;
 
-  apex(): ApexCountQueryBuilder<DB, TB>;
+  apex(): ApexCountQueryBuilder<DB, TB, "static">;
+
+  dynamicApex(): ApexCountQueryBuilder<DB, TB, "dynamic">;
 
   limit(limit: number): CountQueryBuilder<DB, TB>;
 
@@ -196,8 +199,12 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
     return this.#props.queryExecutor.executeAllCountQuery(this.compile());
   }
 
-  apex(): ApexCountQueryBuilder<DB, TB> {
+  apex(): ApexCountQueryBuilder<DB, TB, "static"> {
     return createApexCountQueryBuilder<DB, TB>(this.#props);
+  }
+
+  dynamicApex(): ApexCountQueryBuilder<DB, TB, "dynamic"> {
+    return createDynamicApexCountQueryBuilder<DB, TB>(this.#props);
   }
 
   limit(limit: number): CountQueryBuilder<DB, TB> {

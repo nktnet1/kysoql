@@ -76,6 +76,10 @@ version is cut.
   metadata: DLO queries require `dataspace` and may opt into `honorEmptyStrings`,
   simple DMO record queries expose only `honorEmptyStrings`, and DLO aggregate /
   bare `COUNT()` queries retain the documented Data 360 aggregate surface.
+- A distinct compile-only `.dynamicApex()` context for managed-package dynamic
+  SOQL, including typed bound `Database.QueryOptions` support for
+  `SET OPTIONS :queryOptions` without admitting that dynamic-only form through
+  the existing static `.apex()` context.
 - Kysely-style `$call(...)` composition across record, aggregate, count, Apex,
   relationship-subquery, and semi-join query builders, preserving each builder's
   specialised type while returning the callback result unchanged.

@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
+import {
+  type ApexBindExpression,
+  type ApexDatabaseQueryOptions,
+  apexAdd,
+  apexBind,
+} from "#/apex-bind";
 import { Kysoql } from "#/kysoql";
+import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
 import type { SalesforceField, SalesforceObject } from "#/schema";
 
 type Field<Value = string, Type extends string = "string"> = SalesforceField<
@@ -234,5 +241,126 @@ describe("SET OPTIONS", () => {
         honorEmptyStrings: "yes",
       } as never),
     ).toThrow("SOQL SET OPTIONS honorEmptyStrings must be a boolean.");
+  });
+});
+
+describe("dynamic Apex SET OPTIONS", () => {
+  it("compiles bound Database.QueryOptions only in dynamic Apex queries", () => {
+    const queryOptions = apexBind<ApexDatabaseQueryOptions>("queryOptions");
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(["Id", "Name"])
+      .dynamicApex()
+      .where("Name", "=", apexBind<string>("accountName"))
+      .setOptions(queryOptions);
+
+    expect(query.compile().soql).toBe(
+      "SELECT Id, Name FROM Account WHERE Name = :accountName SET OPTIONS :queryOptions",
+    );
+  });
+
+  it("preserves the dynamic Apex context across chained builder calls", () => {
+    const queryOptions = apexBind<ApexDatabaseQueryOptions>("queryOptions");
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .dynamicApex()
+      .limit(apexBind<number>("page.limit"))
+      .clearLimit()
+      .where("Name", "like", apexBind<string>("filters.name"))
+      .setOptions(queryOptions);
+
+    expect(query.compile().soql).toBe(
+      "SELECT Id FROM Account WHERE Name LIKE :filters.name SET OPTIONS :queryOptions",
+    );
+  });
+
+  it("supports dynamic Apex SET OPTIONS on aggregate and count queries", () => {
+    const queryOptions = apexBind<ApexDatabaseQueryOptions>("queryOptions");
+    const aggregate = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select((eb) => eb.fn.count("Id").as("records"))
+      .dynamicApex()
+      .setOptions(queryOptions);
+    const count = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select((eb) => eb.fn.count())
+      .dynamicApex()
+      .setOptions(queryOptions);
+
+    expect(aggregate.compile().soql).toBe(
+      "SELECT COUNT(Id) records FROM Account SET OPTIONS :queryOptions",
+    );
+    expect(count.compile().soql).toBe(
+      "SELECT COUNT() FROM Account SET OPTIONS :queryOptions",
+    );
+  });
+
+  it("keeps bound SET OPTIONS off static Apex and rejects wrong bind types", () => {
+    const queryOptions = apexBind<ApexDatabaseQueryOptions>("queryOptions");
+    const staticApex = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .apex();
+    const dynamicApex = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .dynamicApex();
+
+    // @ts-expect-error Bound SET OPTIONS is dynamic-Apex-only.
+    staticApex.setOptions(queryOptions);
+    // @ts-expect-error Dynamic Apex SET OPTIONS requires Database.QueryOptions.
+    dynamicApex.setOptions(apexBind<string>("queryOptions"));
+
+    const forgedStatic = staticApex.setOptions(queryOptions as never);
+    expect(() => forgedStatic.compile()).toThrow(
+      "Bound SOQL SET OPTIONS is valid only in the dynamic Apex query context.",
+    );
+  });
+
+  it("rejects non-variable expressions for Database.QueryOptions binds", () => {
+    const dynamicApex = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .dynamicApex();
+
+    expect(() =>
+      dynamicApex.setOptions(
+        apexBind<ApexDatabaseQueryOptions>("request.queryOptions"),
+      ),
+    ).toThrow(
+      "Dynamic Apex SET OPTIONS requires a Database.QueryOptions bind variable.",
+    );
+
+    expect(() =>
+      dynamicApex.setOptions(
+        apexAdd("query", "Options") as unknown as ApexBindExpression<
+          ApexDatabaseQueryOptions
+        >,
+      ),
+    ).toThrow(
+      "Dynamic Apex SET OPTIONS requires a Database.QueryOptions bind variable.",
+    );
+  });
+
+  it("revalidates bound SET OPTIONS at the compiler boundary", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .dynamicApex()
+      .setOptions(apexBind<ApexDatabaseQueryOptions>("queryOptions"));
+    const compiler = new DefaultQueryCompiler();
+
+    expect(() =>
+      compiler.compileQuery(query.toOperationNode(), { apex: true }),
+    ).toThrow(
+      "Bound SOQL SET OPTIONS is valid only in the dynamic Apex query context.",
+    );
+    expect(
+      compiler.compileQuery(query.toOperationNode(), {
+        apex: true,
+        dynamicApex: true,
+      }).soql,
+    ).toBe("SELECT Id FROM Account SET OPTIONS :queryOptions");
   });
 });

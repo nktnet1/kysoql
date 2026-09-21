@@ -91,6 +91,7 @@ import {
 import {
   type ApexAggregateSelectQueryBuilder,
   createApexAggregateSelectQueryBuilder,
+  createDynamicApexAggregateSelectQueryBuilder,
 } from "#/query-builder/apex-aggregate-select-query-builder";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
@@ -388,7 +389,9 @@ export interface AggregateSelectQueryBuilder<
 
   executeAll(): Promise<readonly O[]>;
 
-  apex(): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+  apex(): ApexAggregateSelectQueryBuilder<DB, TB, O, "static">;
+
+  dynamicApex(): ApexAggregateSelectQueryBuilder<DB, TB, O, "dynamic">;
 
   forView(
     ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
@@ -965,8 +968,14 @@ class AggregateSelectQueryBuilderImpl<
     return this.#props.queryExecutor.executeAllQuery(this.compile());
   }
 
-  apex(): ApexAggregateSelectQueryBuilder<DB, TB, O> {
+  apex(): ApexAggregateSelectQueryBuilder<DB, TB, O, "static"> {
     return createApexAggregateSelectQueryBuilder<DB, TB, O>(this.#props);
+  }
+
+  dynamicApex(): ApexAggregateSelectQueryBuilder<DB, TB, O, "dynamic"> {
+    return createDynamicApexAggregateSelectQueryBuilder<DB, TB, O>(
+      this.#props,
+    );
   }
 
   forView(

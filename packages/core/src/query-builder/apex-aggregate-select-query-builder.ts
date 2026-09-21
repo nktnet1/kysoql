@@ -1,4 +1,7 @@
-import type { ApexBindExpression } from "#/apex-bind";
+import type {
+  ApexBindExpression,
+  ApexDatabaseQueryOptions,
+} from "#/apex-bind";
 import {
   type ApexWhereExpressionFactory,
   createApexExpressionBuilder,
@@ -23,6 +26,11 @@ import type {
 } from "#/parser/binary-operation-parser";
 import { validateSemiJoinWhere } from "#/parser/filter-parser";
 import { assertCanClearGroupBy } from "#/parser/group-by-parser";
+import { parseDynamicApexSetOptions } from "#/parser/set-options-parser";
+import type {
+  ApexQueryContext,
+  DynamicApexOnly,
+} from "#/query-builder/apex-query-context";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import { freeze } from "#/util/object-utils";
@@ -30,60 +38,77 @@ import { freeze } from "#/util/object-utils";
 interface ApexAggregateSelectQueryBuilderProps {
   readonly queryNode: SelectQueryNode;
   readonly queryCompiler: QueryCompiler;
+  readonly apexContext: ApexQueryContext;
 }
 
-export interface ApexAggregateSelectQueryBuilder<DB, TB extends keyof DB, O> {
+export interface ApexAggregateSelectQueryBuilder<
+  DB,
+  TB extends keyof DB,
+  O,
+  Context extends ApexQueryContext = "static",
+> {
   $call<T>(func: (qb: this) => T): T;
 
   $if(condition: boolean, func: (qb: this) => this): this;
 
-  clearGroupBy(): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+  clearGroupBy(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
-  clearLimit(): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+  clearLimit(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
-  clearOffset(): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+  clearOffset(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
-  clearOrderBy(): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+  clearOrderBy(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
-  clearWhere(): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+  clearWhere(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
   compile(): CompiledQuery<O>;
 
-  allRows(): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+  allRows(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
   limit(
     limit: number | ApexBindExpression<number>,
-  ): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+  ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
   offset(
     offset: number | ApexBindExpression<number>,
-  ): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+  ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
   where(
     expression: ApexWhereExpressionFactory<DB, TB>,
-  ): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+  ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
   where(
     lhs: ApexBindExpression<string>,
     op: "includes",
     rhs: readonly string[],
-  ): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+  ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
   where<RE extends string, OP extends ComparisonOperatorExpression<DB, TB, RE>>(
     lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
     op: OP,
     rhs: ApexOperandValueExpression<DB, TB, NoInfer<RE>, NoInfer<OP>>,
-  ): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+  ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
-  withSystemMode(): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+  setOptions(
+    options: DynamicApexOnly<
+      Context,
+      ApexBindExpression<ApexDatabaseQueryOptions>
+    >,
+  ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
-  withUserMode(): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+  withSystemMode(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
+
+  withUserMode(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
   toOperationNode(): SelectQueryNode;
 }
 
-class ApexAggregateSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
-  implements ApexAggregateSelectQueryBuilder<DB, TB, O>
+class ApexAggregateSelectQueryBuilderImpl<
+  DB,
+  TB extends keyof DB,
+  O,
+  Context extends ApexQueryContext,
+> implements ApexAggregateSelectQueryBuilder<DB, TB, O, Context>
 {
   readonly #props: ApexAggregateSelectQueryBuilderProps;
 
@@ -99,38 +124,38 @@ class ApexAggregateSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
     return condition ? func(this) : this;
   }
 
-  clearGroupBy(): ApexAggregateSelectQueryBuilder<DB, TB, O> {
+  clearGroupBy(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context> {
     assertCanClearGroupBy(this.#props.queryNode);
 
-    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O>({
+    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithoutGroupBy(this.#props.queryNode),
     });
   }
 
-  clearLimit(): ApexAggregateSelectQueryBuilder<DB, TB, O> {
-    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O>({
+  clearLimit(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context> {
+    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithoutLimit(this.#props.queryNode),
     });
   }
 
-  clearOffset(): ApexAggregateSelectQueryBuilder<DB, TB, O> {
-    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O>({
+  clearOffset(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context> {
+    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithoutOffset(this.#props.queryNode),
     });
   }
 
-  clearOrderBy(): ApexAggregateSelectQueryBuilder<DB, TB, O> {
-    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O>({
+  clearOrderBy(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context> {
+    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithoutOrderBy(this.#props.queryNode),
     });
   }
 
-  clearWhere(): ApexAggregateSelectQueryBuilder<DB, TB, O> {
-    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O>({
+  clearWhere(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context> {
+    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O, Context>({
       ...this.#props,
       queryNode: QueryNode.cloneWithoutWhere(this.#props.queryNode),
     });
@@ -139,11 +164,12 @@ class ApexAggregateSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
   compile(): CompiledQuery<O> {
     return this.#props.queryCompiler.compileQuery<O>(this.#props.queryNode, {
       apex: true,
+      dynamicApex: this.#props.apexContext === "dynamic",
     });
   }
 
-  allRows(): ApexAggregateSelectQueryBuilder<DB, TB, O> {
-    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O>({
+  allRows(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context> {
+    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithAllRows(
         this.#props.queryNode,
@@ -154,8 +180,8 @@ class ApexAggregateSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
 
   limit(
     limit: number | ApexBindExpression<number>,
-  ): ApexAggregateSelectQueryBuilder<DB, TB, O> {
-    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O>({
+  ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context> {
+    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithLimit(
         this.#props.queryNode,
@@ -166,8 +192,8 @@ class ApexAggregateSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
 
   offset(
     offset: number | ApexBindExpression<number>,
-  ): ApexAggregateSelectQueryBuilder<DB, TB, O> {
-    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O>({
+  ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context> {
+    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithOffset(
         this.#props.queryNode,
@@ -178,17 +204,17 @@ class ApexAggregateSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
 
   where(
     expression: ApexWhereExpressionFactory<DB, TB>,
-  ): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+  ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
   where(
     lhs: ApexBindExpression<string>,
     op: "includes",
     rhs: readonly string[],
-  ): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+  ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
   where<RE extends string, OP extends ComparisonOperatorExpression<DB, TB, RE>>(
     lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
     op: OP,
     rhs: ApexOperandValueExpression<DB, TB, NoInfer<RE>, NoInfer<OP>>,
-  ): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+  ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
   where(
     lhsOrExpression:
       | string
@@ -196,7 +222,7 @@ class ApexAggregateSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
       | ApexWhereExpressionFactory<DB, TB>,
     op?: ComparisonOperator,
     rhs?: unknown,
-  ): ApexAggregateSelectQueryBuilder<DB, TB, O> {
+  ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context> {
     const operation =
       typeof lhsOrExpression === "function"
         ? lhsOrExpression(
@@ -217,24 +243,39 @@ class ApexAggregateSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
 
     validateSemiJoinWhere(queryNode.where?.where ?? operation);
 
-    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O>({
+    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O, Context>({
       ...this.#props,
       queryNode,
     });
   }
 
-  withSystemMode(): ApexAggregateSelectQueryBuilder<DB, TB, O> {
+  setOptions(
+    options: DynamicApexOnly<
+      Context,
+      ApexBindExpression<ApexDatabaseQueryOptions>
+    >,
+  ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context> {
+    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O, Context>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithSetOptions(
+        this.#props.queryNode,
+        parseDynamicApexSetOptions(options),
+      ),
+    });
+  }
+
+  withSystemMode(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context> {
     return this.#withAccessMode("system");
   }
 
-  withUserMode(): ApexAggregateSelectQueryBuilder<DB, TB, O> {
+  withUserMode(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context> {
     return this.#withAccessMode("user");
   }
 
   #withAccessMode(
     mode: ApexAccessMode,
-  ): ApexAggregateSelectQueryBuilder<DB, TB, O> {
-    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O>({
+  ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context> {
+    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O, Context>({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithApexAccessMode(
         this.#props.queryNode,
@@ -253,7 +294,23 @@ export function createApexAggregateSelectQueryBuilder<
   TB extends keyof DB,
   O,
 >(
-  props: ApexAggregateSelectQueryBuilderProps,
-): ApexAggregateSelectQueryBuilder<DB, TB, O> {
-  return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O>(props);
+  props: Omit<ApexAggregateSelectQueryBuilderProps, "apexContext">,
+): ApexAggregateSelectQueryBuilder<DB, TB, O, "static"> {
+  return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O, "static">({
+    ...props,
+    apexContext: "static",
+  });
+}
+
+export function createDynamicApexAggregateSelectQueryBuilder<
+  DB,
+  TB extends keyof DB,
+  O,
+>(
+  props: Omit<ApexAggregateSelectQueryBuilderProps, "apexContext">,
+): ApexAggregateSelectQueryBuilder<DB, TB, O, "dynamic"> {
+  return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O, "dynamic">({
+    ...props,
+    apexContext: "dynamic",
+  });
 }

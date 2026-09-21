@@ -2,6 +2,7 @@ export {
   type ApexAdditionOperand,
   type ApexAdditionValue,
   type ApexBindExpression,
+  type ApexDatabaseQueryOptions,
   apexAdd,
   apexBind,
   apexQueryField,
@@ -169,6 +170,7 @@ export type {
 } from "#/parser/set-options-parser";
 export type { AggregateSelectQueryBuilder } from "#/query-builder/aggregate-select-query-builder";
 export type { ApexAggregateSelectQueryBuilder } from "#/query-builder/apex-aggregate-select-query-builder";
+export type { ApexQueryContext } from "#/query-builder/apex-query-context";
 export type { ApexCountQueryBuilder } from "#/query-builder/apex-count-query-builder";
 export type { ApexSelectQueryBuilder } from "#/query-builder/apex-select-query-builder";
 export type { CountQueryBuilder } from "#/query-builder/count-query-builder";
