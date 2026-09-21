@@ -1239,11 +1239,24 @@ pnpm salesforce:setup
 
 The setup script installs from the lockfile, uses the workspace-local Salesforce
 CLI via `pnpm sf`, creates a scratch org, deploys metadata, assigns permissions,
-seeds deterministic data, and verifies the fixture with a SOQL query. It refuses
-to replace an existing org alias unless `--recreate` is explicitly supplied.
+seeds deterministic data, and runs both the existing Salesforce smoke fixtures and
+a generated-query E2E suite. The E2E suite builds `@kysoql/core`, compiles
+representative record, relationship, pagination, grouping, and aggregate queries
+with the public kysoql builder, then sends the generated SOQL to the scratch org.
+It refuses to replace an existing org alias unless `--recreate` is explicitly
+supplied.
+
+Re-run only the generated-query suite against an existing authenticated fixture
+org with:
+
+```bash
+pnpm salesforce:e2e
+# or
+pnpm salesforce:e2e -- --target-org my-scratch-org
+```
 
 See [docs/salesforce-test-org.md](docs/salesforce-test-org.md) for prerequisites,
-manual commands, script options, and cleanup instructions.
+manual commands, script options, coverage boundaries, and cleanup instructions.
 
 For future ChatGPT sessions continuing from a project bundle, read
 [docs/chatgpt-handoff.md](docs/chatgpt-handoff.md) first. It records the package

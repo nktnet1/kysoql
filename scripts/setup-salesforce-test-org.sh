@@ -180,6 +180,9 @@ sf apex run \
 printf 'Running grouped aggregate OFFSET smoke test...\n'
 KYSOQL_TARGET_ORG="$SCRATCH_ALIAS" "$REPO_ROOT/scripts/run-salesforce-aggregate-offset-smoke.sh"
 
+printf 'Running generated-query Salesforce E2E suite...\n'
+KYSOQL_TARGET_ORG="$SCRATCH_ALIAS" "$REPO_ROOT/scripts/run-salesforce-generated-e2e.sh"
+
 printf 'Running fixture smoke test...\n'
 SMOKE_JSON="$(sf data query \
   --target-org "$SCRATCH_ALIAS" \

@@ -48,19 +48,17 @@ SQL escape hatch.
 
 ## Current baseline
 
-The accepted continuation baseline is through **`v1.0.137`**. In addition to the
-completed Kysely-neutral builder audit and bounded `FIELDS(ALL|CUSTOM)` alignment,
-root builders can now start ordinary `GROUP BY` without an aggregate selection,
-grouped queries reject custom relationship expressions using `__r`, and typed
-ordering prevents explicit null placement on nullable reference fields. Generated
-Data 360 DLO/DMO capability metadata drives typed literal `SET OPTIONS`, while a
-distinct compile-only `.dynamicApex()` context supports the managed dynamic-Apex
-`SET OPTIONS :queryOptions` form without widening the static `.apex()` surface.
-Grouped API queries also expose validated `OFFSET` after `GROUP BY`, with the
-scratch-org setup exercising a deterministic grouped aggregate-offset query. The
-current Salesforce Beta `FORMULA()` WHERE surface is available only through the
-explicit `eb.beta.formula(...)` namespace and structurally compiles typed field
-arithmetic without a raw formula-string escape hatch.
+The accepted continuation baseline is through **`v1.0.140`**. The researched
+feature roadmap is complete: direct non-aggregate grouping, grouped API `OFFSET`,
+typed Data 360 `SET OPTIONS`, managed dynamic-Apex query options, Beta `FORMULA()`
+filters, and pilot-namespaced relationship-subquery `OFFSET` are all represented at
+the documented safety boundary. The project is now in a hardening/release phase.
+
+The Salesforce fixture also has a generated-query E2E harness. `pnpm
+salesforce:e2e` builds `@kysoql/core`, compiles representative queries through the
+public builder, executes the generated SOQL against the authenticated fixture org,
+and asserts deterministic results. Keep this separate from `pnpm validate`
+because it requires Salesforce credentials and a live org.
 
 The implementation already covers the broad production SOQL surface:
 
@@ -121,17 +119,32 @@ Preserve these unless a change is explicitly justified:
 - use Valibot at real runtime/external boundaries, not for impossible internal
   AST states.
 
-## Remaining roadmap
+## Hardening and release roadmap
 
-No confirmed implementation items remain. Kysely parity and the researched SOQL
-surface are considered complete for the current scope. Add future items only for
-newly documented Salesforce syntax, a concrete correctness mismatch, or an
-explicit verification target.
+Do not restart feature expansion unless Salesforce documents new syntax or a
+concrete correctness gap is found. Work through these in order, combining only
+small, closely related fixes:
 
-The final non-GA item, relationship-subquery `OFFSET`, is intentionally available
-only through `subquery.pilot.offset(...)`; the compiler requires the immediate
-parent query to use a literal `LIMIT 1`. Salesforce still labels that syntax a
-pilot not intended for production.
+1. **Generated Salesforce E2E coverage.** The initial v1.0.140 harness executes
+   builder-generated record filters/order/pagination, child-to-parent and
+   parent-to-child relationships, direct `GROUP BY`, and grouped aggregates on the
+   deterministic scratch fixture. Extend this suite when later audits expose a
+   production-safe query family that the generic scratch org can exercise.
+2. **API/type consistency audit.** Check `clearX()` semantics, immutable cloning,
+   compiler-boundary validation versus fluent type restrictions, and transitions
+   across record, aggregate, `.apex()`, and `.dynamicApex()` builders. Add focused
+   regressions for every concrete mismatch found; do not refactor for style alone.
+3. **Compiler edge/fuzz coverage.** Exercise clause ordering, deeply nested
+   relationship queries, invalid/manual ASTs, literal escaping, empty containers,
+   bind and alias collisions, and repeated builder calls. Prefer deterministic
+   table-driven tests before introducing a fuzzing dependency.
+4. **Release cleanup.** Reconcile README examples with the actual public API,
+   remove stale roadmap language, consolidate handoff/research notes, run the full
+   local validation gate and live Salesforce E2E suite, then prepare the release.
+
+The non-GA relationship-subquery `OFFSET` remains intentionally namespaced behind
+`subquery.pilot.offset(...)`; the compiler requires the immediate parent query to
+use a literal `LIMIT 1`.
 
 ## Validation
 
@@ -159,6 +172,7 @@ print or commit credentials:
 
 ```bash
 pnpm salesforce:setup
+pnpm salesforce:e2e
 pnpm salesforce:schema -- \
   --object Account \
   --object Kysoql_Record__c \

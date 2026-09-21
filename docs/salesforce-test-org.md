@@ -50,8 +50,10 @@ The script safely performs the complete fixture setup:
    addition / substring expressions, query-result field access, and bound
    pagination;
 10. executes a grouped aggregate `LIMIT 2 OFFSET 1` query against the seeded
-    categories and verifies that the paged results are `Beta` and `Gamma`; and
-11. checks that all three custom fixture records are queryable, including their
+    categories and verifies that the paged results are `Beta` and `Gamma`;
+11. builds `@kysoql/core` and runs the generated-query E2E suite against the seeded
+    org; and
+12. checks that all three custom fixture records are queryable, including their
     parent Account relationship.
 
 Useful options:
@@ -198,6 +200,39 @@ Relationship-subquery `OFFSET` is intentionally not part of the generic scratch-
 setup. Salesforce still labels that syntax a pilot not intended for production, so
 a newly created fixture org cannot be assumed to have pilot eligibility or
 enablement. The core compiler tests enforce its documented parent `LIMIT 1` rule.
+
+### Run builder-generated E2E queries
+
+The setup command also executes SOQL compiled by kysoql itself instead of relying
+only on hand-written smoke strings. Re-run that suite against an existing fixture
+org with:
+
+```bash
+pnpm salesforce:e2e
+pnpm salesforce:e2e -- --target-org my-scratch-org
+# or
+KYSOQL_TARGET_ORG=my-scratch-org pnpm salesforce:e2e
+```
+
+The runner builds `@kysoql/core` first, then compiles and executes deterministic
+cases for:
+
+- scalar filtering, ordering, and `LIMIT`;
+- root `OFFSET` plus explicit null placement on a nullable scalar field;
+- child-to-parent relationship selection;
+- parent-to-child relationship subqueries;
+- direct non-aggregate `GROUP BY`; and
+- grouped aggregate selection.
+
+Each case is sent through the workspace-local `pnpm sf data query --json` command
+and asserts the seeded fixture shape. This catches mismatches between kysoql's
+compiler output and Salesforce's real parser/runtime that unit tests cannot.
+
+The generic fixture intentionally does not claim live coverage for org-dependent
+or non-production surfaces that cannot be enabled reliably in a fresh scratch org,
+including Data 360 DLO/DMO queries, managed-package-only dynamic Apex
+`Database.QueryOptions`, and the relationship-subquery `OFFSET` pilot. Static Apex
+bind grammar continues to be covered separately by `pnpm salesforce:apex-binds`.
 
 ## Smoke-test SOQL
 
