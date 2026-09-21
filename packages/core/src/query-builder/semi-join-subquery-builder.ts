@@ -145,6 +145,8 @@ export interface SemiJoinSubqueryBuilder<
 
   $if(condition: boolean, func: (qb: this) => this): this;
 
+  clearWhere(): this;
+
   select<SE extends string>(
     selection: SE &
       SemiJoinSelectionFieldName<DB, OuterTB, OuterReference, TB, SE>,
@@ -165,6 +167,8 @@ export interface SelectedSemiJoinSubqueryBuilder<
   $call<T>(func: (qb: this) => T): T;
 
   $if(condition: boolean, func: (qb: this) => this): this;
+
+  clearWhere(): this;
 }
 
 export interface SemiJoinQueryCreator<
@@ -213,6 +217,18 @@ class SemiJoinSubqueryBuilderImpl<
 
   $if(condition: boolean, func: (qb: this) => this): this {
     return condition ? func(this) : this;
+  }
+
+  clearWhere(): this {
+    return new SemiJoinSubqueryBuilderImpl<
+      DB,
+      OuterTB,
+      OuterReference,
+      TB
+    >({
+      ...this.#props,
+      queryNode: QueryNode.cloneWithoutWhere(this.#props.queryNode),
+    }) as this;
   }
 
   select<SE extends string>(

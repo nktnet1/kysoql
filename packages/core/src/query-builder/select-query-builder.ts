@@ -215,6 +215,8 @@ export interface SelectQueryBuilder<
     func: (qb: this) => SelectQueryBuilder<DB, TB, O & O2, Mode>,
   ): SelectQueryBuilder<DB, TB, ConditionalOutput<O, O2>, Mode>;
 
+  clearWhere(): SelectQueryBuilder<DB, TB, O, Mode>;
+
   compile(): CompiledQuery<O>;
 
   execute(): Promise<readonly O[]>;
@@ -421,6 +423,13 @@ class SelectQueryBuilderImpl<
       ConditionalOutput<O, O2>,
       Mode
     >;
+  }
+
+  clearWhere(): SelectQueryBuilder<DB, TB, O, Mode> {
+    return new SelectQueryBuilderImpl<DB, TB, O, Mode>({
+      ...this.#props,
+      queryNode: QueryNode.cloneWithoutWhere(this.#props.queryNode),
+    });
   }
 
   compile(): CompiledQuery<O> {

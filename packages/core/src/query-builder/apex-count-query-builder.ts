@@ -35,6 +35,8 @@ export interface ApexCountQueryBuilder<DB, TB extends keyof DB> {
 
   $if(condition: boolean, func: (qb: this) => this): this;
 
+  clearWhere(): ApexCountQueryBuilder<DB, TB>;
+
   compile(): CompiledQuery<number>;
 
   allRows(): ApexCountQueryBuilder<DB, TB>;
@@ -81,6 +83,13 @@ class ApexCountQueryBuilderImpl<DB, TB extends keyof DB>
 
   $if(condition: boolean, func: (qb: this) => this): this {
     return condition ? func(this) : this;
+  }
+
+  clearWhere(): ApexCountQueryBuilder<DB, TB> {
+    return new ApexCountQueryBuilderImpl<DB, TB>({
+      ...this.#props,
+      queryNode: QueryNode.cloneWithoutWhere(this.#props.queryNode),
+    });
   }
 
   compile(): CompiledQuery<number> {

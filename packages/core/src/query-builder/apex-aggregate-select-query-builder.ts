@@ -36,6 +36,8 @@ export interface ApexAggregateSelectQueryBuilder<DB, TB extends keyof DB, O> {
 
   $if(condition: boolean, func: (qb: this) => this): this;
 
+  clearWhere(): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+
   compile(): CompiledQuery<O>;
 
   allRows(): ApexAggregateSelectQueryBuilder<DB, TB, O>;
@@ -86,6 +88,13 @@ class ApexAggregateSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
 
   $if(condition: boolean, func: (qb: this) => this): this {
     return condition ? func(this) : this;
+  }
+
+  clearWhere(): ApexAggregateSelectQueryBuilder<DB, TB, O> {
+    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O>({
+      ...this.#props,
+      queryNode: QueryNode.cloneWithoutWhere(this.#props.queryNode),
+    });
   }
 
   compile(): CompiledQuery<O> {

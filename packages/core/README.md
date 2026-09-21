@@ -36,7 +36,8 @@ callback result. `$if` calls its callback only when the condition is true;
 ordinary fields selected inside it become optional in the inferred result type.
 Structural SOQL modes must remain unchanged across the two branches. These
 helpers are available on record, aggregate, count, Apex, relationship-subquery,
-and semi-join builders:
+and semi-join builders. Every builder that exposes `.where(...)` also exposes
+`.clearWhere()` to remove all accumulated filters immutably:
 
 ```ts
 const activeAccounts = db
@@ -44,6 +45,8 @@ const activeAccounts = db
   .select("Id")
   .$call((qb) => qb.where("Name", "like", "Acme%"))
   .$if(includeName, (qb) => qb.select("Name"));
+
+const allAccounts = activeAccounts.clearWhere();
 
 const soql = activeAccounts.$call((qb) => qb.compile().soql);
 // Result rows: { Id: string; Name?: string | null }

@@ -338,6 +338,15 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  clearWhere(): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
   compile(): CompiledQuery<O>;
 
   execute(): Promise<readonly O[]>;
@@ -786,6 +795,27 @@ class AggregateSelectQueryBuilderImpl<
       GroupMode,
       AdvancedFieldCount
     >;
+  }
+
+  clearWhere(): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({
+      ...this.#props,
+      queryNode: QueryNode.cloneWithoutWhere(this.#props.queryNode),
+    });
   }
 
   compile(): CompiledQuery<O> {

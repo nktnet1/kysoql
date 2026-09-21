@@ -144,7 +144,9 @@ aggregate, count, Apex, relationship-subquery, and semi-join builders. `$call`
 passes the current specialised builder to a callback and returns the callback
 result unchanged. `$if` invokes its callback only when the condition is true;
 ordinary selections added inside `$if` become optional in the inferred result
-shape. Structural SOQL modes must remain the same on both branches.
+shape. Structural SOQL modes must remain the same on both branches. Builders that
+support `.where(...)` also support `.clearWhere()` to remove all accumulated
+filters without mutating the earlier builder.
 
 Selected fields, filterable fields, filter values, and operators are checked from
 the generated Salesforce schema. Equality (`=`, `!=`), ordered comparisons

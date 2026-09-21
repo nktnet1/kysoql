@@ -27,10 +27,11 @@ Settled findings:
 - Repeated `orderBy()` calls are additive and preserve call order.
 - Current Kysely exposes neutral builder helpers such as `$call`, `$if`, and
   clause-clearing methods (`clearWhere`, `clearOrderBy`, `clearLimit`,
-  `clearOffset`, `clearSelect`, and `clearGroupBy`). Kysoql matches `$call` and
-  `$if` across its query-builder modes; `$if` keeps newly selected output fields
-  optional and does not allow a true-only structural mode transition to masquerade
-  as unconditional state. The clearing helpers remain parity-audit candidates.
+  `clearOffset`, `clearSelect`, and `clearGroupBy`). Kysoql matches `$call`, `$if`,
+  and `clearWhere` across the applicable query-builder modes; `$if` keeps newly
+  selected output fields optional and does not allow a true-only structural mode
+  transition to masquerade as unconditional state. The remaining clearing helpers
+  stay parity-audit candidates.
 - Lowercase builder spelling such as `asc` / `desc` is appropriate even when the
   compiler emits uppercase database syntax.
 - Kysoql should follow these conventions only where they map naturally to SOQL.

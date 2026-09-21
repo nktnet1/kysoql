@@ -171,6 +171,15 @@ export interface RelationshipSubqueryBuilder<
     ApexMode
   >;
 
+  clearWhere(): RelationshipSubqueryBuilder<
+    DB,
+    TB,
+    O,
+    Depth,
+    FunctionMode,
+    ApexMode
+  >;
+
   limit(
     limit: number,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
@@ -355,6 +364,27 @@ class RelationshipSubqueryBuilderImpl<
       FunctionMode,
       ApexMode
     >;
+  }
+
+  clearWhere(): RelationshipSubqueryBuilder<
+    DB,
+    TB,
+    O,
+    Depth,
+    FunctionMode,
+    ApexMode
+  > {
+    return new RelationshipSubqueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      Depth,
+      FunctionMode,
+      ApexMode
+    >({
+      ...this.#props,
+      queryNode: QueryNode.cloneWithoutWhere(this.#props.queryNode),
+    });
   }
 
   limit(

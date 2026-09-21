@@ -79,6 +79,9 @@ version is cut.
   surfaces, with callbacks invoked only for true conditions, conditionally selected
   fields reflected as optional output properties, and structural builder modes kept
   stable across both branches.
+- Kysely-style `clearWhere()` across every builder surface that exposes `where()`,
+  removing the complete accumulated `WHERE` clause while preserving immutable
+  builder state and specialised query modes.
 - Typed SOQL `toLabel()` predicates in ordinary `WHERE` expression callbacks,
   with generated filterable picklist/multipicklist metadata, translated-string
   operands, nullability-aware equality, picklist `LIKE`, child-to-parent paths,

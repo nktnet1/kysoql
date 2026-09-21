@@ -51,6 +51,8 @@ export interface CountQueryBuilder<DB, TB extends keyof DB> {
 
   $if(condition: boolean, func: (qb: this) => this): this;
 
+  clearWhere(): CountQueryBuilder<DB, TB>;
+
   compile(): CompiledQuery<number>;
 
   execute(): Promise<number>;
@@ -130,6 +132,13 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
 
   $if(condition: boolean, func: (qb: this) => this): this {
     return condition ? func(this) : this;
+  }
+
+  clearWhere(): CountQueryBuilder<DB, TB> {
+    return new CountQueryBuilderImpl<DB, TB>({
+      ...this.#props,
+      queryNode: QueryNode.cloneWithoutWhere(this.#props.queryNode),
+    });
   }
 
   compile(): CompiledQuery<number> {

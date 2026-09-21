@@ -13,4 +13,10 @@ export const QueryNode = {
         : WhereNode.create(operation),
     }) as T;
   },
+
+  cloneWithoutWhere<T extends HasWhere>(node: T): T {
+    const { where: _where, ...withoutWhere } = node;
+
+    return freeze(withoutWhere) as T;
+  },
 };

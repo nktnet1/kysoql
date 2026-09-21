@@ -81,6 +81,8 @@ export interface ApexSelectQueryBuilder<
     func: (qb: this) => ApexSelectQueryBuilder<DB, TB, O & O2, Mode>,
   ): ApexSelectQueryBuilder<DB, TB, ConditionalOutput<O, O2>, Mode>;
 
+  clearWhere(): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+
   compile(): CompiledQuery<O>;
 
   allRows(): ApexSelectQueryBuilder<DB, TB, O, Mode>;
@@ -180,6 +182,13 @@ class ApexSelectQueryBuilderImpl<
       ConditionalOutput<O, O2>,
       Mode
     >;
+  }
+
+  clearWhere(): ApexSelectQueryBuilder<DB, TB, O, Mode> {
+    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode>({
+      ...this.#props,
+      queryNode: QueryNode.cloneWithoutWhere(this.#props.queryNode),
+    });
   }
 
   compile(): CompiledQuery<O> {
