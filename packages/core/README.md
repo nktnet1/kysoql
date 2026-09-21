@@ -30,6 +30,25 @@ const query = db
 const compiled = query.compile();
 ```
 
+Multi-currency `WHERE` comparisons can use structured ISO-coded literals through
+`soqlCurrency(code, value)`. The ISO code must be three uppercase ASCII letters;
+whether that code is active remains Salesforce-org runtime state. `IN` / `NOT IN`
+lists can use either ISO-coded literals or ordinary numeric values, but Salesforce
+does not allow the two forms to be mixed in one list:
+
+```ts
+import { soqlCurrency } from "@kysoql/core";
+
+const opportunities = db
+  .selectFrom("Opportunity")
+  .select(["Id", "Amount"])
+  .where("Amount", ">", soqlCurrency("USD", 5000))
+  .where("Amount", "in", [
+    soqlCurrency("USD", 5000),
+    soqlCurrency("EUR", 4500),
+  ]);
+```
+
 Date functions are available in ordinary `WHERE` callbacks without requiring a
 grouped query. Inputs are restricted to generated filterable `date` / `datetime`
 fields, `dayOnly()` and `hourInDay()` remain datetime-only, and

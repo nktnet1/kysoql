@@ -65,6 +65,9 @@ version is cut.
 - Typed SOQL date-function predicates in ordinary `WHERE` expression callbacks,
   including all thirteen calendar/fiscal functions, filterable date/datetime
   metadata gating, set/ordered operand typing, and `convertTimezone()` composition.
+- Structured ISO-coded currency literals through `soqlCurrency(...)` for typed
+  currency `WHERE` comparisons, including homogeneous `IN` / `NOT IN` list
+  enforcement and exclusion from aggregate `HAVING` comparisons.
 - Typed SOQL `toLabel()` predicates in ordinary `WHERE` expression callbacks,
   with generated filterable picklist/multipicklist metadata, translated-string
   operands, nullability-aware equality, picklist `LIKE`, child-to-parent paths,

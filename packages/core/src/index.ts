@@ -188,6 +188,10 @@ export { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
 export type { QueryCompiler } from "#/query-compiler/query-compiler";
 export { QueryCreator, type QueryCreatorConfig } from "#/query-creator";
 export type { QueryExecutor } from "#/query-executor";
+export {
+  type SoqlCurrencyLiteral,
+  soqlCurrency,
+} from "#/soql-currency-literal";
 export type {
   SalesforceChildRelationship,
   SalesforceField,

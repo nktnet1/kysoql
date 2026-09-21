@@ -138,6 +138,7 @@ import {
   type SemiJoinSubqueryNode,
   type SetComparisonOperator,
   type SObjectNode,
+  type SoqlCurrencyLiteral,
   type SoqlDateLiteral,
   type SoqlDateTimeLiteral,
   type SoqlRelativeDateFamily,
@@ -145,6 +146,7 @@ import {
   type SoqlRelativeDateValue,
   type SoqlTemporalLiteral,
   type SoqlTimeLiteral,
+  soqlCurrency,
   soqlDate,
   soqlDateTime,
   soqlRelativeDate,
@@ -363,6 +365,7 @@ type PublicTypeSurface = {
   orderByNode: OrderByNode;
   orderedComparisonOperator: OrderedComparisonOperator;
   setComparisonOperator: SetComparisonOperator;
+  soqlCurrencyLiteral: SoqlCurrencyLiteral;
   queryCompiler: QueryCompiler;
   queryCreatorConfig: QueryCreatorConfig;
   queryExecutor: QueryExecutor;
@@ -540,6 +543,7 @@ describe("@kysoql/core public API", () => {
     expect(DefaultQueryCompiler).toBeTypeOf("function");
     expect(apexBind).toBeTypeOf("function");
     expect(apexQueryField).toBeTypeOf("function");
+    expect(soqlCurrency).toBeTypeOf("function");
     expect(soqlDate).toBeTypeOf("function");
     expect(soqlDateTime).toBeTypeOf("function");
     expect(soqlRelativeDate).toBeTypeOf("function");

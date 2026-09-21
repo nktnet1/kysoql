@@ -506,7 +506,7 @@ export interface AggregateSelectQueryBuilder<
   having<
     RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
-    RHS extends OperandValueExpression<DB, TB, RE, NoInfer<OP>, false>,
+    RHS extends OperandValueExpression<DB, TB, RE, NoInfer<OP>, false, false>,
   >(
     lhs: RE &
       GroupedOnly<GroupedBy, GroupedHavingFieldName<DB, TB, GroupedBy, RE>>,
@@ -1127,7 +1127,7 @@ class AggregateSelectQueryBuilderImpl<
   having<
     RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
-    RHS extends OperandValueExpression<DB, TB, RE, NoInfer<OP>, false>,
+    RHS extends OperandValueExpression<DB, TB, RE, NoInfer<OP>, false, false>,
   >(
     lhs: RE &
       GroupedOnly<GroupedBy, GroupedHavingFieldName<DB, TB, GroupedBy, RE>>,

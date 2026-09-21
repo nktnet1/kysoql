@@ -78,6 +78,7 @@ export interface HavingExpressionBuilder<
       TB,
       Reference,
       NoInfer<Operator>,
+      false,
       false
     >,
   >(

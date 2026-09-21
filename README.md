@@ -150,7 +150,10 @@ Calls are additive, and directions use Kysely-style lowercase `asc` / `desc`
 while the compiler emits SOQL `ASC` / `DESC`. Omitting the direction uses
 Salesforce's default ascending order. `.limit(n)` accepts non-negative safe
 integers, including `0`; repeated calls replace the previous limit instead of
-emitting multiple `LIMIT` clauses.
+emitting multiple `LIMIT` clauses. Multi-currency fields also accept structured
+`soqlCurrency("USD", 5000)` filter literals in `WHERE`; ISO-coded `IN` / `NOT IN`
+lists are kept homogeneous with Salesforce's rule that they cannot be mixed with
+bare numeric values.
 
 Generated standard/custom metadata also enables typed `FIELDS(STANDARD)`,
 `FIELDS(CUSTOM)`, and `FIELDS(ALL)` selections on root queries and relationship

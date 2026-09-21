@@ -61,6 +61,7 @@ import { validateTypeOfSelections } from "#/parser/type-of-parser";
 import { validateUserProfileFeedQuery } from "#/parser/user-profile-feed-parser";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
+import { isSoqlCurrencyLiteral } from "#/soql-currency-literal";
 import { isSoqlRelativeDateLiteral } from "#/soql-relative-date-literal";
 import { isSoqlTemporalLiteral } from "#/soql-temporal-literal";
 import { freeze } from "#/util/object-utils";
@@ -561,6 +562,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
     if (isSoqlTemporalLiteral(value) || isSoqlRelativeDateLiteral(value)) {
       return value.value;
+    }
+
+    if (isSoqlCurrencyLiteral(value)) {
+      return `${value.isoCode}${this.#compileNumericLiteral(value.value)}`;
     }
 
     switch (typeof value) {

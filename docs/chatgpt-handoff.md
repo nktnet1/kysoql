@@ -48,8 +48,9 @@ SQL escape hatch.
 
 ## Current baseline
 
-The accepted continuation baseline is through **`v1.0.120`**, which adds
-Apex-only `ALL ROWS` while keeping API QueryAll execution separate.
+The accepted continuation baseline is through **`v1.0.122`**, which adds
+structured ISO-coded currency literals for `WHERE` filters on top of the Apex
+`ALL ROWS` and documentation-pruning patches.
 
 The implementation already covers the broad production SOQL surface:
 
@@ -58,8 +59,8 @@ The implementation already covers the broad production SOQL surface:
 - generated filterable, sortable, groupable, aggregatable, custom, picklist,
   polymorphic-reference, relationship, scope, MRU, and data-category metadata;
 - typed scalar filtering, grouped boolean expressions, `IN` / `NOT IN`,
-  multipicklist `INCLUDES` / `EXCLUDES`, temporal literals, and relative-date
-  literals;
+  multipicklist `INCLUDES` / `EXCLUDES`, temporal/relative-date literals, and
+  ISO-coded multi-currency `WHERE` literals;
 - child-to-parent traversal, parent-to-child relationship subqueries, semi-joins,
   anti-joins, relationship-count limits, and polymorphic `.Type` qualifiers;
 - `TYPEOF` with generated target typing and its SOQL compatibility restrictions;
@@ -116,19 +117,15 @@ closed.
    `WITH` filtering form with typed parameters such as `maxDescriptorPerRecord`,
    `supportsDomains`, and `supportsDelegates`. The current builder has no surface
    for it; model it as structured syntax rather than a generic free-form `WITH` clause.
-2. **ISO-coded currency literals in `WHERE`.** Salesforce supports currency
-   comparisons such as `Amount > USD5000` in multi-currency orgs. `IN` lists
-   cannot mix ISO-coded and bare numeric values. Add this as a structured typed
-   literal rather than accepting raw strings.
-3. **`FORMULA()` in `WHERE` (beta).** Salesforce currently documents arithmetic
+2. **`FORMULA()` in `WHERE` (beta).** Salesforce currently documents arithmetic
    `FORMULA()` predicates for supported numeric/date/currency field pairs using
    `+` / `-`. Treat this as opt-in beta surface and model it structurally if the
    project chooses to support beta SOQL; do not expose raw formula text.
-4. **Relationship-subquery `OFFSET` pilot.** Salesforce documents subquery
+3. **Relationship-subquery `OFFSET` pilot.** Salesforce documents subquery
    `OFFSET` only when the parent query has `LIMIT 1`, and still labels the feature
    pilot/not for production. Keep it omitted unless Salesforce promotes it to a
    production-supported feature or the project explicitly opts into pilot syntax.
-5. **Kysely-neutral builder ergonomics.** Current Kysely exposes helpers such as
+4. **Kysely-neutral builder ergonomics.** Current Kysely exposes helpers such as
    `$if`, `$call`, `clearWhere`, `clearOrderBy`, `clearLimit`, `clearOffset`,
    `clearSelect`, and `clearGroupBy`; kysoql currently does not. Audit these as
    potential unnecessary deviations and add only helpers whose semantics remain

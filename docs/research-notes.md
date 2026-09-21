@@ -94,9 +94,11 @@ Settled findings:
   temporal values can stay strings while input literals use typed wrappers.
 - Relative-date literals are unquoted tokens and include fixed and parameterized
   calendar/fiscal families.
-- Multi-currency orgs support ISO-coded numeric filter literals such as
-  `USD5000`. Bare numeric values retain Salesforce's normal comparison semantics.
-  `IN` lists cannot mix ISO-coded and non-ISO values.
+- Multi-currency orgs support ISO-coded numeric `WHERE` literals such as
+  `USD5000`. Kysoql models these through `soqlCurrency(code, value)` only for
+  generated currency fields. Bare numeric values retain Salesforce's normal
+  comparison semantics, and `IN` / `NOT IN` lists cannot mix ISO-coded and
+  non-ISO values. ISO-coded values remain excluded from aggregate `HAVING`.
 
 ### ORDER BY, LIMIT, and OFFSET
 
@@ -339,20 +341,6 @@ Confirmed gap:
 - Add a typed, structured `WITH RecordVisibilityContext` surface.
 - Require at least one documented parameter and validate numeric/boolean values.
 - Do not generalize the implementation into a raw `WITH` escape hatch.
-
-### ISO-coded currency literals
-
-Source:
-
-- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-querying-currency-fields.html
-
-Confirmed gap:
-
-- Model `ISO_CODE + numeric value` as a structured typed currency filter literal.
-- Preserve Salesforce's rule that an `IN` list cannot mix ISO-coded and bare
-  numeric values.
-- Do not model `convertCurrency()` in `WHERE`; Salesforce explicitly directs
-  filters to ISO-coded literals instead.
 
 ### `FORMULA()` in `WHERE` (beta)
 

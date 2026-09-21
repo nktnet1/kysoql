@@ -20,6 +20,10 @@ import type {
   SemiJoinSubqueryFactory,
 } from "#/query-builder/semi-join-subquery-builder";
 import type { SalesforceField, SalesforceFieldFilterValue } from "#/schema";
+import {
+  isSoqlCurrencyLiteral,
+  type SoqlCurrencyLiteral,
+} from "#/soql-currency-literal";
 
 export type FilterableFieldName<
   DB,
@@ -133,11 +137,37 @@ export type ComparisonOperatorExpression<
     ? never
     : ScalarComparisonOperatorExpression<DB, TB, RE>;
 
-type FieldValueExpression<
+type BaseFieldValueExpression<
   DB,
   TB extends keyof DB,
   RE extends string,
 > = SalesforceFieldFilterValue<FieldReferenceDefinition<DB, TB, RE>>;
+
+type FieldValueExpression<
+  DB,
+  TB extends keyof DB,
+  RE extends string,
+  AllowCurrencyLiteral extends boolean,
+> =
+  | BaseFieldValueExpression<DB, TB, RE>
+  | (AllowCurrencyLiteral extends true
+      ? SalesforceTypeOfField<DB, TB, RE> extends "currency"
+        ? SoqlCurrencyLiteral
+        : never
+      : never);
+
+type SetValueListExpression<
+  DB,
+  TB extends keyof DB,
+  RE extends string,
+  AllowCurrencyLiteral extends boolean,
+> = SalesforceTypeOfField<DB, TB, RE> extends "currency"
+  ? AllowCurrencyLiteral extends true
+    ?
+        | readonly BaseFieldValueExpression<DB, TB, RE>[]
+        | readonly SoqlCurrencyLiteral[]
+    : readonly BaseFieldValueExpression<DB, TB, RE>[]
+  : readonly FieldValueExpression<DB, TB, RE, AllowCurrencyLiteral>[];
 
 export type OperandValueExpression<
   DB,
@@ -145,15 +175,19 @@ export type OperandValueExpression<
   RE extends string,
   OP extends ComparisonOperatorExpression<DB, TB, RE>,
   AllowSemiJoin extends boolean = true,
+  AllowCurrencyLiteral extends boolean = true,
 > = OP extends LikeComparisonOperator
   ? SalesforceTypeOfField<DB, TB, RE> extends "polymorphicType"
     ? string
-    : Extract<NonNullable<FieldValueExpression<DB, TB, RE>>, string>
+    : Extract<
+        NonNullable<FieldValueExpression<DB, TB, RE, AllowCurrencyLiteral>>,
+        string
+      >
   : OP extends OrderedComparisonOperator
-    ? NonNullable<FieldValueExpression<DB, TB, RE>>
+    ? NonNullable<FieldValueExpression<DB, TB, RE, AllowCurrencyLiteral>>
     : OP extends SetComparisonOperator
       ?
-          | readonly FieldValueExpression<DB, TB, RE>[]
+          | SetValueListExpression<DB, TB, RE, AllowCurrencyLiteral>
           | (AllowSemiJoin extends true
               ? RE extends SemiJoinOperandFieldName<DB, TB, RE>
                 ? SemiJoinSubqueryFactory<DB, TB, RE>
@@ -161,12 +195,14 @@ export type OperandValueExpression<
               : never)
       : OP extends MultiSelectComparisonOperator
         ? readonly ActivePicklistValueOfField<DB, TB, RE>[]
-        : FieldValueExpression<DB, TB, RE>;
+        : FieldValueExpression<DB, TB, RE, AllowCurrencyLiteral>;
 
 const SET_VALUE_LIST_ERROR =
   "SOQL IN/NOT IN value lists must contain at least one value.";
 const MULTISELECT_VALUE_LIST_ERROR =
   "SOQL INCLUDES/EXCLUDES value lists must contain at least one value.";
+const MIXED_CURRENCY_VALUE_LIST_ERROR =
+  "SOQL IN/NOT IN currency value lists cannot mix ISO-coded and non-ISO values.";
 
 export function parseValueBinaryOperation(
   left: string,
@@ -215,6 +251,19 @@ function parseValueList(
 
   if (!result.success) {
     throw new TypeError(error);
+  }
+
+  if (operator === "in" || operator === "not in") {
+    const containsIsoCodedCurrency = result.output.some(
+      isSoqlCurrencyLiteral,
+    );
+
+    if (
+      containsIsoCodedCurrency &&
+      result.output.some((item) => !isSoqlCurrencyLiteral(item))
+    ) {
+      throw new TypeError(MIXED_CURRENCY_VALUE_LIST_ERROR);
+    }
   }
 
   return ValueListNode.create(result.output);
