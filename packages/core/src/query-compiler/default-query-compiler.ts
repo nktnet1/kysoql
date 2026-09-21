@@ -61,8 +61,11 @@ import { validateGroupByQuery } from "#/parser/group-by-parser";
 import { validateKnowledgeUpdateQuery } from "#/parser/knowledge-update-parser";
 import { validateObjectQueryLimits } from "#/parser/object-query-limit-parser";
 import { validateRecordVisibilityContextQuery } from "#/parser/record-visibility-context-parser";
+import {
+  validateRelationshipQueryLimits,
+  validateRelationshipSubqueryOffsets,
+} from "#/parser/relationship-query-limit-parser";
 import { validateSetOptionsQuery } from "#/parser/set-options-parser";
-import { validateRelationshipQueryLimits } from "#/parser/relationship-query-limit-parser";
 import { validateTypeOfSelections } from "#/parser/type-of-parser";
 import { validateUserProfileFeedQuery } from "#/parser/user-profile-feed-parser";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
@@ -114,6 +117,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
     validateRecordVisibilityContextQuery(query);
     validateUserProfileFeedQuery(query);
     validateRelationshipQueryLimits(query);
+    validateRelationshipSubqueryOffsets(query);
     validateObjectQueryLimits(query);
     validateSetOptionsQuery(
       query,
@@ -272,6 +276,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
     if (query.limit) {
       soql += ` LIMIT ${this.#compileLimit(query.limit)}`;
+    }
+
+    if (query.offset) {
+      soql += ` OFFSET ${this.#compileOffset(query.offset)}`;
     }
 
     return soql;

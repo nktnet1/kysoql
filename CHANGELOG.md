@@ -106,6 +106,10 @@ version is cut.
   `GROUP BY`, sharing the existing `0..2000` validation with record queries; the
   Salesforce scratch-org setup also runs a deterministic grouped aggregate
   `OFFSET` smoke query against the live org.
+- Explicit pilot-only relationship-subquery `OFFSET` through
+  `subquery.pilot.offset(...)`, with shared `0..2000` validation, immutable
+  `pilot.clearOffset()`, recursive compiler enforcement that the immediate parent
+  query uses a literal `LIMIT 1`, and no ordinary production-surface `.offset()`.
 - Typed SOQL `toLabel()` predicates in ordinary `WHERE` expression callbacks,
   with generated filterable picklist/multipicklist metadata, translated-string
   operands, nullability-aware equality, picklist `LIKE`, child-to-parent paths,

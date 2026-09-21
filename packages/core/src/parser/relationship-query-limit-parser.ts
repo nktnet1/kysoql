@@ -27,6 +27,9 @@ const PARENT_TO_CHILD_RELATIONSHIP_ERROR =
 const CHILD_TO_PARENT_RELATIONSHIP_ERROR =
   "SOQL queries can specify no more than 55 child-to-parent relationships.";
 
+const RELATIONSHIP_SUBQUERY_OFFSET_PARENT_LIMIT_ERROR =
+  "SOQL relationship-subquery OFFSET pilot requires the immediate parent query to use a literal LIMIT 1.";
+
 interface RelationshipCounts {
   readonly parentToChild: Set<string>;
   readonly childToParent: Set<string>;
@@ -264,6 +267,45 @@ const guaranteesSingleRootRecordById = (node: OperationNode): boolean => {
     binary.operator.kind === "OperatorNode" &&
     (binary.operator as OperatorNode).operator === "="
   );
+};
+
+type RelationshipSubqueryParentLimit =
+  | SelectQueryNode["limit"]
+  | RelationshipSubqueryNode["limit"];
+
+// A bound Apex LIMIT could evaluate to 1 at runtime, but that cannot be proven
+// while compiling. Keep this pilot boundary intentionally stricter and require
+// the documented parent LIMIT 1 to be a literal.
+const hasLiteralLimitOne = (
+  limit: RelationshipSubqueryParentLimit,
+): boolean => limit?.limit === 1;
+
+const validateRelationshipSubqueryOffsetSelections = (
+  selections: ReadonlyArray<SelectionNode> | undefined,
+  parentLimit: RelationshipSubqueryParentLimit,
+): void => {
+  for (const selection of selections ?? []) {
+    if (selection.selection.kind !== "RelationshipSubqueryNode") {
+      continue;
+    }
+
+    const subquery = selection.selection as RelationshipSubqueryNode;
+
+    if (subquery.offset && !hasLiteralLimitOne(parentLimit)) {
+      throw new TypeError(RELATIONSHIP_SUBQUERY_OFFSET_PARENT_LIMIT_ERROR);
+    }
+
+    validateRelationshipSubqueryOffsetSelections(
+      subquery.selections,
+      subquery.limit,
+    );
+  }
+};
+
+export const validateRelationshipSubqueryOffsets = (
+  query: SelectQueryNode,
+): void => {
+  validateRelationshipSubqueryOffsetSelections(query.selections, query.limit);
 };
 
 export const validateRelationshipQueryLimits = (

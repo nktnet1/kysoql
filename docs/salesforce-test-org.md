@@ -194,6 +194,11 @@ OFFSET 1`, and asserts that Salesforce returns `Beta` and `Gamma`. This keeps th
 normal API aggregate builder's `OFFSET` support tied to a real-org regression
 rather than compiler output alone.
 
+Relationship-subquery `OFFSET` is intentionally not part of the generic scratch-org
+setup. Salesforce still labels that syntax a pilot not intended for production, so
+a newly created fixture org cannot be assumed to have pilot eligibility or
+enablement. The core compiler tests enforce its documented parent `LIMIT 1` rule.
+
 ## Smoke-test SOQL
 
 A basic custom-object query:

@@ -126,6 +126,8 @@ Settled findings:
   REST, SOAP, and Apex query contexts.
 - Parent-to-child subquery `OFFSET` is allowed only when the parent has `LIMIT 1`
   and remains a pilot feature that Salesforce says is not intended for production.
+  Kysoql exposes it only as `subquery.pilot.offset(...)`, and the compiler requires
+  a literal `LIMIT 1` on the immediate parent query.
 - For reliable pagination of a changing/large result set, query locators are
   preferable to repeated `OFFSET` queries.
 
@@ -420,19 +422,25 @@ Confirmed current documentation:
 
 ## Remaining research targets
 
-These correspond to the active roadmap in `docs/chatgpt-handoff.md`; do not grow
-this into a speculative backlog.
+No active research targets remain. Keep this section empty unless a future
+Salesforce release introduces newly documented syntax or an existing behaviour
+needs live-org verification.
 
-### Relationship-subquery `OFFSET` pilot
+### Closed: relationship-subquery `OFFSET` pilot
 
 Source:
 
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-offset.html
 
-Confirmed current documentation:
+Confirmed current documentation and implementation boundary:
 
 - A parent-to-child subquery may use `OFFSET` only when the parent query has
   `LIMIT 1`.
 - Salesforce still labels this a pilot feature not intended for production.
-- Keep production-safe builders without this method unless that status changes or
-  the project explicitly chooses to expose pilot syntax.
+- Kysoql exposes the feature only through `subquery.pilot.offset(...)`; ordinary
+  relationship builders still have no `.offset()` method.
+- The compiler requires a literal `LIMIT 1` on the immediate parent, including
+  nested relationship-query scopes, and the shared offset parser retains the
+  `0..2000` bound.
+- The generic scratch-org setup does not execute this pilot syntax because org
+  eligibility/enablement cannot be assumed.

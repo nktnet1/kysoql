@@ -1,4 +1,5 @@
 import type { LimitNode } from "#/operation-node/limit-node";
+import type { OffsetNode } from "#/operation-node/offset-node";
 import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import { OrderByNode } from "#/operation-node/order-by-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
@@ -13,6 +14,7 @@ export interface RelationshipSubqueryNode {
   readonly where?: WhereNode;
   readonly orderBy?: OrderByNode;
   readonly limit?: LimitNode;
+  readonly offset?: OffsetNode;
 }
 
 export const RelationshipSubqueryNode = {
@@ -59,6 +61,24 @@ export const RelationshipSubqueryNode = {
     const { limit: _limit, ...withoutLimit } = subquery;
 
     return freeze(withoutLimit);
+  },
+
+  cloneWithOffset(
+    subquery: RelationshipSubqueryNode,
+    offset: OffsetNode,
+  ): RelationshipSubqueryNode {
+    return freeze({
+      ...subquery,
+      offset,
+    });
+  },
+
+  cloneWithoutOffset(
+    subquery: RelationshipSubqueryNode,
+  ): RelationshipSubqueryNode {
+    const { offset: _offset, ...withoutOffset } = subquery;
+
+    return freeze(withoutOffset);
   },
 
   cloneWithOrderByItems(

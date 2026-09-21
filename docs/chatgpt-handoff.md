@@ -123,15 +123,15 @@ Preserve these unless a change is explicitly justified:
 
 ## Remaining roadmap
 
-Keep this list limited to confirmed missing/documented surface, a concrete
-correctness mismatch, or an explicit verification target. Remove an item when it
-is implemented or deliberately closed. Kysely parity is otherwise considered
-complete.
+No confirmed implementation items remain. Kysely parity and the researched SOQL
+surface are considered complete for the current scope. Add future items only for
+newly documented Salesforce syntax, a concrete correctness mismatch, or an
+explicit verification target.
 
-1. **Relationship-subquery `OFFSET` pilot.** Salesforce permits it only when the
-   parent has `LIMIT 1` and still says the feature is not intended for
-   production. Keep it omitted unless its status changes or pilot syntax is
-   explicitly enabled.
+The final non-GA item, relationship-subquery `OFFSET`, is intentionally available
+only through `subquery.pilot.offset(...)`; the compiler requires the immediate
+parent query to use a literal `LIMIT 1`. Salesforce still labels that syntax a
+pilot not intended for production.
 
 ## Validation
 

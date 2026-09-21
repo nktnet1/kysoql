@@ -115,6 +115,7 @@ import {
   type ReferenceNode,
   type RelationshipSubqueryBuilder,
   type RelationshipSubqueryNode,
+  type RelationshipSubqueryPilotModule,
   type SalesforceChildRelationship,
   type SalesforceField,
   type SalesforceFieldCustom,
@@ -416,6 +417,11 @@ type PublicTypeSurface = {
     Record<string, never>
   >;
   relationshipSubqueryNode: RelationshipSubqueryNode;
+  relationshipSubqueryPilotModule: RelationshipSubqueryPilotModule<
+    Record<string, never>,
+    never,
+    Record<string, never>
+  >;
   salesforceChildRelationship: SalesforceChildRelationship<"Child", "Parent">;
   salesforceField: SalesforceField<string, "string", false, true, true, true>;
   salesforceFieldCustom: SalesforceFieldCustom<

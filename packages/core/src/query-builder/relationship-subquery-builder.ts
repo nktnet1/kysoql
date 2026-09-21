@@ -43,6 +43,7 @@ import {
   parseFieldsSelection,
 } from "#/parser/fields-selection-parser";
 import { parseLimit } from "#/parser/limit-parser";
+import { parseOffset } from "#/parser/offset-parser";
 import {
   type OrderByNullsForReference,
   parseDistanceOrderBy,
@@ -144,6 +145,33 @@ type RelationshipOperandValueExpression<
 type RelationshipApexBindLeftExpression<ApexMode extends boolean> =
   ApexMode extends true ? ApexBindExpression<string> : never;
 
+export interface RelationshipSubqueryPilotModule<
+  DB,
+  TB extends keyof DB,
+  O,
+  Depth extends ParentToChildDepth = readonly [unknown],
+  FunctionMode extends RelationshipSubqueryFunctionMode = "none",
+  ApexMode extends boolean = false,
+> {
+  /**
+   * Opts into Salesforce's relationship-subquery OFFSET pilot, which Salesforce
+   * says is not intended for production. The compiler requires the immediate
+   * parent query to use a literal LIMIT 1.
+   */
+  offset(
+    offset: number,
+  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
+
+  clearOffset(): RelationshipSubqueryBuilder<
+    DB,
+    TB,
+    O,
+    Depth,
+    FunctionMode,
+    ApexMode
+  >;
+}
+
 export interface RelationshipSubqueryBuilder<
   DB,
   TB extends keyof DB,
@@ -153,6 +181,18 @@ export interface RelationshipSubqueryBuilder<
   ApexMode extends boolean = false,
 > {
   $call<T>(func: (qb: this) => T): T;
+
+  /**
+   * Explicitly opt into Salesforce pilot-only relationship-subquery syntax.
+   */
+  readonly pilot: RelationshipSubqueryPilotModule<
+    DB,
+    TB,
+    O,
+    Depth,
+    FunctionMode,
+    ApexMode
+  >;
 
   $if<O2>(
     condition: boolean,
@@ -358,9 +398,32 @@ class RelationshipSubqueryBuilderImpl<
     RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>
 {
   readonly #props: RelationshipSubqueryBuilderProps<ApexMode>;
+  readonly #pilot: RelationshipSubqueryPilotModule<
+    DB,
+    TB,
+    O,
+    Depth,
+    FunctionMode,
+    ApexMode
+  >;
 
   constructor(props: RelationshipSubqueryBuilderProps<ApexMode>) {
     this.#props = freeze(props);
+    this.#pilot = freeze({
+      offset: (offset: number) => this.#withPilotOffset(offset),
+      clearOffset: () => this.#withoutPilotOffset(),
+    });
+  }
+
+  get pilot(): RelationshipSubqueryPilotModule<
+    DB,
+    TB,
+    O,
+    Depth,
+    FunctionMode,
+    ApexMode
+  > {
+    return this.#pilot;
   }
 
   $call<T>(func: (qb: this) => T): T {
@@ -766,6 +829,48 @@ class RelationshipSubqueryBuilderImpl<
       queryNode: RelationshipSubqueryNode.cloneWithSelections(
         this.#props.queryNode,
         [SelectionNode.create(subquery.toOperationNode())],
+      ),
+    });
+  }
+
+  #withPilotOffset(
+    offset: number,
+  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode> {
+    return new RelationshipSubqueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      Depth,
+      FunctionMode,
+      ApexMode
+    >({
+      ...this.#props,
+      queryNode: RelationshipSubqueryNode.cloneWithOffset(
+        this.#props.queryNode,
+        parseOffset(offset),
+      ),
+    });
+  }
+
+  #withoutPilotOffset(): RelationshipSubqueryBuilder<
+    DB,
+    TB,
+    O,
+    Depth,
+    FunctionMode,
+    ApexMode
+  > {
+    return new RelationshipSubqueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      Depth,
+      FunctionMode,
+      ApexMode
+    >({
+      ...this.#props,
+      queryNode: RelationshipSubqueryNode.cloneWithoutOffset(
+        this.#props.queryNode,
       ),
     });
   }

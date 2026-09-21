@@ -184,7 +184,10 @@ export type { ApexQueryContext } from "#/query-builder/apex-query-context";
 export type { ApexCountQueryBuilder } from "#/query-builder/apex-count-query-builder";
 export type { ApexSelectQueryBuilder } from "#/query-builder/apex-select-query-builder";
 export type { CountQueryBuilder } from "#/query-builder/count-query-builder";
-export type { RelationshipSubqueryBuilder } from "#/query-builder/relationship-subquery-builder";
+export type {
+  RelationshipSubqueryBuilder,
+  RelationshipSubqueryPilotModule,
+} from "#/query-builder/relationship-subquery-builder";
 export type {
   SelectQueryBuilder,
   SelectQueryBuilderProps,

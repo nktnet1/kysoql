@@ -577,6 +577,116 @@ describe("parent-to-child relationship subqueries", () => {
     }>();
   });
 
+  it("opts into relationship-subquery OFFSET through the pilot namespace", () => {
+    const query = new Kysoql<RelationshipSubquerySchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .selectSubquery("Contacts", (contacts) =>
+        contacts
+          .select(["Id", "LastName"])
+          .orderBy("LastName")
+          .limit(10)
+          .pilot.offset(5),
+      )
+      .limit(1);
+
+    const subquery = query.toOperationNode().selections?.[1]?.selection;
+
+    expect(subquery).toMatchObject({
+      kind: "RelationshipSubqueryNode",
+      limit: { kind: "LimitNode", limit: 10 },
+      offset: { kind: "OffsetNode", offset: 5 },
+    });
+    expect(query.compile().soql).toBe(
+      "SELECT Id, (SELECT Id, LastName FROM Contacts ORDER BY LastName LIMIT 10 OFFSET 5) FROM Account LIMIT 1",
+    );
+  });
+
+  it("clears pilot relationship-subquery OFFSET immutably", () => {
+    const db = new Kysoql<RelationshipSubquerySchema>();
+    const withOffset = db
+      .selectFrom("Account")
+      .select("Id")
+      .selectSubquery("Contacts", (contacts) =>
+        contacts.select("Id").pilot.offset(5),
+      )
+      .limit(1);
+    const cleared = db
+      .selectFrom("Account")
+      .select("Id")
+      .selectSubquery("Contacts", (contacts) =>
+        contacts.select("Id").pilot.offset(5).pilot.clearOffset(),
+      );
+
+    expect(withOffset.compile().soql).toBe(
+      "SELECT Id, (SELECT Id FROM Contacts OFFSET 5) FROM Account LIMIT 1",
+    );
+    expect(cleared.compile().soql).toBe(
+      "SELECT Id, (SELECT Id FROM Contacts) FROM Account",
+    );
+  });
+
+  it("requires literal LIMIT 1 on the immediate parent of a pilot subquery OFFSET", () => {
+    const db = new Kysoql<RelationshipSubquerySchema>();
+    const withoutParentLimit = db
+      .selectFrom("Account")
+      .select("Id")
+      .selectSubquery("Contacts", (contacts) =>
+        contacts.select("Id").pilot.offset(1),
+      );
+    const withParentLimitTwo = withoutParentLimit.limit(2);
+
+    expect(() => withoutParentLimit.compile()).toThrow(
+      "SOQL relationship-subquery OFFSET pilot requires the immediate parent query to use a literal LIMIT 1.",
+    );
+    expect(() => withParentLimitTwo.compile()).toThrow(
+      "SOQL relationship-subquery OFFSET pilot requires the immediate parent query to use a literal LIMIT 1.",
+    );
+  });
+
+  it("applies the pilot LIMIT 1 rule recursively to nested relationship subqueries", () => {
+    const db = new Kysoql<RelationshipSubquerySchema>();
+    const valid = db
+      .selectFrom("Account")
+      .select("Id")
+      .selectSubquery("Contacts", (contacts) =>
+        contacts
+          .select("Id")
+          .selectSubquery("Cases", (cases) =>
+            cases.select("Id").pilot.offset(2),
+          )
+          .limit(1),
+      );
+    const invalid = db
+      .selectFrom("Account")
+      .select("Id")
+      .selectSubquery("Contacts", (contacts) =>
+        contacts.select("Id").selectSubquery("Cases", (cases) =>
+          cases.select("Id").pilot.offset(2),
+        ),
+      );
+
+    expect(valid.compile().soql).toBe(
+      "SELECT Id, (SELECT Id, (SELECT Id FROM Cases OFFSET 2) FROM Contacts LIMIT 1) FROM Account",
+    );
+    expect(() => invalid.compile()).toThrow(
+      "SOQL relationship-subquery OFFSET pilot requires the immediate parent query to use a literal LIMIT 1.",
+    );
+  });
+
+  it("validates pilot relationship-subquery OFFSET bounds", () => {
+    const db = new Kysoql<RelationshipSubquerySchema>();
+
+    expect(() =>
+      db
+        .selectFrom("Account")
+        .select("Id")
+        .selectSubquery("Contacts", (contacts) =>
+          contacts.select("Id").pilot.offset(2001),
+        ),
+    ).toThrow("SOQL OFFSET must be a safe integer between 0 and 2000.");
+  });
+
   it("rejects unknown relationships, invalid child fields, and unsupported capabilities", () => {
     const query = new Kysoql<RelationshipSubquerySchema>()
       .selectFrom("Account")
@@ -600,8 +710,10 @@ describe("parent-to-child relationship subqueries", () => {
         // @ts-expect-error Child orderings retain generated sortable metadata.
         contacts.orderBy("Internal_Note__c");
 
-        // @ts-expect-error Subquery OFFSET is intentionally not exposed because Salesforce documents it as a conditional pilot feature.
+        // @ts-expect-error Pilot subquery OFFSET stays off the ordinary production-safe builder surface.
         contacts.offset(1);
+
+        contacts.pilot.offset(1);
 
         // @ts-expect-error Child SELECT functions retain generated field-type metadata.
         contacts.select(({ fn }) => fn.toLabel("LastName").as("lastNameLabel"));

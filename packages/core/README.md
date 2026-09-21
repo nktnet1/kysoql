@@ -325,6 +325,12 @@ side as literal strings. Knowledge article Apex queries reject all bind forms.
 Relationship subqueries remain bind-free outside the Apex context and continue to
 reject semi-joins.
 
+Relationship-subquery `OFFSET` remains a Salesforce pilot and is therefore
+explicitly namespaced rather than part of the production-safe child builder. Use
+`contacts.pilot.offset(n)` only when the immediate parent query has a literal
+`LIMIT 1`; compilation rejects any other parent limit. `pilot.clearOffset()`
+removes the clause immutably.
+
 Grouped aggregate-result queries in the normal API context expose validated
 `.limit(...)` and `.offset(...)` pagination after `GROUP BY`; `.clearOffset()`
 removes the grouped offset immutably. Bare `COUNT()` remains `LIMIT`-only.

@@ -636,9 +636,28 @@ const accountsWithContacts = await db
 
 Each selected child relationship retains Salesforce's nested query-result shape:
 the relationship value contains `totalSize`, `done`, `records`, and an optional
-`nextRecordsUrl`. Subquery `OFFSET` is intentionally not exposed because Salesforce
-still documents it as a conditional pilot feature rather than a general
-production child-query clause.
+`nextRecordsUrl`. Salesforce still documents relationship-subquery `OFFSET` as a
+pilot that is not intended for production. Kysoql therefore keeps it off the
+ordinary child-query surface and exposes it only through the explicit
+`pilot.offset(...)` namespace. The immediate parent query must use a literal
+`LIMIT 1`; the compiler revalidates that rule recursively for nested child queries.
+
+```ts
+const pilotPagedContacts = db
+  .selectFrom("Account")
+  .select("Id")
+  .selectSubquery("Contacts", (contacts) =>
+    contacts
+      .select(["Id", "LastName"])
+      .orderBy("LastName")
+      .limit(20)
+      .pilot.offset(20),
+  )
+  .limit(1);
+```
+
+Use `pilot.clearOffset()` to remove that pilot clause immutably. The normal
+`contacts.offset(...)` method intentionally does not exist.
 
 Compilation also enforces Salesforce's query-wide relationship cardinality limits:
 no more than 20 parent-to-child relationships and 55 child-to-parent relationships.
