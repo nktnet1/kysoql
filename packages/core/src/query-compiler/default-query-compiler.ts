@@ -37,6 +37,7 @@ import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 import type { SelectQueryNode } from "#/operation-node/select-query-node";
 import type { SelectionNode } from "#/operation-node/selection-node";
+import type { SetOptionsNode } from "#/operation-node/set-options-node";
 import type { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
 import type { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
 import type { TypeOfNode } from "#/operation-node/type-of-node";
@@ -59,6 +60,7 @@ import { validateGroupByQuery } from "#/parser/group-by-parser";
 import { validateKnowledgeUpdateQuery } from "#/parser/knowledge-update-parser";
 import { validateObjectQueryLimits } from "#/parser/object-query-limit-parser";
 import { validateRecordVisibilityContextQuery } from "#/parser/record-visibility-context-parser";
+import { validateSetOptionsQuery } from "#/parser/set-options-parser";
 import { validateRelationshipQueryLimits } from "#/parser/relationship-query-limit-parser";
 import { validateTypeOfSelections } from "#/parser/type-of-parser";
 import { validateUserProfileFeedQuery } from "#/parser/user-profile-feed-parser";
@@ -112,6 +114,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
     validateUserProfileFeedQuery(query);
     validateRelationshipQueryLimits(query);
     validateObjectQueryLimits(query);
+    validateSetOptionsQuery(query);
 
     let soql = `SELECT ${query.selections
       .map((selection) => this.#compileSelection(selection, context))
@@ -176,6 +179,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
     if (query.forUpdate) {
       soql += " FOR UPDATE";
+    }
+
+    if (query.setOptions) {
+      soql += ` SET OPTIONS ${this.#compileSetOptions(query.setOptions)}`;
     }
 
     return soql;
@@ -268,6 +275,19 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileWhere(where: WhereNode): string {
     return this.#compileOperation(where.where);
+  }
+
+  #compileSetOptions(node: SetOptionsNode): string {
+    const options: string[] = [];
+
+    if (node.dataspace) {
+      options.push(`dataspace=${this.#compileValue(node.dataspace)}`);
+    }
+    if (node.honorEmptyStrings !== undefined) {
+      options.push(`honorEmptyStrings=${String(node.honorEmptyStrings)}`);
+    }
+
+    return `(${options.join(", ")})`;
   }
 
   #compileRecordVisibilityContext(node: RecordVisibilityContextNode): string {

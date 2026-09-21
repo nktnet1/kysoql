@@ -72,6 +72,10 @@ version is cut.
   `maxDescriptorPerRecord`, `supportsDomains`, and `supportsDelegates` parameters,
   at-least-one validation, immutable replacement semantics, and compiler guards
   against combining it with another SOQL `WITH` form.
+- Typed Data 360 `SET OPTIONS` support driven by generated DLO/DMO capability
+  metadata: DLO queries require `dataspace` and may opt into `honorEmptyStrings`,
+  simple DMO record queries expose only `honorEmptyStrings`, and DLO aggregate /
+  bare `COUNT()` queries retain the documented Data 360 aggregate surface.
 - Kysely-style `$call(...)` composition across record, aggregate, count, Apex,
   relationship-subquery, and semi-join query builders, preserving each builder's
   specialised type while returning the callback result unchanged.

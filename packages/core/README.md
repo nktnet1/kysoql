@@ -119,6 +119,18 @@ const visibleAccounts = db
   });
 ```
 
+Generated Data 360 object capability metadata also gates `.setOptions(...)`. DLO
+objects require a dataspace and optionally accept `honorEmptyStrings`; simple DMO
+record queries accept only `honorEmptyStrings`. DLO aggregate and bare `COUNT()`
+queries expose the same DLO options, and the compiler places `SET OPTIONS` last.
+
+```ts
+const data360Rows = db
+  .selectFrom("ContactPoint__dll")
+  .select(["Id", "EmailOptIn__c"])
+  .setOptions({ dataspace: "default", honorEmptyStrings: true });
+```
+
 Apex-only query syntax is isolated behind an explicit compile-only context. For
 example, `FOR UPDATE` is available only after switching a completed record query
 into `.apex()`, so it cannot be executed accidentally through an API executor:

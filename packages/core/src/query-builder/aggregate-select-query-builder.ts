@@ -74,6 +74,10 @@ import {
   parseRecordVisibilityContext,
   type RecordVisibilityContextOptions,
 } from "#/parser/record-visibility-context-parser";
+import {
+  type Data360AggregateSetOptionsFor,
+  parseSetOptions,
+} from "#/parser/set-options-parser";
 import type { FieldReferenceDefinition } from "#/parser/reference-parser";
 import {
   parseSelectArg,
@@ -459,6 +463,17 @@ export interface AggregateSelectQueryBuilder<
 
   withRecordVisibilityContext(
     parameters: RecordVisibilityContextOptions,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
+  setOptions(
+    options: Data360AggregateSetOptionsFor<DB[TB]>,
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -1137,6 +1152,32 @@ class AggregateSelectQueryBuilderImpl<
       queryNode: SelectQueryNode.cloneWithRecordVisibilityContext(
         this.#props.queryNode,
         parseRecordVisibilityContext(parameters),
+      ),
+    });
+  }
+
+  setOptions(
+    options: Data360AggregateSetOptionsFor<DB[TB]>,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithSetOptions(
+        this.#props.queryNode,
+        parseSetOptions(options),
       ),
     });
   }

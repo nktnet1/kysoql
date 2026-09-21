@@ -230,7 +230,7 @@ describe("renderSchema", () => {
     ]);
 
     expect(source).toContain(
-      'readonly "Fixture__c": SalesforceObject<\n    Record<string, never>,\n    Record<string, never>,\n    Record<string, never>,\n    "mine" | "team",\n    Record<string, never>,\n    boolean\n  >;',
+      'readonly "Fixture__c": SalesforceObject<\n    Record<string, never>,\n    Record<string, never>,\n    Record<string, never>,\n    "mine" | "team",\n    Record<string, never>,\n    boolean,\n    "none"\n  >;',
     );
   });
 
@@ -239,9 +239,33 @@ describe("renderSchema", () => {
     const disabled = renderSchema([objectWith([], { mruEnabled: false })]);
     const unknown = renderSchema([objectWith([])]);
 
-    expect(enabled).toContain("    Record<string, never>,\n    true\n  >;");
-    expect(disabled).toContain("    Record<string, never>,\n    false\n  >;");
-    expect(unknown).toContain("    Record<string, never>,\n    boolean\n  >;");
+    expect(enabled).toContain(
+      '    Record<string, never>,\n    true,\n    "none"\n  >;',
+    );
+    expect(disabled).toContain(
+      '    Record<string, never>,\n    false,\n    "none"\n  >;',
+    );
+    expect(unknown).toContain(
+      '    Record<string, never>,\n    boolean,\n    "none"\n  >;',
+    );
+  });
+
+  it("renders Data 360 SET OPTIONS capability from object API-name suffixes", () => {
+    const source = renderSchema([
+      objectWith([], { name: "ContactPoint__dll" }),
+      objectWith([], { name: "UnifiedIndividual__dlm" }),
+      objectWith([], { name: "Account" }),
+    ]);
+
+    const objectBlock = (name: string): string => {
+      const start = source.indexOf(`readonly "${name}": SalesforceObject<`);
+      const end = source.indexOf("  >;", start);
+      return source.slice(start, end + 4);
+    };
+
+    expect(objectBlock("ContactPoint__dll")).toContain('"data360-dlo"');
+    expect(objectBlock("UnifiedIndividual__dlm")).toContain('"data360-dmo"');
+    expect(objectBlock("Account")).toContain('"none"');
   });
 
   it("renders data-category groups as sorted object-specific category unions", () => {
@@ -504,7 +528,7 @@ describe("renderSchema", () => {
 
     expect(source).toContain("export interface CustomSchema {");
     expect(source).toContain(
-      'readonly "Fixture__c": SalesforceObject<\n    Record<string, never>,\n    Record<string, never>,\n    Record<string, never>,\n    never,\n    Record<string, never>,\n    boolean\n  >;',
+      'readonly "Fixture__c": SalesforceObject<\n    Record<string, never>,\n    Record<string, never>,\n    Record<string, never>,\n    never,\n    Record<string, never>,\n    boolean,\n    "none"\n  >;',
     );
     expect(source.endsWith("\n")).toBe(true);
   });

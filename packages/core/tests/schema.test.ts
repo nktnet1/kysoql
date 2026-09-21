@@ -15,6 +15,7 @@ import type {
   SalesforceObjectDataCategory,
   SalesforceObjectDataCategoryGroup,
   SalesforceObjectMruEnabled,
+  SalesforceObjectSetOptionsCapability,
   SalesforceObjectSupportedScope,
   SalesforceParentRelationship,
   SalesforceRow,
@@ -179,6 +180,40 @@ it("preserves object-specific supported scope metadata", () => {
   expectTypeOf<
     SalesforceObjectSupportedScope<FixtureObject>
   >().toEqualTypeOf<never>();
+});
+
+it("preserves object-specific SET OPTIONS capability metadata", () => {
+  type DloObject = SalesforceObject<
+    Record<string, never>,
+    Record<string, never>,
+    Record<string, never>,
+    never,
+    Record<string, never>,
+    boolean,
+    "data360-dlo"
+  >;
+  type DmoObject = SalesforceObject<
+    Record<string, never>,
+    Record<string, never>,
+    Record<string, never>,
+    never,
+    Record<string, never>,
+    boolean,
+    "data360-dmo"
+  >;
+
+  expectTypeOf<DloObject["setOptionsCapability"]>().toEqualTypeOf<
+    "data360-dlo"
+  >();
+  expectTypeOf<DmoObject["setOptionsCapability"]>().toEqualTypeOf<
+    "data360-dmo"
+  >();
+  expectTypeOf<
+    SalesforceObjectSetOptionsCapability<DloObject>
+  >().toEqualTypeOf<"data360-dlo">();
+  expectTypeOf<
+    SalesforceObjectSetOptionsCapability<FixtureObject>
+  >().toEqualTypeOf<"none">();
 });
 
 it("preserves object-specific MRU capability metadata", () => {

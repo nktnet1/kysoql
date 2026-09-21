@@ -86,6 +86,11 @@ export interface SalesforceQueryResult<Row> {
   readonly nextRecordsUrl?: string;
 }
 
+export type SalesforceSetOptionsCapability =
+  | "none"
+  | "data360-dlo"
+  | "data360-dmo";
+
 export interface SalesforceObject<
   Fields extends Record<string, AnySalesforceField>,
   Parents extends Record<
@@ -99,6 +104,7 @@ export interface SalesforceObject<
   SupportedScope extends string = never,
   DataCategoryGroups extends Record<string, string> = Record<string, never>,
   MruEnabled extends boolean = boolean,
+  SetOptionsCapability extends SalesforceSetOptionsCapability = "none",
 > {
   readonly fields: Fields;
   readonly parents: Parents;
@@ -106,6 +112,7 @@ export interface SalesforceObject<
   readonly supportedScopes: SupportedScope;
   readonly dataCategoryGroups: DataCategoryGroups;
   readonly mruEnabled: MruEnabled;
+  readonly setOptionsCapability: SetOptionsCapability;
 }
 
 export type SalesforceSchema = Record<
@@ -116,7 +123,8 @@ export type SalesforceSchema = Record<
     Record<string, SalesforceChildRelationship<string, string>>,
     string,
     Record<string, string>,
-    boolean
+    boolean,
+    SalesforceSetOptionsCapability
   >
 >;
 
@@ -150,6 +158,13 @@ export type SalesforceObjectSupportedScope<ObjectType> = ObjectType extends {
 }
   ? SupportedScope
   : never;
+
+export type SalesforceObjectSetOptionsCapability<ObjectType> =
+  ObjectType extends {
+    readonly setOptionsCapability: infer Capability extends SalesforceSetOptionsCapability;
+  }
+    ? Capability
+    : "none";
 
 export type SalesforceFieldValue<Field> =
   Field extends SalesforceField<
@@ -227,7 +242,8 @@ export type SalesforceRow<ObjectType> =
     Record<string, SalesforceChildRelationship<string, string>>,
     string,
     Record<string, string>,
-    boolean
+    boolean,
+    SalesforceSetOptionsCapability
   >
     ? {
         readonly [FieldName in keyof Fields]: SalesforceFieldValue<

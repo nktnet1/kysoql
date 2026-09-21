@@ -75,6 +75,10 @@ import {
   parseRecordVisibilityContext,
   type RecordVisibilityContextOptions,
 } from "#/parser/record-visibility-context-parser";
+import {
+  type Data360SetOptionsFor,
+  parseSetOptions,
+} from "#/parser/set-options-parser";
 import type {
   ChildObjectName,
   ChildRelationshipName,
@@ -320,6 +324,10 @@ export interface SelectQueryBuilder<
 
   withRecordVisibilityContext(
     parameters: RecordVisibilityContextOptions,
+  ): SelectQueryBuilder<DB, TB, O, Mode>;
+
+  setOptions(
+    options: Data360SetOptionsFor<DB[TB]>,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
   withDataCategory<Group extends SalesforceObjectDataCategoryGroup<DB[TB]>>(
@@ -721,6 +729,18 @@ class SelectQueryBuilderImpl<
       queryNode: SelectQueryNode.cloneWithRecordVisibilityContext(
         this.#props.queryNode,
         parseRecordVisibilityContext(parameters),
+      ),
+    });
+  }
+
+  setOptions(
+    options: Data360SetOptionsFor<DB[TB]>,
+  ): SelectQueryBuilder<DB, TB, O, Mode> {
+    return new SelectQueryBuilderImpl<DB, TB, O, Mode>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithSetOptions(
+        this.#props.queryNode,
+        parseSetOptions(options),
       ),
     });
   }

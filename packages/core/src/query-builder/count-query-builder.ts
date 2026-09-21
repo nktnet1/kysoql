@@ -28,6 +28,10 @@ import {
   type RecordVisibilityContextOptions,
 } from "#/parser/record-visibility-context-parser";
 import {
+  type Data360AggregateSetOptionsFor,
+  parseSetOptions,
+} from "#/parser/set-options-parser";
+import {
   parseUserProfileFeedWithUserId,
   type UserProfileFeedWithUserIdCheck,
 } from "#/parser/user-profile-feed-parser";
@@ -96,6 +100,10 @@ export interface CountQueryBuilder<DB, TB extends keyof DB> {
 
   withRecordVisibilityContext(
     parameters: RecordVisibilityContextOptions,
+  ): CountQueryBuilder<DB, TB>;
+
+  setOptions(
+    options: Data360AggregateSetOptionsFor<DB[TB]>,
   ): CountQueryBuilder<DB, TB>;
 
   withDataCategory<Group extends SalesforceObjectDataCategoryGroup<DB[TB]>>(
@@ -287,6 +295,18 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
       queryNode: SelectQueryNode.cloneWithRecordVisibilityContext(
         this.#props.queryNode,
         parseRecordVisibilityContext(parameters),
+      ),
+    });
+  }
+
+  setOptions(
+    options: Data360AggregateSetOptionsFor<DB[TB]>,
+  ): CountQueryBuilder<DB, TB> {
+    return new CountQueryBuilderImpl<DB, TB>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithSetOptions(
+        this.#props.queryNode,
+        parseSetOptions(options),
       ),
     });
   }

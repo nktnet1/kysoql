@@ -48,12 +48,13 @@ SQL escape hatch.
 
 ## Current baseline
 
-The accepted continuation baseline is through **`v1.0.132`**. In addition to the
+The accepted continuation baseline is through **`v1.0.133`**. In addition to the
 completed Kysely-neutral builder audit and bounded `FIELDS(ALL|CUSTOM)` alignment,
 root builders can now start ordinary `GROUP BY` without an aggregate selection,
-and grouped queries reject custom relationship expressions using `__r` while
-preserving valid standard relationship grouping. Typed ordering also prevents
-explicit `NULLS FIRST` / `NULLS LAST` on nullable Salesforce reference fields.
+grouped queries reject custom relationship expressions using `__r`, and typed
+ordering prevents explicit null placement on nullable reference fields. Generated
+Data 360 DLO/DMO capability metadata now drives typed literal `SET OPTIONS` for
+dataspace and empty-string semantics.
 
 The implementation already covers the broad production SOQL surface:
 
@@ -122,10 +123,12 @@ complete.
    for REST, SOAP, and Apex without explicitly excluding grouped queries, while
    kysoql currently exposes aggregate `OFFSET` only in Apex. Verify the exact
    REST/SOAP behavior against the Salesforce fixture before changing the API.
-2. **Typed `SET OPTIONS`.** Summer '26 documents production `SET OPTIONS` support
-   for Data 360 DLO/DMO behavior and managed dynamic Apex namespace resolution.
-   Design capability metadata first; do not add an untyped option bag or raw
-   clause escape hatch.
+2. **Managed dynamic Apex `SET OPTIONS`.** Data 360 literal `SET OPTIONS` is now
+   modeled through generated DLO/DMO capability metadata. The remaining documented
+   form is `SET OPTIONS :queryOptions` for managed dynamic Apex
+   `Database.QueryOptions.explicitNamespace`. Do not force this dynamic-only form
+   into the existing static-Apex builder; introduce an honest dynamic-query context
+   first if the project chooses to support it.
 3. **`FORMULA()` in `WHERE` pilot.** Salesforce currently labels this Summer '26
    feature a pilot, limited to `WHERE` rather than `HAVING`. Keep it omitted from
    the production-safe builder unless the project explicitly opts into pilot

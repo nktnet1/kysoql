@@ -42,6 +42,10 @@ import {
   type DataCategoryInput,
   type DataCategorySelectionNode,
   type DataCategorySelector,
+  type Data360AggregateSetOptionsFor,
+  type Data360DloSetOptions,
+  type Data360DmoSetOptions,
+  type Data360SetOptionsFor,
   type DateFunction,
   type DateFunctionArgumentNode,
   type DateFunctionBuilder,
@@ -119,12 +123,14 @@ import {
   type SalesforceObjectDataCategory,
   type SalesforceObjectDataCategoryGroup,
   type SalesforceObjectMruEnabled,
+  type SalesforceObjectSetOptionsCapability,
   type SalesforceObjectSupportedScope,
   type SalesforceParentRelationship,
   type SalesforceQueryResult,
   type SalesforceRecordAttributes,
   type SalesforceRow,
   type SalesforceSchema,
+  type SalesforceSetOptionsCapability,
   type SelectExpressionBuilder,
   type SelectedSemiJoinSubqueryBuilder,
   type SelectFunctionModule,
@@ -139,6 +145,7 @@ import {
   type SemiJoinSubqueryFactory,
   type SemiJoinSubqueryNode,
   type SetComparisonOperator,
+  type SetOptionsNode,
   type SObjectNode,
   type SoqlCurrencyLiteral,
   type SoqlDateLiteral,
@@ -252,6 +259,30 @@ type PublicTypeSurface = {
   dataCategoryInput: DataCategoryInput<"All" | "usa__c">;
   dataCategorySelectionNode: DataCategorySelectionNode;
   dataCategorySelector: DataCategorySelector;
+  data360AggregateSetOptionsFor: Data360AggregateSetOptionsFor<
+    SalesforceObject<
+      Record<string, never>,
+      Record<string, never>,
+      Record<string, never>,
+      never,
+      Record<string, never>,
+      boolean,
+      "data360-dlo"
+    >
+  >;
+  data360DloSetOptions: Data360DloSetOptions;
+  data360DmoSetOptions: Data360DmoSetOptions;
+  data360SetOptionsFor: Data360SetOptionsFor<
+    SalesforceObject<
+      Record<string, never>,
+      Record<string, never>,
+      Record<string, never>,
+      never,
+      Record<string, never>,
+      boolean,
+      "data360-dmo"
+    >
+  >;
   dateFunction: DateFunction;
   dateFunctionArgumentNode: DateFunctionArgumentNode;
   dateFunctionBuilder: DateFunctionBuilder<
@@ -367,6 +398,7 @@ type PublicTypeSurface = {
   orderByNode: OrderByNode;
   orderedComparisonOperator: OrderedComparisonOperator;
   setComparisonOperator: SetComparisonOperator;
+  setOptionsNode: SetOptionsNode;
   soqlCurrencyLiteral: SoqlCurrencyLiteral;
   queryCompiler: QueryCompiler;
   queryCreatorConfig: QueryCreatorConfig;
@@ -418,6 +450,17 @@ type PublicTypeSurface = {
     "Geography__c"
   >;
   salesforceObjectMruEnabled: SalesforceObjectMruEnabled<unknown>;
+  salesforceObjectSetOptionsCapability: SalesforceObjectSetOptionsCapability<
+    SalesforceObject<
+      Record<string, never>,
+      Record<string, never>,
+      Record<string, never>,
+      never,
+      Record<string, never>,
+      boolean,
+      "data360-dlo"
+    >
+  >;
   salesforceObjectDataCategoryGroup: SalesforceObjectDataCategoryGroup<
     SalesforceObject<
       Record<string, never>,
@@ -450,6 +493,7 @@ type PublicTypeSurface = {
     }>
   >;
   salesforceSchema: SalesforceSchema;
+  salesforceSetOptionsCapability: SalesforceSetOptionsCapability;
   selectQueryBuilder: SelectQueryBuilder<
     Record<string, never>,
     never,

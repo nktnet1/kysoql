@@ -471,6 +471,31 @@ const visibleAccounts = await db
 // supportsDomains=true, supportsDelegates=false)
 ```
 
+Data 360 objects get typed `SET OPTIONS` capability metadata from their generated
+API names. Data Lake Objects (`__dll`) require a `dataspace` whenever
+`.setOptions(...)` is used and can additionally set `honorEmptyStrings`; simple
+Data Model Object (`__dlm`) record queries expose only `honorEmptyStrings`. The
+compiler always emits `SET OPTIONS` at the end of the SOQL statement. DLO
+aggregate-result and bare `COUNT()` builders also support the same typed options.
+
+```ts
+const lakeRows = await db
+  .selectFrom("ContactPoint__dll")
+  .select(["Id", "EmailOptIn__c"])
+  .where("EmailOptIn__c", "=", "")
+  .setOptions({ dataspace: "default", honorEmptyStrings: true })
+  .execute();
+// SELECT Id, EmailOptIn__c FROM ContactPoint__dll
+// WHERE EmailOptIn__c = ''
+// SET OPTIONS (dataspace='default', honorEmptyStrings=true)
+
+const modelRows = await db
+  .selectFrom("UnifiedIndividual__dlm")
+  .select("Id")
+  .setOptions({ honorEmptyStrings: true })
+  .execute();
+```
+
 Salesforce Describe also exposes each object's `mruEnabled` capability. Generated
 schemas preserve that flag so root queries can use `.forView()` /
 `.forReference()` only when the object is known to participate in Most Recently

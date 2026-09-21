@@ -142,6 +142,7 @@ export type { ReferenceNode } from "#/operation-node/reference-node";
 export type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 export type { SelectQueryNode } from "#/operation-node/select-query-node";
 export type { SelectionNode } from "#/operation-node/selection-node";
+export type { SetOptionsNode } from "#/operation-node/set-options-node";
 export type { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
 export type { SObjectNode } from "#/operation-node/sobject-node";
 export type { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
@@ -160,6 +161,12 @@ export type { ApexOperandValueExpression } from "#/parser/apex-bind-parser";
 export type { DataCategoryInput } from "#/parser/data-category-parser";
 export type { DistanceComparisonOperator } from "#/parser/geolocation-expression-parser";
 export type { RecordVisibilityContextOptions } from "#/parser/record-visibility-context-parser";
+export type {
+  Data360AggregateSetOptionsFor,
+  Data360DloSetOptions,
+  Data360DmoSetOptions,
+  Data360SetOptionsFor,
+} from "#/parser/set-options-parser";
 export type { AggregateSelectQueryBuilder } from "#/query-builder/aggregate-select-query-builder";
 export type { ApexAggregateSelectQueryBuilder } from "#/query-builder/apex-aggregate-select-query-builder";
 export type { ApexCountQueryBuilder } from "#/query-builder/apex-count-query-builder";
@@ -204,12 +211,14 @@ export type {
   SalesforceObjectDataCategory,
   SalesforceObjectDataCategoryGroup,
   SalesforceObjectMruEnabled,
+  SalesforceObjectSetOptionsCapability,
   SalesforceObjectSupportedScope,
   SalesforceParentRelationship,
   SalesforceQueryResult,
   SalesforceRecordAttributes,
   SalesforceRow,
   SalesforceSchema,
+  SalesforceSetOptionsCapability,
 } from "#/schema";
 export {
   type SoqlCurrencyLiteral,

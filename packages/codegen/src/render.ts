@@ -279,6 +279,13 @@ const renderObject = (object: SalesforceObjectDescription): string => {
     .sort((left, right) => left.name.localeCompare(right.name))
     .map((group) => renderDataCategoryGroup(group.name, group.categories));
 
+  const objectName = object.name.toLowerCase();
+  const setOptionsCapability = objectName.endsWith("__dll")
+    ? "data360-dlo"
+    : objectName.endsWith("__dlm")
+      ? "data360-dmo"
+      : "none";
+
   return [
     `  readonly ${quote(object.name)}: SalesforceObject<`,
     `${renderBlock(fields.map(renderField))},`,
@@ -286,7 +293,8 @@ const renderObject = (object: SalesforceObjectDescription): string => {
     `${renderBlock(children)},`,
     `    ${supportedScopeType},`,
     `${renderBlock(dataCategoryGroups)},`,
-    `    ${object.mruEnabled === undefined ? "boolean" : booleanLiteral(object.mruEnabled)}`,
+    `    ${object.mruEnabled === undefined ? "boolean" : booleanLiteral(object.mruEnabled)},`,
+    `    ${JSON.stringify(setOptionsCapability)}`,
     "  >;",
   ].join("\n");
 };

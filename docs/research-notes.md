@@ -370,21 +370,25 @@ Current evidence:
   aggregate builders. Verify a grouped REST/SOAP query against the maintained
   Salesforce fixture before treating this as a confirmed missing feature.
 
-### `SET OPTIONS` design
+### `SET OPTIONS`
 
 Source:
 
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-set-options.html
 
-Confirmed current documentation:
+Settled findings:
 
-- `SET OPTIONS dataspace='...'` applies to Data 360 DLO queries.
+- `SET OPTIONS` is a trailing SOQL clause. `dataspace` applies to Data 360 DLO
+  queries and a DLO query that uses the clause must name its dataspace to return
+  records.
 - `honorEmptyStrings=true|false` applies to DLOs and simple DMO queries.
-- `explicitNamespace` applies only to managed dynamic Apex and must be supplied as
-  a bind variable.
-- These capabilities depend on execution/object context that the current generated
-  schema does not model. Add capability metadata before exposing a typed builder;
-  do not use a generic option bag.
+- Kysoql now derives DLO (`__dll`) / DMO (`__dlm`) capability metadata during
+  code generation. Typed DLO options require `dataspace`; typed DMO options expose
+  only `honorEmptyStrings`, and DMO aggregate/grouped use is rejected.
+- `explicitNamespace` is a separate managed dynamic Apex form: Salesforce requires
+  a bound `Database.QueryOptions` object (`SET OPTIONS :queryOptions`) passed to
+  dynamic SOQL. The existing `.apex()` surface models static Apex SOQL, so do not
+  bolt this dynamic-only form onto it without a distinct dynamic-query context.
 
 ### `FORMULA()` in `WHERE` pilot
 

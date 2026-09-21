@@ -21,6 +21,7 @@ import { OrderByNode } from "#/operation-node/order-by-node";
 import type { RecordVisibilityContextNode } from "#/operation-node/record-visibility-context-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { SelectionNode } from "#/operation-node/selection-node";
+import type { SetOptionsNode } from "#/operation-node/set-options-node";
 import type { SObjectNode } from "#/operation-node/sobject-node";
 import type { UserProfileFeedWithNode } from "#/operation-node/user-profile-feed-with-node";
 import type { UsingScopeNode } from "#/operation-node/using-scope-node";
@@ -50,6 +51,7 @@ export interface SelectQueryNode {
   readonly knowledgeUpdate?: KnowledgeUpdateNode;
   readonly allRows?: AllRowsNode;
   readonly forUpdate?: ForUpdateNode;
+  readonly setOptions?: SetOptionsNode;
 }
 
 export const SelectQueryNode = {
@@ -130,6 +132,16 @@ export const SelectQueryNode = {
     return freeze({
       ...select,
       apexAccessMode,
+    });
+  },
+
+  cloneWithSetOptions(
+    select: SelectQueryNode,
+    setOptions: SetOptionsNode,
+  ): SelectQueryNode {
+    return freeze({
+      ...select,
+      setOptions,
     });
   },
 

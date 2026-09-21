@@ -2,7 +2,8 @@
 
 Salesforce Describe-driven schema generation for kysoql. Generated TypeScript
 captures the field and relationship capabilities used by `@kysoql/core` for
-compile-time query validation.
+compile-time query validation. It also derives Data 360 `SET OPTIONS` capability
+metadata from Salesforce's DLO (`__dll`) and DMO (`__dlm`) API-name suffixes.
 
 ## Install
 
