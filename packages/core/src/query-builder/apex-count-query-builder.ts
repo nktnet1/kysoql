@@ -33,6 +33,8 @@ interface ApexCountQueryBuilderProps {
 export interface ApexCountQueryBuilder<DB, TB extends keyof DB> {
   $call<T>(func: (qb: this) => T): T;
 
+  $if(condition: boolean, func: (qb: this) => this): this;
+
   compile(): CompiledQuery<number>;
 
   allRows(): ApexCountQueryBuilder<DB, TB>;
@@ -75,6 +77,10 @@ class ApexCountQueryBuilderImpl<DB, TB extends keyof DB>
 
   $call<T>(func: (qb: this) => T): T {
     return func(this);
+  }
+
+  $if(condition: boolean, func: (qb: this) => this): this {
+    return condition ? func(this) : this;
   }
 
   compile(): CompiledQuery<number> {

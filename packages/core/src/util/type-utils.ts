@@ -7,6 +7,10 @@ export type DrainOuterGeneric<T> = [T] extends [unknown] ? T : never;
 /** Flattens intersections into an object shape for result-facing type checks. */
 export type Simplify<T> = DrainOuterGeneric<{ [K in keyof T]: T[K] } & {}>;
 
+/** Makes fields introduced by a runtime-conditional builder callback optional. */
+export type ConditionalOutput<Base, Added> = Base &
+  Partial<Omit<Added, keyof Base>>;
+
 /** Extracts concrete string keys while treating Record<string, never> as empty. */
 export type NonNeverStringKey<T> = {
   [Key in keyof T]: [T[Key]] extends [never] ? never : Key;

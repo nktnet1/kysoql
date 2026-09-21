@@ -139,10 +139,12 @@ const compiled = query.compile();
 // ORDER BY AnnualRevenue DESC, Name ASC LIMIT 25
 ```
 
-Kysely-style `$call(...)` composition is available on record, aggregate, count,
-Apex, relationship-subquery, and semi-join builders. It passes the current
-specialised builder to a callback and returns the callback result unchanged,
-which makes reusable query transforms possible without adding SOQL semantics.
+Kysely-style `$call(...)` and `$if(...)` composition is available on record,
+aggregate, count, Apex, relationship-subquery, and semi-join builders. `$call`
+passes the current specialised builder to a callback and returns the callback
+result unchanged. `$if` invokes its callback only when the condition is true;
+ordinary selections added inside `$if` become optional in the inferred result
+shape. Structural SOQL modes must remain the same on both branches.
 
 Selected fields, filterable fields, filter values, and operators are checked from
 the generated Salesforce schema. Equality (`=`, `!=`), ordered comparisons

@@ -66,7 +66,7 @@ import {
 } from "#/parser/select-parser";
 import type { SalesforceQueryResult } from "#/schema";
 import { freeze } from "#/util/object-utils";
-import type { Simplify } from "#/util/type-utils";
+import type { ConditionalOutput, Simplify } from "#/util/type-utils";
 
 type ParentToChildDepth = readonly unknown[];
 
@@ -149,6 +149,27 @@ export interface RelationshipSubqueryBuilder<
   ApexMode extends boolean = false,
 > {
   $call<T>(func: (qb: this) => T): T;
+
+  $if<O2>(
+    condition: boolean,
+    func: (
+      qb: this,
+    ) => RelationshipSubqueryBuilder<
+      DB,
+      TB,
+      O & O2,
+      Depth,
+      FunctionMode,
+      ApexMode
+    >,
+  ): RelationshipSubqueryBuilder<
+    DB,
+    TB,
+    ConditionalOutput<O, O2>,
+    Depth,
+    FunctionMode,
+    ApexMode
+  >;
 
   limit(
     limit: number,
@@ -304,6 +325,36 @@ class RelationshipSubqueryBuilderImpl<
 
   $call<T>(func: (qb: this) => T): T {
     return func(this);
+  }
+
+  $if<O2>(
+    condition: boolean,
+    func: (
+      qb: this,
+    ) => RelationshipSubqueryBuilder<
+      DB,
+      TB,
+      O & O2,
+      Depth,
+      FunctionMode,
+      ApexMode
+    >,
+  ): RelationshipSubqueryBuilder<
+    DB,
+    TB,
+    ConditionalOutput<O, O2>,
+    Depth,
+    FunctionMode,
+    ApexMode
+  > {
+    return (condition ? func(this) : this) as RelationshipSubqueryBuilder<
+      DB,
+      TB,
+      ConditionalOutput<O, O2>,
+      Depth,
+      FunctionMode,
+      ApexMode
+    >;
   }
 
   limit(

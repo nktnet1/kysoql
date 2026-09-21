@@ -48,10 +48,10 @@ SQL escape hatch.
 
 ## Current baseline
 
-The accepted continuation baseline is through **`v1.0.125`**, which adds
-Kysely-style `$call(...)` composition across the query-builder surfaces on top of
-structured `WITH RecordVisibilityContext (...)`, ISO-coded currency literals,
-Apex `ALL ROWS`, and the documentation-pruning work.
+The accepted continuation baseline is through **`v1.0.127`**, which adds
+Kysely-style `$call(...)` and `$if(...)` composition across the query-builder
+surfaces on top of structured `WITH RecordVisibilityContext (...)`, ISO-coded
+currency literals, Apex `ALL ROWS`, and the documentation-pruning work.
 
 The implementation already covers the broad production SOQL surface:
 
@@ -123,11 +123,11 @@ closed.
    pilot/not for production. Keep it omitted unless Salesforce promotes it to a
    production-supported feature or the project explicitly opts into pilot syntax.
 3. **Remaining Kysely-neutral builder ergonomics.** Kysoql now matches Kysely's
-   neutral `$call` composition helper. Audit `$if`, `clearWhere`, `clearOrderBy`,
-   `clearLimit`, `clearOffset`, `clearSelect`, and `clearGroupBy` as potential
-   unnecessary deviations, and add only helpers whose semantics remain sound
-   across the relevant SOQL builder modes. SQL joins/raw-expression APIs are not
-   parity gaps.
+   neutral `$call` and `$if` composition helpers. Audit `clearWhere`,
+   `clearOrderBy`, `clearLimit`, `clearOffset`, `clearSelect`, and `clearGroupBy`
+   as potential unnecessary deviations, and add only helpers whose semantics
+   remain sound across the relevant SOQL builder modes. SQL joins/raw-expression
+   APIs are not parity gaps.
 
 Specialist-object restrictions that depend on unavailable adapter metadata,
 permissions, runtime cardinality, or product-specific execution context are not

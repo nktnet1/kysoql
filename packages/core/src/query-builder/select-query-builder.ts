@@ -128,7 +128,7 @@ import type {
   SalesforceQueryResult,
 } from "#/schema";
 import { freeze } from "#/util/object-utils";
-import type { Simplify } from "#/util/type-utils";
+import type { ConditionalOutput, Simplify } from "#/util/type-utils";
 
 type ChildObjectForRelationship<
   DB,
@@ -209,6 +209,11 @@ export interface SelectQueryBuilder<
   Mode extends SelectQueryMode = SelectQueryMode,
 > {
   $call<T>(func: (qb: this) => T): T;
+
+  $if<O2>(
+    condition: boolean,
+    func: (qb: this) => SelectQueryBuilder<DB, TB, O & O2, Mode>,
+  ): SelectQueryBuilder<DB, TB, ConditionalOutput<O, O2>, Mode>;
 
   compile(): CompiledQuery<O>;
 
@@ -404,6 +409,18 @@ class SelectQueryBuilderImpl<
 
   $call<T>(func: (qb: this) => T): T {
     return func(this);
+  }
+
+  $if<O2>(
+    condition: boolean,
+    func: (qb: this) => SelectQueryBuilder<DB, TB, O & O2, Mode>,
+  ): SelectQueryBuilder<DB, TB, ConditionalOutput<O, O2>, Mode> {
+    return (condition ? func(this) : this) as SelectQueryBuilder<
+      DB,
+      TB,
+      ConditionalOutput<O, O2>,
+      Mode
+    >;
   }
 
   compile(): CompiledQuery<O> {

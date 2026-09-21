@@ -34,6 +34,8 @@ interface ApexAggregateSelectQueryBuilderProps {
 export interface ApexAggregateSelectQueryBuilder<DB, TB extends keyof DB, O> {
   $call<T>(func: (qb: this) => T): T;
 
+  $if(condition: boolean, func: (qb: this) => this): this;
+
   compile(): CompiledQuery<O>;
 
   allRows(): ApexAggregateSelectQueryBuilder<DB, TB, O>;
@@ -80,6 +82,10 @@ class ApexAggregateSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
 
   $call<T>(func: (qb: this) => T): T {
     return func(this);
+  }
+
+  $if(condition: boolean, func: (qb: this) => this): this {
+    return condition ? func(this) : this;
   }
 
   compile(): CompiledQuery<O> {

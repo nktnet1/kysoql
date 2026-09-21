@@ -96,6 +96,7 @@ import type {
   SalesforceObjectSupportedScope,
 } from "#/schema";
 import { freeze } from "#/util/object-utils";
+import type { ConditionalOutput } from "#/util/type-utils";
 
 type AggregateGroupMode = "none" | "ordinary" | AdvancedGroupByMode;
 type AdvancedGroupFieldCount = 0 | 1 | 2 | 3;
@@ -315,6 +316,27 @@ export interface AggregateSelectQueryBuilder<
   AdvancedFieldCount extends AdvancedGroupFieldCount = 0,
 > {
   $call<T>(func: (qb: this) => T): T;
+
+  $if<O2>(
+    condition: boolean,
+    func: (
+      qb: this,
+    ) => AggregateSelectQueryBuilder<
+      DB,
+      TB,
+      O & O2,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    ConditionalOutput<O, O2>,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
 
   compile(): CompiledQuery<O>;
 
@@ -734,6 +756,36 @@ class AggregateSelectQueryBuilderImpl<
 
   $call<T>(func: (qb: this) => T): T {
     return func(this);
+  }
+
+  $if<O2>(
+    condition: boolean,
+    func: (
+      qb: this,
+    ) => AggregateSelectQueryBuilder<
+      DB,
+      TB,
+      O & O2,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    ConditionalOutput<O, O2>,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
+    return (condition ? func(this) : this) as AggregateSelectQueryBuilder<
+      DB,
+      TB,
+      ConditionalOutput<O, O2>,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >;
   }
 
   compile(): CompiledQuery<O> {

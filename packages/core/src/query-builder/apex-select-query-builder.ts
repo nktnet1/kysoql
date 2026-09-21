@@ -43,7 +43,7 @@ import type {
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { SalesforceQueryResult } from "#/schema";
 import { freeze } from "#/util/object-utils";
-import type { Simplify } from "#/util/type-utils";
+import type { ConditionalOutput, Simplify } from "#/util/type-utils";
 
 type ChildObjectForRelationship<
   DB,
@@ -75,6 +75,11 @@ export interface ApexSelectQueryBuilder<
   Mode extends SelectQueryMode = SelectQueryMode,
 > {
   $call<T>(func: (qb: this) => T): T;
+
+  $if<O2>(
+    condition: boolean,
+    func: (qb: this) => ApexSelectQueryBuilder<DB, TB, O & O2, Mode>,
+  ): ApexSelectQueryBuilder<DB, TB, ConditionalOutput<O, O2>, Mode>;
 
   compile(): CompiledQuery<O>;
 
@@ -163,6 +168,18 @@ class ApexSelectQueryBuilderImpl<
 
   $call<T>(func: (qb: this) => T): T {
     return func(this);
+  }
+
+  $if<O2>(
+    condition: boolean,
+    func: (qb: this) => ApexSelectQueryBuilder<DB, TB, O & O2, Mode>,
+  ): ApexSelectQueryBuilder<DB, TB, ConditionalOutput<O, O2>, Mode> {
+    return (condition ? func(this) : this) as ApexSelectQueryBuilder<
+      DB,
+      TB,
+      ConditionalOutput<O, O2>,
+      Mode
+    >;
   }
 
   compile(): CompiledQuery<O> {

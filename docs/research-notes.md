@@ -27,9 +27,10 @@ Settled findings:
 - Repeated `orderBy()` calls are additive and preserve call order.
 - Current Kysely exposes neutral builder helpers such as `$call`, `$if`, and
   clause-clearing methods (`clearWhere`, `clearOrderBy`, `clearLimit`,
-  `clearOffset`, `clearSelect`, and `clearGroupBy`). Kysoql now matches `$call`
-  across its query-builder modes; the conditional/clearing helpers remain
-  parity-audit candidates where their typing and SOQL semantics stay sound.
+  `clearOffset`, `clearSelect`, and `clearGroupBy`). Kysoql matches `$call` and
+  `$if` across its query-builder modes; `$if` keeps newly selected output fields
+  optional and does not allow a true-only structural mode transition to masquerade
+  as unconditional state. The clearing helpers remain parity-audit candidates.
 - Lowercase builder spelling such as `asc` / `desc` is appropriate even when the
   compiler emits uppercase database syntax.
 - Kysoql should follow these conventions only where they map naturally to SOQL.
@@ -368,12 +369,14 @@ Source:
 
 Confirmed parity candidates:
 
-- Kysoql now exposes Kysely-compatible `$call(func)`, including the same
-  callback-result return behavior, across record, aggregate, count, Apex,
-  relationship-subquery, and semi-join builders.
-- Remaining parity candidates are `$if`, `clearWhere`, `clearOrderBy`,
-  `clearLimit`, `clearOffset`, `clearSelect`, and `clearGroupBy`. Audit their type
-  behavior across record, aggregate, relationship-subquery, and Apex builder modes
-  before adopting them.
+- Kysoql exposes Kysely-compatible `$call(func)` callback-result behavior and
+  `$if(condition, func)` conditional composition across record, aggregate, count,
+  Apex, relationship-subquery, and semi-join builders. As in Kysely, selections
+  introduced only inside `$if` become optional output fields. Kysoql additionally
+  keeps structural builder state identical across both branches.
+- Remaining parity candidates are `clearWhere`, `clearOrderBy`, `clearLimit`,
+  `clearOffset`, `clearSelect`, and `clearGroupBy`. Audit their type behavior across
+  record, aggregate, relationship-subquery, and Apex builder modes before adopting
+  them.
 - Do not treat arbitrary joins, raw SQL/expression escape hatches, or other
   SQL-specific features as missing kysoql functionality.

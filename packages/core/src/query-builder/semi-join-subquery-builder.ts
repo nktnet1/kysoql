@@ -143,6 +143,8 @@ export interface SemiJoinSubqueryBuilder<
   > {
   $call<T>(func: (qb: this) => T): T;
 
+  $if(condition: boolean, func: (qb: this) => this): this;
+
   select<SE extends string>(
     selection: SE &
       SemiJoinSelectionFieldName<DB, OuterTB, OuterReference, TB, SE>,
@@ -161,6 +163,8 @@ export interface SelectedSemiJoinSubqueryBuilder<
       SelectedSemiJoinSubqueryBuilder<DB, OuterTB, OuterReference, TB>
     > {
   $call<T>(func: (qb: this) => T): T;
+
+  $if(condition: boolean, func: (qb: this) => this): this;
 }
 
 export interface SemiJoinQueryCreator<
@@ -205,6 +209,10 @@ class SemiJoinSubqueryBuilderImpl<
 
   $call<T>(func: (qb: this) => T): T {
     return func(this);
+  }
+
+  $if(condition: boolean, func: (qb: this) => this): this {
+    return condition ? func(this) : this;
   }
 
   select<SE extends string>(

@@ -30,19 +30,23 @@ const query = db
 const compiled = query.compile();
 ```
 
-Query builders also expose Kysely-style `$call(...)` composition. The callback
-receives the current specialised builder and `$call` returns the callback result,
-so it can either keep chaining or derive another value without changing the query
-on its own. This is available on record, aggregate, count, Apex, relationship
-subquery, and semi-join builders:
+Query builders expose Kysely-style `$call(...)` and `$if(...)` composition.
+`$call` passes the current specialised builder to a callback and returns the
+callback result. `$if` calls its callback only when the condition is true;
+ordinary fields selected inside it become optional in the inferred result type.
+Structural SOQL modes must remain unchanged across the two branches. These
+helpers are available on record, aggregate, count, Apex, relationship-subquery,
+and semi-join builders:
 
 ```ts
 const activeAccounts = db
   .selectFrom("Account")
-  .select(["Id", "Name"])
-  .$call((qb) => qb.where("Name", "like", "Acme%"));
+  .select("Id")
+  .$call((qb) => qb.where("Name", "like", "Acme%"))
+  .$if(includeName, (qb) => qb.select("Name"));
 
 const soql = activeAccounts.$call((qb) => qb.compile().soql);
+// Result rows: { Id: string; Name?: string | null }
 ```
 
 Multi-currency `WHERE` comparisons can use structured ISO-coded literals through

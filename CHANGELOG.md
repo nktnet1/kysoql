@@ -75,6 +75,10 @@ version is cut.
 - Kysely-style `$call(...)` composition across record, aggregate, count, Apex,
   relationship-subquery, and semi-join query builders, preserving each builder's
   specialised type while returning the callback result unchanged.
+- Kysely-style `$if(...)` conditional composition across the same query-builder
+  surfaces, with callbacks invoked only for true conditions, conditionally selected
+  fields reflected as optional output properties, and structural builder modes kept
+  stable across both branches.
 - Typed SOQL `toLabel()` predicates in ordinary `WHERE` expression callbacks,
   with generated filterable picklist/multipicklist metadata, translated-string
   operands, nullability-aware equality, picklist `LIKE`, child-to-parent paths,
