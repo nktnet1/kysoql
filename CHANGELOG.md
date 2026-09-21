@@ -133,6 +133,9 @@ version is cut.
 
 ### Fixed
 
+- Make the generated-query Salesforce E2E runner import the built core artifact
+  directly from `packages/core/dist`, so the root-level harness does not depend
+  on a root workspace dependency link for `@kysoql/core`.
 - Keep negative Beta `FORMULA()` type assertions compile-time-only so Vitest does
   not execute deliberately invalid SELECT/HAVING access, operand combinations,
   operators, or comparison values.
