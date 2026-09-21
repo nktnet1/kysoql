@@ -443,6 +443,35 @@ describe("parent-to-child relationship subqueries", () => {
     }>();
   });
 
+  it("accepts Id-bounded unbounded field groups in relationship subqueries", () => {
+    const query = new Kysoql<RelationshipSubquerySchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .selectSubquery("Contacts", (contacts) =>
+        contacts
+          .selectFields("custom")
+          .where("Id", "in", ["003A", "003B"]),
+      );
+
+    expect(query.compile().soql).toBe(
+      "SELECT Id, (SELECT FIELDS(CUSTOM) FROM Contacts WHERE Id IN ('003A', '003B')) FROM Account",
+    );
+  });
+
+  it("rejects unbounded relationship-subquery field groups in Apex", () => {
+    const query = new Kysoql<RelationshipSubquerySchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .apex()
+      .selectSubquery("Contacts", (contacts) =>
+        contacts.selectFields("custom").limit(200),
+      );
+
+    expect(() => query.compile()).toThrow(
+      "SOQL FIELDS(ALL) and FIELDS(CUSTOM) are not supported in Apex.",
+    );
+  });
+
   it("rejects unbounded custom field groups in relationship subqueries", () => {
     const query = new Kysoql<RelationshipSubquerySchema>()
       .selectFrom("Account")
@@ -452,7 +481,7 @@ describe("parent-to-child relationship subqueries", () => {
       );
 
     expect(() => query.compile()).toThrow(
-      "SOQL FIELDS(ALL) and FIELDS(CUSTOM) require LIMIT 200 or less.",
+      "SOQL FIELDS(ALL) and FIELDS(CUSTOM) require LIMIT 200 or less or a WHERE Id filter bounded to 200 IDs or fewer.",
     );
   });
 

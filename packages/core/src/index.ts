@@ -187,7 +187,10 @@ export type {
 } from "#/query-builder/type-of-builder";
 export type { CompiledQuery } from "#/query-compiler/compiled-query";
 export { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
-export type { QueryCompiler } from "#/query-compiler/query-compiler";
+export type {
+  QueryCompileContext,
+  QueryCompiler,
+} from "#/query-compiler/query-compiler";
 export { QueryCreator, type QueryCreatorConfig } from "#/query-creator";
 export type { QueryExecutor } from "#/query-executor";
 export type {

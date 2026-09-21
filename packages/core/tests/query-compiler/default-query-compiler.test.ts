@@ -47,6 +47,19 @@ interface FixtureSchema {
       never,
       "Technology" | "Energy"
     >;
+    readonly CustomValue__c: SalesforceField<
+      string,
+      "string",
+      true,
+      true,
+      true,
+      true,
+      never,
+      never,
+      never,
+      false,
+      true
+    >;
   }>;
   readonly Kysoql_Record__c: SalesforceObject<{
     readonly Id: SalesforceField<string, "id", false, true, true, true>;
@@ -92,15 +105,108 @@ describe("DefaultQueryCompiler", () => {
     expect(all.soql).toBe("SELECT FIELDS(ALL) FROM Account LIMIT 200");
   });
 
-  it("rejects unbounded ALL and CUSTOM field groups", () => {
+  it("accepts Salesforce-bounded Id filters for unbounded FIELDS groups", () => {
     const db = new Kysoql<FixtureSchema>();
+    const inQuery = db
+      .selectFrom("Account")
+      .selectFields("all")
+      .where("Id", "in", ["001A", "001B", "001C"])
+      .compile();
+    const equalityQuery = db
+      .selectFrom("Account")
+      .selectFields("custom")
+      .where((eb) =>
+        eb.or([
+          eb("Id", "=", "001A"),
+          eb("Id", "=", "001B"),
+          eb("Id", "=", "001C"),
+        ]),
+      )
+      .compile();
+
+    expect(inQuery.soql).toBe(
+      "SELECT FIELDS(ALL) FROM Account WHERE Id IN ('001A', '001B', '001C')",
+    );
+    expect(equalityQuery.soql).toBe(
+      "SELECT FIELDS(CUSTOM) FROM Account WHERE ((Id = '001A' OR Id = '001B') OR Id = '001C')",
+    );
+  });
+
+  it("rejects FIELDS groups that are not bounded to 200 result rows", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const tooManyIds = Array.from({ length: 201 }, (_, index) =>
+      `001${String(index).padStart(3, "0")}`,
+    );
+    const error =
+      "SOQL FIELDS(ALL) and FIELDS(CUSTOM) require LIMIT 200 or less or a WHERE Id filter bounded to 200 IDs or fewer.";
 
     expect(() =>
       db.selectFrom("Account").selectFields("custom").compile(),
-    ).toThrow("SOQL FIELDS(ALL) and FIELDS(CUSTOM) require LIMIT 200 or less.");
+    ).toThrow(error);
     expect(() =>
       db.selectFrom("Account").selectFields("all").limit(201).compile(),
-    ).toThrow("SOQL FIELDS(ALL) and FIELDS(CUSTOM) require LIMIT 200 or less.");
+    ).toThrow(error);
+    expect(() =>
+      db
+        .selectFrom("Account")
+        .selectFields("all")
+        .where("Id", "in", tooManyIds)
+        .compile(),
+    ).toThrow(error);
+    expect(() =>
+      db
+        .selectFrom("Account")
+        .selectFields("all")
+        .where((eb) =>
+          eb.or([eb("Id", "=", "001A"), eb("Name", "=", "Acme")]),
+        )
+        .compile(),
+    ).toThrow(error);
+    expect(() =>
+      db
+        .selectFrom("Account")
+        .selectFields("all")
+        .where((eb) =>
+          eb.and([
+            eb("Id", "=", "001000"),
+            eb("Id", "=", "001001"),
+            ...Array.from({ length: 199 }, (_, index) =>
+              eb(
+                "Id",
+                "=",
+                `001${String(index + 2).padStart(3, "0")}`,
+              ),
+            ),
+          ]),
+        )
+        .compile(),
+    ).toThrow(error);
+  });
+
+  it("rejects unbounded FIELDS groups in Apex even when row-bounded", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const error =
+      "SOQL FIELDS(ALL) and FIELDS(CUSTOM) are not supported in Apex.";
+
+    expect(() =>
+      db
+        .selectFrom("Account")
+        .selectFields("all")
+        .limit(200)
+        .apex()
+        .compile(),
+    ).toThrow(error);
+    expect(() =>
+      db
+        .selectFrom("Account")
+        .selectFields("custom")
+        .where("Id", "=", "001A")
+        .apex()
+        .compile(),
+    ).toThrow(error);
+    expect(
+      db.selectFrom("Account").selectFields("standard").apex().compile().soql,
+    ).toBe("SELECT FIELDS(STANDARD) FROM Account");
   });
 
   it("compiles aliased toLabel selections in builder order", () => {

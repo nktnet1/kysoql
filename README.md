@@ -172,17 +172,22 @@ bare numeric values.
 Generated standard/custom metadata also enables typed `FIELDS(STANDARD)`,
 `FIELDS(CUSTOM)`, and `FIELDS(ALL)` selections on root queries and relationship
 subqueries. The selected row shape expands to the matching direct fields without
-including relationship metadata. Kysoql rejects overlapping explicit selections;
-because Salesforce treats `CUSTOM` and `ALL` as unbounded field groups in
-REST/SOAP queries, those two selectors require `LIMIT 200` or less.
+including relationship metadata. Kysoql rejects overlapping explicit selections.
+Salesforce treats `CUSTOM` and `ALL` as unbounded field groups: API queries must
+limit the result to at most 200 rows using `LIMIT`, `Id IN (...)`, or a boolean
+combination of direct `Id = ...` tests. Apex supports only the bounded
+`FIELDS(STANDARD)` selector and rejects `FIELDS(CUSTOM)` / `FIELDS(ALL)` even when
+the query has a row limit. If generated metadata says an object has no custom
+fields, `FIELDS(CUSTOM)` cannot be the complete field list; select another field
+first if the selector is still required.
 
 ```ts
 const accounts = await db
   .selectFrom("Account")
   .selectFields("all")
-  .limit(200)
+  .where("Id", "in", [accountId, secondAccountId])
   .execute();
-// SELECT FIELDS(ALL) FROM Account LIMIT 200
+// SELECT FIELDS(ALL) FROM Account WHERE Id IN ('...', '...')
 ```
 
 Generated Salesforce `location` fields use a structured `{ latitude, longitude }`

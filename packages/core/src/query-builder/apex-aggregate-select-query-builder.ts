@@ -137,7 +137,9 @@ class ApexAggregateSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
   }
 
   compile(): CompiledQuery<O> {
-    return this.#props.queryCompiler.compileQuery<O>(this.#props.queryNode);
+    return this.#props.queryCompiler.compileQuery<O>(this.#props.queryNode, {
+      apex: true,
+    });
   }
 
   allRows(): ApexAggregateSelectQueryBuilder<DB, TB, O> {

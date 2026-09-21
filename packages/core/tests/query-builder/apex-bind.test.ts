@@ -226,6 +226,23 @@ describe("Apex bind expressions", () => {
     );
   });
 
+  it("propagates Apex FIELDS restrictions into query-result expressions", () => {
+    const sourceAccount = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .selectFields("all")
+      .limit(1)
+      .apex();
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .apex()
+      .where("Name", "=", apexQueryField(sourceAccount, "Name"));
+
+    expect(() => query.compile()).toThrow(
+      "SOQL FIELDS(ALL) and FIELDS(CUSTOM) are not supported in Apex.",
+    );
+  });
+
   it("recursively validates binds inside Apex query-result expressions", () => {
     const knowledgeStatus = new Kysoql<FixtureSchema>()
       .selectFrom("KnowledgeArticleVersion")

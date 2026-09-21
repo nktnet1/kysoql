@@ -62,7 +62,10 @@ import { validateRelationshipQueryLimits } from "#/parser/relationship-query-lim
 import { validateTypeOfSelections } from "#/parser/type-of-parser";
 import { validateUserProfileFeedQuery } from "#/parser/user-profile-feed-parser";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
-import type { QueryCompiler } from "#/query-compiler/query-compiler";
+import type {
+  QueryCompileContext,
+  QueryCompiler,
+} from "#/query-compiler/query-compiler";
 import { isSoqlCurrencyLiteral } from "#/soql-currency-literal";
 import { isSoqlRelativeDateLiteral } from "#/soql-relative-date-literal";
 import { isSoqlTemporalLiteral } from "#/soql-temporal-literal";
@@ -75,19 +78,28 @@ const numericLiteralSchema = v.pipe(
 );
 
 export class DefaultQueryCompiler implements QueryCompiler {
-  compileQuery<O = unknown>(query: SelectQueryNode): CompiledQuery<O> {
+  compileQuery<O = unknown>(
+    query: SelectQueryNode,
+    context: QueryCompileContext = {},
+  ): CompiledQuery<O> {
     return freeze({
       query,
-      soql: this.#compileSelectQuery(query),
+      soql: this.#compileSelectQuery(query, context),
     });
   }
 
-  #compileSelectQuery(query: SelectQueryNode): string {
+  #compileSelectQuery(
+    query: SelectQueryNode,
+    context: QueryCompileContext,
+  ): string {
     if (!query.selections?.length) {
       throw new Error("Cannot compile a SELECT query without selections.");
     }
 
-    validateFieldsSelections(query.selections, query.limit);
+    validateFieldsSelections(query.selections, query.limit, {
+      apex: context.apex === true,
+      where: query.where,
+    });
     validateAllRowsQuery(query);
     validateApexAccessModeQuery(query);
     validateApexBindQuery(query);
@@ -99,7 +111,9 @@ export class DefaultQueryCompiler implements QueryCompiler {
     validateRelationshipQueryLimits(query);
     validateObjectQueryLimits(query);
 
-    let soql = `SELECT ${query.selections.map((selection) => this.#compileSelection(selection)).join(", ")} FROM ${query.from.name}`;
+    let soql = `SELECT ${query.selections
+      .map((selection) => this.#compileSelection(selection, context))
+      .join(", ")} FROM ${query.from.name}`;
 
     if (query.usingScope) {
       soql += ` USING SCOPE ${this.#compileUsingScope(query.usingScope)}`;
@@ -165,7 +179,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
     return soql;
   }
 
-  #compileSelection(selection: SelectionNode): string {
+  #compileSelection(
+    selection: SelectionNode,
+    context: QueryCompileContext,
+  ): string {
     switch (selection.selection.kind) {
       case "AggregateFunctionNode":
         return this.#compileAggregateFunction(
@@ -186,6 +203,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
       case "RelationshipSubqueryNode":
         return `(${this.#compileRelationshipSubquery(
           selection.selection as RelationshipSubqueryNode,
+          context,
         )})`;
       case "TypeOfNode":
         return this.#compileTypeOf(selection.selection as TypeOfNode);
@@ -212,17 +230,23 @@ export class DefaultQueryCompiler implements QueryCompiler {
     return `TYPEOF ${this.#compileReference(node.reference)} ${whens}${elseClause} END`;
   }
 
-  #compileRelationshipSubquery(query: RelationshipSubqueryNode): string {
+  #compileRelationshipSubquery(
+    query: RelationshipSubqueryNode,
+    context: QueryCompileContext,
+  ): string {
     if (!query.selections?.length) {
       throw new Error(
         "Cannot compile a relationship subquery without selections.",
       );
     }
 
-    validateFieldsSelections(query.selections, query.limit);
+    validateFieldsSelections(query.selections, query.limit, {
+      apex: context.apex === true,
+      where: query.where,
+    });
 
     let soql = `SELECT ${query.selections
-      .map((selection) => this.#compileSelection(selection))
+      .map((selection) => this.#compileSelection(selection, context))
       .join(", ")} FROM ${this.#compileReference(query.relationship)}`;
 
     if (query.where) {
@@ -410,7 +434,9 @@ export class DefaultQueryCompiler implements QueryCompiler {
         return this.#compileApexLiteral(node as ApexLiteralNode);
       case "ApexQueryResultNode": {
         const queryResult = node as ApexQueryResultNode;
-        return `[${this.compileQuery(queryResult.query).soql}].${queryResult.field}`;
+        return `[${this.compileQuery(queryResult.query, { apex: true }).soql}].${
+          queryResult.field
+        }`;
       }
       case "ApexSubstringNode": {
         const substring = node as ApexSubstringNode;

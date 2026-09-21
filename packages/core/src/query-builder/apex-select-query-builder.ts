@@ -219,7 +219,9 @@ class ApexSelectQueryBuilderImpl<
   }
 
   compile(): CompiledQuery<O> {
-    return this.#props.queryCompiler.compileQuery<O>(this.#props.queryNode);
+    return this.#props.queryCompiler.compileQuery<O>(this.#props.queryNode, {
+      apex: true,
+    });
   }
 
   allRows(): ApexSelectQueryBuilder<DB, TB, O, Mode> {

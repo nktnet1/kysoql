@@ -104,6 +104,7 @@ class ApexCountQueryBuilderImpl<DB, TB extends keyof DB>
   compile(): CompiledQuery<number> {
     return this.#props.queryCompiler.compileQuery<number>(
       this.#props.queryNode,
+      { apex: true },
     );
   }
 

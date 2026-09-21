@@ -117,6 +117,9 @@ Sources:
 Settled findings:
 
 - `ORDER BY` supports `ASC` / `DESC` and explicit `NULLS FIRST` / `NULLS LAST`.
+- Salesforce does not support explicit `NULLS FIRST` / `NULLS LAST` when ordering
+  by a relationship/reference field that can contain null. Generated nullable
+  reference metadata is sufficient to prevent that invalid combination.
 - `OFFSET` is bounded to `0..2000` and is a top-level production feature for
   REST, SOAP, and Apex query contexts.
 - Parent-to-child subquery `OFFSET` is allowed only when the parent has `LIMIT 1`
@@ -169,6 +172,7 @@ Settled findings:
 Sources:
 
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-groupby.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-group-by-considerations.html
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-having.html
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-grouping.html
 - https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-functions.html
@@ -180,6 +184,12 @@ Settled findings:
 
 - Aggregate queries have a distinct result shape; generated `aggregatable` /
   `groupable` metadata must gate safe function/grouping use.
+- Salesforce also permits `GROUP BY` without any aggregate function to return
+  the distinct grouped values, including `null`; this needs a direct root-builder
+  surface rather than an aggregate-only transition.
+- Queries using `GROUP BY` cannot use child relationship expressions written with
+  custom `__r` syntax. This is an explicit Salesforce restriction in addition to
+  each field's generated `groupable` capability.
 - `HAVING` filters grouped results and supports boolean composition, but should
   not inherit unsupported `WHERE` features by analogy alone.
 - `ROLLUP` / `CUBE`, `GROUPING()`, date grouping functions, and aggregate ordering
@@ -203,8 +213,15 @@ Sources:
 
 Settled findings:
 
-- `FIELDS(STANDARD|CUSTOM|ALL)` has bounded-query restrictions and should expand
-  to typed direct-field output from generated metadata.
+- `FIELDS(STANDARD|CUSTOM|ALL)` expands to typed direct-field output from
+  generated metadata. `FIELDS(ALL)` and `FIELDS(CUSTOM)` are unbounded selectors:
+  REST/SOAP/CLI queries must cap rows with `LIMIT <= 200`, `Id IN (...)` containing
+  at most 200 IDs, or at most 200 direct `Id = ...` tests joined by boolean
+  operators. Apex does not support either unbounded selector, even for dynamic
+  SOQL. `FIELDS(STANDARD)` remains supported in Apex.
+- `FIELDS(CUSTOM)` as the complete field list fails when the object has no custom
+  fields; adding another selected field makes the field list valid. Generated
+  custom-field metadata can enforce this for the typed builder surface.
 - Geolocation expressions require location-specific structured operands rather
   than raw expression strings.
 - `TYPEOF` is tied to polymorphic references and has compatibility restrictions
@@ -337,7 +354,37 @@ Settled findings:
 These correspond to the active roadmap in `docs/chatgpt-handoff.md`; do not grow
 this into a speculative backlog.
 
-### `FORMULA()` in `WHERE` (beta)
+### Aggregate `OFFSET` verification
+
+Source:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-offset.html
+
+Current evidence:
+
+- Salesforce documents top-level `OFFSET` as supported in SOAP API, REST API, and
+  Apex and does not explicitly list aggregate/grouped queries as an exclusion.
+- Kysoql currently exposes aggregate `OFFSET` in Apex but not in normal API
+  aggregate builders. Verify a grouped REST/SOAP query against the maintained
+  Salesforce fixture before treating this as a confirmed missing feature.
+
+### `SET OPTIONS` design
+
+Source:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-set-options.html
+
+Confirmed current documentation:
+
+- `SET OPTIONS dataspace='...'` applies to Data 360 DLO queries.
+- `honorEmptyStrings=true|false` applies to DLOs and simple DMO queries.
+- `explicitNamespace` applies only to managed dynamic Apex and must be supplied as
+  a bind variable.
+- These capabilities depend on execution/object context that the current generated
+  schema does not model. Add capability metadata before exposing a typed builder;
+  do not use a generic option bag.
+
+### `FORMULA()` in `WHERE` pilot
 
 Sources:
 
@@ -346,10 +393,11 @@ Sources:
 
 Confirmed current documentation:
 
-- `FORMULA()` is beta and available in `WHERE`, not SELECT.
-- It supports `+` / `-` arithmetic over documented numeric/date/currency field
-  families and compares the result with normal comparison operators/literals.
-- If adopted, model operands/operators structurally and keep beta support explicit.
+- Summer '26 `FORMULA()` is a pilot capability and is currently available only in
+  `WHERE`, not `HAVING`.
+- It supports `+` / `-` arithmetic over documented numeric/date/currency families.
+- If the project opts into pilot syntax, model operands/operators structurally and
+  keep the feature visibly opt-in.
 
 ### Relationship-subquery `OFFSET` pilot
 

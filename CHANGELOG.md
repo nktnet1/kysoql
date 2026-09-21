@@ -106,6 +106,11 @@ version is cut.
 
 ### Fixed
 
+- Align unbounded `FIELDS(ALL)` / `FIELDS(CUSTOM)` validation with Salesforce:
+  accept REST/SOAP-style queries bounded to at most 200 rows by `LIMIT` or direct
+  `Id` tests, reject both selectors in Apex, propagate Apex compile context into
+  relationship subqueries/nested query-result expressions, and prevent
+  custom-only field lists when generated metadata contains no custom fields.
 - Correct the polymorphic `.Type` null-filter regression expectation to match
   the established scalar compiler output (`null`), without changing compiler
   behavior.

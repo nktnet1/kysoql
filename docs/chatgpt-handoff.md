@@ -48,12 +48,12 @@ SQL escape hatch.
 
 ## Current baseline
 
-The accepted continuation baseline is through **`v1.0.129`**, which completes
-the current Kysely-neutral clause-clearing audit with `clearOrderBy()`,
-`clearLimit()`, `clearOffset()`, `clearSelect()`, and aggregate `clearGroupBy()`,
-on top of `clearWhere()`, `$call(...)`, `$if(...)`, structured
-`WITH RecordVisibilityContext (...)`, ISO-coded currency literals, Apex `ALL ROWS`,
-and the documentation-pruning work.
+The accepted continuation baseline is through **`v1.0.130`**. In addition to the
+completed Kysely-neutral builder audit, it aligns `FIELDS(ALL|CUSTOM)` with
+Salesforce's bounded-query rules: API queries can be bounded by `LIMIT <= 200` or
+by direct `Id` tests covering at most 200 IDs, Apex rejects both unbounded
+selectors, and the typed API catches custom-only selection on objects with no
+generated custom fields.
 
 The implementation already covers the broad production SOQL surface:
 
@@ -112,23 +112,37 @@ Preserve these unless a change is explicitly justified:
 
 ## Remaining roadmap
 
-Keep this list limited to confirmed missing/documented surface or a concrete
-Kysely-parity concern. Remove an item when it is implemented or deliberately
-closed.
+Keep this list limited to confirmed missing/documented surface, a concrete
+correctness mismatch, or an explicit verification target. Remove an item when it
+is implemented or deliberately closed. Kysely parity is otherwise considered
+complete.
 
-1. **`FORMULA()` in `WHERE` (beta).** Salesforce currently documents arithmetic
-   `FORMULA()` predicates for supported numeric/date/currency field pairs using
-   `+` / `-`. Treat this as opt-in beta surface and model it structurally if the
-   project chooses to support beta SOQL; do not expose raw formula text.
-2. **Relationship-subquery `OFFSET` pilot.** Salesforce documents subquery
-   `OFFSET` only when the parent query has `LIMIT 1`, and still labels the feature
-   pilot/not for production. Keep it omitted unless Salesforce promotes it to a
-   production-supported feature or the project explicitly opts into pilot syntax.
-
-Specialist-object restrictions that depend on unavailable adapter metadata,
-permissions, runtime cardinality, or product-specific execution context are not
-roadmap items by themselves. Add one only when there is an authoritative rule the
-library can soundly model.
+1. **Nullable relationship/reference `ORDER BY ... NULLS ...`.** Salesforce does
+   not support `NULLS FIRST` / `NULLS LAST` when the ordered relationship field
+   can contain null (for example nullable `AccountId`). Restrict the current
+   `orderBy(..., nulls)` surface using generated nullability/reference metadata.
+2. **Direct non-aggregate `GROUP BY`.** Salesforce supports `GROUP BY` without an
+   aggregate function to return distinct values, including `null`. Root record
+   builders currently require an aggregate transition before grouping.
+3. **Custom `__r` grouping restriction.** Salesforce forbids child relationship
+   expressions using `__r` in any query that uses `GROUP BY`. Add a typed/compiler
+   guard without blocking valid standard relationship grouping.
+4. **Aggregate `OFFSET` verification.** Salesforce documents top-level `OFFSET`
+   for REST, SOAP, and Apex without explicitly excluding grouped queries, while
+   kysoql currently exposes aggregate `OFFSET` only in Apex. Verify the exact
+   REST/SOAP behavior against the Salesforce fixture before changing the API.
+5. **Typed `SET OPTIONS`.** Summer '26 documents production `SET OPTIONS` support
+   for Data 360 DLO/DMO behavior and managed dynamic Apex namespace resolution.
+   Design capability metadata first; do not add an untyped option bag or raw
+   clause escape hatch.
+6. **`FORMULA()` in `WHERE` pilot.** Salesforce currently labels this Summer '26
+   feature a pilot, limited to `WHERE` rather than `HAVING`. Keep it omitted from
+   the production-safe builder unless the project explicitly opts into pilot
+   syntax.
+7. **Relationship-subquery `OFFSET` pilot.** Salesforce permits it only when the
+   parent query has `LIMIT 1` and still says the feature is not intended for
+   production. Keep it omitted unless its status changes or pilot syntax is
+   explicitly enabled.
 
 ## Validation
 

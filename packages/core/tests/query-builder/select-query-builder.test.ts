@@ -192,6 +192,13 @@ interface FixtureSchema {
   }>;
 }
 
+interface StandardOnlySchema {
+  readonly Account: SalesforceObject<{
+    readonly Id: SalesforceField<string, "id", false, true, true, true>;
+    readonly Name: SalesforceField<string, "string", true, true, true, true>;
+  }>;
+}
+
 type OutputOf<Query> =
   Query extends SelectQueryBuilder<infer _DB, infer _TB, infer Output>
     ? Output
@@ -333,6 +340,19 @@ describe("SelectQueryBuilder", () => {
     expectTypeOf<Simplify<OutputOf<typeof allQuery>>>().toEqualTypeOf<
       Simplify<OutputOf<typeof standardQuery> & OutputOf<typeof customQuery>>
     >();
+  });
+
+  it("requires another selected field when FIELDS(CUSTOM) expands to no fields", () => {
+    const query = new Kysoql<StandardOnlySchema>().selectFrom("Account");
+
+    void (() => {
+      // @ts-expect-error Salesforce rejects FIELDS(CUSTOM) as the complete field list when the object has no custom fields.
+      query.selectFields("custom");
+    });
+
+    expect(
+      query.select("Id").selectFields("custom").limit(200).compile().soql,
+    ).toBe("SELECT Id, FIELDS(CUSTOM) FROM Account LIMIT 200");
   });
 
   it("rejects overlapping and unknown field-group selections at compile time", () => {
