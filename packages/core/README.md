@@ -30,6 +30,21 @@ const query = db
 const compiled = query.compile();
 ```
 
+Query builders also expose Kysely-style `$call(...)` composition. The callback
+receives the current specialised builder and `$call` returns the callback result,
+so it can either keep chaining or derive another value without changing the query
+on its own. This is available on record, aggregate, count, Apex, relationship
+subquery, and semi-join builders:
+
+```ts
+const activeAccounts = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .$call((qb) => qb.where("Name", "like", "Acme%"));
+
+const soql = activeAccounts.$call((qb) => qb.compile().soql);
+```
+
 Multi-currency `WHERE` comparisons can use structured ISO-coded literals through
 `soqlCurrency(code, value)`. The ISO code must be three uppercase ASCII letters;
 whether that code is active remains Salesforce-org runtime state. `IN` / `NOT IN`

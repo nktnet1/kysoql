@@ -31,6 +31,8 @@ interface ApexCountQueryBuilderProps {
 }
 
 export interface ApexCountQueryBuilder<DB, TB extends keyof DB> {
+  $call<T>(func: (qb: this) => T): T;
+
   compile(): CompiledQuery<number>;
 
   allRows(): ApexCountQueryBuilder<DB, TB>;
@@ -69,6 +71,10 @@ class ApexCountQueryBuilderImpl<DB, TB extends keyof DB>
 
   constructor(props: ApexCountQueryBuilderProps) {
     this.#props = freeze(props);
+  }
+
+  $call<T>(func: (qb: this) => T): T {
+    return func(this);
   }
 
   compile(): CompiledQuery<number> {

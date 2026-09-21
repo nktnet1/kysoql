@@ -148,6 +148,8 @@ export interface RelationshipSubqueryBuilder<
   FunctionMode extends RelationshipSubqueryFunctionMode = "none",
   ApexMode extends boolean = false,
 > {
+  $call<T>(func: (qb: this) => T): T;
+
   limit(
     limit: number,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
@@ -298,6 +300,10 @@ class RelationshipSubqueryBuilderImpl<
 
   constructor(props: RelationshipSubqueryBuilderProps<ApexMode>) {
     this.#props = freeze(props);
+  }
+
+  $call<T>(func: (qb: this) => T): T {
+    return func(this);
   }
 
   limit(

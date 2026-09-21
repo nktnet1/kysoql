@@ -47,6 +47,8 @@ import type {
 import { freeze } from "#/util/object-utils";
 
 export interface CountQueryBuilder<DB, TB extends keyof DB> {
+  $call<T>(func: (qb: this) => T): T;
+
   compile(): CompiledQuery<number>;
 
   execute(): Promise<number>;
@@ -118,6 +120,10 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
 
   constructor(props: CountQueryBuilderProps) {
     this.#props = freeze(props);
+  }
+
+  $call<T>(func: (qb: this) => T): T {
+    return func(this);
   }
 
   compile(): CompiledQuery<number> {

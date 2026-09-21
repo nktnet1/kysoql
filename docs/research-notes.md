@@ -25,10 +25,11 @@ Settled findings:
 - Selected output is accumulated in the builder's output type.
 - Repeated `where()` calls combine through boolean operation nodes.
 - Repeated `orderBy()` calls are additive and preserve call order.
-- Current Kysely also exposes neutral builder helpers such as `$if`, `$call`, and
+- Current Kysely exposes neutral builder helpers such as `$call`, `$if`, and
   clause-clearing methods (`clearWhere`, `clearOrderBy`, `clearLimit`,
-  `clearOffset`, `clearSelect`, and `clearGroupBy`). Kysoql currently lacks these,
-  so they are valid parity-audit candidates if their typing remains sound.
+  `clearOffset`, `clearSelect`, and `clearGroupBy`). Kysoql now matches `$call`
+  across its query-builder modes; the conditional/clearing helpers remain
+  parity-audit candidates where their typing and SOQL semantics stay sound.
 - Lowercase builder spelling such as `asc` / `desc` is appropriate even when the
   compiler emits uppercase database syntax.
 - Kysoql should follow these conventions only where they map naturally to SOQL.
@@ -367,9 +368,12 @@ Source:
 
 Confirmed parity candidates:
 
-- Kysoql currently lacks Kysely's `$if`, `$call`, `clearWhere`, `clearOrderBy`,
-  `clearLimit`, `clearOffset`, `clearSelect`, and `clearGroupBy` helpers.
-- Audit their type behavior across record, aggregate, relationship-subquery, and
-  Apex builder modes before adopting them.
+- Kysoql now exposes Kysely-compatible `$call(func)`, including the same
+  callback-result return behavior, across record, aggregate, count, Apex,
+  relationship-subquery, and semi-join builders.
+- Remaining parity candidates are `$if`, `clearWhere`, `clearOrderBy`,
+  `clearLimit`, `clearOffset`, `clearSelect`, and `clearGroupBy`. Audit their type
+  behavior across record, aggregate, relationship-subquery, and Apex builder modes
+  before adopting them.
 - Do not treat arbitrary joins, raw SQL/expression escape hatches, or other
   SQL-specific features as missing kysoql functionality.

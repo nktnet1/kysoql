@@ -32,6 +32,8 @@ interface ApexAggregateSelectQueryBuilderProps {
 }
 
 export interface ApexAggregateSelectQueryBuilder<DB, TB extends keyof DB, O> {
+  $call<T>(func: (qb: this) => T): T;
+
   compile(): CompiledQuery<O>;
 
   allRows(): ApexAggregateSelectQueryBuilder<DB, TB, O>;
@@ -74,6 +76,10 @@ class ApexAggregateSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
 
   constructor(props: ApexAggregateSelectQueryBuilderProps) {
     this.#props = freeze(props);
+  }
+
+  $call<T>(func: (qb: this) => T): T {
+    return func(this);
   }
 
   compile(): CompiledQuery<O> {

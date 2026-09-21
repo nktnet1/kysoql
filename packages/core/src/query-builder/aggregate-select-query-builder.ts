@@ -314,6 +314,8 @@ export interface AggregateSelectQueryBuilder<
   GroupMode extends AggregateGroupMode = "none",
   AdvancedFieldCount extends AdvancedGroupFieldCount = 0,
 > {
+  $call<T>(func: (qb: this) => T): T;
+
   compile(): CompiledQuery<O>;
 
   execute(): Promise<readonly O[]>;
@@ -728,6 +730,10 @@ class AggregateSelectQueryBuilderImpl<
 
   constructor(props: AggregateSelectQueryBuilderProps) {
     this.#props = freeze(props);
+  }
+
+  $call<T>(func: (qb: this) => T): T {
+    return func(this);
   }
 
   compile(): CompiledQuery<O> {

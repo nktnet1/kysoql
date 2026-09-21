@@ -208,6 +208,8 @@ export interface SelectQueryBuilder<
   O,
   Mode extends SelectQueryMode = SelectQueryMode,
 > {
+  $call<T>(func: (qb: this) => T): T;
+
   compile(): CompiledQuery<O>;
 
   execute(): Promise<readonly O[]>;
@@ -398,6 +400,10 @@ class SelectQueryBuilderImpl<
 
   constructor(props: SelectQueryBuilderProps) {
     this.#props = freeze(props);
+  }
+
+  $call<T>(func: (qb: this) => T): T {
+    return func(this);
   }
 
   compile(): CompiledQuery<O> {

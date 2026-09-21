@@ -72,6 +72,9 @@ version is cut.
   `maxDescriptorPerRecord`, `supportsDomains`, and `supportsDelegates` parameters,
   at-least-one validation, immutable replacement semantics, and compiler guards
   against combining it with another SOQL `WITH` form.
+- Kysely-style `$call(...)` composition across record, aggregate, count, Apex,
+  relationship-subquery, and semi-join query builders, preserving each builder's
+  specialised type while returning the callback result unchanged.
 - Typed SOQL `toLabel()` predicates in ordinary `WHERE` expression callbacks,
   with generated filterable picklist/multipicklist metadata, translated-string
   operands, nullability-aware equality, picklist `LIKE`, child-to-parent paths,

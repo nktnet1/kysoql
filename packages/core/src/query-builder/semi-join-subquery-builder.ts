@@ -141,6 +141,8 @@ export interface SemiJoinSubqueryBuilder<
     TB,
     SemiJoinSubqueryBuilder<DB, OuterTB, OuterReference, TB>
   > {
+  $call<T>(func: (qb: this) => T): T;
+
   select<SE extends string>(
     selection: SE &
       SemiJoinSelectionFieldName<DB, OuterTB, OuterReference, TB, SE>,
@@ -157,7 +159,9 @@ export interface SelectedSemiJoinSubqueryBuilder<
       DB,
       TB,
       SelectedSemiJoinSubqueryBuilder<DB, OuterTB, OuterReference, TB>
-    > {}
+    > {
+  $call<T>(func: (qb: this) => T): T;
+}
 
 export interface SemiJoinQueryCreator<
   DB,
@@ -197,6 +201,10 @@ class SemiJoinSubqueryBuilderImpl<
 
   constructor(props: SemiJoinSubqueryBuilderProps) {
     this.#props = freeze(props);
+  }
+
+  $call<T>(func: (qb: this) => T): T {
+    return func(this);
   }
 
   select<SE extends string>(

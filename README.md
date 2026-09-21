@@ -139,6 +139,11 @@ const compiled = query.compile();
 // ORDER BY AnnualRevenue DESC, Name ASC LIMIT 25
 ```
 
+Kysely-style `$call(...)` composition is available on record, aggregate, count,
+Apex, relationship-subquery, and semi-join builders. It passes the current
+specialised builder to a callback and returns the callback result unchanged,
+which makes reusable query transforms possible without adding SOQL semantics.
+
 Selected fields, filterable fields, filter values, and operators are checked from
 the generated Salesforce schema. Equality (`=`, `!=`), ordered comparisons
 (`<`, `<=`, `>`, `>=`), and Kysely-style `like` are available where the field
