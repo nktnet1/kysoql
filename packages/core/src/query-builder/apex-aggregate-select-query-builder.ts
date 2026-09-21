@@ -3,6 +3,7 @@ import {
   type ApexWhereExpressionFactory,
   createApexExpressionBuilder,
 } from "#/expression/apex-expression-builder";
+import { AllRowsNode } from "#/operation-node/all-rows-node";
 import {
   type ApexAccessMode,
   ApexAccessModeNode,
@@ -32,6 +33,8 @@ interface ApexAggregateSelectQueryBuilderProps {
 
 export interface ApexAggregateSelectQueryBuilder<DB, TB extends keyof DB, O> {
   compile(): CompiledQuery<O>;
+
+  allRows(): ApexAggregateSelectQueryBuilder<DB, TB, O>;
 
   limit(
     limit: number | ApexBindExpression<number>,
@@ -75,6 +78,16 @@ class ApexAggregateSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
 
   compile(): CompiledQuery<O> {
     return this.#props.queryCompiler.compileQuery<O>(this.#props.queryNode);
+  }
+
+  allRows(): ApexAggregateSelectQueryBuilder<DB, TB, O> {
+    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithAllRows(
+        this.#props.queryNode,
+        AllRowsNode.create(),
+      ),
+    });
   }
 
   limit(

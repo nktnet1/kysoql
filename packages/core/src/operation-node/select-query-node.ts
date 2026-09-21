@@ -1,3 +1,4 @@
+import type { AllRowsNode } from "#/operation-node/all-rows-node";
 import type { ApexAccessModeNode } from "#/operation-node/apex-access-mode-node";
 import type { ApexBindExpressionNode } from "#/operation-node/apex-expression-node";
 import type { DateFunctionNode } from "#/operation-node/date-function-node";
@@ -45,6 +46,7 @@ export interface SelectQueryNode {
   readonly offset?: OffsetNode<number | ApexBindExpressionNode>;
   readonly forViewReference?: ForViewReferenceNode;
   readonly knowledgeUpdate?: KnowledgeUpdateNode;
+  readonly allRows?: AllRowsNode;
   readonly forUpdate?: ForUpdateNode;
 }
 
@@ -177,6 +179,16 @@ export const SelectQueryNode = {
       knowledgeUpdate: select.knowledgeUpdate
         ? KnowledgeUpdateNode.cloneWithMode(select.knowledgeUpdate, mode)
         : KnowledgeUpdateNode.create(mode),
+    });
+  },
+
+  cloneWithAllRows(
+    select: SelectQueryNode,
+    allRows: AllRowsNode,
+  ): SelectQueryNode {
+    return freeze({
+      ...select,
+      allRows,
     });
   },
 

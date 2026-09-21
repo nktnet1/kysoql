@@ -800,6 +800,24 @@ const lockedAccountQuery = db
   .compile();
 ```
 
+Apex SOQL can also opt into deleted records and archived activities with
+`.allRows()`. This is deliberately separate from API QueryAll execution:
+
+```ts
+const allAccounts = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .apex()
+  .allRows()
+  .compile();
+// SELECT Id, Name FROM Account ALL ROWS
+```
+
+`ALL ROWS` is available on record, aggregate-result, and bare `COUNT()` Apex
+queries. Salesforce does not allow it together with `FOR UPDATE`, and Kysoql
+rejects that combination when compiling the query. Executable API queries
+continue to use `.executeAll()` instead of compiling `ALL ROWS`.
+
 The Apex-context builder intentionally has no `.execute()` or `.executeAll()`
 method. It also exposes explicit access modes without guessing the Apex API
 version's default security context:

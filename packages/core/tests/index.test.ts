@@ -15,6 +15,7 @@ import {
   type AliasedDistanceFunctionBuilder,
   type AliasedSelectFunctionBuilder,
   type AliasNode,
+  type AllRowsNode,
   type AndNode,
   type ApexAccessMode,
   type ApexAccessModeNode,
@@ -227,6 +228,7 @@ type PublicTypeSurface = {
   >;
   aliasedSelectFunctionBuilder: AliasedSelectFunctionBuilder<string, "label">;
   aliasNode: AliasNode;
+  allRowsNode: AllRowsNode;
   andNode: AndNode;
   binaryOperationNode: BinaryOperationNode;
   comparisonOperator: ComparisonOperator;

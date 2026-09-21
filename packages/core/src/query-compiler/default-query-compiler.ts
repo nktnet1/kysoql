@@ -48,6 +48,7 @@ import type {
   DataCategorySelectionNode,
   WithDataCategoryNode,
 } from "#/operation-node/with-data-category-node";
+import { validateAllRowsQuery } from "#/parser/all-rows-parser";
 import { validateApexAccessModeQuery } from "#/parser/apex-access-mode-parser";
 import { validateApexBindQuery } from "#/parser/apex-bind-parser";
 import { validateDataCategoryQuery } from "#/parser/data-category-parser";
@@ -84,6 +85,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
     }
 
     validateFieldsSelections(query.selections, query.limit);
+    validateAllRowsQuery(query);
     validateApexAccessModeQuery(query);
     validateApexBindQuery(query);
     validateForUpdateQuery(query);
@@ -142,6 +144,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
     if (query.knowledgeUpdate) {
       soql += ` UPDATE ${this.#compileKnowledgeUpdate(query.knowledgeUpdate)}`;
+    }
+
+    if (query.allRows) {
+      soql += " ALL ROWS";
     }
 
     if (query.forUpdate) {

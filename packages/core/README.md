@@ -72,6 +72,11 @@ The same Apex-only surface supports explicit `.withUserMode()` and
 those methods is called, so the generated SOQL does not assume an Apex API
 version's default access behavior.
 
+Apex record, aggregate-result, and bare `COUNT()` queries also expose
+`.allRows()` for Salesforce's Apex-only `ALL ROWS` suffix, including deleted
+records and archived activities. It remains distinct from API `.executeAll()`
+QueryAll execution and cannot be combined with `.forUpdate()`.
+
 Apex `WHERE` bind expressions use the typed `apexBind<T>(expression)` helper.
 Expressions are restricted to identifiers or dotted member paths, scalar binds
 preserve field-value typing, and `IN` / `NOT IN` collection binds compile without

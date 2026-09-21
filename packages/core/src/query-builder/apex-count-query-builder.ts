@@ -3,6 +3,7 @@ import {
   type ApexWhereExpressionFactory,
   createApexExpressionBuilder,
 } from "#/expression/apex-expression-builder";
+import { AllRowsNode } from "#/operation-node/all-rows-node";
 import {
   type ApexAccessMode,
   ApexAccessModeNode,
@@ -31,6 +32,8 @@ interface ApexCountQueryBuilderProps {
 
 export interface ApexCountQueryBuilder<DB, TB extends keyof DB> {
   compile(): CompiledQuery<number>;
+
+  allRows(): ApexCountQueryBuilder<DB, TB>;
 
   limit(
     limit: number | ApexBindExpression<number>,
@@ -72,6 +75,16 @@ class ApexCountQueryBuilderImpl<DB, TB extends keyof DB>
     return this.#props.queryCompiler.compileQuery<number>(
       this.#props.queryNode,
     );
+  }
+
+  allRows(): ApexCountQueryBuilder<DB, TB> {
+    return new ApexCountQueryBuilderImpl<DB, TB>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithAllRows(
+        this.#props.queryNode,
+        AllRowsNode.create(),
+      ),
+    });
   }
 
   limit(

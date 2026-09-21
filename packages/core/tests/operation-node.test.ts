@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
 import { AliasNode } from "#/operation-node/alias-node";
+import { AllRowsNode } from "#/operation-node/all-rows-node";
 import { AndNode } from "#/operation-node/and-node";
 import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 import { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
@@ -127,6 +128,13 @@ describe("operation nodes", () => {
     ).toThrow(
       "SOQL date functions require a field reference or an unaliased convertTimezone() expression.",
     );
+  });
+
+  it("creates frozen ALL ROWS nodes", () => {
+    const allRows = AllRowsNode.create();
+
+    expect(allRows).toEqual({ kind: "AllRowsNode" });
+    expectFrozen(allRows);
   });
 
   it("creates frozen FOR VIEW / FOR REFERENCE nodes", () => {

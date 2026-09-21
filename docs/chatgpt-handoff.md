@@ -72,7 +72,7 @@ Package boundaries are intentional:
 Follow Kysely's public API and immutable-AST architecture where it maps cleanly
 to SOQL. Do not copy SQL-only semantics such as arbitrary joins.
 
-## Current state after `v1.0.119`
+## Current state after `v1.0.120`
 
 The current continuation state includes all earlier work plus the following
 recent patch sequence:
@@ -172,6 +172,7 @@ recent patch sequence:
 | `v1.0.117` | Model Salesforce's raw-date-field GROUP BY exception for grouped SELECT date functions: a grouped generated `date` field can back selected date functions without exact function grouping, while datetime/ROLLUP/CUBE/HAVING/ORDER BY stay strict. |
 | `v1.0.118` | Add typed polymorphic relationship `.Type` qualifiers to ordinary SELECT/WHERE references, with exact generated target-name unions, nested parent paths, conservative capabilities, and `TYPEOF` filter compatibility. |
 | `v1.0.119` | Fix the new polymorphic `.Type` null-filter test expectation to match the existing scalar compiler contract (`null`); no production behavior changes. |
+| `v1.0.120` | Add Apex-only `ALL ROWS` for record, aggregate-result, and bare-`COUNT()` queries, keeping API QueryAll separate and rejecting the Salesforce-invalid `FOR UPDATE` combination. |
 
 ### Build/tooling state
 
@@ -466,7 +467,7 @@ Important current filter typing rules:
 
 ## Current next slice
 
-**The follow-on SOQL completeness pass is active through `v1.0.119`.**
+**The follow-on SOQL completeness/Apex-context pass is active through `v1.0.120`.**
 `v1.0.104` closes the release-audit gap rather than adding more SOQL grammar,
 `v1.0.105` repairs that verifier for TypeScript 7, whose package root no longer
 exposes the historical compiler API, `v1.0.106` adds direct scanner regression
@@ -554,7 +555,14 @@ the existing scalar literal compiler serialises JavaScript `null` as lowercase
 SOQL `null`, so the test now follows that established output contract. No
 production compiler or type behavior changes.
 
-There is no precommitted next ordinary REST/SOAP SOQL slice after `v1.0.119`. The
+`v1.0.120` adds Apex-only `ALL ROWS` as the next execution-context slice.
+Record, aggregate-result, and bare-`COUNT()` Apex builders expose `.allRows()`,
+while ordinary executable builders continue to use transport-level
+`.executeAll()` / QueryAll. The compiler emits `ALL ROWS` at the end of the Apex
+statement and rejects any AST that also contains `FOR UPDATE`, matching
+Salesforce's documented incompatibility regardless of builder call order.
+
+There is no precommitted next ordinary REST/SOAP SOQL slice after `v1.0.120`. The
 remaining items below require either narrower metadata/execution-context support or
 a separately verified completeness decision; do not invent a generic raw-SOQL
 escape hatch to chase them.
@@ -574,7 +582,8 @@ consistency audit:
 1. **Data-category transport support when a stable path exists.** The public
    codegen hook already accepts normalized `Question` taxonomy metadata; do not
    use JSforce's private SOAP invocation machinery solely to automate it.
-2. **Execution-context-specific syntax.** Re-evaluate `FOR UPDATE`,
+2. **Execution-context-specific syntax.** `v1.0.120` adds the documented
+   Apex-only `ALL ROWS` suffix. Continue to re-evaluate `FOR UPDATE`,
    `WITH USER_MODE`, nested bind positions, and related Apex-context behavior
    separately from the transport-neutral REST/JSforce core. Do not reintroduce
    retired `WITH SECURITY_ENFORCED` syntax.
@@ -582,8 +591,10 @@ consistency audit:
    object rules, external-adapter-specific limits, and permission/cardinality
    dependent caps need authoritative metadata or execution-context hooks before
    they can become sound static/compiler guarantees.
-4. **Release hardening.** The baseline audit is complete through `v1.0.119`: built
-   runtime/declaration export parity is verified against source barrels without
+4. **Release hardening.** The baseline audit completed at `v1.0.119`; `v1.0.120`
+   is an Apex-context follow-on and does not change that release-hardening
+   baseline. Built runtime/declaration export parity is verified against source
+   barrels without
    depending on TypeScript's removed root compiler API, and the scratch-org fixture
    exercises the completed static-Apex bind-expression families. Continue only for
    concrete API/package defects or additional real-org regressions discovered by

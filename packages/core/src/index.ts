@@ -66,6 +66,7 @@ export type {
   AggregateFunctionNode,
 } from "#/operation-node/aggregate-function-node";
 export type { AliasNode } from "#/operation-node/alias-node";
+export type { AllRowsNode } from "#/operation-node/all-rows-node";
 export type { AndNode } from "#/operation-node/and-node";
 export type {
   ApexAccessMode,

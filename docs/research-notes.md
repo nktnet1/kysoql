@@ -1443,6 +1443,35 @@ end of the statement and rejects any query that also has `ORDER BY`. Aggregate
 and bare-`COUNT()` builders do not expose the Apex context because record locking
 has no sound aggregate result semantics.
 
+### Apex `ALL ROWS` execution-context boundary
+
+Sources re-checked on 2026-09-21:
+
+- https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/langCon_apex_SOQL_query_all_rows.htm
+- https://resources.docs.salesforce.com/latest/latest/en-us/sfdc/pdf/salesforce_apex_developer_guide.pdf
+- https://help.salesforce.com/s/articleView?id=000386329&language=en_US&type=1
+
+Useful findings:
+
+- Salesforce's Apex guide documents `ALL ROWS` as a static-Apex SOQL suffix for
+  querying deleted records and archived activities, including Recycle Bin rows.
+- The current guide demonstrates `ALL ROWS` on a scalar `COUNT()` query, so the
+  syntax is not limited to row-producing record selections.
+- Salesforce explicitly rejects combining `ALL ROWS` with `FOR UPDATE`.
+- Salesforce Help distinguishes the execution contexts: `ALL ROWS` is intended
+  for Apex SOQL, while API callers use `queryAll()` instead of `query()`.
+- `ALL ROWS` applies at the root statement and therefore also affects records
+  reached through relationship selections; it is not a child-subquery modifier.
+
+Kysoql consequence for `v1.0.120`: expose immutable `.allRows()` only after a
+root query enters the compile-only `.apex()` context. Support record,
+aggregate-result, and bare-`COUNT()` Apex builders, compile the suffix at the end
+of the statement, and reject any AST that also carries `FOR UPDATE` at the
+compiler boundary so call order cannot bypass the Salesforce restriction. Keep
+ordinary executable builders unchanged: their deleted/archived-record operation
+remains transport-level `.executeAll()` / QueryAll rather than emitted Apex
+syntax.
+
 ### Apex access-mode clauses
 
 Sources re-checked on 2026-09-20:

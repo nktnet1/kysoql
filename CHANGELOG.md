@@ -21,6 +21,9 @@ version is cut.
   paginated deleted/archived results.
 - Explicit compile-only Apex query context with typed `FOR UPDATE` record locking,
   including compiler rejection of the unsupported `ORDER BY` combination.
+- Apex-only `ALL ROWS` compilation for record, aggregate-result, and bare
+  `COUNT()` queries, with explicit separation from API QueryAll execution and
+  compiler rejection of `FOR UPDATE` combinations.
 - Explicit Apex `WITH USER_MODE` / `WITH SYSTEM_MODE` access clauses on the
   compile-only Apex query surface, with immutable replacement semantics and no
   inferred default mode.

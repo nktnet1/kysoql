@@ -3,6 +3,7 @@ import {
   type ApexWhereExpressionFactory,
   createApexExpressionBuilder,
 } from "#/expression/apex-expression-builder";
+import { AllRowsNode } from "#/operation-node/all-rows-node";
 import {
   type ApexAccessMode,
   ApexAccessModeNode,
@@ -74,6 +75,8 @@ export interface ApexSelectQueryBuilder<
   Mode extends SelectQueryMode = SelectQueryMode,
 > {
   compile(): CompiledQuery<O>;
+
+  allRows(): ApexSelectQueryBuilder<DB, TB, O, Mode>;
 
   forUpdate(): ApexSelectQueryBuilder<DB, TB, O, Mode>;
 
@@ -158,6 +161,16 @@ class ApexSelectQueryBuilderImpl<
 
   compile(): CompiledQuery<O> {
     return this.#props.queryCompiler.compileQuery<O>(this.#props.queryNode);
+  }
+
+  allRows(): ApexSelectQueryBuilder<DB, TB, O, Mode> {
+    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithAllRows(
+        this.#props.queryNode,
+        AllRowsNode.create(),
+      ),
+    });
   }
 
   forUpdate(): ApexSelectQueryBuilder<DB, TB, O, Mode> {
