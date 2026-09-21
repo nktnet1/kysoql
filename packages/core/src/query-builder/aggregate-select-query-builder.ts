@@ -63,6 +63,7 @@ import {
 import { validateGroupingSelections } from "#/parser/grouping-expression-parser";
 import type { KnowledgeArticleUpdateCheck } from "#/parser/knowledge-update-parser";
 import { parseLimit } from "#/parser/limit-parser";
+import { parseOffset } from "#/parser/offset-parser";
 import {
   type OrderByNullsForReference,
   parseAggregateOrderBy,
@@ -356,6 +357,15 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  clearOffset(): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
   clearOrderBy(): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -629,6 +639,17 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  offset(
+    offset: GroupedOnly<GroupedBy, number>,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
   orderBy<OE extends string>(
     field: OE &
       GroupedOnly<GroupedBy, GroupedSortableFieldName<DB, TB, GroupedBy, OE>>,
@@ -872,6 +893,27 @@ class AggregateSelectQueryBuilderImpl<
     >({
       ...this.#props,
       queryNode: SelectQueryNode.cloneWithoutLimit(this.#props.queryNode),
+    });
+  }
+
+  clearOffset(): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithoutOffset(this.#props.queryNode),
     });
   }
 
@@ -1506,6 +1548,34 @@ class AggregateSelectQueryBuilderImpl<
       queryNode: SelectQueryNode.cloneWithLimit(
         this.#props.queryNode,
         parseLimit(limit),
+      ),
+    });
+  }
+
+  offset(
+    offset: GroupedOnly<GroupedBy, number>,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
+    assertGroupedQuery(this.#props.queryNode);
+
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithOffset(
+        this.#props.queryNode,
+        parseOffset(offset),
       ),
     });
   }

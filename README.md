@@ -717,7 +717,9 @@ accumulated grouping set. Standard child-to-parent references such as
 `Owner.Name` remain supported when their target field is groupable; Salesforce's
 documented custom relationship-expression restriction means paths using `__r`
 are rejected whenever the query uses `GROUP BY`. Grouped queries can also order
-by grouped sortable fields and use `LIMIT`.
+by grouped sortable fields and use `LIMIT` / `OFFSET`; `OFFSET` retains
+Salesforce's `0..2000` bound and is available only after grouping on the
+aggregate builder.
 
 ```ts
 const byStage = await db
@@ -727,6 +729,7 @@ const byStage = await db
   .select("StageName")
   .orderBy("StageName")
   .limit(20)
+  .offset(20)
   .execute();
 ```
 

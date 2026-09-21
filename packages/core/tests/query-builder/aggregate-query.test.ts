@@ -207,6 +207,65 @@ describe("aggregate queries", () => {
     );
   });
 
+  it("sets, replaces, and clears OFFSET on grouped queries immutably", () => {
+    const baseQuery = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupBy("Name")
+      .select("Name")
+      .orderBy("Name")
+      .limit(2);
+    const offsetQuery = baseQuery.offset(1);
+    const reoffsetQuery = offsetQuery.offset(2);
+    const clearedQuery = reoffsetQuery.clearOffset();
+
+    expect(baseQuery.toOperationNode().offset).toBeUndefined();
+    expect(offsetQuery.toOperationNode().offset).toEqual({
+      kind: "OffsetNode",
+      offset: 1,
+    });
+    expect(reoffsetQuery.compile().soql).toBe(
+      "SELECT COUNT(Id) rowCount, Name FROM Account GROUP BY Name ORDER BY Name LIMIT 2 OFFSET 2",
+    );
+    expect(clearedQuery.compile().soql).toBe(
+      "SELECT COUNT(Id) rowCount, Name FROM Account GROUP BY Name ORDER BY Name LIMIT 2",
+    );
+    expect(Object.isFrozen(offsetQuery.toOperationNode().offset)).toBe(true);
+  });
+
+  it("supports OFFSET on direct non-aggregate GROUP BY queries", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .groupBy("Name")
+      .select("Name")
+      .orderBy("Name")
+      .limit(2)
+      .offset(1);
+
+    expect(query.compile().soql).toBe(
+      "SELECT Name FROM Account GROUP BY Name ORDER BY Name LIMIT 2 OFFSET 1",
+    );
+  });
+
+  it("rejects invalid grouped aggregate OFFSET values at runtime", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(({ fn }) => fn.count("Id").as("rowCount"))
+      .groupBy("Name");
+
+    for (const invalidOffset of [
+      -1,
+      1.5,
+      2001,
+      Number.NaN,
+      Number.POSITIVE_INFINITY,
+    ]) {
+      expect(() => query.offset(invalidOffset)).toThrow(
+        "SOQL OFFSET must be a safe integer between 0 and 2000.",
+      );
+    }
+  });
+
   it("supports date grouping without requiring an aggregate selection", () => {
     const query = new Kysoql<FixtureSchema>()
       .selectFrom("Account")
@@ -1000,6 +1059,8 @@ describe("aggregate queries", () => {
 
       // @ts-expect-error LIMIT is available only after GROUP BY.
       aggregateQuery.limit(1);
+      // @ts-expect-error OFFSET is available only after GROUP BY.
+      aggregateQuery.offset(1);
 
       // @ts-expect-error ORDER BY is available only after GROUP BY.
       aggregateQuery.orderBy("Name");

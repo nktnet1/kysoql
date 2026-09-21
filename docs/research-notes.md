@@ -372,24 +372,34 @@ Settled findings:
   `.dynamicApex()` context and a typed `ApexDatabaseQueryOptions` bind marker; the
   existing `.apex()` surface remains static Apex and rejects the bound form.
 
+## Closed verification targets
+
+### Grouped aggregate `OFFSET`
+
+Sources:
+
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-offset.html
+- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-group-by-considerations.html
+
+Current evidence and implementation:
+
+- Salesforce documents top-level `OFFSET` as supported in SOAP API, REST API, and
+  Apex and does not list aggregate/grouped queries as an exclusion. Grouped REST
+  and SOAP queries also cannot continue through their normal query-locator /
+  `queryMore()` mechanisms, making bounded top-level pagination particularly
+  relevant for grouped result sets.
+- Kysoql exposes `offset()` only after `GROUP BY` on normal aggregate builders and
+  reuses the existing `0..2000` parser. `clearOffset()` preserves immutable
+  builder semantics, and clearing grouping is rejected while grouped `OFFSET`
+  remains. Bare `COUNT()` intentionally stays without `OFFSET`.
+- `pnpm salesforce:aggregate-offset` runs a deterministic grouped aggregate query
+  through Salesforce CLI against the maintained fixture, and
+  `pnpm salesforce:setup` runs that smoke check automatically after seeding.
+
 ## Remaining research targets
 
 These correspond to the active roadmap in `docs/chatgpt-handoff.md`; do not grow
 this into a speculative backlog.
-
-### Aggregate `OFFSET` verification
-
-Source:
-
-- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-offset.html
-
-Current evidence:
-
-- Salesforce documents top-level `OFFSET` as supported in SOAP API, REST API, and
-  Apex and does not explicitly list aggregate/grouped queries as an exclusion.
-- Kysoql currently exposes aggregate `OFFSET` in Apex but not in normal API
-  aggregate builders. Verify a grouped REST/SOAP query against the maintained
-  Salesforce fixture before treating this as a confirmed missing feature.
 
 ### `FORMULA()` in `WHERE` pilot
 

@@ -47,9 +47,11 @@ The script safely performs the complete fixture setup:
 8. runs the idempotent Apex seed script;
 9. executes a static-Apex bind-expression smoke fixture covering member paths,
    collection binds, bind-left `INCLUDES`, relationship-subquery binds, structured
-   addition / substring
-   expressions, query-result field access, and bound pagination; and
-10. checks that all three custom fixture records are queryable, including their
+   addition / substring expressions, query-result field access, and bound
+   pagination;
+10. executes a grouped aggregate `LIMIT 2 OFFSET 1` query against the seeded
+    categories and verifies that the paged results are `Beta` and `Gamma`; and
+11. checks that all three custom fixture records are queryable, including their
     parent Account relationship.
 
 Useful options:
@@ -170,6 +172,28 @@ generic scratch-org fixture. Salesforce scopes `Database.QueryOptions`
 `explicitNamespace` to managed Apex, so meaningful runtime verification requires a
 managed-package namespace rather than an ordinary unmanaged scratch org.
 
+### Verify grouped aggregate OFFSET
+
+The setup command automatically verifies grouped aggregate pagination after
+seeding. Re-run only that fixture against an existing authenticated org with:
+
+```bash
+pnpm salesforce:aggregate-offset
+```
+
+Override the target org without changing Salesforce CLI defaults:
+
+```bash
+pnpm salesforce:aggregate-offset -- --target-org my-scratch-org
+# or
+KYSOQL_TARGET_ORG=my-scratch-org pnpm salesforce:aggregate-offset
+```
+
+The smoke query orders the three deterministic categories, applies `LIMIT 2
+OFFSET 1`, and asserts that Salesforce returns `Beta` and `Gamma`. This keeps the
+normal API aggregate builder's `OFFSET` support tied to a real-org regression
+rather than compiler output alone.
+
 ## Smoke-test SOQL
 
 A basic custom-object query:
@@ -201,7 +225,7 @@ An aggregate query:
 ```bash
 pnpm sf data query \
   --target-org kysoql-test \
-  --query "SELECT Category__c, COUNT(Id) records, SUM(Amount__c) total FROM Kysoql_Record__c GROUP BY Category__c ORDER BY Category__c"
+  --query "SELECT Category__c, COUNT(Id) records, SUM(Amount__c) total FROM Kysoql_Record__c GROUP BY Category__c ORDER BY Category__c LIMIT 2 OFFSET 1"
 ```
 
 These queries are useful acceptance cases for the kysoql compiler as its SOQL

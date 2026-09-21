@@ -177,6 +177,9 @@ sf apex run \
   --target-org "$SCRATCH_ALIAS" \
   --file scripts/apex/static-bind-smoke.apex
 
+printf 'Running grouped aggregate OFFSET smoke test...\n'
+KYSOQL_TARGET_ORG="$SCRATCH_ALIAS" "$REPO_ROOT/scripts/run-salesforce-aggregate-offset-smoke.sh"
+
 printf 'Running fixture smoke test...\n'
 SMOKE_JSON="$(sf data query \
   --target-org "$SCRATCH_ALIAS" \

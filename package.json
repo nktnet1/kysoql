@@ -21,6 +21,7 @@
     "clean": "turbo run clean && rm -rf node_modules",
     "salesforce:setup": "bash scripts/setup-salesforce-test-org.sh",
     "salesforce:apex-binds": "bash scripts/run-salesforce-apex-bind-smoke.sh",
+    "salesforce:aggregate-offset": "bash scripts/run-salesforce-aggregate-offset-smoke.sh",
     "salesforce:schema": "bash scripts/generate-salesforce-schema.sh",
     "debug": "pnpm --filter @kysoql/core build && pnpm --filter @kysoql/debug debug",
     "verify:publish": "node scripts/verify-publish-shape.ts",

@@ -128,17 +128,19 @@ describe("Kysely-style clear clause helpers", () => {
       .groupBy("Name")
       .select("Name")
       .orderBy("Name")
-      .limit(10);
+      .limit(10)
+      .offset(2);
 
     const cleared = original
       .clearSelect()
       .clearOrderBy()
       .clearLimit()
+      .clearOffset()
       .clearGroupBy()
       .select(({ fn }) => fn.count("Id").as("rowCount"));
 
     expect(original.compile().soql).toBe(
-      "SELECT SUM(AnnualRevenue) revenue, Name FROM Account GROUP BY Name ORDER BY Name LIMIT 10",
+      "SELECT SUM(AnnualRevenue) revenue, Name FROM Account GROUP BY Name ORDER BY Name LIMIT 10 OFFSET 2",
     );
     expect(cleared.compile().soql).toBe(
       "SELECT COUNT(Id) rowCount FROM Account",
@@ -185,11 +187,15 @@ describe("Kysely-style clear clause helpers", () => {
     expect(() =>
       aggregate.groupBy("Name").orderBy("Name").clearGroupBy(),
     ).toThrow(
-      "SOQL clearGroupBy() cannot remove GROUP BY while grouped HAVING, ORDER BY, or LIMIT clauses remain.",
+      "SOQL clearGroupBy() cannot remove GROUP BY while grouped HAVING, ORDER BY, LIMIT, or OFFSET clauses remain.",
     );
 
     expect(() => aggregate.groupBy("Name").limit(5).clearGroupBy()).toThrow(
-      "SOQL clearGroupBy() cannot remove GROUP BY while grouped HAVING, ORDER BY, or LIMIT clauses remain.",
+      "SOQL clearGroupBy() cannot remove GROUP BY while grouped HAVING, ORDER BY, LIMIT, or OFFSET clauses remain.",
+    );
+
+    expect(() => aggregate.groupBy("Name").offset(1).clearGroupBy()).toThrow(
+      "SOQL clearGroupBy() cannot remove GROUP BY while grouped HAVING, ORDER BY, LIMIT, or OFFSET clauses remain.",
     );
 
     expect(() =>
@@ -198,7 +204,7 @@ describe("Kysely-style clear clause helpers", () => {
         .having((eb) => eb(eb.fn.count("Id"), ">", 0))
         .clearGroupBy(),
     ).toThrow(
-      "SOQL clearGroupBy() cannot remove GROUP BY while grouped HAVING, ORDER BY, or LIMIT clauses remain.",
+      "SOQL clearGroupBy() cannot remove GROUP BY while grouped HAVING, ORDER BY, LIMIT, or OFFSET clauses remain.",
     );
 
     expect(() =>

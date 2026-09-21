@@ -98,6 +98,10 @@ version is cut.
 - Direct non-aggregate `GROUP BY` from unselected root builders, including typed
   field lists and date grouping functions, so distinct grouped values can be
   queried without introducing a dummy aggregate selection.
+- Grouped API queries now expose typed `OFFSET` / `clearOffset()` after
+  `GROUP BY`, sharing the existing `0..2000` validation with record queries; the
+  Salesforce scratch-org setup also runs a deterministic grouped aggregate
+  `OFFSET` smoke query against the live org.
 - Typed SOQL `toLabel()` predicates in ordinary `WHERE` expression callbacks,
   with generated filterable picklist/multipicklist metadata, translated-string
   operands, nullability-aware equality, picklist `LIKE`, child-to-parent paths,

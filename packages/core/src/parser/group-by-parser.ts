@@ -105,9 +105,14 @@ export function assertCanClearGroupBy(queryNode: SelectQueryNode): void {
     return;
   }
 
-  if (queryNode.having || queryNode.orderBy || queryNode.limit) {
+  if (
+    queryNode.having ||
+    queryNode.orderBy ||
+    queryNode.limit ||
+    queryNode.offset
+  ) {
     throw new TypeError(
-      "SOQL clearGroupBy() cannot remove GROUP BY while grouped HAVING, ORDER BY, or LIMIT clauses remain.",
+      "SOQL clearGroupBy() cannot remove GROUP BY while grouped HAVING, ORDER BY, LIMIT, or OFFSET clauses remain.",
     );
   }
 

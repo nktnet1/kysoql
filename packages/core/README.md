@@ -302,6 +302,10 @@ side as literal strings. Knowledge article Apex queries reject all bind forms.
 Relationship subqueries remain bind-free outside the Apex context and continue to
 reject semi-joins.
 
+Grouped aggregate-result queries in the normal API context expose validated
+`.limit(...)` and `.offset(...)` pagination after `GROUP BY`; `.clearOffset()`
+removes the grouped offset immutably. Bare `COUNT()` remains `LIMIT`-only.
+
 Aggregate-result and bare `COUNT()` queries can also switch to `.apex()` after
 their aggregate selection is built. They reuse access modes and supported bind
 positions, remain compile-only, and intentionally do not expose record locking.
