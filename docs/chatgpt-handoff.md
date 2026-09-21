@@ -48,9 +48,9 @@ SQL escape hatch.
 
 ## Current baseline
 
-The accepted continuation baseline is through **`v1.0.122`**, which adds
-structured ISO-coded currency literals for `WHERE` filters on top of the Apex
-`ALL ROWS` and documentation-pruning patches.
+The accepted continuation baseline is through **`v1.0.124`**, which adds
+structured `WITH RecordVisibilityContext (...)` root filtering on top of the
+ISO-coded currency literal, Apex `ALL ROWS`, and documentation-pruning patches.
 
 The implementation already covers the broad production SOQL surface:
 
@@ -68,9 +68,9 @@ The implementation already covers the broad production SOQL surface:
   aggregate ordering, `GROUPING()`, and date grouping/filter functions;
 - `toLabel()`, `convertCurrency()`, `convertTimezone()`, `FORMAT()`, geolocation
   expressions, and `FIELDS(STANDARD|CUSTOM|ALL)`;
-- `USING SCOPE`, `WITH DATA CATEGORY`, `FOR VIEW`, `FOR REFERENCE`, Knowledge
-  tracking/view-stat clauses, and the currently modeled object-specific query
-  restrictions;
+- `USING SCOPE`, `WITH DATA CATEGORY`, structured `WITH RecordVisibilityContext`,
+  `FOR VIEW`, `FOR REFERENCE`, Knowledge tracking/view-stat clauses, and the
+  currently modeled object-specific query restrictions;
 - `ORDER BY` including null placement, `LIMIT`, and `OFFSET`;
 - transport-neutral compilation/execution plus JSforce pagination and QueryAll;
 - compile-only Apex query contexts with `FOR UPDATE`, `ALL ROWS`, explicit
@@ -113,19 +113,15 @@ Keep this list limited to confirmed missing/documented surface or a concrete
 Kysely-parity concern. Remove an item when it is implemented or deliberately
 closed.
 
-1. **`WITH RecordVisibilityContext`.** Salesforce documents this API 48+
-   `WITH` filtering form with typed parameters such as `maxDescriptorPerRecord`,
-   `supportsDomains`, and `supportsDelegates`. The current builder has no surface
-   for it; model it as structured syntax rather than a generic free-form `WITH` clause.
-2. **`FORMULA()` in `WHERE` (beta).** Salesforce currently documents arithmetic
+1. **`FORMULA()` in `WHERE` (beta).** Salesforce currently documents arithmetic
    `FORMULA()` predicates for supported numeric/date/currency field pairs using
    `+` / `-`. Treat this as opt-in beta surface and model it structurally if the
    project chooses to support beta SOQL; do not expose raw formula text.
-3. **Relationship-subquery `OFFSET` pilot.** Salesforce documents subquery
+2. **Relationship-subquery `OFFSET` pilot.** Salesforce documents subquery
    `OFFSET` only when the parent query has `LIMIT 1`, and still labels the feature
    pilot/not for production. Keep it omitted unless Salesforce promotes it to a
    production-supported feature or the project explicitly opts into pilot syntax.
-4. **Kysely-neutral builder ergonomics.** Current Kysely exposes helpers such as
+3. **Kysely-neutral builder ergonomics.** Current Kysely exposes helpers such as
    `$if`, `$call`, `clearWhere`, `clearOrderBy`, `clearLimit`, `clearOffset`,
    `clearSelect`, and `clearGroupBy`; kysoql currently does not. Audit these as
    potential unnecessary deviations and add only helpers whose semantics remain

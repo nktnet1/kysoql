@@ -18,6 +18,7 @@ import type { OffsetNode } from "#/operation-node/offset-node";
 import type { OperationNode } from "#/operation-node/operation-node";
 import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import { OrderByNode } from "#/operation-node/order-by-node";
+import type { RecordVisibilityContextNode } from "#/operation-node/record-visibility-context-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { SelectionNode } from "#/operation-node/selection-node";
 import type { SObjectNode } from "#/operation-node/sobject-node";
@@ -37,6 +38,7 @@ export interface SelectQueryNode {
   readonly usingScope?: UsingScopeNode;
   readonly where?: WhereNode;
   readonly userProfileFeedWith?: UserProfileFeedWithNode;
+  readonly recordVisibilityContext?: RecordVisibilityContextNode;
   readonly withDataCategory?: WithDataCategoryNode;
   readonly apexAccessMode?: ApexAccessModeNode;
   readonly groupBy?: GroupByNode;
@@ -87,6 +89,16 @@ export const SelectQueryNode = {
     return freeze({
       ...select,
       userProfileFeedWith,
+    });
+  },
+
+  cloneWithRecordVisibilityContext(
+    select: SelectQueryNode,
+    recordVisibilityContext: RecordVisibilityContextNode,
+  ): SelectQueryNode {
+    return freeze({
+      ...select,
+      recordVisibilityContext,
     });
   },
 

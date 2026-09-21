@@ -104,6 +104,8 @@ import {
   QueryCreator,
   type QueryCreatorConfig,
   type QueryExecutor,
+  type RecordVisibilityContextNode,
+  type RecordVisibilityContextOptions,
   type ReferenceNode,
   type RelationshipSubqueryBuilder,
   type RelationshipSubqueryNode,
@@ -368,6 +370,8 @@ type PublicTypeSurface = {
   soqlCurrencyLiteral: SoqlCurrencyLiteral;
   queryCompiler: QueryCompiler;
   queryCreatorConfig: QueryCreatorConfig;
+  recordVisibilityContextNode: RecordVisibilityContextNode;
+  recordVisibilityContextOptions: RecordVisibilityContextOptions;
   queryExecutor: QueryExecutor;
   referenceNode: ReferenceNode;
   relationshipSubqueryBuilder: RelationshipSubqueryBuilder<

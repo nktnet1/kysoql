@@ -58,6 +58,10 @@ import type { KnowledgeArticleUpdateCheck } from "#/parser/knowledge-update-pars
 import { parseLimit } from "#/parser/limit-parser";
 import { parseOffset } from "#/parser/offset-parser";
 import {
+  parseRecordVisibilityContext,
+  type RecordVisibilityContextOptions,
+} from "#/parser/record-visibility-context-parser";
+import {
   parseDistanceOrderBy,
   parseOrderBy,
   type SortableFieldName,
@@ -243,6 +247,10 @@ export interface SelectQueryBuilder<
   withUserId(
     userId: string,
     ..._userProfileFeedCheck: UserProfileFeedWithUserIdCheck<TB>
+  ): SelectQueryBuilder<DB, TB, O, Mode>;
+
+  withRecordVisibilityContext(
+    parameters: RecordVisibilityContextOptions,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
   withDataCategory<Group extends SalesforceObjectDataCategoryGroup<DB[TB]>>(
@@ -519,6 +527,18 @@ class SelectQueryBuilderImpl<
       queryNode: SelectQueryNode.cloneWithUserProfileFeedWith(
         this.#props.queryNode,
         parseUserProfileFeedWithUserId(userId),
+      ),
+    });
+  }
+
+  withRecordVisibilityContext(
+    parameters: RecordVisibilityContextOptions,
+  ): SelectQueryBuilder<DB, TB, O, Mode> {
+    return new SelectQueryBuilderImpl<DB, TB, O, Mode>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithRecordVisibilityContext(
+        this.#props.queryNode,
+        parseRecordVisibilityContext(parameters),
       ),
     });
   }

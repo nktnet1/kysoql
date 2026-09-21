@@ -68,6 +68,10 @@ version is cut.
 - Structured ISO-coded currency literals through `soqlCurrency(...)` for typed
   currency `WHERE` comparisons, including homogeneous `IN` / `NOT IN` list
   enforcement and exclusion from aggregate `HAVING` comparisons.
+- Structured `WITH RecordVisibilityContext (...)` root-query filtering with typed
+  `maxDescriptorPerRecord`, `supportsDomains`, and `supportsDelegates` parameters,
+  at-least-one validation, immutable replacement semantics, and compiler guards
+  against combining it with another SOQL `WITH` form.
 - Typed SOQL `toLabel()` predicates in ordinary `WHERE` expression callbacks,
   with generated filterable picklist/multipicklist metadata, translated-string
   operands, nullability-aware equality, picklist `LIKE`, child-to-parent paths,

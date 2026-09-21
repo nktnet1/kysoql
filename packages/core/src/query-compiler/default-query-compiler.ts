@@ -32,6 +32,7 @@ import type { OperatorNode } from "#/operation-node/operator-node";
 import type { OrNode } from "#/operation-node/or-node";
 import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import type { OrderByNode } from "#/operation-node/order-by-node";
+import type { RecordVisibilityContextNode } from "#/operation-node/record-visibility-context-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 import type { SelectQueryNode } from "#/operation-node/select-query-node";
@@ -56,6 +57,7 @@ import { validateFieldsSelections } from "#/parser/fields-selection-parser";
 import { validateForUpdateQuery } from "#/parser/for-update-parser";
 import { validateKnowledgeUpdateQuery } from "#/parser/knowledge-update-parser";
 import { validateObjectQueryLimits } from "#/parser/object-query-limit-parser";
+import { validateRecordVisibilityContextQuery } from "#/parser/record-visibility-context-parser";
 import { validateRelationshipQueryLimits } from "#/parser/relationship-query-limit-parser";
 import { validateTypeOfSelections } from "#/parser/type-of-parser";
 import { validateUserProfileFeedQuery } from "#/parser/user-profile-feed-parser";
@@ -92,6 +94,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
     validateForUpdateQuery(query);
     validateTypeOfSelections(query);
     validateKnowledgeUpdateQuery(query);
+    validateRecordVisibilityContextQuery(query);
     validateUserProfileFeedQuery(query);
     validateRelationshipQueryLimits(query);
     validateObjectQueryLimits(query);
@@ -104,6 +107,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
     if (query.where) {
       soql += ` WHERE ${this.#compileWhere(query.where)}`;
+    }
+
+    if (query.recordVisibilityContext) {
+      soql += ` WITH ${this.#compileRecordVisibilityContext(query.recordVisibilityContext)}`;
     }
 
     if (query.userProfileFeedWith) {
@@ -235,6 +242,24 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileWhere(where: WhereNode): string {
     return this.#compileOperation(where.where);
+  }
+
+  #compileRecordVisibilityContext(
+    node: RecordVisibilityContextNode,
+  ): string {
+    const parameters: string[] = [];
+
+    if (node.maxDescriptorPerRecord !== undefined) {
+      parameters.push(`maxDescriptorPerRecord=${node.maxDescriptorPerRecord}`);
+    }
+    if (node.supportsDomains !== undefined) {
+      parameters.push(`supportsDomains=${String(node.supportsDomains)}`);
+    }
+    if (node.supportsDelegates !== undefined) {
+      parameters.push(`supportsDelegates=${String(node.supportsDelegates)}`);
+    }
+
+    return `RecordVisibilityContext (${parameters.join(", ")})`;
   }
 
   #compileWithDataCategory(node: WithDataCategoryNode): string {

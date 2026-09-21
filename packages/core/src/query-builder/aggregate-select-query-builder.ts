@@ -62,6 +62,10 @@ import {
 import { validateGroupingSelections } from "#/parser/grouping-expression-parser";
 import type { KnowledgeArticleUpdateCheck } from "#/parser/knowledge-update-parser";
 import type { FieldReferenceDefinition } from "#/parser/reference-parser";
+import {
+  parseRecordVisibilityContext,
+  type RecordVisibilityContextOptions,
+} from "#/parser/record-visibility-context-parser";
 import { parseLimit } from "#/parser/limit-parser";
 import {
   parseAggregateOrderBy,
@@ -380,6 +384,17 @@ export interface AggregateSelectQueryBuilder<
   withUserId(
     userId: string,
     ..._userProfileFeedCheck: UserProfileFeedWithUserIdCheck<TB>
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
+  withRecordVisibilityContext(
+    parameters: RecordVisibilityContextOptions,
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -906,6 +921,32 @@ class AggregateSelectQueryBuilderImpl<
       queryNode: SelectQueryNode.cloneWithUserProfileFeedWith(
         this.#props.queryNode,
         parseUserProfileFeedWithUserId(userId),
+      ),
+    });
+  }
+
+  withRecordVisibilityContext(
+    parameters: RecordVisibilityContextOptions,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithRecordVisibilityContext(
+        this.#props.queryNode,
+        parseRecordVisibilityContext(parameters),
       ),
     });
   }

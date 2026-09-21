@@ -24,6 +24,10 @@ import {
 import type { KnowledgeArticleUpdateCheck } from "#/parser/knowledge-update-parser";
 import { parseLimit } from "#/parser/limit-parser";
 import {
+  parseRecordVisibilityContext,
+  type RecordVisibilityContextOptions,
+} from "#/parser/record-visibility-context-parser";
+import {
   parseUserProfileFeedWithUserId,
   type UserProfileFeedWithUserIdCheck,
 } from "#/parser/user-profile-feed-parser";
@@ -80,6 +84,10 @@ export interface CountQueryBuilder<DB, TB extends keyof DB> {
   withUserId(
     userId: string,
     ..._userProfileFeedCheck: UserProfileFeedWithUserIdCheck<TB>
+  ): CountQueryBuilder<DB, TB>;
+
+  withRecordVisibilityContext(
+    parameters: RecordVisibilityContextOptions,
   ): CountQueryBuilder<DB, TB>;
 
   withDataCategory<Group extends SalesforceObjectDataCategoryGroup<DB[TB]>>(
@@ -237,6 +245,18 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
       queryNode: SelectQueryNode.cloneWithUserProfileFeedWith(
         this.#props.queryNode,
         parseUserProfileFeedWithUserId(userId),
+      ),
+    });
+  }
+
+  withRecordVisibilityContext(
+    parameters: RecordVisibilityContextOptions,
+  ): CountQueryBuilder<DB, TB> {
+    return new CountQueryBuilderImpl<DB, TB>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithRecordVisibilityContext(
+        this.#props.queryNode,
+        parseRecordVisibilityContext(parameters),
       ),
     });
   }

@@ -5,7 +5,11 @@ export function validateApexAccessModeQuery(query: SelectQueryNode): void {
     return;
   }
 
-  if (query.withDataCategory || query.userProfileFeedWith) {
+  if (
+    query.withDataCategory ||
+    query.userProfileFeedWith ||
+    query.recordVisibilityContext
+  ) {
     throw new Error(
       "SOQL Apex access modes cannot be combined with another WITH filtering clause.",
     );

@@ -72,6 +72,23 @@ const recent = db
   );
 ```
 
+Root queries can also add Salesforce API 48+ `WITH RecordVisibilityContext`
+filtering with a structured options object. At least one of
+`maxDescriptorPerRecord`, `supportsDomains`, or `supportsDelegates` is required;
+repeated calls replace the previous context, and the clause cannot be combined
+with another SOQL `WITH` form.
+
+```ts
+const visibleAccounts = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where("Name", "=", "Acme")
+  .withRecordVisibilityContext({
+    maxDescriptorPerRecord: 100,
+    supportsDomains: true,
+  });
+```
+
 Apex-only query syntax is isolated behind an explicit compile-only context. For
 example, `FOR UPDATE` is available only after switching a completed record query
 into `.apex()`, so it cannot be executed accidentally through an API executor:

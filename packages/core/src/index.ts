@@ -137,6 +137,7 @@ export type {
   OrderByNulls,
 } from "#/operation-node/order-by-item-node";
 export type { OrderByNode } from "#/operation-node/order-by-node";
+export type { RecordVisibilityContextNode } from "#/operation-node/record-visibility-context-node";
 export type { ReferenceNode } from "#/operation-node/reference-node";
 export type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 export type { SelectQueryNode } from "#/operation-node/select-query-node";
@@ -157,6 +158,7 @@ export type {
 } from "#/operation-node/with-data-category-node";
 export type { ApexOperandValueExpression } from "#/parser/apex-bind-parser";
 export type { DataCategoryInput } from "#/parser/data-category-parser";
+export type { RecordVisibilityContextOptions } from "#/parser/record-visibility-context-parser";
 export type { DistanceComparisonOperator } from "#/parser/geolocation-expression-parser";
 export type { AggregateSelectQueryBuilder } from "#/query-builder/aggregate-select-query-builder";
 export type { ApexAggregateSelectQueryBuilder } from "#/query-builder/apex-aggregate-select-query-builder";

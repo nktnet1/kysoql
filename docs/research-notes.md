@@ -244,10 +244,11 @@ Settled findings:
 
 - Salesforce documents `RecordVisibilityContext` as an API 48+ `WITH` filtering
   form for querying record-visibility attributes.
-- At least one parameter is required. Documented parameters include
-  `maxDescriptorPerRecord`, `supportsDomains`, and `supportsDelegates`.
-- This should be modeled as structured syntax with validated parameter names/types,
-  not as a generic raw `WITH` expression.
+- At least one parameter is required. `maxDescriptorPerRecord` is an integer;
+  `supportsDomains` and `supportsDelegates` are booleans.
+- It occupies the query's `WITH filteringExpression` position, so the safe builder
+  models it as structured root-query syntax rather than a generic raw `WITH`
+  expression or a relationship-subquery feature.
 
 ### Object-specific restrictions
 
@@ -329,18 +330,6 @@ Settled findings:
 
 These correspond to the active roadmap in `docs/chatgpt-handoff.md`; do not grow
 this into a speculative backlog.
-
-### `WITH RecordVisibilityContext`
-
-Source:
-
-- https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-with-recordvisibilitycontext.html
-
-Confirmed gap:
-
-- Add a typed, structured `WITH RecordVisibilityContext` surface.
-- Require at least one documented parameter and validate numeric/boolean values.
-- Do not generalize the implementation into a raw `WITH` escape hatch.
 
 ### `FORMULA()` in `WHERE` (beta)
 

@@ -427,6 +427,31 @@ category discovery optional so a SOAP-backed integration can supply Question
 metadata without widening ordinary sObject Describe metadata. `WITH DATA CATEGORY`
 is intentionally absent from relationship-subquery builders.
 
+Salesforce API 48+ `WITH RecordVisibilityContext (...)` filtering is available on
+root record, aggregate-result, and bare `COUNT()` builders through
+`.withRecordVisibilityContext(...)`. The options are limited to Salesforce's three
+documented parameters, at least one is required, and repeated calls replace the
+previous context immutably. Because SOQL has one `WITH filteringExpression` slot,
+RecordVisibilityContext cannot be combined with `WITH DATA CATEGORY`,
+`WITH UserId`, or Apex access-mode `WITH` clauses. Relationship subqueries do not
+expose it.
+
+```ts
+const visibleAccounts = await db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where("Name", "like", "Acme%")
+  .withRecordVisibilityContext({
+    maxDescriptorPerRecord: 100,
+    supportsDomains: true,
+    supportsDelegates: false,
+  })
+  .execute();
+// SELECT Id, Name FROM Account WHERE Name LIKE 'Acme%'
+// WITH RecordVisibilityContext (maxDescriptorPerRecord=100,
+// supportsDomains=true, supportsDelegates=false)
+```
+
 Salesforce Describe also exposes each object's `mruEnabled` capability. Generated
 schemas preserve that flag so root queries can use `.forView()` /
 `.forReference()` only when the object is known to participate in Most Recently
