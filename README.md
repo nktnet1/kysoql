@@ -146,7 +146,12 @@ result unchanged. `$if` invokes its callback only when the condition is true;
 ordinary selections added inside `$if` become optional in the inferred result
 shape. Structural SOQL modes must remain the same on both branches. Builders that
 support `.where(...)` also support `.clearWhere()` to remove all accumulated
-filters without mutating the earlier builder.
+filters without mutating the earlier builder. The remaining Kysely-style clause
+clearing helpers are also available where the corresponding SOQL clause is
+modeled: `.clearOrderBy()`, `.clearLimit()`, `.clearOffset()`, `.clearSelect()`,
+and aggregate `.clearGroupBy()`. Clearing selections resets the inferred output
+before new selections are added. `clearGroupBy()` rejects cases where removing
+the grouping would leave grouped-only SOQL state behind.
 
 Selected fields, filterable fields, filter values, and operators are checked from
 the generated Salesforce schema. Equality (`=`, `!=`), ordered comparisons

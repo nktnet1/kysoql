@@ -55,6 +55,7 @@ import {
   validateSemiJoinWhere,
 } from "#/parser/filter-parser";
 import {
+  assertCanClearGroupBy,
   type GroupableFieldName,
   parseAdvancedGroupBy,
   parseGroupBy,
@@ -333,6 +334,35 @@ export interface AggregateSelectQueryBuilder<
     DB,
     TB,
     ConditionalOutput<O, O2>,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
+  clearGroupBy(): AggregateSelectQueryBuilder<DB, TB, O, never, "none", 0>;
+
+  clearLimit(): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
+  clearOrderBy(): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
+  clearSelect(): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    unknown,
     GroupedBy,
     GroupMode,
     AdvancedFieldCount
@@ -795,6 +825,78 @@ class AggregateSelectQueryBuilderImpl<
       GroupMode,
       AdvancedFieldCount
     >;
+  }
+
+  clearGroupBy(): AggregateSelectQueryBuilder<DB, TB, O, never, "none", 0> {
+    assertCanClearGroupBy(this.#props.queryNode);
+
+    return new AggregateSelectQueryBuilderImpl<DB, TB, O, never, "none", 0>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithoutGroupBy(this.#props.queryNode),
+    });
+  }
+
+  clearLimit(): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithoutLimit(this.#props.queryNode),
+    });
+  }
+
+  clearOrderBy(): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithoutOrderBy(this.#props.queryNode),
+    });
+  }
+
+  clearSelect(): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    unknown,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      unknown,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithoutSelections(this.#props.queryNode),
+    });
   }
 
   clearWhere(): AggregateSelectQueryBuilder<

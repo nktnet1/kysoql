@@ -35,6 +35,8 @@ export interface ApexCountQueryBuilder<DB, TB extends keyof DB> {
 
   $if(condition: boolean, func: (qb: this) => this): this;
 
+  clearLimit(): ApexCountQueryBuilder<DB, TB>;
+
   clearWhere(): ApexCountQueryBuilder<DB, TB>;
 
   compile(): CompiledQuery<number>;
@@ -83,6 +85,13 @@ class ApexCountQueryBuilderImpl<DB, TB extends keyof DB>
 
   $if(condition: boolean, func: (qb: this) => this): this {
     return condition ? func(this) : this;
+  }
+
+  clearLimit(): ApexCountQueryBuilder<DB, TB> {
+    return new ApexCountQueryBuilderImpl<DB, TB>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithoutLimit(this.#props.queryNode),
+    });
   }
 
   clearWhere(): ApexCountQueryBuilder<DB, TB> {

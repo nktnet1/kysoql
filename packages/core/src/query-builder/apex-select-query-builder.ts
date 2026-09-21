@@ -81,6 +81,12 @@ export interface ApexSelectQueryBuilder<
     func: (qb: this) => ApexSelectQueryBuilder<DB, TB, O & O2, Mode>,
   ): ApexSelectQueryBuilder<DB, TB, ConditionalOutput<O, O2>, Mode>;
 
+  clearLimit(): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+
+  clearOffset(): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+
+  clearOrderBy(): ApexSelectQueryBuilder<DB, TB, O, Mode>;
+
   clearWhere(): ApexSelectQueryBuilder<DB, TB, O, Mode>;
 
   compile(): CompiledQuery<O>;
@@ -182,6 +188,27 @@ class ApexSelectQueryBuilderImpl<
       ConditionalOutput<O, O2>,
       Mode
     >;
+  }
+
+  clearLimit(): ApexSelectQueryBuilder<DB, TB, O, Mode> {
+    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithoutLimit(this.#props.queryNode),
+    });
+  }
+
+  clearOffset(): ApexSelectQueryBuilder<DB, TB, O, Mode> {
+    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithoutOffset(this.#props.queryNode),
+    });
+  }
+
+  clearOrderBy(): ApexSelectQueryBuilder<DB, TB, O, Mode> {
+    return new ApexSelectQueryBuilderImpl<DB, TB, O, Mode>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithoutOrderBy(this.#props.queryNode),
+    });
   }
 
   clearWhere(): ApexSelectQueryBuilder<DB, TB, O, Mode> {

@@ -27,11 +27,14 @@ Settled findings:
 - Repeated `orderBy()` calls are additive and preserve call order.
 - Current Kysely exposes neutral builder helpers such as `$call`, `$if`, and
   clause-clearing methods (`clearWhere`, `clearOrderBy`, `clearLimit`,
-  `clearOffset`, `clearSelect`, and `clearGroupBy`). Kysoql matches `$call`, `$if`,
-  and `clearWhere` across the applicable query-builder modes; `$if` keeps newly
-  selected output fields optional and does not allow a true-only structural mode
-  transition to masquerade as unconditional state. The remaining clearing helpers
-  stay parity-audit candidates.
+  `clearOffset`, `clearSelect`, and `clearGroupBy`). Kysoql now covers this neutral
+  set where each operation maps soundly to a specialised SOQL builder. `$if` keeps
+  newly selected output fields optional and does not allow a true-only structural
+  mode transition to masquerade as unconditional state. `clearSelect()` resets the
+  selection accumulator while preserving SOQL-specific builder context, and
+  aggregate `clearGroupBy()` rejects removals that would leave grouped selections,
+  `HAVING`, grouped `ORDER BY`, or grouped `LIMIT` behind. That stricter guard is a
+  deliberate SOQL-safety deviation rather than an outstanding parity gap.
 - Lowercase builder spelling such as `asc` / `desc` is appropriate even when the
   compiler emits uppercase database syntax.
 - Kysoql should follow these conventions only where they map naturally to SOQL.
@@ -361,23 +364,3 @@ Confirmed current documentation:
 - Salesforce still labels this a pilot feature not intended for production.
 - Keep production-safe builders without this method unless that status changes or
   the project explicitly chooses to expose pilot syntax.
-
-### Kysely-neutral builder ergonomics
-
-Source:
-
-- https://kysely-org.github.io/kysely-apidoc/interfaces/SelectQueryBuilder.html
-
-Confirmed parity candidates:
-
-- Kysoql exposes Kysely-compatible `$call(func)` callback-result behavior and
-  `$if(condition, func)` conditional composition across record, aggregate, count,
-  Apex, relationship-subquery, and semi-join builders. As in Kysely, selections
-  introduced only inside `$if` become optional output fields. Kysoql additionally
-  keeps structural builder state identical across both branches.
-- Remaining parity candidates are `clearWhere`, `clearOrderBy`, `clearLimit`,
-  `clearOffset`, `clearSelect`, and `clearGroupBy`. Audit their type behavior across
-  record, aggregate, relationship-subquery, and Apex builder modes before adopting
-  them.
-- Do not treat arbitrary joins, raw SQL/expression escape hatches, or other
-  SQL-specific features as missing kysoql functionality.

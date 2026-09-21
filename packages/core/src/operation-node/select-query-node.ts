@@ -72,6 +72,12 @@ export const SelectQueryNode = {
     });
   },
 
+  cloneWithoutSelections(select: SelectQueryNode): SelectQueryNode {
+    const { selections: _selections, ...withoutSelections } = select;
+
+    return freeze(withoutSelections);
+  },
+
   cloneWithUsingScope(
     select: SelectQueryNode,
     usingScope: UsingScopeNode,
@@ -140,6 +146,12 @@ export const SelectQueryNode = {
     });
   },
 
+  cloneWithoutGroupBy(select: SelectQueryNode): SelectQueryNode {
+    const { groupBy: _groupBy, ...withoutGroupBy } = select;
+
+    return freeze(withoutGroupBy);
+  },
+
   cloneWithHaving(
     select: SelectQueryNode,
     operation: OperationNode,
@@ -162,6 +174,12 @@ export const SelectQueryNode = {
     });
   },
 
+  cloneWithoutLimit(select: SelectQueryNode): SelectQueryNode {
+    const { limit: _limit, ...withoutLimit } = select;
+
+    return freeze(withoutLimit);
+  },
+
   cloneWithOffset(
     select: SelectQueryNode,
     offset: OffsetNode<number | ApexBindExpressionNode>,
@@ -170,6 +188,12 @@ export const SelectQueryNode = {
       ...select,
       offset,
     });
+  },
+
+  cloneWithoutOffset(select: SelectQueryNode): SelectQueryNode {
+    const { offset: _offset, ...withoutOffset } = select;
+
+    return freeze(withoutOffset);
   },
 
   cloneWithForViewReference(
@@ -224,5 +248,11 @@ export const SelectQueryNode = {
         ? OrderByNode.cloneWithItems(select.orderBy, items)
         : OrderByNode.create(items),
     });
+  },
+
+  cloneWithoutOrderBy(select: SelectQueryNode): SelectQueryNode {
+    const { orderBy: _orderBy, ...withoutOrderBy } = select;
+
+    return freeze(withoutOrderBy);
   },
 };

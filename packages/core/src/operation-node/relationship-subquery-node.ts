@@ -35,6 +35,14 @@ export const RelationshipSubqueryNode = {
     });
   },
 
+  cloneWithoutSelections(
+    subquery: RelationshipSubqueryNode,
+  ): RelationshipSubqueryNode {
+    const { selections: _selections, ...withoutSelections } = subquery;
+
+    return freeze(withoutSelections);
+  },
+
   cloneWithLimit(
     subquery: RelationshipSubqueryNode,
     limit: LimitNode,
@@ -43,6 +51,14 @@ export const RelationshipSubqueryNode = {
       ...subquery,
       limit,
     });
+  },
+
+  cloneWithoutLimit(
+    subquery: RelationshipSubqueryNode,
+  ): RelationshipSubqueryNode {
+    const { limit: _limit, ...withoutLimit } = subquery;
+
+    return freeze(withoutLimit);
   },
 
   cloneWithOrderByItems(
@@ -55,5 +71,13 @@ export const RelationshipSubqueryNode = {
         ? OrderByNode.cloneWithItems(subquery.orderBy, items)
         : OrderByNode.create(items),
     });
+  },
+
+  cloneWithoutOrderBy(
+    subquery: RelationshipSubqueryNode,
+  ): RelationshipSubqueryNode {
+    const { orderBy: _orderBy, ...withoutOrderBy } = subquery;
+
+    return freeze(withoutOrderBy);
   },
 };

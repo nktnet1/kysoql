@@ -48,9 +48,10 @@ SQL escape hatch.
 
 ## Current baseline
 
-The accepted continuation baseline is through **`v1.0.128`**, which adds
-Kysely-style `clearWhere()` across every builder surface that supports filtering,
-on top of `$call(...)`, `$if(...)`, structured
+The accepted continuation baseline is through **`v1.0.129`**, which completes
+the current Kysely-neutral clause-clearing audit with `clearOrderBy()`,
+`clearLimit()`, `clearOffset()`, `clearSelect()`, and aggregate `clearGroupBy()`,
+on top of `clearWhere()`, `$call(...)`, `$if(...)`, structured
 `WITH RecordVisibilityContext (...)`, ISO-coded currency literals, Apex `ALL ROWS`,
 and the documentation-pruning work.
 
@@ -123,12 +124,6 @@ closed.
    `OFFSET` only when the parent query has `LIMIT 1`, and still labels the feature
    pilot/not for production. Keep it omitted unless Salesforce promotes it to a
    production-supported feature or the project explicitly opts into pilot syntax.
-3. **Remaining Kysely-neutral builder ergonomics.** Kysoql now matches Kysely's
-   neutral `$call`, `$if`, and `clearWhere` helpers. Audit `clearOrderBy`,
-   `clearLimit`, `clearOffset`, `clearSelect`, and `clearGroupBy` as potential
-   unnecessary deviations, and add only helpers whose semantics remain sound
-   across the relevant SOQL builder modes. SQL joins/raw-expression APIs are not
-   parity gaps.
 
 Specialist-object restrictions that depend on unavailable adapter metadata,
 permissions, runtime cardinality, or product-specific execution context are not

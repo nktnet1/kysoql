@@ -1,5 +1,8 @@
+import type { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
+import type { FormatFunctionNode } from "#/operation-node/format-function-node";
 import type { AdvancedGroupByMode } from "#/operation-node/group-by-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
+import type { SelectQueryNode } from "#/operation-node/select-query-node";
 import type { FieldReferenceDefinition } from "#/parser/reference-parser";
 
 export type GroupableFieldName<
@@ -48,4 +51,49 @@ export function parseAdvancedGroupBy(
   }
 
   return items;
+}
+
+export function assertCanClearGroupBy(queryNode: SelectQueryNode): void {
+  if (!queryNode.groupBy) {
+    return;
+  }
+
+  if (queryNode.having || queryNode.orderBy || queryNode.limit) {
+    throw new TypeError(
+      "SOQL clearGroupBy() cannot remove GROUP BY while grouped HAVING, ORDER BY, or LIMIT clauses remain.",
+    );
+  }
+
+  for (const selection of queryNode.selections ?? []) {
+    const node = selection.selection;
+
+    if (node.kind !== "AliasNode") {
+      throw new TypeError(
+        "SOQL clearGroupBy() cannot remove GROUP BY while grouped field selections remain.",
+      );
+    }
+
+    if (
+      node.node.kind === "DateFunctionNode" ||
+      (node.node.kind === "AggregateFunctionNode" &&
+        (node.node as AggregateFunctionNode).function === "grouping") ||
+      isGroupingFormatSelection(node.node)
+    ) {
+      throw new TypeError(
+        "SOQL clearGroupBy() cannot remove GROUP BY while grouping-dependent selections remain.",
+      );
+    }
+  }
+}
+
+function isGroupingFormatSelection(node: { readonly kind: string }): boolean {
+  if (node.kind !== "FormatFunctionNode") {
+    return false;
+  }
+
+  const expression = (node as FormatFunctionNode).expression;
+  return (
+    expression.kind === "AggregateFunctionNode" &&
+    expression.function === "grouping"
+  );
 }

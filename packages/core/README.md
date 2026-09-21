@@ -52,6 +52,14 @@ const soql = activeAccounts.$call((qb) => qb.compile().soql);
 // Result rows: { Id: string; Name?: string | null }
 ```
 
+Kysoql also exposes Kysely-style `.clearOrderBy()`, `.clearLimit()`,
+`.clearOffset()`, `.clearSelect()`, and aggregate `.clearGroupBy()` where those
+operations are meaningful for the specialised SOQL builder. `clearSelect()`
+resets the selection accumulator so a query can be reselected with a fresh result
+type. Because SOQL aggregate builders statically model grouping constraints,
+`clearGroupBy()` refuses to remove grouping when grouped field selections,
+`HAVING`, grouped `ORDER BY`, or grouped `LIMIT` would otherwise remain invalid.
+
 Multi-currency `WHERE` comparisons can use structured ISO-coded literals through
 `soqlCurrency(code, value)`. The ISO code must be three uppercase ASCII letters;
 whether that code is active remains Salesforce-org runtime state. `IN` / `NOT IN`

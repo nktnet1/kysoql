@@ -80,6 +80,9 @@ type SelectFunctionForMode<
 type ChildFunctionMode<Mode extends RelationshipSubqueryFunctionMode> =
   Mode extends "forbidden" ? "forbidden" : "none";
 
+type ClearedFunctionMode<Mode extends RelationshipSubqueryFunctionMode> =
+  Mode extends "forbidden" ? "forbidden" : "none";
+
 type MergeFunctionMode<
   Mode extends RelationshipSubqueryFunctionMode,
   ChildMode extends RelationshipSubqueryFunctionMode,
@@ -168,6 +171,33 @@ export interface RelationshipSubqueryBuilder<
     ConditionalOutput<O, O2>,
     Depth,
     FunctionMode,
+    ApexMode
+  >;
+
+  clearLimit(): RelationshipSubqueryBuilder<
+    DB,
+    TB,
+    O,
+    Depth,
+    FunctionMode,
+    ApexMode
+  >;
+
+  clearOrderBy(): RelationshipSubqueryBuilder<
+    DB,
+    TB,
+    O,
+    Depth,
+    FunctionMode,
+    ApexMode
+  >;
+
+  clearSelect(): RelationshipSubqueryBuilder<
+    DB,
+    TB,
+    unknown,
+    Depth,
+    ClearedFunctionMode<FunctionMode>,
     ApexMode
   >;
 
@@ -364,6 +394,75 @@ class RelationshipSubqueryBuilderImpl<
       FunctionMode,
       ApexMode
     >;
+  }
+
+  clearLimit(): RelationshipSubqueryBuilder<
+    DB,
+    TB,
+    O,
+    Depth,
+    FunctionMode,
+    ApexMode
+  > {
+    return new RelationshipSubqueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      Depth,
+      FunctionMode,
+      ApexMode
+    >({
+      ...this.#props,
+      queryNode: RelationshipSubqueryNode.cloneWithoutLimit(
+        this.#props.queryNode,
+      ),
+    });
+  }
+
+  clearOrderBy(): RelationshipSubqueryBuilder<
+    DB,
+    TB,
+    O,
+    Depth,
+    FunctionMode,
+    ApexMode
+  > {
+    return new RelationshipSubqueryBuilderImpl<
+      DB,
+      TB,
+      O,
+      Depth,
+      FunctionMode,
+      ApexMode
+    >({
+      ...this.#props,
+      queryNode: RelationshipSubqueryNode.cloneWithoutOrderBy(
+        this.#props.queryNode,
+      ),
+    });
+  }
+
+  clearSelect(): RelationshipSubqueryBuilder<
+    DB,
+    TB,
+    unknown,
+    Depth,
+    ClearedFunctionMode<FunctionMode>,
+    ApexMode
+  > {
+    return new RelationshipSubqueryBuilderImpl<
+      DB,
+      TB,
+      unknown,
+      Depth,
+      ClearedFunctionMode<FunctionMode>,
+      ApexMode
+    >({
+      ...this.#props,
+      queryNode: RelationshipSubqueryNode.cloneWithoutSelections(
+        this.#props.queryNode,
+      ),
+    });
   }
 
   clearWhere(): RelationshipSubqueryBuilder<

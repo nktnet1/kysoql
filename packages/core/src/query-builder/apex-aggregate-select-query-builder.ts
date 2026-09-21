@@ -22,6 +22,7 @@ import type {
   FilterableFieldName,
 } from "#/parser/binary-operation-parser";
 import { validateSemiJoinWhere } from "#/parser/filter-parser";
+import { assertCanClearGroupBy } from "#/parser/group-by-parser";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import { freeze } from "#/util/object-utils";
@@ -35,6 +36,14 @@ export interface ApexAggregateSelectQueryBuilder<DB, TB extends keyof DB, O> {
   $call<T>(func: (qb: this) => T): T;
 
   $if(condition: boolean, func: (qb: this) => this): this;
+
+  clearGroupBy(): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+
+  clearLimit(): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+
+  clearOffset(): ApexAggregateSelectQueryBuilder<DB, TB, O>;
+
+  clearOrderBy(): ApexAggregateSelectQueryBuilder<DB, TB, O>;
 
   clearWhere(): ApexAggregateSelectQueryBuilder<DB, TB, O>;
 
@@ -88,6 +97,36 @@ class ApexAggregateSelectQueryBuilderImpl<DB, TB extends keyof DB, O>
 
   $if(condition: boolean, func: (qb: this) => this): this {
     return condition ? func(this) : this;
+  }
+
+  clearGroupBy(): ApexAggregateSelectQueryBuilder<DB, TB, O> {
+    assertCanClearGroupBy(this.#props.queryNode);
+
+    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithoutGroupBy(this.#props.queryNode),
+    });
+  }
+
+  clearLimit(): ApexAggregateSelectQueryBuilder<DB, TB, O> {
+    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithoutLimit(this.#props.queryNode),
+    });
+  }
+
+  clearOffset(): ApexAggregateSelectQueryBuilder<DB, TB, O> {
+    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithoutOffset(this.#props.queryNode),
+    });
+  }
+
+  clearOrderBy(): ApexAggregateSelectQueryBuilder<DB, TB, O> {
+    return new ApexAggregateSelectQueryBuilderImpl<DB, TB, O>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithoutOrderBy(this.#props.queryNode),
+    });
   }
 
   clearWhere(): ApexAggregateSelectQueryBuilder<DB, TB, O> {

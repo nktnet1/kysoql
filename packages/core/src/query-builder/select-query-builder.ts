@@ -215,6 +215,14 @@ export interface SelectQueryBuilder<
     func: (qb: this) => SelectQueryBuilder<DB, TB, O & O2, Mode>,
   ): SelectQueryBuilder<DB, TB, ConditionalOutput<O, O2>, Mode>;
 
+  clearLimit(): SelectQueryBuilder<DB, TB, O, Mode>;
+
+  clearOffset(): SelectQueryBuilder<DB, TB, O, Mode>;
+
+  clearOrderBy(): SelectQueryBuilder<DB, TB, O, Mode>;
+
+  clearSelect(): SelectQueryBuilder<DB, TB, unknown, "plain">;
+
   clearWhere(): SelectQueryBuilder<DB, TB, O, Mode>;
 
   compile(): CompiledQuery<O>;
@@ -423,6 +431,34 @@ class SelectQueryBuilderImpl<
       ConditionalOutput<O, O2>,
       Mode
     >;
+  }
+
+  clearLimit(): SelectQueryBuilder<DB, TB, O, Mode> {
+    return new SelectQueryBuilderImpl<DB, TB, O, Mode>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithoutLimit(this.#props.queryNode),
+    });
+  }
+
+  clearOffset(): SelectQueryBuilder<DB, TB, O, Mode> {
+    return new SelectQueryBuilderImpl<DB, TB, O, Mode>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithoutOffset(this.#props.queryNode),
+    });
+  }
+
+  clearOrderBy(): SelectQueryBuilder<DB, TB, O, Mode> {
+    return new SelectQueryBuilderImpl<DB, TB, O, Mode>({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithoutOrderBy(this.#props.queryNode),
+    });
+  }
+
+  clearSelect(): SelectQueryBuilder<DB, TB, unknown, "plain"> {
+    return new SelectQueryBuilderImpl<DB, TB, unknown, "plain">({
+      ...this.#props,
+      queryNode: SelectQueryNode.cloneWithoutSelections(this.#props.queryNode),
+    });
   }
 
   clearWhere(): SelectQueryBuilder<DB, TB, O, Mode> {

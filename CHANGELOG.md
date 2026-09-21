@@ -82,6 +82,11 @@ version is cut.
 - Kysely-style `clearWhere()` across every builder surface that exposes `where()`,
   removing the complete accumulated `WHERE` clause while preserving immutable
   builder state and specialised query modes.
+- Kysely-style `clearOrderBy()`, `clearLimit()`, `clearOffset()`, `clearSelect()`,
+  and aggregate `clearGroupBy()` across the applicable SOQL builder surfaces,
+  including immutable clause removal, selection-type reset, Apex pagination/order/
+  grouping cleanup, and guards against clearing grouping when grouped-only SOQL
+  state would remain.
 - Typed SOQL `toLabel()` predicates in ordinary `WHERE` expression callbacks,
   with generated filterable picklist/multipicklist metadata, translated-string
   operands, nullability-aware equality, picklist `LIKE`, child-to-parent paths,
