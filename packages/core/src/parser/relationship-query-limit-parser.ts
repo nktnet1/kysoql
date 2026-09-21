@@ -8,8 +8,8 @@ import type { DateFunctionNode } from "#/operation-node/date-function-node";
 import type { DistanceFunctionNode } from "#/operation-node/distance-function-node";
 import type { FormatFunctionNode } from "#/operation-node/format-function-node";
 import type { NotNode } from "#/operation-node/not-node";
-import type { OperatorNode } from "#/operation-node/operator-node";
 import type { OperationNode } from "#/operation-node/operation-node";
+import type { OperatorNode } from "#/operation-node/operator-node";
 import type { OrNode } from "#/operation-node/or-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
@@ -243,7 +243,6 @@ const collectSelectionRelationships = (
       collectOperationRelationships(selection.selection, scope, counts);
   }
 };
-
 
 const guaranteesSingleRootRecordById = (node: OperationNode): boolean => {
   if (node.kind === "AndNode") {

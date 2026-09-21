@@ -2,10 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { Kysoql } from "#/kysoql";
 import type { SalesforceField, SalesforceObject } from "#/schema";
-import {
-  isSoqlCurrencyLiteral,
-  soqlCurrency,
-} from "#/soql-currency-literal";
+import { isSoqlCurrencyLiteral, soqlCurrency } from "#/soql-currency-literal";
 
 type Field<
   Value,
@@ -122,11 +119,7 @@ describe("SOQL currency literals", () => {
       .select("Id");
 
     expect(() =>
-      query.where(
-        "Amount",
-        "in",
-        [soqlCurrency("USD", 5000), 6000] as never,
-      ),
+      query.where("Amount", "in", [soqlCurrency("USD", 5000), 6000] as never),
     ).toThrow(
       "SOQL IN/NOT IN currency value lists cannot mix ISO-coded and non-ISO values.",
     );

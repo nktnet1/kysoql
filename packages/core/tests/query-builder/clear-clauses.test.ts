@@ -243,7 +243,9 @@ describe("Kysely-style clear clause helpers", () => {
       .limit(10)
       .clearLimit()
       .allRows();
-    expect(apexCount.compile().soql).toBe("SELECT COUNT() FROM Account ALL ROWS");
+    expect(apexCount.compile().soql).toBe(
+      "SELECT COUNT() FROM Account ALL ROWS",
+    );
   });
 
   it("clears inherited ORDER BY and Apex pagination without leaving Apex mode", () => {

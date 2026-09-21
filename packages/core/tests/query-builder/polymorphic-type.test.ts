@@ -194,9 +194,7 @@ describe("polymorphic relationship Type qualifiers", () => {
       .selectFrom("Event")
       .select("Id")
       .selectTypeOf("What", (typeOf) =>
-        typeOf
-          .when("Account", ["Name"])
-          .when("Opportunity", ["Name"]),
+        typeOf.when("Account", ["Name"]).when("Opportunity", ["Name"]),
       )
       .where("What.Type", "in", ["Account", "Opportunity"]);
 

@@ -86,7 +86,10 @@ describe("SOQL relationship query limits", () => {
   });
 
   it("accepts 55 child-to-parent relationships and rejects the 56th", () => {
-    const fiftyFive = rootQuery([fieldSelection("Id"), ...parentReferences(55)]);
+    const fiftyFive = rootQuery([
+      fieldSelection("Id"),
+      ...parentReferences(55),
+    ]);
     const fiftySix = rootQuery([fieldSelection("Id"), ...parentReferences(56)]);
 
     expect(() => compiler.compileQuery(fiftyFive)).not.toThrow();

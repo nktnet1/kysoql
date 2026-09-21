@@ -161,13 +161,14 @@ type SetValueListExpression<
   TB extends keyof DB,
   RE extends string,
   AllowCurrencyLiteral extends boolean,
-> = SalesforceTypeOfField<DB, TB, RE> extends "currency"
-  ? AllowCurrencyLiteral extends true
-    ?
-        | readonly BaseFieldValueExpression<DB, TB, RE>[]
-        | readonly SoqlCurrencyLiteral[]
-    : readonly BaseFieldValueExpression<DB, TB, RE>[]
-  : readonly FieldValueExpression<DB, TB, RE, AllowCurrencyLiteral>[];
+> =
+  SalesforceTypeOfField<DB, TB, RE> extends "currency"
+    ? AllowCurrencyLiteral extends true
+      ?
+          | readonly BaseFieldValueExpression<DB, TB, RE>[]
+          | readonly SoqlCurrencyLiteral[]
+      : readonly BaseFieldValueExpression<DB, TB, RE>[]
+    : readonly FieldValueExpression<DB, TB, RE, AllowCurrencyLiteral>[];
 
 export type OperandValueExpression<
   DB,
@@ -254,9 +255,7 @@ function parseValueList(
   }
 
   if (operator === "in" || operator === "not in") {
-    const containsIsoCodedCurrency = result.output.some(
-      isSoqlCurrencyLiteral,
-    );
+    const containsIsoCodedCurrency = result.output.some(isSoqlCurrencyLiteral);
 
     if (
       containsIsoCodedCurrency &&

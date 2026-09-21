@@ -42,17 +42,18 @@ type PolymorphicTypeSelection<
   TB extends keyof DB,
   Relationship extends ParentRelationshipName<DB, TB>,
   Reference,
-> = PolymorphicRelationshipTypeTargets<
-  DB,
-  TB,
-  Relationship
-> extends infer Targets extends string
-  ? [Targets] extends [never]
-    ? unknown
-    : "Type" extends Reference
-      ? { readonly Type: Targets }
-      : unknown
-  : unknown;
+> =
+  PolymorphicRelationshipTypeTargets<
+    DB,
+    TB,
+    Relationship
+  > extends infer Targets extends string
+    ? [Targets] extends [never]
+      ? unknown
+      : "Type" extends Reference
+        ? { readonly Type: Targets }
+        : unknown
+    : unknown;
 
 type RegularParentSelectionReference<
   DB,
@@ -69,19 +70,20 @@ type RegularParentSelection<
   Relationship extends ParentRelationshipName<DB, TB>,
   Reference,
   ForceNullable extends boolean,
-> = RegularParentSelectionReference<
-  DB,
-  TB,
-  Relationship,
-  Reference
-> extends infer RegularReference
-  ? [RegularReference] extends [never]
-    ? unknown
-    : ParentObjectName<DB, TB, Relationship> extends infer ParentTB extends
-          keyof DB
-      ? Selection<DB, ParentTB, RegularReference, ForceNullable>
-      : never
-  : never;
+> =
+  RegularParentSelectionReference<
+    DB,
+    TB,
+    Relationship,
+    Reference
+  > extends infer RegularReference
+    ? [RegularReference] extends [never]
+      ? unknown
+      : ParentObjectName<DB, TB, Relationship> extends infer ParentTB extends
+            keyof DB
+        ? Selection<DB, ParentTB, RegularReference, ForceNullable>
+        : never
+    : never;
 
 type ParentSelectionValue<
   DB,

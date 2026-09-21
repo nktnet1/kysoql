@@ -1,12 +1,12 @@
 import {
-  createSelectExpressionBuilder,
   type ConvertTimezoneFunctionBuilder,
+  createSelectExpressionBuilder,
   type DateFunctionExpression,
   type TranslatableFieldReference,
 } from "#/expression/aggregate-function-builder";
-import {
-  type DistanceFunctionExpression,
-  type GeolocationFilterFunctionModule,
+import type {
+  DistanceFunctionExpression,
+  GeolocationFilterFunctionModule,
 } from "#/expression/geolocation-function-builder";
 import { AndNode } from "#/operation-node/and-node";
 import { NotNode } from "#/operation-node/not-node";
@@ -127,33 +127,32 @@ export type FilterableToLabelFieldReference<
   DB,
   TB extends keyof DB,
   Reference extends string,
-> = Reference extends TranslatableFieldReference<DB, TB, Reference>
-  ? Reference extends FilterableFieldName<DB, TB, Reference>
-    ? TerminalFieldName<Reference> extends UnsupportedToLabelWhereFieldName
-      ? never
-      : Reference
-    : never
-  : never;
+> =
+  Reference extends TranslatableFieldReference<DB, TB, Reference>
+    ? Reference extends FilterableFieldName<DB, TB, Reference>
+      ? TerminalFieldName<Reference> extends UnsupportedToLabelWhereFieldName
+        ? never
+        : Reference
+      : never
+    : never;
 
 type ToLabelFilterOperatorForReference<
   DB,
   TB extends keyof DB,
   Reference extends string,
-> = Reference extends FilterableToLabelFieldReference<DB, TB, Reference>
-  ? FieldReferenceDefinition<DB, TB, Reference> extends {
-      readonly salesforceType: "picklist";
-    }
-    ? ToLabelFilterComparisonOperator
-    : EqualityComparisonOperator
-  : never;
+> =
+  Reference extends FilterableToLabelFieldReference<DB, TB, Reference>
+    ? FieldReferenceDefinition<DB, TB, Reference> extends {
+        readonly salesforceType: "picklist";
+      }
+      ? ToLabelFilterComparisonOperator
+      : EqualityComparisonOperator
+    : never;
 
-type ToLabelFilterValue<
-  DB,
-  TB extends keyof DB,
-  Reference extends string,
-> = true extends FieldReferenceNullable<DB, TB, Reference>
-  ? string | null
-  : string;
+type ToLabelFilterValue<DB, TB extends keyof DB, Reference extends string> =
+  true extends FieldReferenceNullable<DB, TB, Reference>
+    ? string | null
+    : string;
 
 type ToLabelFilterOperandValue<
   Value,
@@ -233,10 +232,12 @@ interface ToLabelFilterFunctionModule<DB, TB extends keyof DB> {
   ): ToLabelFilterFunctionExpression<Reference>;
 }
 
-type FilterFunctionModule<DB, TB extends keyof DB> =
-  DateFilterFunctionModule<DB, TB> &
-    GeolocationFilterFunctionModule<DB, TB> &
-    ToLabelFilterFunctionModule<DB, TB>;
+type FilterFunctionModule<DB, TB extends keyof DB> = DateFilterFunctionModule<
+  DB,
+  TB
+> &
+  GeolocationFilterFunctionModule<DB, TB> &
+  ToLabelFilterFunctionModule<DB, TB>;
 
 export interface ExpressionWrapper<
   DB,

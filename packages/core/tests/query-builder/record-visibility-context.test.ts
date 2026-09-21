@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { Kysoql } from "#/kysoql";
-import { DataCategorySelectionNode } from "#/operation-node/with-data-category-node";
 import { RecordVisibilityContextNode } from "#/operation-node/record-visibility-context-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
 import { SelectionNode } from "#/operation-node/selection-node";
 import { SObjectNode } from "#/operation-node/sobject-node";
+import { DataCategorySelectionNode } from "#/operation-node/with-data-category-node";
 import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
 import type {
   SalesforceChildRelationship,
@@ -73,9 +73,7 @@ describe("WITH RecordVisibilityContext", () => {
   });
 
   it("accepts any single documented parameter and replaces prior context immutably", () => {
-    const base = new Kysoql<FixtureSchema>()
-      .selectFrom("Account")
-      .select("Id");
+    const base = new Kysoql<FixtureSchema>().selectFrom("Account").select("Id");
     const first = base.withRecordVisibilityContext({ supportsDomains: false });
     const second = first.withRecordVisibilityContext({
       maxDescriptorPerRecord: 25,
@@ -90,9 +88,9 @@ describe("WITH RecordVisibilityContext", () => {
       kind: "RecordVisibilityContextNode",
       maxDescriptorPerRecord: 25,
     });
-    expect(Object.isFrozen(first.toOperationNode().recordVisibilityContext)).toBe(
-      true,
-    );
+    expect(
+      Object.isFrozen(first.toOperationNode().recordVisibilityContext),
+    ).toBe(true);
     expect(first.compile().soql).toBe(
       "SELECT Id FROM Account WITH RecordVisibilityContext (supportsDomains=false)",
     );
@@ -124,7 +122,9 @@ describe("WITH RecordVisibilityContext", () => {
   });
 
   it("requires at least one parameter at type and runtime boundaries", () => {
-    const query = new Kysoql<FixtureSchema>().selectFrom("Account").select("Id");
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id");
 
     function typecheckOnly(): void {
       // @ts-expect-error Salesforce requires at least one RecordVisibilityContext parameter.
@@ -138,7 +138,9 @@ describe("WITH RecordVisibilityContext", () => {
   });
 
   it("validates parameter names and values", () => {
-    const query = new Kysoql<FixtureSchema>().selectFrom("Account").select("Id");
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id");
 
     expect(() =>
       query.withRecordVisibilityContext({ unknown: true } as never),

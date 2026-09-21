@@ -100,8 +100,9 @@ const validateParameters = (
     ...(maxDescriptorPerRecord === undefined
       ? {}
       : {
-          maxDescriptorPerRecord:
-            validateMaxDescriptorPerRecord(maxDescriptorPerRecord),
+          maxDescriptorPerRecord: validateMaxDescriptorPerRecord(
+            maxDescriptorPerRecord,
+          ),
         }),
     ...(supportsDomains === undefined
       ? {}
@@ -135,7 +136,8 @@ export const validateRecordVisibilityContextQuery = (
   }
 
   validateParameters({
-    maxDescriptorPerRecord: query.recordVisibilityContext.maxDescriptorPerRecord,
+    maxDescriptorPerRecord:
+      query.recordVisibilityContext.maxDescriptorPerRecord,
     supportsDomains: query.recordVisibilityContext.supportsDomains,
     supportsDelegates: query.recordVisibilityContext.supportsDelegates,
   });

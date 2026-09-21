@@ -510,8 +510,7 @@ const whereUsesToLabel = (node: OperationNode): boolean => {
     }
     case "BinaryOperationNode":
       return (
-        (node as BinaryOperationNode).leftOperand.kind ===
-        "ToLabelFunctionNode"
+        (node as BinaryOperationNode).leftOperand.kind === "ToLabelFunctionNode"
       );
     case "NotNode":
       return whereUsesToLabel((node as NotNode).operand);

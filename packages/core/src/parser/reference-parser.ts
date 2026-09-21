@@ -124,33 +124,41 @@ export type PolymorphicRelationshipTypeTargets<
   DB,
   TB extends keyof DB,
   Relationship extends ParentRelationshipName<DB, TB>,
-> = ParentRelationshipFieldName<DB, TB, Relationship> extends infer SourceField extends
-  FieldName<DB, TB>
-  ? FieldDefinition<DB, TB, SourceField> extends {
-      readonly polymorphic: true;
-      readonly referenceTo: infer Targets extends string;
-    }
-    ? Targets
-    : never
-  : never;
+> =
+  ParentRelationshipFieldName<
+    DB,
+    TB,
+    Relationship
+  > extends infer SourceField extends FieldName<DB, TB>
+    ? FieldDefinition<DB, TB, SourceField> extends {
+        readonly polymorphic: true;
+        readonly referenceTo: infer Targets extends string;
+      }
+      ? Targets
+      : never
+    : never;
 
 type PolymorphicTypeQualifierDefinition<
   DB,
   TB extends keyof DB,
   Relationship extends ParentRelationshipName<DB, TB>,
-> = PolymorphicRelationshipTypeTargets<DB, TB, Relationship> extends infer Targets extends
-  string
-  ? [Targets] extends [never]
-    ? never
-    : SalesforceField<
-        Targets,
-        "polymorphicType",
-        ParentRelationshipNullable<DB, TB, Relationship>,
-        true,
-        false,
-        false
-      >
-  : never;
+> =
+  PolymorphicRelationshipTypeTargets<
+    DB,
+    TB,
+    Relationship
+  > extends infer Targets extends string
+    ? [Targets] extends [never]
+      ? never
+      : SalesforceField<
+          Targets,
+          "polymorphicType",
+          ParentRelationshipNullable<DB, TB, Relationship>,
+          true,
+          false,
+          false
+        >
+    : never;
 
 export type ChildObjectName<
   DB,
@@ -197,8 +205,11 @@ export type FieldReferenceDefinition<
             Relationship
           > extends infer TypeQualifier
           ? [TypeQualifier] extends [never]
-            ? ParentObjectName<DB, TB, Relationship> extends infer ParentTB extends
-                keyof DB
+            ? ParentObjectName<
+                DB,
+                TB,
+                Relationship
+              > extends infer ParentTB extends keyof DB
               ? FieldReferenceDefinition<
                   DB,
                   ParentTB,
@@ -209,7 +220,7 @@ export type FieldReferenceDefinition<
             : TypeQualifier
           : never
         : ParentObjectName<DB, TB, Relationship> extends infer ParentTB extends
-            keyof DB
+              keyof DB
           ? FieldReferenceDefinition<
               DB,
               ParentTB,
@@ -234,11 +245,14 @@ export type FieldReferenceNullable<
       ? true extends ParentRelationshipNullable<DB, TB, Relationship>
         ? true
         : ParentReference extends "Type"
-          ? [
-              PolymorphicRelationshipTypeTargets<DB, TB, Relationship>,
-            ] extends [never]
-            ? ParentObjectName<DB, TB, Relationship> extends infer ParentTB extends
-                keyof DB
+          ? [PolymorphicRelationshipTypeTargets<DB, TB, Relationship>] extends [
+              never,
+            ]
+            ? ParentObjectName<
+                DB,
+                TB,
+                Relationship
+              > extends infer ParentTB extends keyof DB
               ? FieldReferenceNullable<
                   DB,
                   ParentTB,
@@ -247,8 +261,11 @@ export type FieldReferenceNullable<
                 >
               : never
             : false
-          : ParentObjectName<DB, TB, Relationship> extends infer ParentTB extends
-              keyof DB
+          : ParentObjectName<
+                DB,
+                TB,
+                Relationship
+              > extends infer ParentTB extends keyof DB
             ? FieldReferenceNullable<
                 DB,
                 ParentTB,

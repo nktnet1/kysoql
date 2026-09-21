@@ -58,14 +58,14 @@ import type { KnowledgeArticleUpdateCheck } from "#/parser/knowledge-update-pars
 import { parseLimit } from "#/parser/limit-parser";
 import { parseOffset } from "#/parser/offset-parser";
 import {
-  parseRecordVisibilityContext,
-  type RecordVisibilityContextOptions,
-} from "#/parser/record-visibility-context-parser";
-import {
   parseDistanceOrderBy,
   parseOrderBy,
   type SortableFieldName,
 } from "#/parser/order-by-parser";
+import {
+  parseRecordVisibilityContext,
+  type RecordVisibilityContextOptions,
+} from "#/parser/record-visibility-context-parser";
 import type {
   ChildObjectName,
   ChildRelationshipName,

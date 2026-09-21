@@ -138,9 +138,7 @@ describe("$if", () => {
       .selectFrom("Account")
       .select("Id")
       .selectSubquery("Contacts", (contacts) =>
-        contacts
-          .select("Id")
-          .$if(includeName, (qb) => qb.select("LastName")),
+        contacts.select("Id").$if(includeName, (qb) => qb.select("LastName")),
       );
 
     expect(relationship.compile().soql).toBe(

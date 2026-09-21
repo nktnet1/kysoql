@@ -220,12 +220,7 @@ class SemiJoinSubqueryBuilderImpl<
   }
 
   clearWhere(): this {
-    return new SemiJoinSubqueryBuilderImpl<
-      DB,
-      OuterTB,
-      OuterReference,
-      TB
-    >({
+    return new SemiJoinSubqueryBuilderImpl<DB, OuterTB, OuterReference, TB>({
       ...this.#props,
       queryNode: QueryNode.cloneWithoutWhere(this.#props.queryNode),
     }) as this;

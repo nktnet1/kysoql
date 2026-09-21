@@ -62,11 +62,6 @@ import {
 } from "#/parser/group-by-parser";
 import { validateGroupingSelections } from "#/parser/grouping-expression-parser";
 import type { KnowledgeArticleUpdateCheck } from "#/parser/knowledge-update-parser";
-import type { FieldReferenceDefinition } from "#/parser/reference-parser";
-import {
-  parseRecordVisibilityContext,
-  type RecordVisibilityContextOptions,
-} from "#/parser/record-visibility-context-parser";
 import { parseLimit } from "#/parser/limit-parser";
 import {
   parseAggregateOrderBy,
@@ -74,6 +69,11 @@ import {
   parseOrderBy,
   type SortableFieldName,
 } from "#/parser/order-by-parser";
+import {
+  parseRecordVisibilityContext,
+  type RecordVisibilityContextOptions,
+} from "#/parser/record-visibility-context-parser";
+import type { FieldReferenceDefinition } from "#/parser/reference-parser";
 import {
   parseSelectArg,
   type SelectExpression,
@@ -703,9 +703,8 @@ export interface AggregateSelectQueryBuilder<
         TB,
         AdvancedGroupingFields<GroupedBy, GroupMode>
       >,
-    ) =>
-      Selection &
-        GroupedFunctionSelection<DB, TB, Selection, GroupedBy, GroupMode>,
+    ) => Selection &
+      GroupedFunctionSelection<DB, TB, Selection, GroupedBy, GroupMode>,
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -1626,9 +1625,8 @@ class AggregateSelectQueryBuilderImpl<
         TB,
         AdvancedGroupingFields<GroupedBy, GroupMode>
       >,
-    ) =>
-      Selection &
-        GroupedFunctionSelection<DB, TB, Selection, GroupedBy, GroupMode>,
+    ) => Selection &
+      GroupedFunctionSelection<DB, TB, Selection, GroupedBy, GroupMode>,
   ): AggregateSelectQueryBuilder<
     DB,
     TB,

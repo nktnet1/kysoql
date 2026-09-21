@@ -244,9 +244,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
     return this.#compileOperation(where.where);
   }
 
-  #compileRecordVisibilityContext(
-    node: RecordVisibilityContextNode,
-  ): string {
+  #compileRecordVisibilityContext(node: RecordVisibilityContextNode): string {
     const parameters: string[] = [];
 
     if (node.maxDescriptorPerRecord !== undefined) {

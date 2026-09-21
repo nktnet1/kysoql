@@ -51,26 +51,23 @@ type ApexFieldValue<
   RE extends string,
 > = SalesforceFieldValue<FieldReferenceDefinition<DB, TB, RE>>;
 
-type ApexFieldSalesforceType<
-  DB,
-  TB extends keyof DB,
-  RE extends string,
-> = FieldReferenceDefinition<DB, TB, RE> extends SalesforceField<
-  unknown,
-  infer SalesforceType,
-  boolean,
-  boolean,
-  boolean,
-  boolean,
-  string,
-  string,
-  string,
-  boolean,
-  boolean,
-  boolean
->
-  ? SalesforceType
-  : never;
+type ApexFieldSalesforceType<DB, TB extends keyof DB, RE extends string> =
+  FieldReferenceDefinition<DB, TB, RE> extends SalesforceField<
+    unknown,
+    infer SalesforceType,
+    boolean,
+    boolean,
+    boolean,
+    boolean,
+    string,
+    string,
+    string,
+    boolean,
+    boolean,
+    boolean
+  >
+    ? SalesforceType
+    : never;
 
 type ApexScalarBindValue<
   DB,

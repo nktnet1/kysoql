@@ -158,8 +158,8 @@ export type {
 } from "#/operation-node/with-data-category-node";
 export type { ApexOperandValueExpression } from "#/parser/apex-bind-parser";
 export type { DataCategoryInput } from "#/parser/data-category-parser";
-export type { RecordVisibilityContextOptions } from "#/parser/record-visibility-context-parser";
 export type { DistanceComparisonOperator } from "#/parser/geolocation-expression-parser";
+export type { RecordVisibilityContextOptions } from "#/parser/record-visibility-context-parser";
 export type { AggregateSelectQueryBuilder } from "#/query-builder/aggregate-select-query-builder";
 export type { ApexAggregateSelectQueryBuilder } from "#/query-builder/apex-aggregate-select-query-builder";
 export type { ApexCountQueryBuilder } from "#/query-builder/apex-count-query-builder";
@@ -190,10 +190,6 @@ export { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
 export type { QueryCompiler } from "#/query-compiler/query-compiler";
 export { QueryCreator, type QueryCreatorConfig } from "#/query-creator";
 export type { QueryExecutor } from "#/query-executor";
-export {
-  type SoqlCurrencyLiteral,
-  soqlCurrency,
-} from "#/soql-currency-literal";
 export type {
   SalesforceChildRelationship,
   SalesforceField,
@@ -212,6 +208,10 @@ export type {
   SalesforceRow,
   SalesforceSchema,
 } from "#/schema";
+export {
+  type SoqlCurrencyLiteral,
+  soqlCurrency,
+} from "#/soql-currency-literal";
 export {
   type SoqlRelativeDateFamily,
   type SoqlRelativeDateLiteral,
