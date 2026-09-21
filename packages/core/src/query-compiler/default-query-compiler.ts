@@ -20,6 +20,7 @@ import type { DistanceFunctionNode } from "#/operation-node/distance-function-no
 import type { FieldsFunctionNode } from "#/operation-node/fields-function-node";
 import type { ForViewReferenceNode } from "#/operation-node/for-view-reference-node";
 import type { FormatFunctionNode } from "#/operation-node/format-function-node";
+import type { FormulaFunctionNode } from "#/operation-node/formula-function-node";
 import type { GeolocationFunctionNode } from "#/operation-node/geolocation-function-node";
 import type { GroupByNode } from "#/operation-node/group-by-node";
 import type { HavingNode } from "#/operation-node/having-node";
@@ -420,6 +421,8 @@ export class DefaultQueryCompiler implements QueryCompiler {
         return this.#compileDistanceFunction(node as DistanceFunctionNode);
       case "FormatFunctionNode":
         return this.#compileFormatFunction(node as FormatFunctionNode);
+      case "FormulaFunctionNode":
+        return this.#compileFormulaFunction(node as FormulaFunctionNode);
       case "GeolocationFunctionNode":
         return this.#compileGeolocationFunction(
           node as GeolocationFunctionNode,
@@ -548,6 +551,13 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileFormatFunction(node: FormatFunctionNode): string {
     return `FORMAT(${this.#compileOperation(node.expression)})`;
+  }
+
+  #compileFormulaFunction(node: FormulaFunctionNode): string {
+    const expression = `${this.#compileReference(node.leftOperand)} ${
+      node.operator
+    } ${this.#compileReference(node.rightOperand)}`;
+    return `FORMULA('${this.#escapeString(expression, false)}')`;
   }
 
   #compileToLabelFunction(node: ToLabelFunctionNode): string {

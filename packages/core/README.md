@@ -102,6 +102,29 @@ const recent = db
   );
 ```
 
+Salesforce currently documents arithmetic `FORMULA()` predicates as a Beta
+service and only for `WHERE`. Kysoql keeps that surface visibly opt-in under
+`eb.beta.formula(left, op, right)`: operands are generated filterable
+`currency`, `double`, `int`, `date`, or `datetime` fields, arithmetic is limited
+to `+` / `-`, and the formula body is built structurally rather than accepted as
+raw text. Numeric results compare to numbers; supported date/datetime arithmetic
+retains the corresponding explicit SOQL temporal-literal type.
+
+```ts
+const profitable = db
+  .selectFrom("Opportunity")
+  .select(["Id", "Amount", "ExpectedRevenue"])
+  .where((eb) =>
+    eb(eb.beta.formula("Amount", "-", "ExpectedRevenue"), ">", 100),
+  );
+// ... WHERE FORMULA('Amount - ExpectedRevenue') > 100
+```
+
+`FORMULA()` is intentionally absent from SELECT and HAVING builders. Static and
+dynamic Apex WHERE builders retain the same Beta namespace and can compare the
+result against typed Apex binds. Because the feature requires Salesforce Beta
+access, the generic scratch-org fixture does not assume it is enabled.
+
 Root queries can also add Salesforce API 48+ `WITH RecordVisibilityContext`
 filtering with a structured options object. At least one of
 `maxDescriptorPerRecord`, `supportsDomains`, or `supportsDelegates` is required;

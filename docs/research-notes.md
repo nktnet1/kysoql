@@ -396,12 +396,9 @@ Current evidence and implementation:
   through Salesforce CLI against the maintained fixture, and
   `pnpm salesforce:setup` runs that smoke check automatically after seeding.
 
-## Remaining research targets
+## Recent documented surface
 
-These correspond to the active roadmap in `docs/chatgpt-handoff.md`; do not grow
-this into a speculative backlog.
-
-### `FORMULA()` in `WHERE` pilot
+### `FORMULA()` in `WHERE` Beta
 
 Sources:
 
@@ -410,11 +407,21 @@ Sources:
 
 Confirmed current documentation:
 
-- Summer '26 `FORMULA()` is a pilot capability and is currently available only in
-  `WHERE`, not `HAVING`.
-- It supports `+` / `-` arithmetic over documented numeric/date/currency families.
-- If the project opts into pilot syntax, model operands/operators structurally and
-  keep the feature visibly opt-in.
+- The current SOQL reference now labels arithmetic `FORMULA()` a Beta service;
+  the June 2026 launch post still describes the earlier pilot/enrollment state.
+- `FORMULA()` is available only in `WHERE`, not SELECT or HAVING.
+- Supported operand families are Double/Decimal, Integer, DateTime, Date, and
+  Currency, with only `+` / `-` arithmetic. A non-date left operand cannot use a
+  date right operand, and DATE/DATETIME cannot be mixed.
+- Kysoql exposes the Beta feature visibly through `eb.beta.formula(...)`, builds
+  the quoted formula body from typed field references rather than raw text, and
+  keeps it off SELECT/HAVING expression builders. Generic scratch-org validation
+  does not assume Beta access is enabled.
+
+## Remaining research targets
+
+These correspond to the active roadmap in `docs/chatgpt-handoff.md`; do not grow
+this into a speculative backlog.
 
 ### Relationship-subquery `OFFSET` pilot
 

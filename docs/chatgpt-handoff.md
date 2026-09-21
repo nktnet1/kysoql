@@ -48,7 +48,7 @@ SQL escape hatch.
 
 ## Current baseline
 
-The accepted continuation baseline is through **`v1.0.136`**. In addition to the
+The accepted continuation baseline is through **`v1.0.137`**. In addition to the
 completed Kysely-neutral builder audit and bounded `FIELDS(ALL|CUSTOM)` alignment,
 root builders can now start ordinary `GROUP BY` without an aggregate selection,
 grouped queries reject custom relationship expressions using `__r`, and typed
@@ -57,7 +57,10 @@ Data 360 DLO/DMO capability metadata drives typed literal `SET OPTIONS`, while a
 distinct compile-only `.dynamicApex()` context supports the managed dynamic-Apex
 `SET OPTIONS :queryOptions` form without widening the static `.apex()` surface.
 Grouped API queries also expose validated `OFFSET` after `GROUP BY`, with the
-scratch-org setup exercising a deterministic grouped aggregate-offset query.
+scratch-org setup exercising a deterministic grouped aggregate-offset query. The
+current Salesforce Beta `FORMULA()` WHERE surface is available only through the
+explicit `eb.beta.formula(...)` namespace and structurally compiles typed field
+arithmetic without a raw formula-string escape hatch.
 
 The implementation already covers the broad production SOQL surface:
 
@@ -125,11 +128,7 @@ correctness mismatch, or an explicit verification target. Remove an item when it
 is implemented or deliberately closed. Kysely parity is otherwise considered
 complete.
 
-1. **`FORMULA()` in `WHERE` pilot.** Salesforce currently labels this Summer '26
-   feature a pilot, limited to `WHERE` rather than `HAVING`. Keep it omitted from
-   the production-safe builder unless the project explicitly opts into pilot
-   syntax.
-2. **Relationship-subquery `OFFSET` pilot.** Salesforce permits it only when the
+1. **Relationship-subquery `OFFSET` pilot.** Salesforce permits it only when the
    parent has `LIMIT 1` and still says the feature is not intended for
    production. Keep it omitted unless its status changes or pilot syntax is
    explicitly enabled.

@@ -787,6 +787,30 @@ const currentYearActivity = await db
   .execute();
 ```
 
+Salesforce's arithmetic `FORMULA()` predicate is currently a Beta service and is
+documented only for `WHERE`. Kysoql keeps it visibly opt-in through
+`eb.beta.formula(...)` rather than placing it on the ordinary `fn` namespace.
+The formula body is structural: both operands must be generated filterable
+`currency`, `double`, `int`, `date`, or `datetime` fields, and only `+` / `-` are
+accepted. This avoids a raw formula-string escape hatch while preserving typed
+numeric and temporal comparison values.
+
+```ts
+const highMargin = await db
+  .selectFrom("Opportunity")
+  .select(["Id", "Amount", "ExpectedRevenue"])
+  .where((eb) =>
+    eb(eb.beta.formula("Amount", "-", "ExpectedRevenue"), ">", 100),
+  )
+  .execute();
+// SELECT Id, Amount, ExpectedRevenue FROM Opportunity
+// WHERE FORMULA('Amount - ExpectedRevenue') > 100
+```
+
+The Beta helper is not exposed in SELECT or HAVING. Static and dynamic Apex
+WHERE builders retain it and accept typed Apex binds on the comparison side. The
+generic Salesforce scratch-org setup does not assume Beta enrollment.
+
 ```ts
 const revenueByExactCloseDate = await db
   .selectFrom("Opportunity")

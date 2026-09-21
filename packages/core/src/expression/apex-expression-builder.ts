@@ -1,5 +1,11 @@
 import { type ApexBindExpression, isApexBindExpression } from "#/apex-bind";
 import {
+  type BetaExpressionModule,
+  createBetaExpressionModule,
+  type FormulaFilterComparisonOperator,
+  type FormulaFilterFunctionExpression,
+} from "#/expression/formula-filter-function-builder";
+import {
   createGeolocationFilterExpressionBuilder,
   type DistanceFunctionExpression,
   type GeolocationFilterFunctionModule,
@@ -12,18 +18,29 @@ import { OrNode } from "#/operation-node/or-node";
 import {
   type ApexOperandValueExpression,
   parseApexFilterBinaryOperation,
+  parseApexOperationValueBinaryOperation,
 } from "#/parser/apex-bind-parser";
 import type {
   ComparisonOperatorExpression,
   FilterableFieldName,
 } from "#/parser/binary-operation-parser";
 import type { FilterBinaryOperationOptions } from "#/parser/filter-parser";
+import type {
+  SoqlDateLiteral,
+  SoqlDateTimeLiteral,
+} from "#/soql-temporal-literal";
 import {
   type DistanceComparisonOperator,
   parseDistanceFilterBinaryOperation,
 } from "#/parser/geolocation-expression-parser";
 
 declare const apexExpressionType: unique symbol;
+
+type ApexFormulaBindValue<Value> = Value extends
+  | SoqlDateLiteral
+  | SoqlDateTimeLiteral
+  ? string
+  : Value;
 
 type SemiJoinFlag<Value> = Value extends (...args: never[]) => unknown
   ? true
@@ -71,6 +88,12 @@ export interface ApexExpressionBuilder<
     rhs: number,
   ): ApexExpressionWrapper<DB, TB, false>;
 
+  <Value, Operator extends FormulaFilterComparisonOperator>(
+    lhs: FormulaFilterFunctionExpression<Value>,
+    op: Operator,
+    rhs: Value | ApexBindExpression<ApexFormulaBindValue<Value>>,
+  ): ApexExpressionWrapper<DB, TB, false>;
+
   <
     RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
@@ -109,6 +132,7 @@ export interface ApexExpressionBuilder<
     ],
   ): ApexExpressionWrapper<DB, TB, false>;
 
+  readonly beta: BetaExpressionModule<DB, TB>;
   readonly fn: GeolocationFilterFunctionModule<DB, TB>;
 }
 
@@ -154,18 +178,27 @@ export function createApexExpressionBuilder<
     lhs:
       | string
       | ApexBindExpression<string>
-      | DistanceFunctionExpression<unknown, boolean, boolean>,
+      | DistanceFunctionExpression<unknown, boolean, boolean>
+      | FormulaFilterFunctionExpression<unknown>,
     op: ComparisonOperator,
     rhs: unknown,
   ): ApexExpressionWrapper<DB, TB, boolean> => {
-    const node =
-      typeof lhs === "string" || isApexBindExpression(lhs)
-        ? parseApexFilterBinaryOperation(lhs, op, rhs, options)
-        : parseDistanceFilterBinaryOperation(
-            lhs,
-            op as DistanceComparisonOperator,
-            rhs,
-          );
+    let node: OperationNode;
+
+    if (typeof lhs === "string" || isApexBindExpression(lhs)) {
+      node = parseApexFilterBinaryOperation(lhs, op, rhs, options);
+    } else {
+      const operation = lhs.toOperationNode();
+
+      node =
+        operation.kind === "FormulaFunctionNode"
+          ? parseApexOperationValueBinaryOperation(operation, op, rhs)
+          : parseDistanceFilterBinaryOperation(
+              lhs as DistanceFunctionExpression<unknown, boolean, boolean>,
+              op as DistanceComparisonOperator,
+              rhs,
+            );
+    }
 
     return new ApexExpressionWrapperImpl<DB, TB, boolean>(node);
   };
@@ -217,10 +250,12 @@ export function createApexExpressionBuilder<
     return new ApexExpressionWrapperImpl<DB, TB, false>(operation);
   };
 
+  const beta = createBetaExpressionModule<DB, TB>();
   const fn = createGeolocationFilterExpressionBuilder<DB, TB>().fn;
 
   return Object.assign(expression, {
     and,
+    beta,
     fn,
     not,
     or,

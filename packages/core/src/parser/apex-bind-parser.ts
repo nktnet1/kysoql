@@ -119,6 +119,22 @@ export function parseApexOffset(
     : parseOffset(offset);
 }
 
+export function parseApexOperationValueBinaryOperation(
+  left: OperationNode,
+  operator: ComparisonOperator,
+  right: unknown,
+): BinaryOperationNode {
+  if (!isApexBindExpression(right)) {
+    return parseOperationValueBinaryOperation(left, operator, right);
+  }
+
+  return BinaryOperationNode.create(
+    left,
+    OperatorNode.create(operator),
+    right.toOperationNode(),
+  );
+}
+
 export function parseApexFilterBinaryOperation(
   left: string | ApexBindExpression<string>,
   operator: ComparisonOperator,

@@ -4,6 +4,12 @@ import {
   type DateFunctionExpression,
   type TranslatableFieldReference,
 } from "#/expression/aggregate-function-builder";
+import {
+  type BetaExpressionModule,
+  createBetaExpressionModule,
+  type FormulaFilterComparisonOperator,
+  type FormulaFilterFunctionExpression,
+} from "#/expression/formula-filter-function-builder";
 import type {
   DistanceFunctionExpression,
   GeolocationFilterFunctionModule,
@@ -291,6 +297,15 @@ export interface ExpressionBuilder<
   ): ExpressionWrapper<DB, TB, false>;
 
   <
+    Value,
+    Operator extends FormulaFilterComparisonOperator,
+  >(
+    lhs: FormulaFilterFunctionExpression<Value>,
+    op: Operator,
+    rhs: Value,
+  ): ExpressionWrapper<DB, TB, false>;
+
+  <
     RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
     RHS extends OperandValueExpression<DB, TB, RE, NoInfer<OP>, AllowSemiJoin>,
@@ -322,6 +337,7 @@ export interface ExpressionBuilder<
     ],
   ): ExpressionWrapper<DB, TB, false>;
 
+  readonly beta: BetaExpressionModule<DB, TB>;
   readonly fn: FilterFunctionModule<DB, TB>;
 }
 
@@ -373,6 +389,7 @@ export function createExpressionBuilder<
       | string
       | DateFunctionExpression<unknown, unknown, ComparisonOperator, string>
       | DistanceFunctionExpression<unknown, boolean, boolean>
+      | FormulaFilterFunctionExpression<unknown>
       | ToLabelFilterFunctionExpression<string>,
     op: ComparisonOperator,
     rhs: unknown,
@@ -389,6 +406,7 @@ export function createExpressionBuilder<
 
       node =
         operation.kind === "DateFunctionNode" ||
+        operation.kind === "FormulaFunctionNode" ||
         operation.kind === "ToLabelFunctionNode"
           ? parseOperationValueBinaryOperation(operation, op, rhs)
           : parseDistanceFilterBinaryOperation(
@@ -448,12 +466,15 @@ export function createExpressionBuilder<
     return new ExpressionWrapperImpl<DB, TB, false>(operation);
   };
 
+  const beta = createBetaExpressionModule<DB, TB>();
   const fn = createSelectExpressionBuilder<DB, TB>()
     .fn as unknown as FilterFunctionModule<DB, TB>;
 
-  return Object.assign(expression, { and, fn, not, or }) as ExpressionBuilder<
-    DB,
-    TB,
-    AllowSemiJoin
-  >;
+  return Object.assign(expression, {
+    and,
+    beta,
+    fn,
+    not,
+    or,
+  }) as ExpressionBuilder<DB, TB, AllowSemiJoin>;
 }

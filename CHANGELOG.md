@@ -65,6 +65,10 @@ version is cut.
 - Typed SOQL date-function predicates in ordinary `WHERE` expression callbacks,
   including all thirteen calendar/fiscal functions, filterable date/datetime
   metadata gating, set/ordered operand typing, and `convertTimezone()` composition.
+- Opt-in Beta SOQL `FORMULA()` predicates through `eb.beta.formula(...)`, with
+  structural `+` / `-` arithmetic, generated filterable field/type gating, typed
+  numeric/date/datetime comparison results, Apex bind support, and no raw
+  formula-string escape hatch.
 - Structured ISO-coded currency literals through `soqlCurrency(...)` for typed
   currency `WHERE` comparisons, including homogeneous `IN` / `NOT IN` list
   enforcement and exclusion from aggregate `HAVING` comparisons.
@@ -121,6 +125,9 @@ version is cut.
 
 ### Fixed
 
+- Keep negative Beta `FORMULA()` type assertions compile-time-only so Vitest does
+  not execute deliberately invalid SELECT/HAVING access, operand combinations,
+  operators, or comparison values.
 - Enforce Salesforce's grouped-query restriction on custom relationship
   expressions using `__r` at both the typed grouping surface and compiler
   boundary, while preserving valid standard relationship grouping such as

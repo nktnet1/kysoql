@@ -44,6 +44,12 @@ export type {
   WhereExpressionFactory,
 } from "#/expression/expression-builder";
 export type {
+  BetaExpressionModule,
+  FilterableFormulaFieldReference,
+  FormulaFilterComparisonOperator,
+  FormulaFilterFunctionExpression,
+} from "#/expression/formula-filter-function-builder";
+export type {
   AliasedDistanceFunctionBuilder,
   DistanceFunctionBuilder,
   DistanceFunctionExpression,
@@ -108,6 +114,10 @@ export type {
   ForViewReferenceNode,
 } from "#/operation-node/for-view-reference-node";
 export type { FormatFunctionNode } from "#/operation-node/format-function-node";
+export type {
+  FormulaArithmeticOperator,
+  FormulaFunctionNode,
+} from "#/operation-node/formula-function-node";
 export type { GeolocationFunctionNode } from "#/operation-node/geolocation-function-node";
 export type {
   AdvancedGroupByMode,
