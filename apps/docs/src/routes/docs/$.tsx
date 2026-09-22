@@ -108,14 +108,14 @@ function Page() {
       tree={pageTree}
       tabs={{
         transform(option, node) {
-          if (!node.icon) return option;
+          if (!node.icon) {
+            return option;
+          }
 
           return {
             ...option,
             icon: (
-              <div
-                className="size-full rounded-lg [&_svg]:size-full max-md:border max-md:p-1.5"
-              >
+              <div className="size-full rounded-lg max-md:border max-md:p-1.5 [&_svg]:size-full">
                 {node.icon}
               </div>
             ),

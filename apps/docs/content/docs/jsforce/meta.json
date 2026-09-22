@@ -3,8 +3,5 @@
   "description": "Optional JSforce execution adapter with @kysoql/jsforce.",
   "root": true,
   "icon": "Plug",
-  "pages": [
-    "index",
-    "api"
-  ]
+  "pages": ["index", "api"]
 }

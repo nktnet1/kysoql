@@ -130,10 +130,7 @@ try {
     );
   }
 } catch (error) {
-  complain(
-    "meta.json",
-    error instanceof Error ? error.message : String(error),
-  );
+  complain("meta.json", error instanceof Error ? error.message : String(error));
 }
 const referenced = new Set();
 for (const file of metadataFiles) {

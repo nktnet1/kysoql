@@ -28,7 +28,10 @@
         "noUnusedFunctionParameters": "off"
       },
       "nursery": {
-        "useSortedClasses": "error"
+        "useSortedClasses": {
+          "fix": "safe",
+          "level": "error"
+        }
       },
       "preset": "recommended",
       "style": {

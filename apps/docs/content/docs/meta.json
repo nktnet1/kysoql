@@ -1,11 +1,5 @@
 {
   "title": "Kysoql",
   "description": "Type-safe Salesforce SOQL queries for TypeScript.",
-  "pages": [
-    "framework",
-    "core",
-    "rest",
-    "codegen",
-    "jsforce"
-  ]
+  "pages": ["framework", "core", "rest", "codegen", "jsforce"]
 }

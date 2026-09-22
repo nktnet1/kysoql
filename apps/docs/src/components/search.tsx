@@ -23,7 +23,7 @@ import { useI18n } from "fumadocs-ui/contexts/i18n";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
-import { docsSections, type DocsSectionSlug } from "@/lib/docs-packages";
+import { type DocsSectionSlug, docsSections } from "@/lib/docs-packages";
 
 const sectionFilters: ReadonlyArray<{
   readonly name: string;
@@ -69,9 +69,7 @@ export default function DefaultSearchDialog(props: SharedProps) {
           <SearchDialogClose />
         </SearchDialogHeader>
         <SearchDialogList items={query.data !== "empty" ? query.data : null} />
-        <SearchDialogFooter
-          className="flex flex-row flex-wrap items-center gap-2"
-        >
+        <SearchDialogFooter className="flex flex-row flex-wrap items-center gap-2">
           <Popover open={filterOpen} onOpenChange={setFilterOpen}>
             <PopoverTrigger
               className={buttonVariants({
