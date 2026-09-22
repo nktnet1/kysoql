@@ -35,32 +35,51 @@ const tokenRequest = async (
     method: "POST",
     redirect: "error",
     cache: "no-store",
-    headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
     body: new URLSearchParams(parameters).toString(),
     signal,
   });
   const body = await readJson(response, signal);
   if (!response.ok) {
-    throw new SalesforceOAuthError(response.status,
-      isRecord(body) && typeof body.error === "string" ? body.error : undefined);
+    throw new SalesforceOAuthError(
+      response.status,
+      isRecord(body) && typeof body.error === "string" ? body.error : undefined,
+    );
   }
   if (
-    !isRecord(body) || typeof body.access_token !== "string" ||
+    !isRecord(body) ||
+    typeof body.access_token !== "string" ||
     typeof body.instance_url !== "string" ||
-    (body.token_type !== undefined && (typeof body.token_type !== "string" || body.token_type.toLowerCase() !== "bearer")) ||
+    (body.token_type !== undefined &&
+      (typeof body.token_type !== "string" ||
+        body.token_type.toLowerCase() !== "bearer")) ||
     (body.refresh_token !== undefined && typeof body.refresh_token !== "string")
   ) {
-    throw new SalesforceResponseError("Invalid Salesforce OAuth token response.");
+    throw new SalesforceResponseError(
+      "Invalid Salesforce OAuth token response.",
+    );
   }
   return {
     accessToken: nonEmptySecret(body.access_token, "OAuth access token"),
     instanceUrl: parseOrigin(body.instance_url, "OAuth instance URL"),
-    ...(body.refresh_token === undefined ? {} : { refreshToken: nonEmptySecret(body.refresh_token, "OAuth refresh token") }),
+    ...(body.refresh_token === undefined
+      ? {}
+      : {
+          refreshToken: nonEmptySecret(
+            body.refresh_token,
+            "OAuth refresh token",
+          ),
+        }),
   };
 };
 
 /** One token exchange. Configure the OAuth application in Salesforce first. */
-export const authenticateClientCredentials = async (options: ClientCredentialsOptions): Promise<SalesforceOAuthSession> =>
+export const authenticateClientCredentials = async (
+  options: ClientCredentialsOptions,
+): Promise<SalesforceOAuthSession> =>
   tokenRequest(options, {
     grant_type: "client_credentials",
     client_id: nonEmptySecret(options.clientId, "clientId"),
@@ -68,10 +87,16 @@ export const authenticateClientCredentials = async (options: ClientCredentialsOp
   });
 
 /** One refresh exchange. Interactive authorisation and secure token storage stay in the application. */
-export const refreshAccessToken = async (options: RefreshTokenOptions): Promise<SalesforceOAuthSession> =>
+export const refreshAccessToken = async (
+  options: RefreshTokenOptions,
+): Promise<SalesforceOAuthSession> =>
   tokenRequest(options, {
     grant_type: "refresh_token",
     client_id: nonEmptySecret(options.clientId, "clientId"),
     refresh_token: nonEmptySecret(options.refreshToken, "refreshToken"),
-    ...(options.clientSecret === undefined ? {} : { client_secret: nonEmptySecret(options.clientSecret, "clientSecret") }),
+    ...(options.clientSecret === undefined
+      ? {}
+      : {
+          client_secret: nonEmptySecret(options.clientSecret, "clientSecret"),
+        }),
   });

@@ -1,0 +1,69 @@
+---
+title: "Salesforce reference map"
+description: "Map Kysoql builders to the official Salesforce SOQL and REST API documentation."
+icon: "Cloud"
+---
+
+Kysoql deliberately uses Salesforce terminology rather than inventing a second
+query language. Use this page when you know the SOQL feature you need and want
+the corresponding typed builder API.
+
+## SOQL SELECT
+
+Salesforce documents a `SELECT` statement as a field list plus optional clauses
+such as `WHERE`, `GROUP BY`, and `ORDER BY`. Kysoql exposes those concepts as
+builder methods and validates them against generated Describe metadata.
+
+| Salesforce concept | Kysoql guide | Official Salesforce documentation |
+| --- | --- | --- |
+| SOQL overview and `SELECT` syntax | [Mental model](/docs/guides/mental-model) | [Salesforce Object Query Language (SOQL)](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql.html) |
+| Field lists and `FIELDS()` | [Selecting fields](/docs/guides/selecting) | [`SELECT`](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-fields.html) |
+| `WHERE` conditions | [Filtering records](/docs/guides/filtering) | [`WHERE`](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-conditionexpression.html) |
+| `ORDER BY`, `LIMIT`, and `OFFSET` | [Ordering and pagination](/docs/guides/ordering-and-pagination) | [`ORDER BY`](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-orderby.html) and [`OFFSET`](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-offset.html) |
+| Parent and child relationships | [Relationships and joins](/docs/guides/relationships) | [Relationship queries](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-relationships.html) |
+| Aggregate functions and `GROUP BY` | [Counts and aggregate reports](/docs/guides/aggregates) | [Aggregate functions](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-agg-functions.html) and [`GROUP BY`](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-groupby.html) |
+| Date functions and literals | [Date functions](/docs/guides/date-functions) and [literals](/docs/guides/literals) | [Date functions](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-date-functions.html) and [date formats/literals](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-dateformats.html) |
+| SOQL select functions | [Labels, currency, and formatting](/docs/guides/select-functions) | [SOQL SELECT functions](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-functions.html) |
+
+## REST query execution
+
+Kysoql's native REST executor targets Salesforce's Query and QueryAll resources.
+The executor follows `nextRecordsUrl` for root-query pagination rather than
+pretending `OFFSET` is a cursor.
+
+| Salesforce API concept | Kysoql guide | Official Salesforce documentation |
+| --- | --- | --- |
+| Execute a SOQL query | [Native REST execution](/docs/guides/execution) | [Query resource](https://developer.salesforce.com/docs/platform/api-rest/guide/resources-query.html) |
+| Retrieve additional pages | [Native REST execution](/docs/guides/execution) | [Execute a SOQL query](https://developer.salesforce.com/docs/platform/api-rest/guide/dome-query.html) |
+| Include deleted records | [Native REST execution](/docs/guides/execution) | [Working with searches and queries](https://developer.salesforce.com/docs/platform/api-rest/guide/using-resources-working-with-searches-and-queries.html) |
+
+## Compare equivalent queries
+
+Salesforce's reference commonly starts from raw SOQL. The equivalent Kysoql
+builder keeps the same concepts visible:
+
+```sql title="Salesforce SOQL"
+SELECT Id, Name, BillingCity
+FROM Account
+WHERE Name LIKE 'A%'
+ORDER BY Name DESC NULLS LAST
+LIMIT 25
+```
+
+```ts title="Kysoql"
+import { db } from "./db";
+
+const query = db
+  .selectFrom("Account")
+  .select(["Id", "Name", "BillingCity"])
+  .where("Name", "like", "A%")
+  .orderBy("Name", "desc", "last")
+  .limit(25);
+
+query.compile().soql;
+```
+
+The builder does not replace Salesforce documentation for server-side limits,
+permissions, API-version behaviour, or feature availability. Treat Salesforce's
+reference as authoritative for the platform and these docs as authoritative for
+Kysoql's typed API.

@@ -14,7 +14,15 @@ const nonBlankString = v.pipe(
   v.check((value) => value.trim().length > 0, "Expected a non-blank string."),
 );
 const configSchema = v.strictObject({
-  apiVersion: v.optional(v.pipe(v.string(), v.regex(/^[1-9]\d*\.0$/, 'Expected apiVersion such as "65.0", without "v".'))),
+  apiVersion: v.optional(
+    v.pipe(
+      v.string(),
+      v.regex(
+        /^[1-9]\d*\.0$/,
+        'Expected apiVersion such as "65.0", without "v".',
+      ),
+    ),
+  ),
   objects: v.optional(v.array(nonBlankString)),
   // Shared with the programmatic API; validation reports the exact rule path.
   fields: v.optional(v.unknown()),
@@ -151,11 +159,7 @@ export const loadConfig = async (
       tryNative: false,
     });
     const module = await jiti.import<unknown>(filename);
-    if (
-      module !== null &&
-      typeof module === "object" &&
-      "default" in module
-    ) {
+    if (module !== null && typeof module === "object" && "default" in module) {
       input = module.default;
     } else if ([".cts", ".cjs"].includes(extname(filename))) {
       input = module;
@@ -184,7 +188,9 @@ export const resolveGenerateOptions = (
 ): ResolvedGenerateOptions => {
   const config = parseKysoqlConfig({
     ...loaded?.config,
-    ...(flags["api-version"] === undefined ? {} : { apiVersion: flags["api-version"] }),
+    ...(flags["api-version"] === undefined
+      ? {}
+      : { apiVersion: flags["api-version"] }),
     ...(flags.object === undefined ? {} : { objects: flags.object }),
     ...(flags.output === undefined ? {} : { output: flags.output }),
     ...(flags["schema-name"] === undefined
@@ -197,7 +203,9 @@ export const resolveGenerateOptions = (
       : dirname(loaded.filename);
 
   return {
-    ...(config.apiVersion === undefined ? {} : { apiVersion: config.apiVersion }),
+    ...(config.apiVersion === undefined
+      ? {}
+      : { apiVersion: config.apiVersion }),
     objects: config.objects ?? [],
     ...(config.fields === undefined ? {} : { fields: config.fields }),
     output: resolve(

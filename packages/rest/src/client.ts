@@ -1,8 +1,8 @@
 import { SalesforceRestError } from "#/errors";
 import {
   type HttpOptions,
-  readJson,
   type RestRequestOptions,
+  readJson,
   requestSignal,
   waitFor,
 } from "#/http";
@@ -50,13 +50,17 @@ class NativeRestClient implements RestClient {
 
   constructor(options: RestClientOptions) {
     this.#origin = parseOrigin(options.instanceUrl, "instanceUrl");
-    this.apiVersion = parseApiVersion(options.apiVersion ?? DEFAULT_API_VERSION);
+    this.apiVersion = parseApiVersion(
+      options.apiVersion ?? DEFAULT_API_VERSION,
+    );
     this.#prefix = `/services/data/v${this.apiVersion}`;
     this.#options = { ...options };
     this.#fetch = options.fetch ?? globalThis.fetch;
     parseTimeout(options.timeoutMs ?? 30_000);
     if (typeof this.#fetch !== "function") {
-      throw new TypeError("Native fetch or an injected fetch implementation is required.");
+      throw new TypeError(
+        "Native fetch or an injected fetch implementation is required.",
+      );
     }
     if (typeof options.accessToken !== "function") {
       this.#token = nonEmptySecret(options.accessToken, "accessToken");
@@ -64,22 +68,34 @@ class NativeRestClient implements RestClient {
   }
 
   #url(path: string): URL {
-    if (!path.startsWith("/") || path.startsWith("//") || /[\\\r\n#]/.test(path)) {
-      throw new TypeError("REST paths must be relative API paths, not absolute URLs.");
+    if (
+      !path.startsWith("/") ||
+      path.startsWith("//") ||
+      /[\\\r\n#]/.test(path)
+    ) {
+      throw new TypeError(
+        "REST paths must be relative API paths, not absolute URLs.",
+      );
     }
     const url = new URL(
       path.startsWith("/services/data/") ? path : `${this.#prefix}${path}`,
       this.#origin,
     );
     // Normalisation must never permit traversal, credentials, or a version switch.
-    if (url.origin !== this.#origin || !url.pathname.startsWith(`${this.#prefix}/`)) {
+    if (
+      url.origin !== this.#origin ||
+      !url.pathname.startsWith(`${this.#prefix}/`)
+    ) {
       throw new TypeError("REST path escapes the configured API version.");
     }
     if (/%(?:25)*(?:2e|2f|5c)/i.test(url.pathname)) {
       throw new TypeError("REST path contains encoded traversal.");
     }
     const decoded = decodeURIComponent(url.pathname);
-    if (decoded.split("/").some((part) => part === "." || part === "..") || decoded.includes("\\")) {
+    if (
+      decoded.split("/").some((part) => part === "." || part === "..") ||
+      decoded.includes("\\")
+    ) {
       throw new TypeError("REST path contains unsafe traversal.");
     }
     return url;
@@ -105,8 +121,12 @@ class NativeRestClient implements RestClient {
     this.#loading = loading;
     // Release both successful and failed loads; don't retain a rejected promise.
     void loading.then(
-      () => { this.#loading = undefined; },
-      () => { this.#loading = undefined; },
+      () => {
+        this.#loading = undefined;
+      },
+      () => {
+        this.#loading = undefined;
+      },
     );
     return loading;
   }
@@ -125,7 +145,9 @@ class NativeRestClient implements RestClient {
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
-          ...(batchSize === undefined ? {} : { "Sforce-Query-Options": `batchSize=${batchSize}` }),
+          ...(batchSize === undefined
+            ? {}
+            : { "Sforce-Query-Options": `batchSize=${batchSize}` }),
         },
         signal,
       });
@@ -135,7 +157,8 @@ class NativeRestClient implements RestClient {
       }
       const details = parseErrorDetails(body);
       if (
-        attempt === 0 && response.status === 401 &&
+        attempt === 0 &&
+        response.status === 401 &&
         typeof this.#options.accessToken === "function" &&
         details.some((detail) => detail.errorCode === "INVALID_SESSION_ID")
       ) {
@@ -151,5 +174,6 @@ class NativeRestClient implements RestClient {
 export const createRestClient = (options: RestClientOptions): RestClient =>
   new NativeRestClient(options);
 
-export const resolveRestClient = (input: RestClient | RestClientOptions): RestClient =>
-  "request" in input ? input : createRestClient(input);
+export const resolveRestClient = (
+  input: RestClient | RestClientOptions,
+): RestClient => ("request" in input ? input : createRestClient(input));

@@ -1,20 +1,25 @@
 {
   "title": "Build and run queries",
+  "icon": "Braces",
   "pages": [
     "mental-model",
+    "---[BookOpen]SOQL SELECT---",
     "selecting",
     "filtering",
     "literals",
     "ordering-and-pagination",
     "relationships",
     "polymorphism",
+    "---[ChartBar]Reporting and functions---",
     "aggregates",
     "date-functions",
     "select-functions",
     "geolocation",
+    "---[Play]Runtime---",
     "composition",
     "execution",
     "authentication",
-    "jsforce"
+    "jsforce",
+    "external:[ExternalLink][Salesforce SOQL reference](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql.html)"
   ]
 }

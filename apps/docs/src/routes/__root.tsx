@@ -5,6 +5,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { RootProvider } from "fumadocs-ui/provider/tanstack";
+import IconAsset from "@/assets/icon.svg";
 import SearchDialog from "@/components/search";
 import { appDescription, appName } from "@/lib/shared";
 import appCss from "@/styles/app.css?url";
@@ -27,7 +28,10 @@ export const Route = createRootRoute({
         content: appDescription,
       },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", href: IconAsset, type: "image/svg+xml" },
+    ],
   }),
   component: RootComponent,
 });

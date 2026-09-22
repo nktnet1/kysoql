@@ -69,11 +69,12 @@ export type FieldsSelectionCheck<
   TB extends keyof DB,
   O,
   Selector extends FieldsSelector,
-> = false extends SalesforceObjectFieldsComplete<DB[TB]>
-  ? readonly [requiresCompleteFieldSchema: never]
-  : Extract<keyof O, keyof FieldsSelection<DB, TB, Selector>> extends never
-    ? EmptyCustomSelectionCheck<DB, TB, O, Selector>
-    : readonly [overlappingFields: never];
+> =
+  false extends SalesforceObjectFieldsComplete<DB[TB]>
+    ? readonly [requiresCompleteFieldSchema: never]
+    : Extract<keyof O, keyof FieldsSelection<DB, TB, Selector>> extends never
+      ? EmptyCustomSelectionCheck<DB, TB, O, Selector>
+      : readonly [overlappingFields: never];
 
 export type AvailableSelectExpression<
   DB,

@@ -18,7 +18,9 @@ export const requestSignal = (
   options: RestRequestOptions,
 ): AbortSignal => {
   const signals: AbortSignal[] = [
-    AbortSignal.timeout(parseTimeout(options.timeoutMs ?? defaults.timeoutMs ?? 30_000)),
+    AbortSignal.timeout(
+      parseTimeout(options.timeoutMs ?? defaults.timeoutMs ?? 30_000),
+    ),
   ];
   if (defaults.signal !== undefined) {
     signals.push(defaults.signal);
@@ -32,12 +34,17 @@ export const requestSignal = (
 };
 
 /** Cancel waiting without cancelling a token refresh shared by another request. */
-export const waitFor = async <T>(promise: Promise<T>, signal: AbortSignal): Promise<T> => {
+export const waitFor = async <T>(
+  promise: Promise<T>,
+  signal: AbortSignal,
+): Promise<T> => {
   signal.throwIfAborted();
   return new Promise<T>((resolve, reject) => {
     const aborted = (): void => reject(signal.reason);
     signal.addEventListener("abort", aborted, { once: true });
-    promise.then(resolve, reject).finally(() => signal.removeEventListener("abort", aborted));
+    promise
+      .then(resolve, reject)
+      .finally(() => signal.removeEventListener("abort", aborted));
     // A thenable may settle while a caller is aborting; keep the check explicit.
     if (signal.aborted) {
       aborted();
@@ -45,7 +52,10 @@ export const waitFor = async <T>(promise: Promise<T>, signal: AbortSignal): Prom
   });
 };
 
-export const readJson = async (response: Response, signal: AbortSignal): Promise<unknown> => {
+export const readJson = async (
+  response: Response,
+  signal: AbortSignal,
+): Promise<unknown> => {
   // Buffering JSON is intentional; the query executor streams pages, not bytes.
   const text = await waitFor(response.text(), signal);
   signal.throwIfAborted();

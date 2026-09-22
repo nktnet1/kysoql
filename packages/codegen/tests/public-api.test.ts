@@ -103,10 +103,12 @@ it("exports the complete codegen public API from the package entrypoint", () => 
   }>();
 });
 
-
 it("exports field rules for both configuration and programmatic generation", () => {
   expectTypeOf<ObjectFieldFilter>().toMatchTypeOf<
-    { readonly include: readonly string[] } | { readonly exclude: readonly string[] }
+    | { readonly include: readonly string[] }
+    | { readonly exclude: readonly string[] }
   >();
-  expectTypeOf<GenerateSchemaOptions["fields"]>().toEqualTypeOf<ObjectFieldFilters | undefined>();
+  expectTypeOf<GenerateSchemaOptions["fields"]>().toEqualTypeOf<
+    ObjectFieldFilters | undefined
+  >();
 });

@@ -15,7 +15,9 @@ const repositoryBranch =
 
 if (
   repositoryUrl &&
-  !/^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repositoryUrl)
+  !/^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(
+    repositoryUrl,
+  )
 ) {
   throw new Error(
     "VITE_DOCS_REPOSITORY_URL must be an HTTPS GitHub repository URL without a branch, query, or fragment.",

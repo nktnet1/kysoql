@@ -69,9 +69,9 @@ describe("field-filtered generated schemas", () => {
     expect(
       db.selectFrom("User").selectFields("all").limit(20).compile().soql,
     ).toBe("SELECT FIELDS(ALL) FROM User LIMIT 20");
-    expect(
-      db.selectFrom("User").selectFields("standard").compile().soql,
-    ).toBe("SELECT FIELDS(STANDARD) FROM User");
+    expect(db.selectFrom("User").selectFields("standard").compile().soql).toBe(
+      "SELECT FIELDS(STANDARD) FROM User",
+    );
   });
 
   it("preserves virtual polymorphic types and explicit known-target branches", () => {

@@ -98,7 +98,11 @@ export const loadSchema = async (
 ): Promise<readonly SalesforceObjectDescription[]> => {
   // Reject malformed rules before making any network requests.
   const filters = fields === undefined ? {} : parseFieldFilters(fields);
-  const objectNames = await selectObjectNames(client, requestedObjects, filters);
+  const objectNames = await selectObjectNames(
+    client,
+    requestedObjects,
+    filters,
+  );
   const objects = await Promise.all(
     objectNames.map(async (objectName) => {
       const object = parseSalesforceObjectDescription(

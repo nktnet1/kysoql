@@ -117,7 +117,10 @@ export const parseSalesforceDataCategoryGroups = (
   input: unknown,
   objectName: string,
 ): SalesforceDataCategoryGroupsResponse => {
-  const response = v.safeParse(salesforceDataCategoryGroupsResponseSchema, input);
+  const response = v.safeParse(
+    salesforceDataCategoryGroupsResponseSchema,
+    input,
+  );
   if (!response.success) {
     throw new TypeError(
       `Invalid Salesforce data category response for ${objectName}:\n${v.summarize(response.issues)}`,
@@ -156,7 +159,9 @@ export const parseSalesforceDataCategoryGroupsResponse = (
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([name, categories]) => ({
       name,
-      categories: [...categories].sort((left, right) => left.localeCompare(right)),
+      categories: [...categories].sort((left, right) =>
+        left.localeCompare(right),
+      ),
     }));
 };
 

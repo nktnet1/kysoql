@@ -156,17 +156,20 @@ describe("kysoql oclif CLI", () => {
     expect(process.exitCode).toBe(1);
   });
 
-  it.each(["--object", "--output", "--schema-name", "--config", "--api-version"])(
-    "lets oclif reject a missing value for %s",
-    async (flag) => {
-      await expect(runGenerate([flag])).rejects.toThrow(
-        new RegExp(flag.replace("--", "")),
-      );
+  it.each([
+    "--object",
+    "--output",
+    "--schema-name",
+    "--config",
+    "--api-version",
+  ])("lets oclif reject a missing value for %s", async (flag) => {
+    await expect(runGenerate([flag])).rejects.toThrow(
+      new RegExp(flag.replace("--", "")),
+    );
 
-      expect(mocks.createRestClient).not.toHaveBeenCalled();
-      expect(process.exitCode).toBe(1);
-    },
-  );
+    expect(mocks.createRestClient).not.toHaveBeenCalled();
+    expect(process.exitCode).toBe(1);
+  });
 
   it("rejects invalid schema identifiers before connecting", async () => {
     process.env.SF_ACCESS_TOKEN = "token";
@@ -400,14 +403,17 @@ describe("CLI field filtering", () => {
       fields: [field("Id"), field("Name")],
     }));
     try {
-      await writeFile(configFile, `export default ${JSON.stringify({
-        objects: ["Contact"],
-        fields: {
-          Account: { include: ["Id"] },
-          Contact: { include: ["NotDescribed"] },
-        },
-        output: "filtered.ts",
-      })};`);
+      await writeFile(
+        configFile,
+        `export default ${JSON.stringify({
+          objects: ["Contact"],
+          fields: {
+            Account: { include: ["Id"] },
+            Contact: { include: ["NotDescribed"] },
+          },
+          output: "filtered.ts",
+        })};`,
+      );
       await runGenerate(["--config", configFile, "--object", "Account"]);
       expect(mocks.describe).toHaveBeenCalledOnce();
       expect(mocks.describe).toHaveBeenCalledWith("Account");
@@ -418,7 +424,11 @@ describe("CLI field filtering", () => {
 
       const fullOutput = join(directory, "full.ts");
       await runGenerate([
-        "--no-config", "--object", "Account", "--output", fullOutput,
+        "--no-config",
+        "--object",
+        "Account",
+        "--output",
+        fullOutput,
       ]);
       expect(await readFile(fullOutput, "utf8")).toContain(
         'readonly "Name": SalesforceField<',
@@ -429,11 +439,14 @@ describe("CLI field filtering", () => {
   });
 
   it("rejects invalid field rules before credentials or a connection are needed", async () => {
-    const directory = await mkdtemp(join(tmpdir(), "kysoql-cli-invalid-fields-"));
+    const directory = await mkdtemp(
+      join(tmpdir(), "kysoql-cli-invalid-fields-"),
+    );
     const configFile = join(directory, "kysoql.config.ts");
     try {
-      await writeFile(configFile,
-        'export default { fields: { Account: { include: [] } } };',
+      await writeFile(
+        configFile,
+        "export default { fields: { Account: { include: [] } } };",
       );
       await expect(runGenerate(["--config", configFile])).rejects.toThrow(
         /kysoql\.config\.ts: fields\.Account\.include/,
@@ -454,28 +467,63 @@ describe("native REST CLI version selection", () => {
     vi.spyOn(Command.prototype, "log").mockImplementation(() => undefined);
     process.env.SF_ACCESS_TOKEN = "token";
     process.env.SF_INSTANCE_URL = "https://example.my.salesforce.com";
-    mocks.describeGlobal.mockResolvedValue({ sobjects: [{ name: "Account", queryable: true }] });
+    mocks.describeGlobal.mockResolvedValue({
+      sobjects: [{ name: "Account", queryable: true }],
+    });
     mocks.describe.mockResolvedValue({ name: "Account", fields: [] });
     try {
-      await writeFile(configFile, 'export default { objects: ["Account"], apiVersion: "66.0" };');
+      await writeFile(
+        configFile,
+        'export default { objects: ["Account"], apiVersion: "66.0" };',
+      );
       process.env.SF_API_VERSION = "64.0";
-      await runGenerate(["--no-config", "--object", "Account", "--output", output]);
-      expect(mocks.createRestClient).toHaveBeenLastCalledWith(expect.objectContaining({ apiVersion: "64.0" }));
+      await runGenerate([
+        "--no-config",
+        "--object",
+        "Account",
+        "--output",
+        output,
+      ]);
+      expect(mocks.createRestClient).toHaveBeenLastCalledWith(
+        expect.objectContaining({ apiVersion: "64.0" }),
+      );
       await runGenerate(["--config", configFile, "--output", output]);
-      expect(mocks.createRestClient).toHaveBeenLastCalledWith(expect.objectContaining({ apiVersion: "66.0" }));
-      await runGenerate(["--config", configFile, "--api-version", "67.0", "--output", output]);
-      expect(mocks.createRestClient).toHaveBeenLastCalledWith(expect.objectContaining({ apiVersion: "67.0" }));
+      expect(mocks.createRestClient).toHaveBeenLastCalledWith(
+        expect.objectContaining({ apiVersion: "66.0" }),
+      );
+      await runGenerate([
+        "--config",
+        configFile,
+        "--api-version",
+        "67.0",
+        "--output",
+        output,
+      ]);
+      expect(mocks.createRestClient).toHaveBeenLastCalledWith(
+        expect.objectContaining({ apiVersion: "67.0" }),
+      );
       delete process.env.SF_API_VERSION;
-      await runGenerate(["--no-config", "--object", "Account", "--output", output]);
-      expect(mocks.createRestClient).toHaveBeenLastCalledWith(expect.objectContaining({ apiVersion: "65.0" }));
+      await runGenerate([
+        "--no-config",
+        "--object",
+        "Account",
+        "--output",
+        output,
+      ]);
+      expect(mocks.createRestClient).toHaveBeenLastCalledWith(
+        expect.objectContaining({ apiVersion: "65.0" }),
+      );
     } finally {
       await rm(directory, { recursive: true, force: true });
     }
   });
 
-  it.each(["", "v65.0", "../query"])("rejects invalid SF_API_VERSION %j before connecting", async (value) => {
-    process.env.SF_API_VERSION = value;
-    await expect(runGenerate(["--no-config"])).rejects.toThrow(/apiVersion/);
-    expect(mocks.createRestClient).not.toHaveBeenCalled();
-  });
+  it.each(["", "v65.0", "../query"])(
+    "rejects invalid SF_API_VERSION %j before connecting",
+    async (value) => {
+      process.env.SF_API_VERSION = value;
+      await expect(runGenerate(["--no-config"])).rejects.toThrow(/apiVersion/);
+      expect(mocks.createRestClient).not.toHaveBeenCalled();
+    },
+  );
 });

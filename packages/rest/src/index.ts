@@ -24,7 +24,7 @@ export type { HttpOptions, RestRequestOptions } from "#/http";
 export {
   authenticateClientCredentials,
   type ClientCredentialsOptions,
-  refreshAccessToken,
   type RefreshTokenOptions,
+  refreshAccessToken,
   type SalesforceOAuthSession,
 } from "#/oauth";

@@ -27,7 +27,10 @@ const output = path.join(docsRoot, ".cache/docs-examples");
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 for (const name of ["db.ts", "salesforce.generated.ts"]) {
-  await copyFile(path.join(docsRoot, "examples", name), path.join(output, name));
+  await copyFile(
+    path.join(docsRoot, "examples", name),
+    path.join(output, name),
+  );
 }
 
 const manifest = [];
@@ -80,11 +83,15 @@ console.log(
 console.log(
   "Example/source line mapping: apps/docs/.cache/docs-examples/manifest.json",
 );
-const result = spawnSync("tsc", ["--project", path.join(output, "tsconfig.json")], {
-  cwd: docsRoot,
-  stdio: "inherit",
-  shell: process.platform === "win32",
-});
+const result = spawnSync(
+  "tsc",
+  ["--project", path.join(output, "tsconfig.json")],
+  {
+    cwd: docsRoot,
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  },
+);
 if (result.error) {
   console.error(
     "Unable to start tsc. Install workspace dependencies, then use pnpm --filter docs check:examples.",

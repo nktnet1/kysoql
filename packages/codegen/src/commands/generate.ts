@@ -1,7 +1,11 @@
 import { DEFAULT_API_VERSION } from "@kysoql/rest";
 import { Command, Flags } from "@oclif/core";
 
-import { loadConfig, parseKysoqlConfig, resolveGenerateOptions } from "#/config-loader";
+import {
+  loadConfig,
+  parseKysoqlConfig,
+  resolveGenerateOptions,
+} from "#/config-loader";
 import { generateSchema } from "#/index";
 import { createRestDescribeClient } from "#/rest-client";
 import { parseRequiredEnvironmentVariable } from "#/validation";
@@ -25,7 +29,8 @@ CLI flags override configuration. Authentication requires SF_INSTANCE_URL and SF
 
   static flags = {
     "api-version": Flags.string({
-      description: "Salesforce REST version, without v (flag > config > SF_API_VERSION > 65.0).",
+      description:
+        "Salesforce REST version, without v (flag > config > SF_API_VERSION > 65.0).",
       helpValue: "<version>",
     }),
     config: Flags.string({
@@ -65,7 +70,8 @@ CLI flags override configuration. Authentication requires SF_INSTANCE_URL and SF
     });
     const { apiVersion, ...options } = resolveGenerateOptions(flags, loaded);
     const version = parseKysoqlConfig({
-      apiVersion: apiVersion ?? process.env.SF_API_VERSION ?? DEFAULT_API_VERSION,
+      apiVersion:
+        apiVersion ?? process.env.SF_API_VERSION ?? DEFAULT_API_VERSION,
     }).apiVersion;
     const client = createRestDescribeClient({
       accessToken: requiredEnvironmentVariable("SF_ACCESS_TOKEN"),

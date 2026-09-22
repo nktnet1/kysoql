@@ -29,7 +29,9 @@ export class SalesforceQueryLimitError extends Error {
   readonly limit: "maxPages" | "maxRecords";
 
   constructor(limit: "maxPages" | "maxRecords") {
-    super(`Salesforce query exceeded ${limit}; results were not truncated to success.`);
+    super(
+      `Salesforce query exceeded ${limit}; results were not truncated to success.`,
+    );
     this.name = "SalesforceQueryLimitError";
     this.limit = limit;
   }

@@ -1,6 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { staticFunctionMiddleware } from "@tanstack/start-static-server-functions";
 import { useFumadocsLoader } from "fumadocs-core/source/client";
 import { DocsLayout } from "fumadocs-ui/layouts/docs";
 import {
@@ -21,6 +20,7 @@ import {
   getPageSourceUrl,
 } from "@/lib/shared";
 import { docs, source } from "@/lib/source";
+import { staticFunctionMiddleware } from "@/lib/staticMiddlewareFunction";
 
 export const Route = createFileRoute("/docs/$")({
   component: Page,
@@ -33,7 +33,10 @@ export const Route = createFileRoute("/docs/$")({
   head: ({ loaderData }) => ({
     meta: [
       { title: loaderData ? `${loaderData.title} | ${appName}` : appName },
-      { name: "description", content: loaderData?.description ?? appDescription },
+      {
+        name: "description",
+        content: loaderData?.description ?? appDescription,
+      },
     ],
   }),
 });

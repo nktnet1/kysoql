@@ -7,7 +7,11 @@ import { applyFieldFilters, parseFieldFilters } from "#/field-filters";
 import { renderSchema } from "#/render";
 import type { SalesforceObjectDescription } from "#/types";
 
-import { field, fixtureFilters, fixtureObjects } from "./fixtures/field-filtering.js";
+import {
+  field,
+  fixtureFilters,
+  fixtureObjects,
+} from "./fixtures/field-filtering.js";
 
 const getObject = (
   objects: readonly SalesforceObjectDescription[],
@@ -43,7 +47,9 @@ describe("field rule validation", () => {
     assert.deepEqual(parseFieldFilters({}), {});
     const input = Object.create(null);
     input.Account = { include: ["Id"] };
-    assert.deepEqual(parseFieldFilters(input), { Account: { include: ["Id"] } });
+    assert.deepEqual(parseFieldFilters(input), {
+      Account: { include: ["Id"] },
+    });
   });
 
   it("does not treat special property names as prototypes", () => {
@@ -51,7 +57,9 @@ describe("field rule validation", () => {
     const parsed = parseFieldFilters(input);
     assert.equal(Object.getPrototypeOf(parsed), Object.prototype);
     assert.ok(Object.hasOwn(parsed, "__proto__"));
-    assert.deepEqual(Object.entries(parsed), [["__proto__", { include: ["Id"] }]]);
+    assert.deepEqual(Object.entries(parsed), [
+      ["__proto__", { include: ["Id"] }],
+    ]);
   });
 
   const invalidInputs: readonly [string, unknown, RegExp][] = [
@@ -68,10 +76,22 @@ describe("field rule validation", () => {
     ["null rule", { Account: null }, /fields\.Account/],
     ["array rule", { Account: ["Id"] }, /fields\.Account/],
     ["empty rule", { Account: {} }, /exactly one/],
-    ["both modes", { Account: { include: ["Id"], exclude: [] } }, /exactly one/],
+    [
+      "both modes",
+      { Account: { include: ["Id"], exclude: [] } },
+      /exactly one/,
+    ],
     ["unknown mode", { Account: { includes: ["Id"] } }, /fields\.Account/],
-    ["unknown option", { Account: { include: ["Id"], extra: true } }, /exactly one/],
-    ["undefined list", { Account: { include: undefined } }, /fields\.Account\.include/],
+    [
+      "unknown option",
+      { Account: { include: ["Id"], extra: true } },
+      /exactly one/,
+    ],
+    [
+      "undefined list",
+      { Account: { include: undefined } },
+      /fields\.Account\.include/,
+    ],
     ["null list", { Account: { exclude: null } }, /fields\.Account\.exclude/],
     ["string list", { Account: { include: "Id" } }, /fields\.Account\.include/],
     ["empty include", { Account: { include: [] } }, /at least one field/],
@@ -80,7 +100,11 @@ describe("field rule validation", () => {
     ["pattern field", { Account: { include: [/__c$/] } }, /include\[0\]/],
     ["sparse list", { Account: { include: Array(1) } }, /include\[0\]/],
     ["symbol key", { [Symbol("Account")]: { include: ["Id"] } }, /fields/],
-    ["symbol rule key", { Account: { include: ["Id"], [Symbol("extra")]: true } }, /fields\.Account/],
+    [
+      "symbol rule key",
+      { Account: { include: ["Id"], [Symbol("extra")]: true } },
+      /fields\.Account/,
+    ],
   ];
   for (const [name, input, message] of invalidInputs) {
     it(`rejects ${name} with an actionable path`, () => {
@@ -90,7 +114,11 @@ describe("field rule validation", () => {
 
   it("includes the config filename when supplied by the loader", () => {
     assert.throws(
-      () => parseFieldFilters({ Account: { include: [] } }, "config in app/kysoql.config.ts: fields"),
+      () =>
+        parseFieldFilters(
+          { Account: { include: [] } },
+          "config in app/kysoql.config.ts: fields",
+        ),
       /app\/kysoql\.config\.ts: fields\.Account\.include/,
     );
   });
@@ -110,17 +138,30 @@ describe("field filtering and relationships", () => {
 
   it("includes and excludes exact fields while keeping unspecified objects full", () => {
     const filtered = applyFieldFilters(fixtureObjects, fixtureFilters);
-    assert.deepEqual(fieldNames(getObject(filtered, "Account")), ["Id", "Name", "OwnerId"]);
-    assert.deepEqual(fieldNames(getObject(filtered, "Contact")), ["Id", "LastName", "AccountId"]);
+    assert.deepEqual(fieldNames(getObject(filtered, "Account")), [
+      "Id",
+      "Name",
+      "OwnerId",
+    ]);
+    assert.deepEqual(fieldNames(getObject(filtered, "Contact")), [
+      "Id",
+      "LastName",
+      "AccountId",
+    ]);
     assert.deepEqual(fieldNames(getObject(filtered, "Task")), ["Id", "WhoId"]);
     assert.equal(getObject(filtered, "Account").fieldsComplete, false);
     assert.equal(getObject(filtered, "Contact").fieldsComplete, false);
-    assert.equal(getObject(filtered, "User"), getObject(fixtureObjects, "User"));
+    assert.equal(
+      getObject(filtered, "User"),
+      getObject(fixtureObjects, "User"),
+    );
     assert.equal(getObject(filtered, "User").fieldsComplete, undefined);
   });
 
   it("never restores Id or other excluded fields implicitly", () => {
-    const filtered = applyFieldFilters(fixtureObjects, { Account: { include: ["Name"] } });
+    const filtered = applyFieldFilters(fixtureObjects, {
+      Account: { include: ["Name"] },
+    });
     assert.deepEqual(fieldNames(getObject(filtered, "Account")), ["Name"]);
   });
 
@@ -138,7 +179,9 @@ describe("field filtering and relationships", () => {
         const filters = parseFieldFilters({ Account: { [mode]: [name] } });
         assert.throws(
           () => applyFieldFilters(fixtureObjects, filters),
-          new RegExp(`fields\\.Account\\.${mode}: unknown or unavailable field`),
+          new RegExp(
+            `fields\\.Account\\.${mode}: unknown or unavailable field`,
+          ),
         );
       });
     }
@@ -146,14 +189,20 @@ describe("field filtering and relationships", () => {
 
   it("rejects an exclusion that empties an object", () => {
     assert.throws(
-      () => applyFieldFilters(fixtureObjects, { User: { exclude: ["Id", "Name"] } }),
+      () =>
+        applyFieldFilters(fixtureObjects, {
+          User: { exclude: ["Id", "Name"] },
+        }),
       /fields\.User\.exclude: the rule removes every field/,
     );
   });
 
   it("rejects a rule for a selected object with no visible fields", () => {
     assert.throws(
-      () => applyFieldFilters([{ name: "Empty__c", fields: [] }], { Empty__c: { exclude: [] } }),
+      () =>
+        applyFieldFilters([{ name: "Empty__c", fields: [] }], {
+          Empty__c: { exclude: [] },
+        }),
       /fields\.Empty__c\.exclude: the rule removes every field/,
     );
   });
@@ -161,10 +210,15 @@ describe("field filtering and relationships", () => {
   it("keeps retained fields and unrelated object capabilities intact", () => {
     const custom = {
       ...getObject(fixtureObjects, "Account"),
-      dataCategoryGroups: [{ name: "Region__c", categories: ["All", "Sydney"] }],
+      dataCategoryGroups: [
+        { name: "Region__c", categories: ["All", "Sydney"] },
+      ],
     };
     const before = structuredClone(custom);
-    const [result] = applyFieldFilters([custom, getObject(fixtureObjects, "User")], fixtureFilters);
+    const [result] = applyFieldFilters(
+      [custom, getObject(fixtureObjects, "User")],
+      fixtureFilters,
+    );
     assert.ok(result);
     assert.equal(result.fields[2], custom.fields[4]);
     assert.equal(result.supportedScopes, custom.supportedScopes);
@@ -174,29 +228,48 @@ describe("field filtering and relationships", () => {
   });
 
   it("removes parent paths and inverse child paths when a lookup is excluded", () => {
-    const filtered = applyFieldFilters(fixtureObjects, { Contact: { exclude: ["AccountId"] } });
+    const filtered = applyFieldFilters(fixtureObjects, {
+      Contact: { exclude: ["AccountId"] },
+    });
     assert.deepEqual(getObject(filtered, "Account").childRelationships, []);
     const source = renderSchema(filtered);
-    assert.ok(!source.includes('readonly "Account": SalesforceParentRelationship<'));
-    assert.ok(!source.includes('readonly "Contacts": SalesforceChildRelationship<'));
+    assert.ok(
+      !source.includes('readonly "Account": SalesforceParentRelationship<'),
+    );
+    assert.ok(
+      !source.includes('readonly "Contacts": SalesforceChildRelationship<'),
+    );
   });
 
   it("retains child paths only when the child object and its lookup are retained", () => {
     const filtered = applyFieldFilters(fixtureObjects, fixtureFilters);
     assert.deepEqual(getObject(filtered, "Account").childRelationships, [
-      { childSObject: "Contact", field: "AccountId", relationshipName: "Contacts" },
+      {
+        childSObject: "Contact",
+        field: "AccountId",
+        relationshipName: "Contacts",
+      },
     ]);
-    assert.equal(getObject(filtered, "Contact").childRelationships?.[0]?.relationshipName, "Tasks");
+    assert.equal(
+      getObject(filtered, "Contact").childRelationships?.[0]?.relationshipName,
+      "Tasks",
+    );
   });
 
   it("keeps complete polymorphic targets when a target object is not generated", () => {
     const filtered = applyFieldFilters(fixtureObjects, fixtureFilters);
-    const who = getObject(filtered, "Task").fields.find((item) => item.name === "WhoId");
+    const who = getObject(filtered, "Task").fields.find(
+      (item) => item.name === "WhoId",
+    );
     assert.deepEqual(who?.referenceTo, ["Contact", "Lead"]);
     assert.equal(who?.polymorphicForeignKey, true);
     const source = renderSchema(filtered);
     assert.ok(source.includes('readonly referenceTo: "Contact" | "Lead";'));
-    assert.ok(source.includes('readonly "Who": SalesforceParentRelationship<\n        "Contact" | "Lead",'));
+    assert.ok(
+      source.includes(
+        'readonly "Who": SalesforceParentRelationship<\n        "Contact" | "Lead",',
+      ),
+    );
     assert.ok(source.includes("readonly polymorphic: true;"));
     assert.ok(!source.includes('readonly "Lead": SalesforceObject<'));
   });
@@ -207,14 +280,24 @@ describe("field filtering and relationships", () => {
         name: "Account",
         fields: [field("Id")],
         childRelationships: [
-          { childSObject: "Contact", field: "AccountId", relationshipName: "Children" },
-          { childSObject: "Other__c", field: "Account__c", relationshipName: "Children" },
+          {
+            childSObject: "Contact",
+            field: "AccountId",
+            relationshipName: "Children",
+          },
+          {
+            childSObject: "Other__c",
+            field: "Account__c",
+            relationshipName: "Children",
+          },
         ],
       },
       getObject(fixtureObjects, "Contact"),
       { name: "Other__c", fields: [field("Id"), field("Account__c")] },
     ];
-    const filtered = applyFieldFilters(objects, { Other__c: { include: ["Id"] } });
+    const filtered = applyFieldFilters(objects, {
+      Other__c: { include: ["Id"] },
+    });
     assert.deepEqual(getObject(filtered, "Account").childRelationships, []);
   });
 
@@ -232,9 +315,18 @@ describe("field filtering and relationships", () => {
 
   it("renders the exact generated schema exercised by core's type regression tests", async () => {
     const expected = await readFile(
-      new URL("../../core/tests/fixtures/field-filtered.generated.ts", import.meta.url),
+      new URL(
+        "../../core/tests/fixtures/field-filtered.generated.ts",
+        import.meta.url,
+      ),
       "utf8",
     );
-    assert.equal(renderSchema(applyFieldFilters(fixtureObjects, fixtureFilters), "FilteredSchema"), expected);
+    assert.equal(
+      renderSchema(
+        applyFieldFilters(fixtureObjects, fixtureFilters),
+        "FilteredSchema",
+      ),
+      expected,
+    );
   });
 });

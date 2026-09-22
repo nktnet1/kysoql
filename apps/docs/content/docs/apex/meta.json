@@ -1,7 +1,5 @@
 {
   "title": "Compile for Apex",
-  "pages": [
-    "overview",
-    "bindings"
-  ]
+  "icon": "Code",
+  "pages": ["overview", "bindings"]
 }

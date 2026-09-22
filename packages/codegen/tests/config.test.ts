@@ -5,7 +5,11 @@ import { fileURLToPath } from "node:url";
 
 import { afterEach, describe, expect, expectTypeOf, it } from "vitest";
 
-import { defineConfig, type KysoqlConfig, type ObjectFieldFilters } from "#/config";
+import {
+  defineConfig,
+  type KysoqlConfig,
+  type ObjectFieldFilters,
+} from "#/config";
 import {
   loadConfig,
   parseKysoqlConfig,
@@ -31,9 +35,9 @@ const writeConfig = async (
 
 afterEach(async () => {
   await Promise.all(
-    directories.splice(0).map((directory) =>
-      rm(directory, { recursive: true, force: true }),
-    ),
+    directories
+      .splice(0)
+      .map((directory) => rm(directory, { recursive: true, force: true })),
   );
 });
 
@@ -121,17 +125,20 @@ describe("configuration discovery and loading", () => {
     },
   );
 
-  it.each(["cts", "cjs"])("loads module.exports from .%s", async (extension) => {
-    const directory = await temporaryDirectory();
-    await writeConfig(
-      directory,
-      'module.exports = { objects: ["Contact"] };',
-      `kysoql.config.${extension}`,
-    );
-    expect((await loadConfig({ cwd: directory }))?.config.objects).toEqual([
-      "Contact",
-    ]);
-  });
+  it.each(["cts", "cjs"])(
+    "loads module.exports from .%s",
+    async (extension) => {
+      const directory = await temporaryDirectory();
+      await writeConfig(
+        directory,
+        'module.exports = { objects: ["Contact"] };',
+        `kysoql.config.${extension}`,
+      );
+      expect((await loadConfig({ cwd: directory }))?.config.objects).toEqual([
+        "Contact",
+      ]);
+    },
+  );
 
   it("loads typed configs and extensionless TypeScript helpers", async () => {
     const directory = await temporaryDirectory();
@@ -140,11 +147,14 @@ describe("configuration discovery and loading", () => {
       join(directory, "objects.ts"),
       'export const objects: readonly string[] = ["Account", "Contact"];',
     );
-    await writeConfig(directory, `
+    await writeConfig(
+      directory,
+      `
       import { defineConfig } from ${JSON.stringify(helper)};
       import { objects } from "./objects";
       export default defineConfig({ objects, output: "src/schema.ts" });
-    `);
+    `,
+    );
     expect((await loadConfig({ cwd: directory }))?.config.objects).toEqual([
       "Account",
       "Contact",
@@ -305,9 +315,9 @@ describe("generation option precedence", () => {
   });
 
   it("treats an explicit empty object list as all queryable objects", () => {
-    expect(
-      resolveGenerateOptions({ object: [] }, loaded, cwd).objects,
-    ).toEqual([]);
+    expect(resolveGenerateOptions({ object: [] }, loaded, cwd).objects).toEqual(
+      [],
+    );
   });
 
   it("resolves the default output beside a loaded config", () => {
@@ -332,8 +342,10 @@ describe("field filter configuration", () => {
   it("exports the typed configuration and preserves field rules", () => {
     expect(defineConfig({ fields }).fields).toBe(fields);
     expect(parseKysoqlConfig({ fields })).toEqual({ fields });
-    // @ts-expect-error Each object must use exactly one filtering mode.
-    defineConfig({ fields: { Account: { include: ["Id"], exclude: ["Name"] } } });
+    defineConfig({
+      // @ts-expect-error Each object must use exactly one filtering mode.
+      fields: { Account: { include: ["Id"], exclude: ["Name"] } },
+    });
     // @ts-expect-error Field rules cannot be empty objects.
     defineConfig({ fields: { Account: {} } });
     // @ts-expect-error Only arrays of exact API names are supported.
@@ -341,22 +353,36 @@ describe("field filter configuration", () => {
   });
 
   it("validates JavaScript field rules with the config filename", () => {
-    expect(() => parseKysoqlConfig({ fields: { Account: { include: [] } } }, "config in kysoql.config.ts"))
-      .toThrow(/kysoql\.config\.ts: fields\.Account\.include/);
+    expect(() =>
+      parseKysoqlConfig(
+        { fields: { Account: { include: [] } } },
+        "config in kysoql.config.ts",
+      ),
+    ).toThrow(/kysoql\.config\.ts: fields\.Account\.include/);
   });
 
   it("loads field filters from a real TypeScript config", async () => {
     const directory = await temporaryDirectory();
-    await writeConfig(directory, `export default ${JSON.stringify({ fields })};`);
-    expect((await loadConfig({ cwd: directory }))?.config.fields).toEqual(fields);
+    await writeConfig(
+      directory,
+      `export default ${JSON.stringify({ fields })};`,
+    );
+    expect((await loadConfig({ cwd: directory }))?.config.fields).toEqual(
+      fields,
+    );
   });
 
   it("does not implicitly add objects and retains rules through CLI overrides", () => {
-    const loaded = { filename: resolve("kysoql.config.ts"), config: { objects: ["Account", "Contact"], fields } };
+    const loaded = {
+      filename: resolve("kysoql.config.ts"),
+      config: { objects: ["Account", "Contact"], fields },
+    };
     const options = resolveGenerateOptions({ object: ["Account"] }, loaded);
     expect(options.objects).toEqual(["Account"]);
     expect(options.fields).toEqual(fields);
-    expect(resolveGenerateOptions({}, { ...loaded, config: { fields } }).objects).toEqual([]);
+    expect(
+      resolveGenerateOptions({}, { ...loaded, config: { fields } }).objects,
+    ).toEqual([]);
     expect(loaded.config.objects).toEqual(["Account", "Contact"]);
   });
 });

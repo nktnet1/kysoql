@@ -34,7 +34,11 @@ export const fixtureObjects: readonly SalesforceObjectDescription[] = [
       }),
     ],
     childRelationships: [
-      { childSObject: "Contact", field: "AccountId", relationshipName: "Contacts" },
+      {
+        childSObject: "Contact",
+        field: "AccountId",
+        relationshipName: "Contacts",
+      },
       {
         childSObject: "Missing__c",
         field: "Account__c",

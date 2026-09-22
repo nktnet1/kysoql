@@ -11,13 +11,15 @@ function Home() {
     <HomeLayout {...baseOptions()}>
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center gap-8 px-6 py-16">
         <div className="max-w-2xl">
-          <p className="mb-3 font-medium text-fd-muted-foreground text-sm">Kysoql</p>
+          <p className="mb-3 font-medium text-fd-muted-foreground text-sm">
+            Kysoql
+          </p>
           <h1 className="mb-5 font-semibold text-4xl tracking-tight sm:text-5xl">
             Salesforce queries, checked by TypeScript.
           </h1>
           <p className="text-fd-muted-foreground text-lg leading-relaxed">
-            Generate types from your org, compose SOQL with an immutable builder,
-            and execute through native REST or compile for Apex.
+            Generate types from your org, compose SOQL with an immutable
+            builder, and execute through native REST or compile for Apex.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">

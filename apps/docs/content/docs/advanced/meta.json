@@ -1,5 +1,6 @@
 {
   "title": "Salesforce-specific features",
+  "icon": "SlidersHorizontal",
   "pages": [
     "scopes-and-visibility",
     "knowledge-and-feeds",

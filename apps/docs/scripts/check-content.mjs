@@ -53,7 +53,10 @@ for (const page of pages) {
         titles.add(parsed);
       }
     } catch {
-      complain(page.relative, `${key} must be a non-empty, double-quoted string`);
+      complain(
+        page.relative,
+        `${key} must be a non-empty, double-quoted string`,
+      );
     }
   }
   const blocks = codeBlocks(page.text);
@@ -67,7 +70,9 @@ for (const page of pages) {
   if (/^# /m.test(prose)) {
     complain(page.relative, "use H2 or lower; the page layout supplies H1");
   }
-  if (/Hello World|Lorem ipsum|TODO|My App|This is a new docs site/i.test(prose)) {
+  if (
+    /Hello World|Lorem ipsum|TODO|My App|This is a new docs site/i.test(prose)
+  ) {
     complain(page.relative, "starter content or unfinished placeholder found");
   }
   if (routes.has(page.route)) {
@@ -110,12 +115,22 @@ for (const file of metadataFiles) {
   const label = path.relative(contentRoot, file);
   try {
     const meta = JSON.parse(await readFile(file, "utf8"));
-    assert.ok(Array.isArray(meta.pages), "pages must be an explicit ordered array");
+    assert.ok(
+      Array.isArray(meta.pages),
+      "pages must be an explicit ordered array",
+    );
     const seen = new Set();
     for (const item of meta.pages) {
       assert.equal(typeof item, "string");
       assert.ok(!seen.has(item), `duplicate navigation entry: ${item}`);
       seen.add(item);
+      if (
+        item.startsWith("---") ||
+        item.startsWith("external:") ||
+        /^\[[^\]]+\](?:\[[^\]]+\])?\(/.test(item)
+      ) {
+        continue;
+      }
       const fileTarget = path.join(path.dirname(file), `${item}.mdx`);
       const folderTarget = path.join(path.dirname(file), item, "meta.json");
       assert.ok(

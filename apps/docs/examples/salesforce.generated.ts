@@ -48,6 +48,7 @@ export interface SalesforceSchema {
   Account: SalesforceObject<{
     Id: Field<string, "id">;
     Name: Field<string, "string">;
+    BillingCity: Field<string, "string", true>;
     AnnualRevenue: Field<number, "currency", true>;
     Phone: Field<string, "phone", true>;
     NumberOfEmployees: Field<number, "int", true>;
