@@ -26,7 +26,6 @@
     "salesforce:aggregate-offset": "bash scripts/run-salesforce-aggregate-offset-smoke.sh",
     "salesforce:e2e": "bash scripts/run-salesforce-generated-e2e.sh",
     "salesforce:schema": "bash scripts/generate-salesforce-schema.sh",
-    "debug": "pnpm --filter @kysoql/core build && pnpm --filter @kysoql/debug debug",
     "verify:publish": "node scripts/verify-publish-shape.ts",
     "verify:release": "node scripts/verify-release-metadata.ts"
   },

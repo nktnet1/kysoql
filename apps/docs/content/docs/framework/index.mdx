@@ -58,10 +58,9 @@ the typed builder with the platform syntax and limits.
 | [`@kysoql/codegen`](/docs/codegen) | Describe-driven schema generation and the `kysoql` CLI. |
 | [`@kysoql/jsforce`](/docs/jsforce) | Optional adapter for applications that already use JSforce. |
 
-These docs use the repository's existing `@kysoql` scope. The supplied package
-manifests are version `0.0.0`; installation examples assume the packages have
-been published to your configured registry. They do not imply a public release
-is available. See [local workspace use](/docs/framework/getting-started/installation#use-the-workspace-before-publication).
+Kysoql is split into focused `@kysoql/*` packages so applications can install
+only the pieces they need. Keep the Kysoql packages in an application on aligned
+versions.
 
 ## Find the right guide
 
@@ -84,7 +83,6 @@ validation also reject many invalid clause combinations. Neither replaces the
 Salesforce server: org permissions, API versions, enabled features, current
 metadata, query selectivity, and runtime governor limits still apply.
 
-All guides describe the API in this repository snapshot. Beta and pilot features
-are [explicitly separated](/docs/core/advanced/experimental), not presented as ordinary
-production features. There is no arbitrary raw-SOQL escape hatch in the public
-builder API.
+Beta and pilot features are [explicitly separated](/docs/core/advanced/experimental),
+not presented as ordinary production features. There is no arbitrary raw-SOQL
+escape hatch in the public builder API.

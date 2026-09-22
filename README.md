@@ -12,7 +12,6 @@ A type-safe, Kysely-inspired SOQL query builder for TypeScript.
   for applications with an existing JSforce connection.
 - [`@kysoql/codegen`](packages/codegen/README.md) — CLI for generating strongly
   typed Salesforce schemas from Describe metadata.
-- `@kysoql/debug` — minimal TypeScript runtime playground that logs query-builder ASTs.
 
 ## Requirements
 
@@ -68,15 +67,11 @@ source-typecheck scripts must not rebuild or clean another package's `dist/`.
 A second core build can otherwise remove declarations while docs or another
 consumer is reading them, even after a successful Turbo cache restore.
 
-To check only docs and the debug playground with their build prerequisites:
+To check only the docs app with its build prerequisites:
 
 ```bash
-pnpm exec turbo run typecheck:source --filter=docs --filter=@kysoql/debug
+pnpm exec turbo run typecheck:source --filter=docs
 ```
-
-Direct package scripts such as `pnpm --filter @kysoql/debug typecheck:source`
-bypass Turbo and require dependency builds to exist already. Prefer the Turbo
-command for a clean checkout; no separate manual build is needed.
 
 Vitest is configured at the workspace root and discovers tests under
 `packages/**/tests/**/*.test.ts` plus `scripts/**/*.test.ts`. `pnpm typecheck:test`
@@ -90,18 +85,6 @@ points VS Code at that installation. After the first `pnpm install`, select
 the repository. Keeping the editor language service on the same TypeScript
 version as `pnpm typecheck` prevents version-specific diagnostic placement from
 turning valid negative `@ts-expect-error` assertions into editor-only errors.
-
-To inspect the query builder at runtime without connecting to Salesforce, run:
-
-```bash
-pnpm debug
-```
-
-The debug package is written in TypeScript. It builds `@kysoql/core`, compiles the
-playground to an ignored `dist/` directory, then logs the immutable AST after
-`selectFrom()`, `select()`, scalar and temporal `where()` calls, additive
-`orderBy()` calls, `limit()`, the compiled SOQL, and a mock executor call made
-by `.execute()`.
 
 ## Schema generation CLI
 

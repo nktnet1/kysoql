@@ -297,11 +297,6 @@ importers:
         specifier: 1.5.0
         version: 1.5.0(typescript@7.0.2)
 
-  packages/debug:
-    dependencies:
-      '@kysoql/core':
-        specifier: workspace:*
-        version: link:../core
 
   packages/jsforce:
     dependencies:

@@ -1,12 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
   <title id="title">Kysoql</title>
-  <desc id="desc">A database cylinder connected to a typed query chevron.</desc>
+  <desc id="desc">A Kysoql KQ monogram.</desc>
   <rect x="2" y="2" width="60" height="60" rx="14" fill="#0B1220"/>
-  <ellipse cx="23" cy="18" rx="12" ry="5" fill="none" stroke="#5FB8FF" stroke-width="3"/>
-  <path d="M11 18v18c0 2.8 5.4 5 12 5 2.3 0 4.5-.3 6.3-.8" fill="none" stroke="#5FB8FF" stroke-width="3" stroke-linecap="round"/>
-  <path d="M11 27c0 2.8 5.4 5 12 5 2.4 0 4.6-.3 6.4-.9" fill="none" stroke="#5FB8FF" stroke-width="3" stroke-linecap="round"/>
-  <path d="M11 36c0 2.8 5.4 5 12 5" fill="none" stroke="#5FB8FF" stroke-width="3" stroke-linecap="round"/>
-  <path d="m38 25-7 7 7 7" fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="m46 25 7 7-7 7" fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="m44 21-4 22" fill="none" stroke="#7DD3FC" stroke-width="3" stroke-linecap="round"/>
+  <path d="M15 15v34M16 32l14-16M16 32l14 16" fill="none" stroke="#5FB8FF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="42" cy="31" r="12.5" fill="none" stroke="#FFFFFF" stroke-width="4.5"/>
+  <path d="M49.5 40.5 55 47" fill="none" stroke="#5FB8FF" stroke-width="4.5" stroke-linecap="round"/>
 </svg>

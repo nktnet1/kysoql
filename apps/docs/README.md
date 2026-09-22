@@ -159,11 +159,10 @@ find its location in the original page.
 If declarations disappear during a Turbo run after a successful build or cache
 restore, check for a consumer script that rebuilds or cleans a dependency.
 `tsdown` cleans `dist/` before building; a nested rebuild can remove files while
-other typechecks read them. In particular, the debug source-typecheck task must
-only run `tsc --noEmit`, not launch another core build. Keep the existing
-`^build` prerequisites and `dist/**` cached outputs in `turbo.json`; do not
-work around this race by disabling cleaning, skipping declaration checks, or
-falling back to source aliases.
+other typechecks read them. Keep the existing `^build` prerequisites and
+`dist/**` cached outputs in `turbo.json`; do not work around this race by
+disabling cleaning, skipping declaration checks, or falling back to source
+aliases.
 
 The root `pnpm test:tasks` command checks these task-configuration invariants
 without installed dependencies (it can also be run as

@@ -43,8 +43,6 @@ Package boundaries are intentional:
   native Describe factory; version precedence is flag/config/environment/default.
 - `@kysoql/jsforce` is an optional adapter for existing JSforce connections and
   validates external query/pagination payloads.
-- `@kysoql/debug` is a private TypeScript playground and is not a publishable
-  package.
 
 Follow Kysely's immutable-builder and public-API conventions where they map
 cleanly to SOQL. Do not copy SQL-only semantics such as arbitrary joins or a raw

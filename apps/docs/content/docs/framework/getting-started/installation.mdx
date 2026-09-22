@@ -1,38 +1,32 @@
 ---
 title: "Installation"
-description: "Choose the packages, configure TypeScript, and use the unpublished workspace."
+description: "Install Kysoql and configure a TypeScript application."
 icon: "Package"
 ---
 
 ## Requirements
 
-The supplied package manifests declare **Node.js `>=26.0.0 <27`** and ESM
-(`"type": "module"`). The workspace pins Node.js `26.8.2` in `.node-version`
-and pnpm `12.4.1` in `packageManager`. Use those versions for repository work;
-these are the project's declared requirements, not a claim about other versions
-being tested.
-
-Use TypeScript with strict null checking. The workspace pins TypeScript `7.0.2`.
-No minimum consumer TypeScript version is declared, so use the workspace version
-when reproducing type errors rather than assuming older compilers are supported.
+Kysoql is ESM-only. The current packages declare **Node.js `>=26.0.0 <27`**.
+Use TypeScript with strict null checking so generated Salesforce metadata and
+query result inference retain their intended guarantees.
 
 ## Install packages
 
-For normal API execution:
+For native Salesforce REST execution:
 
 ```npm
 npm install @kysoql/core @kysoql/rest
 npm install --save-dev @kysoql/codegen typescript @types/node tsx
 ```
 
-The package-manager tabs are shared across the docs, so your npm, pnpm, yarn,
-or bun selection is reused for other install examples.
+For compile-only use, install `@kysoql/core`; add `@kysoql/codegen` when you
+want to generate schema types from Salesforce Describe metadata. Native
+execution and code generation do not require JSforce.
 
-For compile-only use, install `@kysoql/core`; add codegen only when generating
-schemas. Native execution and codegen do not depend on JSforce. Install
-`@kysoql/jsforce` and `jsforce` only for the [optional adapter](/docs/jsforce),
-or implement a [custom executor](/docs/core/reference/custom-executors).
-Keep the Kysoql packages you use on aligned versions.
+Install `@kysoql/jsforce` and `jsforce` only when your application already uses
+JSforce and you want the [optional adapter](/docs/jsforce), or implement a
+[custom executor](/docs/core/reference/custom-executors). Keep the Kysoql
+packages in an application on aligned versions.
 
 ## Configure a TypeScript application
 
@@ -75,10 +69,9 @@ configuration.
 ```
 
 Use `import type` for generated schemas. `tsx` runs the examples but does not
-check their types: run `pnpm run typecheck` as a separate step and in CI.
-For deployment, use your application's existing build tool to produce runnable
+check their types, so run your `typecheck` script separately and in CI. For
+deployment, use your application's existing build tool to produce runnable
 JavaScript, or make the TypeScript runner available in the deployment image.
-A dev-only `tsx` installation is not present in a production-only install.
 
 Do not switch to plain `tsc` emission followed by native Node.js execution
 without revisiting module resolution. TypeScript's `Bundler` setting accepts
@@ -86,48 +79,9 @@ extensionless imports; it does not rewrite them for Node.js ESM. See the officia
 [TypeScript module-resolution reference](https://www.typescriptlang.org/tsconfig/moduleResolution.html)
 and [tsx typechecking guide](https://tsx.is/typescript).
 
-## Use the workspace before publication
-
-The packages in the supplied repository are version `0.0.0`. If they are not
-available in your registry, work inside the pnpm workspace instead of repeatedly
-trying the public registry.
-
-From the repository root, with the required Node.js and pnpm versions active:
-
-```bash
-pnpm install --frozen-lockfile
-pnpm exec turbo run build --filter=@kysoql/codegen
-```
-
-An application package inside the workspace can declare:
-
-```json
-{
-  "dependencies": {
-    "@kysoql/core": "workspace:*",
-    "@kysoql/rest": "workspace:*"
-  },
-  "devDependencies": {
-    "@kysoql/codegen": "workspace:*"
-  }
-}
-```
-
-Run `pnpm install` after adding those declarations. Build the libraries before
-running an application through their default package exports. For schema
-generation from the repository root, the built CLI is also directly runnable:
-
-```bash
-node packages/codegen/dist/cli.mjs generate --help
-```
-
-`@kysoql/debug` is a workspace playground, not a required application dependency.
-
 ## Next step
 
-Continue with the [quickstart](/docs/framework/getting-started/quickstart). It starts with
-an existing Salesforce access token. Native
-[authentication helpers](/docs/rest/authentication) also support client-credentials
-and refresh-token exchanges. A full repository install still includes the optional
-JSforce workspace and Salesforce CLI development tooling; an application installing
-only core, REST, and codegen does not inherit those workspace development dependencies.
+Continue with the [quickstart](/docs/framework/getting-started/quickstart). It
+starts with an existing Salesforce access token. Native
+[authentication helpers](/docs/rest/authentication) also support
+client-credentials and refresh-token exchanges.
