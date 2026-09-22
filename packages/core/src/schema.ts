@@ -26,10 +26,7 @@ type SalesforceFieldMetadataProperty<
   Default,
 > = Key extends keyof Metadata ? Exclude<Metadata[Key], undefined> : Default;
 
-type SalesforceFieldShape<
-  Value,
-  Metadata extends SalesforceFieldMetadata,
-> = {
+type SalesforceFieldShape<Value, Metadata extends SalesforceFieldMetadata> = {
   readonly value: Value;
   readonly salesforceType: Metadata["salesforceType"];
   readonly nullable: Metadata["nullable"];

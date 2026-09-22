@@ -100,9 +100,7 @@ const renderField = (field: SalesforceFieldDescription): string => {
     ...(activePicklistValue === "never"
       ? []
       : [`          readonly activePicklistValue: ${activePicklistValue};`]),
-    ...(field.aggregatable
-      ? ["          readonly aggregatable: true;"]
-      : []),
+    ...(field.aggregatable ? ["          readonly aggregatable: true;"] : []),
     ...(field.custom ? ["          readonly custom: true;"] : []),
     ...(polymorphic ? ["          readonly polymorphic: true;"] : []),
   ];
