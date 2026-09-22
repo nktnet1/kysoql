@@ -12,652 +12,616 @@ export interface SalesforceSchema {
     {
       readonly "AccountNumber": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "AccountSource": SalesforceField<
         string,
-        "picklist",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        "Other" | "Partner Referral" | "Phone Inquiry" | "Purchased List" | "Web"
+        {
+          readonly salesforceType: "picklist";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly activePicklistValue: "Other" | "Partner Referral" | "Phone Inquiry" | "Purchased List" | "Web";
+        }
       >;
       readonly "AnnualRevenue": SalesforceField<
         number,
-        "currency",
-        true,
-        true,
-        true,
-        false,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "currency";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: false;
+        }
       >;
       readonly "BillingAddress": SalesforceField<
         unknown,
-        "address",
-        true,
-        true,
-        false,
-        false,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "address";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: false;
+          readonly groupable: false;
+        }
       >;
       readonly "BillingCity": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "BillingCountry": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "BillingGeocodeAccuracy": SalesforceField<
         string,
-        "picklist",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        "Address" | "Block" | "City" | "County" | "ExtendedZip" | "NearAddress" | "Neighborhood" | "State" | "Street" | "Unknown" | "Zip"
+        {
+          readonly salesforceType: "picklist";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly activePicklistValue: "Address" | "Block" | "City" | "County" | "ExtendedZip" | "NearAddress" | "Neighborhood" | "State" | "Street" | "Unknown" | "Zip";
+        }
       >;
       readonly "BillingLatitude": SalesforceField<
         number,
-        "double",
-        true,
-        true,
-        true,
-        false,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "double";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: false;
+        }
       >;
       readonly "BillingLongitude": SalesforceField<
         number,
-        "double",
-        true,
-        true,
-        true,
-        false,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "double";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: false;
+        }
       >;
       readonly "BillingPostalCode": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "BillingState": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "BillingStreet": SalesforceField<
         string,
-        "textarea",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "textarea";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "CleanStatus": SalesforceField<
         string,
-        "picklist",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        "Acknowledged" | "Different" | "Inactive" | "Matched" | "NotFound" | "Pending" | "SelectMatch" | "Skipped"
+        {
+          readonly salesforceType: "picklist";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly activePicklistValue: "Acknowledged" | "Different" | "Inactive" | "Matched" | "NotFound" | "Pending" | "SelectMatch" | "Skipped";
+        }
       >;
       readonly "CreatedById": SalesforceField<
         string,
-        "reference",
-        false,
-        true,
-        true,
-        true,
-        "User",
-        "CreatedBy",
-        never
+        {
+          readonly salesforceType: "reference";
+          readonly nullable: false;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly referenceTo: "User";
+          readonly relationshipName: "CreatedBy";
+        }
       >;
       readonly "CreatedDate": SalesforceField<
         string,
-        "datetime",
-        false,
-        true,
-        true,
-        false,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "datetime";
+          readonly nullable: false;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: false;
+        }
       >;
       readonly "DandbCompanyId": SalesforceField<
         string,
-        "reference",
-        true,
-        true,
-        true,
-        true,
-        "DandBCompany",
-        "DandbCompany",
-        never
+        {
+          readonly salesforceType: "reference";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly referenceTo: "DandBCompany";
+          readonly relationshipName: "DandbCompany";
+        }
       >;
       readonly "Description": SalesforceField<
         string,
-        "textarea",
-        true,
-        false,
-        false,
-        false,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "textarea";
+          readonly nullable: true;
+          readonly filterable: false;
+          readonly sortable: false;
+          readonly groupable: false;
+        }
       >;
       readonly "DunsNumber": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "Fax": SalesforceField<
         string,
-        "phone",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "phone";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "Id": SalesforceField<
         string,
-        "id",
-        false,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "id";
+          readonly nullable: false;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "Industry": SalesforceField<
         string,
-        "picklist",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        "Agriculture" | "Apparel" | "Banking" | "Biotechnology" | "Chemicals" | "Communications" | "Construction" | "Consulting" | "Education" | "Electronics" | "Energy" | "Engineering" | "Entertainment" | "Environmental" | "Finance" | "Food & Beverage" | "Government" | "Healthcare" | "Hospitality" | "Insurance" | "Machinery" | "Manufacturing" | "Media" | "Not For Profit" | "Other" | "Recreation" | "Retail" | "Shipping" | "Technology" | "Telecommunications" | "Transportation" | "Utilities"
+        {
+          readonly salesforceType: "picklist";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly activePicklistValue: "Agriculture" | "Apparel" | "Banking" | "Biotechnology" | "Chemicals" | "Communications" | "Construction" | "Consulting" | "Education" | "Electronics" | "Energy" | "Engineering" | "Entertainment" | "Environmental" | "Finance" | "Food & Beverage" | "Government" | "Healthcare" | "Hospitality" | "Insurance" | "Machinery" | "Manufacturing" | "Media" | "Not For Profit" | "Other" | "Recreation" | "Retail" | "Shipping" | "Technology" | "Telecommunications" | "Transportation" | "Utilities";
+        }
       >;
       readonly "IsDeleted": SalesforceField<
         boolean,
-        "boolean",
-        false,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "boolean";
+          readonly nullable: false;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "Jigsaw": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "JigsawCompanyId": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        "JigsawCompany",
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly relationshipName: "JigsawCompany";
+        }
       >;
       readonly "LastActivityDate": SalesforceField<
         string,
-        "date",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "date";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "LastModifiedById": SalesforceField<
         string,
-        "reference",
-        false,
-        true,
-        true,
-        true,
-        "User",
-        "LastModifiedBy",
-        never
+        {
+          readonly salesforceType: "reference";
+          readonly nullable: false;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly referenceTo: "User";
+          readonly relationshipName: "LastModifiedBy";
+        }
       >;
       readonly "LastModifiedDate": SalesforceField<
         string,
-        "datetime",
-        false,
-        true,
-        true,
-        false,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "datetime";
+          readonly nullable: false;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: false;
+        }
       >;
       readonly "LastReferencedDate": SalesforceField<
         string,
-        "datetime",
-        true,
-        true,
-        true,
-        false,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "datetime";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: false;
+        }
       >;
       readonly "LastViewedDate": SalesforceField<
         string,
-        "datetime",
-        true,
-        true,
-        true,
-        false,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "datetime";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: false;
+        }
       >;
       readonly "MasterRecordId": SalesforceField<
         string,
-        "reference",
-        true,
-        true,
-        true,
-        true,
-        "Account",
-        "MasterRecord",
-        never
+        {
+          readonly salesforceType: "reference";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly referenceTo: "Account";
+          readonly relationshipName: "MasterRecord";
+        }
       >;
       readonly "NaicsCode": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "NaicsDesc": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "Name": SalesforceField<
         string,
-        "string",
-        false,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: false;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "NumberOfEmployees": SalesforceField<
         number,
-        "int",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "int";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "OperatingHoursId": SalesforceField<
         string,
-        "reference",
-        true,
-        true,
-        true,
-        true,
-        "OperatingHours",
-        "OperatingHours",
-        never
+        {
+          readonly salesforceType: "reference";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly referenceTo: "OperatingHours";
+          readonly relationshipName: "OperatingHours";
+        }
       >;
       readonly "OwnerId": SalesforceField<
         string,
-        "reference",
-        false,
-        true,
-        true,
-        true,
-        "User",
-        "Owner",
-        never
+        {
+          readonly salesforceType: "reference";
+          readonly nullable: false;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly referenceTo: "User";
+          readonly relationshipName: "Owner";
+        }
       >;
       readonly "Ownership": SalesforceField<
         string,
-        "picklist",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        "Other" | "Private" | "Public" | "Subsidiary"
+        {
+          readonly salesforceType: "picklist";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly activePicklistValue: "Other" | "Private" | "Public" | "Subsidiary";
+        }
       >;
       readonly "ParentId": SalesforceField<
         string,
-        "reference",
-        true,
-        true,
-        true,
-        true,
-        "Account",
-        "Parent",
-        never
+        {
+          readonly salesforceType: "reference";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly referenceTo: "Account";
+          readonly relationshipName: "Parent";
+        }
       >;
       readonly "Phone": SalesforceField<
         string,
-        "phone",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "phone";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "PhotoUrl": SalesforceField<
         string,
-        "url",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "url";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "Rating": SalesforceField<
         string,
-        "picklist",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        "Cold" | "Hot" | "Warm"
+        {
+          readonly salesforceType: "picklist";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly activePicklistValue: "Cold" | "Hot" | "Warm";
+        }
       >;
       readonly "ShippingAddress": SalesforceField<
         unknown,
-        "address",
-        true,
-        true,
-        false,
-        false,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "address";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: false;
+          readonly groupable: false;
+        }
       >;
       readonly "ShippingCity": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "ShippingCountry": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "ShippingGeocodeAccuracy": SalesforceField<
         string,
-        "picklist",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        "Address" | "Block" | "City" | "County" | "ExtendedZip" | "NearAddress" | "Neighborhood" | "State" | "Street" | "Unknown" | "Zip"
+        {
+          readonly salesforceType: "picklist";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly activePicklistValue: "Address" | "Block" | "City" | "County" | "ExtendedZip" | "NearAddress" | "Neighborhood" | "State" | "Street" | "Unknown" | "Zip";
+        }
       >;
       readonly "ShippingLatitude": SalesforceField<
         number,
-        "double",
-        true,
-        true,
-        true,
-        false,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "double";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: false;
+        }
       >;
       readonly "ShippingLongitude": SalesforceField<
         number,
-        "double",
-        true,
-        true,
-        true,
-        false,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "double";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: false;
+        }
       >;
       readonly "ShippingPostalCode": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "ShippingState": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "ShippingStreet": SalesforceField<
         string,
-        "textarea",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "textarea";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "Sic": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "SicDesc": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "Site": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "SystemModstamp": SalesforceField<
         string,
-        "datetime",
-        false,
-        true,
-        true,
-        false,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "datetime";
+          readonly nullable: false;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: false;
+        }
       >;
       readonly "TickerSymbol": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "Tradestyle": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "Type": SalesforceField<
         string,
-        "picklist",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        "Channel Partner / Reseller" | "Customer - Channel" | "Customer - Direct" | "Installation Partner" | "Other" | "Prospect" | "Technology Partner"
+        {
+          readonly salesforceType: "picklist";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly activePicklistValue: "Channel Partner / Reseller" | "Customer - Channel" | "Customer - Direct" | "Installation Partner" | "Other" | "Prospect" | "Technology Partner";
+        }
       >;
       readonly "Website": SalesforceField<
         string,
-        "url",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "url";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "YearStarted": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
     },
     {
@@ -996,168 +960,162 @@ export interface SalesforceSchema {
     {
       readonly "Account__c": SalesforceField<
         string,
-        "reference",
-        true,
-        true,
-        true,
-        true,
-        "Account",
-        "Account__r",
-        never
+        {
+          readonly salesforceType: "reference";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly referenceTo: "Account";
+          readonly relationshipName: "Account__r";
+        }
       >;
       readonly "Active__c": SalesforceField<
         boolean,
-        "boolean",
-        false,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "boolean";
+          readonly nullable: false;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "Amount__c": SalesforceField<
         number,
-        "double",
-        true,
-        true,
-        true,
-        false,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "double";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: false;
+        }
       >;
       readonly "Category__c": SalesforceField<
         string,
-        "picklist",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        "Alpha" | "Beta" | "Gamma"
+        {
+          readonly salesforceType: "picklist";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly activePicklistValue: "Alpha" | "Beta" | "Gamma";
+        }
       >;
       readonly "CreatedById": SalesforceField<
         string,
-        "reference",
-        false,
-        true,
-        true,
-        true,
-        "User",
-        "CreatedBy",
-        never
+        {
+          readonly salesforceType: "reference";
+          readonly nullable: false;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly referenceTo: "User";
+          readonly relationshipName: "CreatedBy";
+        }
       >;
       readonly "CreatedDate": SalesforceField<
         string,
-        "datetime",
-        false,
-        true,
-        true,
-        false,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "datetime";
+          readonly nullable: false;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: false;
+        }
       >;
       readonly "External_Id__c": SalesforceField<
         string,
-        "string",
-        false,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: false;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "Id": SalesforceField<
         string,
-        "id",
-        false,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "id";
+          readonly nullable: false;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "IsDeleted": SalesforceField<
         boolean,
-        "boolean",
-        false,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "boolean";
+          readonly nullable: false;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "LastModifiedById": SalesforceField<
         string,
-        "reference",
-        false,
-        true,
-        true,
-        true,
-        "User",
-        "LastModifiedBy",
-        never
+        {
+          readonly salesforceType: "reference";
+          readonly nullable: false;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly referenceTo: "User";
+          readonly relationshipName: "LastModifiedBy";
+        }
       >;
       readonly "LastModifiedDate": SalesforceField<
         string,
-        "datetime",
-        false,
-        true,
-        true,
-        false,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "datetime";
+          readonly nullable: false;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: false;
+        }
       >;
       readonly "Name": SalesforceField<
         string,
-        "string",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "string";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "Occurred_On__c": SalesforceField<
         string,
-        "date",
-        true,
-        true,
-        true,
-        true,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "date";
+          readonly nullable: true;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+        }
       >;
       readonly "OwnerId": SalesforceField<
         string,
-        "reference",
-        false,
-        true,
-        true,
-        true,
-        "Group" | "User",
-        "Owner",
-        never
+        {
+          readonly salesforceType: "reference";
+          readonly nullable: false;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: true;
+          readonly referenceTo: "Group" | "User";
+          readonly relationshipName: "Owner";
+        }
       >;
       readonly "SystemModstamp": SalesforceField<
         string,
-        "datetime",
-        false,
-        true,
-        true,
-        false,
-        never,
-        never,
-        never
+        {
+          readonly salesforceType: "datetime";
+          readonly nullable: false;
+          readonly filterable: true;
+          readonly sortable: true;
+          readonly groupable: false;
+        }
       >;
     },
     {

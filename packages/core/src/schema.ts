@@ -6,48 +6,104 @@ import type {
 } from "#/soql-temporal-literal";
 import type { NonNeverStringKey } from "#/util/type-utils";
 
-export interface SalesforceField<
+export interface SalesforceFieldMetadata {
+  readonly salesforceType: string;
+  readonly nullable: boolean;
+  readonly filterable: boolean;
+  readonly sortable: boolean;
+  readonly groupable: boolean;
+  readonly referenceTo?: string;
+  readonly relationshipName?: string;
+  readonly activePicklistValue?: string;
+  readonly aggregatable?: boolean;
+  readonly custom?: boolean;
+  readonly polymorphic?: boolean;
+}
+
+type SalesforceFieldMetadataProperty<
+  Metadata,
+  Key extends PropertyKey,
+  Default,
+> = Key extends keyof Metadata ? Exclude<Metadata[Key], undefined> : Default;
+
+type SalesforceFieldShape<
   Value,
-  SalesforceType extends string,
-  Nullable extends boolean,
-  Filterable extends boolean,
-  Sortable extends boolean,
-  Groupable extends boolean,
+  Metadata extends SalesforceFieldMetadata,
+> = {
+  readonly value: Value;
+  readonly salesforceType: Metadata["salesforceType"];
+  readonly nullable: Metadata["nullable"];
+  readonly filterable: Metadata["filterable"];
+  readonly sortable: Metadata["sortable"];
+  readonly groupable: Metadata["groupable"];
+  readonly referenceTo: SalesforceFieldMetadataProperty<
+    Metadata,
+    "referenceTo",
+    never
+  >;
+  readonly relationshipName: SalesforceFieldMetadataProperty<
+    Metadata,
+    "relationshipName",
+    never
+  >;
+  readonly activePicklistValue: SalesforceFieldMetadataProperty<
+    Metadata,
+    "activePicklistValue",
+    never
+  >;
+  readonly aggregatable: SalesforceFieldMetadataProperty<
+    Metadata,
+    "aggregatable",
+    false
+  >;
+  readonly custom: SalesforceFieldMetadataProperty<Metadata, "custom", false>;
+  readonly polymorphic: SalesforceFieldMetadataProperty<
+    Metadata,
+    "polymorphic",
+    false
+  >;
+};
+
+/**
+ * Describes one Salesforce field.
+ *
+ * Generated schemas use the named metadata-object form. The remaining generic
+ * parameters preserve compatibility with hand-written schemas that used the
+ * original positional representation before named metadata was introduced.
+ */
+export type SalesforceField<
+  Value,
+  MetadataOrSalesforceType extends SalesforceFieldMetadata | string,
+  Nullable extends boolean = false,
+  Filterable extends boolean = false,
+  Sortable extends boolean = false,
+  Groupable extends boolean = false,
   ReferenceTo extends string = never,
   RelationshipName extends string = never,
   ActivePicklistValue extends string = never,
   Aggregatable extends boolean = false,
   Custom extends boolean = false,
   Polymorphic extends boolean = false,
-> {
-  readonly value: Value;
-  readonly salesforceType: SalesforceType;
-  readonly nullable: Nullable;
-  readonly filterable: Filterable;
-  readonly sortable: Sortable;
-  readonly groupable: Groupable;
-  readonly referenceTo: ReferenceTo;
-  readonly relationshipName: RelationshipName;
-  readonly activePicklistValue: ActivePicklistValue;
-  readonly aggregatable: Aggregatable;
-  readonly custom: Custom;
-  readonly polymorphic: Polymorphic;
-}
-
-type AnySalesforceField = SalesforceField<
-  unknown,
-  string,
-  boolean,
-  boolean,
-  boolean,
-  boolean,
-  string,
-  string,
-  string,
-  boolean,
-  boolean,
-  boolean
+> = SalesforceFieldShape<
+  Value,
+  MetadataOrSalesforceType extends SalesforceFieldMetadata
+    ? MetadataOrSalesforceType
+    : {
+        readonly salesforceType: MetadataOrSalesforceType;
+        readonly nullable: Nullable;
+        readonly filterable: Filterable;
+        readonly sortable: Sortable;
+        readonly groupable: Groupable;
+        readonly referenceTo: ReferenceTo;
+        readonly relationshipName: RelationshipName;
+        readonly activePicklistValue: ActivePicklistValue;
+        readonly aggregatable: Aggregatable;
+        readonly custom: Custom;
+        readonly polymorphic: Polymorphic;
+      }
 >;
+
+type AnySalesforceField = SalesforceField<unknown, SalesforceFieldMetadata>;
 
 export interface SalesforceParentRelationship<
   ObjectName extends string,
@@ -167,25 +223,14 @@ export type SalesforceObjectSetOptionsCapability<ObjectType> =
     ? Capability
     : "none";
 
-export type SalesforceFieldValue<Field> =
-  Field extends SalesforceField<
-    infer Value,
-    string,
-    infer Nullable,
-    boolean,
-    boolean,
-    boolean,
-    string,
-    string,
-    string,
-    boolean,
-    boolean,
-    boolean
-  >
-    ? Nullable extends true
-      ? Value | null
-      : Value
-    : never;
+export type SalesforceFieldValue<Field> = Field extends {
+  readonly value: infer Value;
+  readonly nullable: infer Nullable extends boolean;
+}
+  ? Nullable extends true
+    ? Value | null
+    : Value
+  : never;
 
 type SalesforceFieldFilterScalar<
   Value,
@@ -198,43 +243,21 @@ type SalesforceFieldFilterScalar<
       ? SoqlTimeLiteral
       : Value;
 
-export type SalesforceFieldFilterValue<Field> =
-  Field extends SalesforceField<
-    infer Value,
-    infer SalesforceType,
-    infer Nullable,
-    boolean,
-    boolean,
-    boolean,
-    string,
-    string,
-    string,
-    boolean,
-    boolean,
-    boolean
-  >
-    ? Nullable extends true
-      ? SalesforceFieldFilterScalar<Value, SalesforceType> | null
-      : SalesforceFieldFilterScalar<Value, SalesforceType>
-    : never;
+export type SalesforceFieldFilterValue<Field> = Field extends {
+  readonly value: infer Value;
+  readonly salesforceType: infer SalesforceType extends string;
+  readonly nullable: infer Nullable extends boolean;
+}
+  ? Nullable extends true
+    ? SalesforceFieldFilterScalar<Value, SalesforceType> | null
+    : SalesforceFieldFilterScalar<Value, SalesforceType>
+  : never;
 
-export type SalesforceFieldCustom<Field> =
-  Field extends SalesforceField<
-    unknown,
-    string,
-    boolean,
-    boolean,
-    boolean,
-    boolean,
-    string,
-    string,
-    string,
-    boolean,
-    infer Custom,
-    boolean
-  >
-    ? Custom
-    : never;
+export type SalesforceFieldCustom<Field> = Field extends {
+  readonly custom: infer Custom extends boolean;
+}
+  ? Custom
+  : never;
 
 export type SalesforceRow<ObjectType> =
   ObjectType extends SalesforceObject<

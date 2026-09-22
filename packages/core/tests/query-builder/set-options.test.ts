@@ -8,7 +8,11 @@ import {
 } from "#/apex-bind";
 import { Kysoql } from "#/kysoql";
 import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
-import type { SalesforceField, SalesforceObject } from "#/schema";
+import type {
+  SalesforceField,
+  SalesforceFieldMetadata,
+  SalesforceObject,
+} from "#/schema";
 
 type Field<Value = string, Type extends string = "string"> = SalesforceField<
   Value,
@@ -26,8 +30,10 @@ type Field<Value = string, Type extends string = "string"> = SalesforceField<
 type EmptyRelationships = Record<string, never>;
 type EmptyCategories = Record<string, never>;
 
+type AnyField = SalesforceField<unknown, SalesforceFieldMetadata>;
+
 type Data360Object<
-  Fields extends Record<string, Field<unknown, string>>,
+  Fields extends Record<string, AnyField>,
   Capability extends "data360-dlo" | "data360-dmo",
 > = SalesforceObject<
   Fields,

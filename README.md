@@ -107,8 +107,11 @@ object returned by Salesforce. Generated schemas retain the Describe metadata
 used by the typed builder, including field capabilities, custom/polymorphic
 reference metadata, supported scopes, MRU capability, and data-category metadata
 when available. Generated imports are minimal, and empty metadata maps are
-emitted as `Record<string, never>`. Run `kysoql --help` or
-`kysoql generate --help` for the oclif-generated command reference.
+emitted as `Record<string, never>`. Generated field capabilities use named
+metadata objects instead of positional booleans, and generated files are marked
+`Do not edit manually`; regenerate them from Salesforce Describe metadata rather
+than maintaining local edits. Run `kysoql --help` or `kysoql generate --help`
+for the oclif-generated command reference.
 
 ## Current query surface
 

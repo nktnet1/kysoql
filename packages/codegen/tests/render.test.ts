@@ -56,7 +56,7 @@ describe("renderSchema", () => {
     const source = renderSchema([objectWith([field({ type })])]);
 
     expect(source).toContain(
-      `readonly "Field__c": SalesforceField<\n        ${valueType},\n        "${type}",`,
+      `readonly "Field__c": SalesforceField<\n        ${valueType},\n        {\n          readonly salesforceType: "${type}";`,
     );
   });
 
@@ -78,19 +78,21 @@ describe("renderSchema", () => {
       [
         'readonly "Field__c": SalesforceField<',
         "        string,",
-        '        "string",',
-        "        true,",
-        "        false,",
-        "        false,",
-        "        false,",
-        "        never,",
-        "        never,",
-        "        never,",
-        "        false,",
-        "        false,",
-        "        false",
+        "        {",
+        '          readonly salesforceType: "string";',
+        "          readonly nullable: true;",
+        "          readonly filterable: false;",
+        "          readonly sortable: false;",
+        "          readonly groupable: false;",
+        "        }",
       ].join("\n"),
     );
+    expect(source).not.toContain("readonly referenceTo:");
+    expect(source).not.toContain("readonly relationshipName:");
+    expect(source).not.toContain("readonly activePicklistValue:");
+    expect(source).not.toContain("readonly aggregatable: false;");
+    expect(source).not.toContain("readonly custom: false;");
+    expect(source).not.toContain("readonly polymorphic: false;");
   });
 
   it("renders active picklist values as a sorted unique string union", () => {
@@ -135,7 +137,7 @@ describe("renderSchema", () => {
 
     expect(withValues).toContain('"Alpha" | "Beta"');
     expect(withoutValues).toContain(
-      '        "multipicklist",\n        false,\n        true,\n        true,\n        true,\n        never,\n        never,\n        never,\n        true',
+      '          readonly salesforceType: "multipicklist";\n          readonly nullable: false;\n          readonly filterable: true;\n          readonly sortable: true;\n          readonly groupable: true;\n          readonly aggregatable: true;\n          readonly custom: true;',
     );
   });
 
@@ -151,7 +153,7 @@ describe("renderSchema", () => {
 
     expect(source).not.toContain("Unexpected");
     expect(source).toContain(
-      '        "string",\n        false,\n        true,\n        true,\n        true,\n        never,\n        never,\n        never,\n        true',
+      '          readonly salesforceType: "string";\n          readonly nullable: false;\n          readonly filterable: true;\n          readonly sortable: true;\n          readonly groupable: true;\n          readonly aggregatable: true;\n          readonly custom: true;',
     );
   });
 
@@ -169,7 +171,7 @@ describe("renderSchema", () => {
     ]);
 
     expect(source).toContain(
-      '        "Account" | "User",\n        "Owner__r",\n        never,\n        true',
+      '          readonly referenceTo: "Account" | "User";\n          readonly relationshipName: "Owner__r";\n          readonly aggregatable: true;',
     );
     expect(source).toContain(
       [
@@ -217,9 +219,11 @@ describe("renderSchema", () => {
       return source.slice(start, end).trimEnd();
     };
 
-    expect(fieldBlock("WhatId")).toMatch(/\n {8}true$/);
-    expect(fieldBlock("OwnerId")).toMatch(/\n {8}false$/);
-    expect(fieldBlock("DuplicateTarget__c")).toMatch(/\n {8}false$/);
+    expect(fieldBlock("WhatId")).toContain("readonly polymorphic: true;");
+    expect(fieldBlock("OwnerId")).not.toContain("readonly polymorphic:");
+    expect(fieldBlock("DuplicateTarget__c")).not.toContain(
+      "readonly polymorphic:",
+    );
   });
 
   it("renders supported scopes as a sorted unique string-literal union", () => {
@@ -363,8 +367,22 @@ describe("renderSchema", () => {
     ]);
 
     expect(source).toContain(
-      '        "reference",\n        false,\n        true,\n        true,\n        true,\n        never,\n        "EmptyReference__r",\n        never,\n        true',
+      [
+        'readonly "EmptyReference__c": SalesforceField<',
+        "        string,",
+        "        {",
+        '          readonly salesforceType: "reference";',
+        "          readonly nullable: false;",
+        "          readonly filterable: true;",
+        "          readonly sortable: true;",
+        "          readonly groupable: true;",
+        '          readonly relationshipName: "EmptyReference__r";',
+        "          readonly aggregatable: true;",
+        "          readonly custom: true;",
+        "        }",
+      ].join("\n"),
     );
+    expect(source).not.toContain("readonly referenceTo:");
     expect(source).not.toContain(
       'readonly "EmptyReference__r": SalesforceParentRelationship<',
     );

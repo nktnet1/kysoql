@@ -218,6 +218,7 @@ export type { QueryExecutor } from "#/query-executor";
 export type {
   SalesforceChildRelationship,
   SalesforceField,
+  SalesforceFieldMetadata,
   SalesforceFieldCustom,
   SalesforceFieldFilterValue,
   SalesforceFieldValue,

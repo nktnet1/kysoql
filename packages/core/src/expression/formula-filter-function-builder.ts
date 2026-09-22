@@ -9,7 +9,6 @@ import type {
 import { ReferenceNode } from "#/operation-node/reference-node";
 import type { FilterableFieldName } from "#/parser/binary-operation-parser";
 import type { FieldReferenceDefinition } from "#/parser/reference-parser";
-import type { SalesforceField } from "#/schema";
 import type {
   SoqlDateLiteral,
   SoqlDateTimeLiteral,
@@ -33,20 +32,9 @@ type FormulaSalesforceTypeOfReference<
   TB extends keyof DB,
   Reference extends string,
 > =
-  FieldReferenceDefinition<DB, TB, Reference> extends SalesforceField<
-    unknown,
-    infer SalesforceType,
-    boolean,
-    boolean,
-    boolean,
-    boolean,
-    string,
-    string,
-    string,
-    boolean,
-    boolean,
-    boolean
-  >
+  FieldReferenceDefinition<DB, TB, Reference> extends {
+    readonly salesforceType: infer SalesforceType extends string;
+  }
     ? SalesforceType
     : never;
 

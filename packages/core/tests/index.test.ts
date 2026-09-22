@@ -118,6 +118,7 @@ import {
   type RelationshipSubqueryPilotModule,
   type SalesforceChildRelationship,
   type SalesforceField,
+  type SalesforceFieldMetadata,
   type SalesforceFieldCustom,
   type SalesforceFieldFilterValue,
   type SalesforceFieldValue,
@@ -424,6 +425,7 @@ type PublicTypeSurface = {
   >;
   salesforceChildRelationship: SalesforceChildRelationship<"Child", "Parent">;
   salesforceField: SalesforceField<string, "string", false, true, true, true>;
+  salesforceFieldMetadata: SalesforceFieldMetadata;
   salesforceFieldCustom: SalesforceFieldCustom<
     SalesforceField<
       string,

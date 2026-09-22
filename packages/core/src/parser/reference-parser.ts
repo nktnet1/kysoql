@@ -152,11 +152,13 @@ type PolymorphicTypeQualifierDefinition<
       ? never
       : SalesforceField<
           Targets,
-          "polymorphicType",
-          ParentRelationshipNullable<DB, TB, Relationship>,
-          true,
-          false,
-          false
+          {
+            readonly salesforceType: "polymorphicType";
+            readonly nullable: ParentRelationshipNullable<DB, TB, Relationship>;
+            readonly filterable: true;
+            readonly sortable: false;
+            readonly groupable: false;
+          }
         >
     : never;
 

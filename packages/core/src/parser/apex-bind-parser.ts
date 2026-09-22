@@ -36,7 +36,7 @@ import {
 import { parseLimit } from "#/parser/limit-parser";
 import { parseOffset } from "#/parser/offset-parser";
 import type { FieldReferenceDefinition } from "#/parser/reference-parser";
-import type { SalesforceField, SalesforceFieldValue } from "#/schema";
+import type { SalesforceFieldValue } from "#/schema";
 
 const KNOWLEDGE_APEX_BIND_ERROR =
   "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.";
@@ -52,20 +52,9 @@ type ApexFieldValue<
 > = SalesforceFieldValue<FieldReferenceDefinition<DB, TB, RE>>;
 
 type ApexFieldSalesforceType<DB, TB extends keyof DB, RE extends string> =
-  FieldReferenceDefinition<DB, TB, RE> extends SalesforceField<
-    unknown,
-    infer SalesforceType,
-    boolean,
-    boolean,
-    boolean,
-    boolean,
-    string,
-    string,
-    string,
-    boolean,
-    boolean,
-    boolean
-  >
+  FieldReferenceDefinition<DB, TB, RE> extends {
+    readonly salesforceType: infer SalesforceType extends string;
+  }
     ? SalesforceType
     : never;
 

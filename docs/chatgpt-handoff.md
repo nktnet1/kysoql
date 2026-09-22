@@ -48,11 +48,20 @@ SQL escape hatch.
 
 ## Current baseline
 
-The accepted continuation baseline is through **`v1.0.143`**. The researched
+The accepted continuation baseline is through **`v1.0.145`**. The researched
 feature roadmap is complete: direct non-aggregate grouping, grouped API `OFFSET`,
 typed Data 360 `SET OPTIONS`, managed dynamic-Apex query options, Beta `FORMULA()`
 filters, and pilot-namespaced relationship-subquery `OFFSET` are all represented at
 the documented safety boundary. The project is now in a hardening/release phase.
+
+Generated Salesforce schema fields now use named metadata objects rather than
+positional capability booleans. Codegen omits default `never`/`false` metadata
+for readability, generated files remain explicitly non-editable artifacts, and
+core keeps legacy positional `SalesforceField<...>` input source-compatible for
+hand-written schemas.
+The TypeScript 7 regression coverage also uses the structural named-field
+supertype for heterogeneous field-map constraints rather than constraining
+through a broad legacy positional type argument.
 
 The Salesforce fixture also has a generated-query E2E harness. `pnpm
 salesforce:e2e` builds `@kysoql/core`, then runs a dedicated Vitest configuration

@@ -78,6 +78,26 @@ it("derives nullable row values from generated field metadata", () => {
   }>();
 });
 
+it("supports named Salesforce field metadata", () => {
+  type NamedField = SalesforceField<
+    string,
+    {
+      readonly salesforceType: "string";
+      readonly nullable: true;
+      readonly filterable: true;
+      readonly sortable: false;
+      readonly groupable: false;
+      readonly custom: true;
+    }
+  >;
+
+  expectTypeOf<SalesforceFieldValue<NamedField>>().toEqualTypeOf<
+    string | null
+  >();
+  expectTypeOf<NamedField["salesforceType"]>().toEqualTypeOf<"string">();
+  expectTypeOf<NamedField["custom"]>().toEqualTypeOf<true>();
+});
+
 it("derives scalar field values from nullability metadata", () => {
   expectTypeOf<
     SalesforceFieldValue<

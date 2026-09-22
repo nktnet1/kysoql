@@ -136,6 +136,9 @@ version is cut.
 
 ### Fixed
 
+- Keep the named `SalesforceField` metadata migration compatible with TypeScript 7
+  test helpers that constrain heterogeneous field maps, and update the remaining
+  codegen regression that still expected the legacy positional rendering.
 - Make the generated-query Salesforce E2E runner import the built core artifact
   directly from `packages/core/dist`, so the root-level harness does not depend
   on a root workspace dependency link for `@kysoql/core`.
@@ -188,5 +191,9 @@ version is cut.
 
 ### Changed
 
+- Generated Salesforce fields now use named metadata objects instead of opaque
+  positional capability arguments. Default `never`/`false` metadata is omitted
+  from generated output, while legacy positional `SalesforceField<...>` usage
+  remains source-compatible for hand-written schemas.
 - Publishable packages now declare their Node.js support, public npm access,
   tree-shaking metadata, and package-specific search keywords explicitly.

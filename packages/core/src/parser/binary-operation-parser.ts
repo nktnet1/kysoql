@@ -19,7 +19,7 @@ import type {
   SemiJoinOperandFieldName,
   SemiJoinSubqueryFactory,
 } from "#/query-builder/semi-join-subquery-builder";
-import type { SalesforceField, SalesforceFieldFilterValue } from "#/schema";
+import type { SalesforceFieldFilterValue } from "#/schema";
 import {
   isSoqlCurrencyLiteral,
   type SoqlCurrencyLiteral,
@@ -40,38 +40,16 @@ export type FilterableFieldName<
   : never;
 
 type SalesforceTypeOfField<DB, TB extends keyof DB, RE extends string> =
-  FieldReferenceDefinition<DB, TB, RE> extends SalesforceField<
-    unknown,
-    infer SalesforceType,
-    boolean,
-    boolean,
-    boolean,
-    boolean,
-    string,
-    string,
-    string,
-    boolean,
-    boolean,
-    boolean
-  >
+  FieldReferenceDefinition<DB, TB, RE> extends {
+    readonly salesforceType: infer SalesforceType extends string;
+  }
     ? SalesforceType
     : never;
 
 type ActivePicklistValueOfField<DB, TB extends keyof DB, RE extends string> =
-  FieldReferenceDefinition<DB, TB, RE> extends SalesforceField<
-    unknown,
-    string,
-    boolean,
-    boolean,
-    boolean,
-    boolean,
-    string,
-    string,
-    infer ActivePicklistValue,
-    boolean,
-    boolean,
-    boolean
-  >
+  FieldReferenceDefinition<DB, TB, RE> extends {
+    readonly activePicklistValue: infer ActivePicklistValue extends string;
+  }
     ? ActivePicklistValue
     : never;
 

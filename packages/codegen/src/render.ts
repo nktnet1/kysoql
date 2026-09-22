@@ -82,20 +82,37 @@ const renderField = (field: SalesforceFieldDescription): string => {
     ? fieldReferenceType(field)
     : "never";
 
+  const relationshipName = fieldRelationshipType(field);
+  const activePicklistValue = activePicklistType(field);
+  const polymorphic = fieldPolymorphic(field);
+  const metadata = [
+    `          readonly salesforceType: ${quote(field.type)};`,
+    `          readonly nullable: ${booleanLiteral(field.nillable)};`,
+    `          readonly filterable: ${booleanLiteral(field.filterable)};`,
+    `          readonly sortable: ${booleanLiteral(field.sortable)};`,
+    `          readonly groupable: ${booleanLiteral(field.groupable)};`,
+    ...(referenceTo === "never"
+      ? []
+      : [`          readonly referenceTo: ${referenceTo};`]),
+    ...(relationshipName === "never"
+      ? []
+      : [`          readonly relationshipName: ${relationshipName};`]),
+    ...(activePicklistValue === "never"
+      ? []
+      : [`          readonly activePicklistValue: ${activePicklistValue};`]),
+    ...(field.aggregatable
+      ? ["          readonly aggregatable: true;"]
+      : []),
+    ...(field.custom ? ["          readonly custom: true;"] : []),
+    ...(polymorphic ? ["          readonly polymorphic: true;"] : []),
+  ];
+
   return [
     `      readonly ${quote(field.name)}: SalesforceField<`,
     `        ${fieldValueType(field)},`,
-    `        ${quote(field.type)},`,
-    `        ${booleanLiteral(field.nillable)},`,
-    `        ${booleanLiteral(field.filterable)},`,
-    `        ${booleanLiteral(field.sortable)},`,
-    `        ${booleanLiteral(field.groupable)},`,
-    `        ${referenceTo},`,
-    `        ${fieldRelationshipType(field)},`,
-    `        ${activePicklistType(field)},`,
-    `        ${booleanLiteral(field.aggregatable)},`,
-    `        ${booleanLiteral(field.custom)},`,
-    `        ${booleanLiteral(fieldPolymorphic(field))}`,
+    "        {",
+    ...metadata,
+    "        }",
     "      >;",
   ].join("\n");
 };

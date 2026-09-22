@@ -28,6 +28,29 @@ pnpm exec kysoql generate \
 Salesforce. Run `pnpm exec kysoql generate --help` for the complete command
 reference.
 
+Generated schema files are build artifacts: they include a `Do not edit manually`
+header and should be regenerated from Salesforce Describe metadata rather than
+hand-edited. Field capabilities use named metadata so generated output remains
+inspectable without memorising positional boolean arguments:
+
+```ts
+readonly AccountNumber: SalesforceField<
+  string,
+  {
+    readonly salesforceType: "string";
+    readonly nullable: true;
+    readonly filterable: true;
+    readonly sortable: true;
+    readonly groupable: true;
+  }
+>;
+```
+
+Less common metadata is emitted only when it is meaningful. For example,
+`referenceTo`, `relationshipName`, `activePicklistValue`, `aggregatable`,
+`custom`, and `polymorphic` are omitted when they have their default
+`never`/`false` values.
+
 ## Library API
 
 The package also exports `generateSchema`, `loadSchema`, `renderSchema`, and the
