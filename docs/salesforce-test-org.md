@@ -214,8 +214,9 @@ pnpm salesforce:e2e -- --target-org my-scratch-org
 KYSOQL_TARGET_ORG=my-scratch-org pnpm salesforce:e2e
 ```
 
-The runner builds `@kysoql/core` first, then starts a dedicated Vitest suite that
-compiles and executes deterministic cases for:
+The runner builds `@kysoql/core` first, validates `KYSOQL_TARGET_ORG` with
+Valibot (defaulting to `kysoql-test` only when it is unset), then starts a dedicated
+Vitest suite that compiles and executes deterministic cases for:
 
 - scalar filtering, ordering, and `LIMIT`;
 - root `OFFSET` plus explicit null placement on a nullable scalar field;
@@ -229,7 +230,9 @@ workspace-local `pnpm sf data query --json` command, then asserts deterministic
 returned values or relationship shapes from the seeded fixture. The dedicated
 `vitest.salesforce.config.ts` includes only `test/salesforce-e2e/**/*.test.mjs`, so
 these credential-dependent tests are not collected by normal `pnpm test` or
-`pnpm validate`.
+`pnpm validate`. `KYSOQL_TARGET_ORG` is also listed in Turborepo
+`globalPassThroughEnv`: it is available to explicit live-org commands without
+changing cache keys for unrelated build/typecheck/test tasks.
 
 The generic fixture intentionally does not claim live coverage for org-dependent
 or non-production surfaces that cannot be enabled reliably in a fresh scratch org,

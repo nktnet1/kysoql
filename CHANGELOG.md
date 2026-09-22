@@ -66,6 +66,9 @@ version is cut.
   with `pnpm salesforce:e2e`, which builds `@kysoql/core`, asserts exact SOQL
   compiled by the public builder, executes it through the workspace Salesforce CLI,
   and asserts deterministic scratch-org values and relationship shapes.
+- Salesforce E2E environment handling now validates `KYSOQL_TARGET_ORG` with
+  Valibot and declares it as a Turborepo global pass-through environment variable,
+  keeping live-org configuration explicit without perturbing unrelated cache keys.
 - Typed SOQL date-function predicates in ordinary `WHERE` expression callbacks,
   including all thirteen calendar/fiscal functions, filterable date/datetime
   metadata gating, set/ordered operand typing, and `convertTimezone()` composition.

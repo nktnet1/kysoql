@@ -48,7 +48,7 @@ SQL escape hatch.
 
 ## Current baseline
 
-The accepted continuation baseline is through **`v1.0.142`**. The researched
+The accepted continuation baseline is through **`v1.0.143`**. The researched
 feature roadmap is complete: direct non-aggregate grouping, grouped API `OFFSET`,
 typed Data 360 `SET OPTIONS`, managed dynamic-Apex query options, Beta `FORMULA()`
 filters, and pilot-namespaced relationship-subquery `OFFSET` are all represented at
@@ -57,8 +57,10 @@ the documented safety boundary. The project is now in a hardening/release phase.
 The Salesforce fixture also has a generated-query E2E harness. `pnpm
 salesforce:e2e` builds `@kysoql/core`, then runs a dedicated Vitest configuration
 that asserts exact builder-generated SOQL and deterministic live-org values and
-relationship shapes. Keep this separate from normal `pnpm test` and `pnpm
-validate` because it requires Salesforce credentials and a live org.
+relationship shapes. `KYSOQL_TARGET_ORG` is validated with Valibot and declared
+as a Turborepo global pass-through environment variable so the live target does
+not contaminate unrelated task cache keys. Keep this separate from normal `pnpm
+test` and `pnpm validate` because it requires Salesforce credentials and a live org.
 
 The implementation already covers the broad production SOQL surface:
 

@@ -1,13 +1,28 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { Kysoql } from "../../packages/core/dist/index.mjs";
 
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(testDir, "..", "..");
 const salesforceDir = path.join(repoRoot, "test", "salesforce");
-const targetOrg = process.env.KYSOQL_TARGET_ORG ?? "kysoql-test";
+const salesforceE2eEnvironmentSchema = v.object({
+  KYSOQL_TARGET_ORG: v.optional(
+    v.pipe(
+      v.string(),
+      v.trim(),
+      v.minLength(1, "KYSOQL_TARGET_ORG must not be empty."),
+    ),
+    "kysoql-test",
+  ),
+});
+
+const { KYSOQL_TARGET_ORG: targetOrg } = v.parse(
+  salesforceE2eEnvironmentSchema,
+  process.env,
+);
 
 const runSfQuery = (soql) => {
   const command = spawnSync(
