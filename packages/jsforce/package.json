@@ -42,7 +42,7 @@
   "dependencies": {
     "@kysoql/core": "workspace:*",
     "jsforce": "3.10.25",
-    "valibot": "1.4.2"
+    "valibot": "1.5.0"
   },
   "publishConfig": {
     "access": "public",

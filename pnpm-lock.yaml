@@ -7,153 +7,153 @@ importers:
     configDependencies: {}
     packageManagerDependencies:
       pnpm:
-        specifier: 12.4.1
-        version: 12.4.1
+        specifier: 12.5.1
+        version: 12.5.1
 
 packages:
 
-  '@pnpm/exe.android-arm64@12.4.1':
-    resolution: {integrity: sha512-/HwsqXMSmlOfgtV9+O0ratzjV6Vd/8n1hh4rGHpCGmDURvt52MwZxdbhyxP4K03ZfvgSDvotFPr8O+RzE5Eu8A==}
+  '@pnpm/exe.android-arm64@12.5.1':
+    resolution: {integrity: sha512-6LGBmQuDzUmgpHSuy+haG0jrmkwFNa4EuShDZqK3cIBv4Wfb75CzjJmowkzr+iJg40vnBKMQ62t4Ko6mwsId7A==}
     cpu: [arm64]
     os: [android]
 
-  '@pnpm/exe.android-x64@12.4.1':
-    resolution: {integrity: sha512-+l74Qb4c2YjOzNKHXJLg+1wr8xHM1ckkUhnU5KRUK9TJqiiczt6yeTZqqzHIlJ8i6pAoj5V0OJevDRwnQKLgrQ==}
+  '@pnpm/exe.android-x64@12.5.1':
+    resolution: {integrity: sha512-091oCltP3Rx89yxL1Wh5rXkUXEyFzyxIzSHKRFDyDFlQkb8Ox8FaDcm+M8PNkMyqnLA+qeGOLzY7Rjj9izl1Ww==}
     cpu: [x64]
     os: [android]
 
-  '@pnpm/exe.darwin-arm64@12.4.1':
-    resolution: {integrity: sha512-6rkZkT3iGfaxknUdGHraqSWFvTa6N0ajAHluv9Ax0GRWs0sIcGNiFhDopv6xSZCsJZmG483aNS/b6UEDy3blfw==}
+  '@pnpm/exe.darwin-arm64@12.5.1':
+    resolution: {integrity: sha512-r1vEMQPVjRexZMyL2HonxJoo3+nuB/+G+tg+f2PK6faRdXX1TDwevKXOxJAfqlPInTy6W/pm912+s+m0NcR4BQ==}
     cpu: [arm64]
     os: [darwin]
 
-  '@pnpm/exe.darwin-x64@12.4.1':
-    resolution: {integrity: sha512-Vb1CHlR88HghC1qUxjxjs82zQSXnXacPD+btG2CmG8Q/hBU7Q0/b2YWJKSQqZXicunV5khFtfTlAwJddV9RkYA==}
+  '@pnpm/exe.darwin-x64@12.5.1':
+    resolution: {integrity: sha512-YHwI1g2B+Y2cAEylOR31r781GWijdJL7Gy7TEn/ZpZ5v/Cuwp5/Pz0EFCgo0M2MKLafAbL/laUMGvOpAdnerAw==}
     cpu: [x64]
     os: [darwin]
 
-  '@pnpm/exe.freebsd-x64@12.4.1':
-    resolution: {integrity: sha512-iT3iHz3Nl0Sxxj7UPOtZ/aQ81AFsQhjoeWMAlPkSRO04gsgDGAXv3UYxOFaesMWsfNxaGn0A+CITbuCHFF66FA==}
+  '@pnpm/exe.freebsd-x64@12.5.1':
+    resolution: {integrity: sha512-sFUMHiYFs6q5syFwgaVppzhQSmqnXoJIz/YwTXIOXTDE76ndIpTRpDGAnBCBKjsaEBnqjJA/2l6hpJcNDNoMiA==}
     cpu: [x64]
     os: [freebsd]
 
-  '@pnpm/exe.linux-arm64-musl@12.4.1':
-    resolution: {integrity: sha512-aBooZfNXM5f+OGUgCAMFWpE/kAhsWfvmqIyMtHy6zl3aNxyInWrcY/Saln/UElzo7lZWMC0Yktroxd/2J26lNQ==}
+  '@pnpm/exe.linux-arm64-musl@12.5.1':
+    resolution: {integrity: sha512-zupuxYZBuBEGjUz805/4/Asq01UNziFADANt8yp+LdUjU9bbMa3xY78Bx1PsGDqBy7aiad4sdUMK8ZxH4n4gmQ==}
     cpu: [arm64]
     os: [linux]
     libc: [musl]
 
-  '@pnpm/exe.linux-arm64@12.4.1':
-    resolution: {integrity: sha512-TlOdacTTP09BgcMvwWBFRsu8VAjfwqwnslBj+XSq1JFM3ck4f3k+1O/747EuctxZxs3/o785b6Q3s7Pd92Ptsg==}
+  '@pnpm/exe.linux-arm64@12.5.1':
+    resolution: {integrity: sha512-6hbMWW2/eQo1b5wvQPe/ndLHVTH88Rav6N+ffD4/h6IuFMjWCgasFYYsFv0GrvpqREAx3SwmZSvli+0NFXqbxA==}
     cpu: [arm64]
     os: [linux]
     libc: [glibc]
 
-  '@pnpm/exe.linux-ppc64@12.4.1':
-    resolution: {integrity: sha512-r/ab/MlIBo75oizUP5ITiziCCrnXz4SJwfErLQ+603AshB+Yq7xTMCoMtzTSCAMu6aaymIKkAFtZvd2J75Wq0w==}
+  '@pnpm/exe.linux-ppc64@12.5.1':
+    resolution: {integrity: sha512-Gg3maDzaE/ZFMV9HIx/BwMN0Y6QbEs13URfxmiYHtKjjLAs5wEQZRMUP87YNLYO7cNaEfbM8GRbS9vPosyD9Gw==}
     cpu: [ppc64]
     os: [linux]
     libc: [glibc]
 
-  '@pnpm/exe.linux-riscv64@12.4.1':
-    resolution: {integrity: sha512-C/D1QWdKMiB8+wv/spl1rGITFUuqC+aI/fb6h8NB5sqxsOaGXeYc/g891oCuzggHn6SODk9p+I09hI76x/cMNw==}
+  '@pnpm/exe.linux-riscv64@12.5.1':
+    resolution: {integrity: sha512-6fgWxXYMBMsWQ8DAiRevscX4QZQjwh+FsyCj8ZOk8pMXvqeq84MqBLCmS6KckvnbdqJ+HlSVQ7fs/kd0ldwfhA==}
     cpu: [riscv64]
     os: [linux]
     libc: [glibc]
 
-  '@pnpm/exe.linux-s390x@12.4.1':
-    resolution: {integrity: sha512-nxz5zD4yXt94uzbStDk0QTPKW+aE92hH1b5tFXK9ctB1HE9Xcq1vjTiA2LsZMFC6p4gdu5OwQeFqYNAVGa6QlA==}
+  '@pnpm/exe.linux-s390x@12.5.1':
+    resolution: {integrity: sha512-nzMZruRvxDhEfYUhzu+7EmM39+82Dgagc/6hPFPqGqzXNGcIG0anuxbUxfeNtI64SHt91KuuYUmCB/inlM+Pag==}
     cpu: [s390x]
     os: [linux]
     libc: [glibc]
 
-  '@pnpm/exe.linux-x64-musl@12.4.1':
-    resolution: {integrity: sha512-5AwgFdGhVUg2kIweYGfxzSLEHiIG77PQhZAkXC3TwofQHsu1Wr+TrV5/rNX2PopFnHRzuE581zoB8F6Wle32yg==}
+  '@pnpm/exe.linux-x64-musl@12.5.1':
+    resolution: {integrity: sha512-kHCbegdTNHpzmPtUD4S5fqkVkqgdQR47spF9p2VPP3dIIkZl6Ytk8w0vhlAsAGgge8FmucfwX+vvPKgm0NtOCQ==}
     cpu: [x64]
     os: [linux]
     libc: [musl]
 
-  '@pnpm/exe.linux-x64@12.4.1':
-    resolution: {integrity: sha512-FJOZuuuQMhp0oLzBtcKkLXknBI92hfkmSnlKc47vfin4HrmfID5khY2lGekL9tCzk1cpR+HShEw/meFl+nHtzQ==}
+  '@pnpm/exe.linux-x64@12.5.1':
+    resolution: {integrity: sha512-3PkUBYo5z4dgtlnTNIFj7QGpcDUAuqXz9WGVigPDCeccEnhGiRkWmA5102TmYJHtwJP3LfmE+ZF9PGeWhn8p9Q==}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
 
-  '@pnpm/exe.win32-arm64@12.4.1':
-    resolution: {integrity: sha512-OO7eKBL9S+xk5hRy+JUUZSNJknGuGe3GEUffsrlC2LbqKF02g+VX1anGIzSbJDvkkdnpJhSlxF5AUz2JzJu2Jw==}
+  '@pnpm/exe.win32-arm64@12.5.1':
+    resolution: {integrity: sha512-49NvjZIXHly56/PLoEDD7VphbO4N8dwMXoApElDFCpVGDNGeKlwlib1tXtnpTF6i2/XIsAj7GgatHB5KHXgBnA==}
     cpu: [arm64]
     os: [win32]
 
-  '@pnpm/exe.win32-x64@12.4.1':
-    resolution: {integrity: sha512-x7gJHZgHo6hp354xCYA2NvoFzYJkHwovt2kVsUBK5EmXULLcP51JGMq09CX+5FRFJUZFKoXjLu3mZWmfP7o6PQ==}
+  '@pnpm/exe.win32-x64@12.5.1':
+    resolution: {integrity: sha512-ePUmQFPAPJFNMwg1lelDx2PdjHqYRiF0yfg5e6qeDbPNOu97QNo557Ru/SxmCrmt8ydQWNuZXWpdEp019md5vw==}
     cpu: [x64]
     os: [win32]
 
-  pnpm@12.4.1:
-    resolution: {integrity: sha512-LoHjmdc/6DkNqyXgaqeIq3pZCCSNL1o3D4K0gRR6ano2e/gEj5pv22Rg8hpm8FQt7bi5TKLIcjWWdBkgsWVtTA==}
+  pnpm@12.5.1:
+    resolution: {integrity: sha512-4/MFvHhKK8ifWtO2E4iJRw+ujSr182thIW7JHCw9ZAiXdfneOKrDMQROpA8kXLDVZmOS399lgk4ZB+9qLGLeXw==}
     engines: {node: '>=18.*'}
     hasBin: true
 
 snapshots:
 
-  '@pnpm/exe.android-arm64@12.4.1':
+  '@pnpm/exe.android-arm64@12.5.1':
     optional: true
 
-  '@pnpm/exe.android-x64@12.4.1':
+  '@pnpm/exe.android-x64@12.5.1':
     optional: true
 
-  '@pnpm/exe.darwin-arm64@12.4.1':
+  '@pnpm/exe.darwin-arm64@12.5.1':
     optional: true
 
-  '@pnpm/exe.darwin-x64@12.4.1':
+  '@pnpm/exe.darwin-x64@12.5.1':
     optional: true
 
-  '@pnpm/exe.freebsd-x64@12.4.1':
+  '@pnpm/exe.freebsd-x64@12.5.1':
     optional: true
 
-  '@pnpm/exe.linux-arm64-musl@12.4.1':
+  '@pnpm/exe.linux-arm64-musl@12.5.1':
     optional: true
 
-  '@pnpm/exe.linux-arm64@12.4.1':
+  '@pnpm/exe.linux-arm64@12.5.1':
     optional: true
 
-  '@pnpm/exe.linux-ppc64@12.4.1':
+  '@pnpm/exe.linux-ppc64@12.5.1':
     optional: true
 
-  '@pnpm/exe.linux-riscv64@12.4.1':
+  '@pnpm/exe.linux-riscv64@12.5.1':
     optional: true
 
-  '@pnpm/exe.linux-s390x@12.4.1':
+  '@pnpm/exe.linux-s390x@12.5.1':
     optional: true
 
-  '@pnpm/exe.linux-x64-musl@12.4.1':
+  '@pnpm/exe.linux-x64-musl@12.5.1':
     optional: true
 
-  '@pnpm/exe.linux-x64@12.4.1':
+  '@pnpm/exe.linux-x64@12.5.1':
     optional: true
 
-  '@pnpm/exe.win32-arm64@12.4.1':
+  '@pnpm/exe.win32-arm64@12.5.1':
     optional: true
 
-  '@pnpm/exe.win32-x64@12.4.1':
+  '@pnpm/exe.win32-x64@12.5.1':
     optional: true
 
-  pnpm@12.4.1:
+  pnpm@12.5.1:
     optionalDependencies:
-      '@pnpm/exe.android-arm64': 12.4.1
-      '@pnpm/exe.android-x64': 12.4.1
-      '@pnpm/exe.darwin-arm64': 12.4.1
-      '@pnpm/exe.darwin-x64': 12.4.1
-      '@pnpm/exe.freebsd-x64': 12.4.1
-      '@pnpm/exe.linux-arm64': 12.4.1
-      '@pnpm/exe.linux-arm64-musl': 12.4.1
-      '@pnpm/exe.linux-ppc64': 12.4.1
-      '@pnpm/exe.linux-riscv64': 12.4.1
-      '@pnpm/exe.linux-s390x': 12.4.1
-      '@pnpm/exe.linux-x64': 12.4.1
-      '@pnpm/exe.linux-x64-musl': 12.4.1
-      '@pnpm/exe.win32-arm64': 12.4.1
-      '@pnpm/exe.win32-x64': 12.4.1
+      '@pnpm/exe.android-arm64': 12.5.1
+      '@pnpm/exe.android-x64': 12.5.1
+      '@pnpm/exe.darwin-arm64': 12.5.1
+      '@pnpm/exe.darwin-x64': 12.5.1
+      '@pnpm/exe.freebsd-x64': 12.5.1
+      '@pnpm/exe.linux-arm64': 12.5.1
+      '@pnpm/exe.linux-arm64-musl': 12.5.1
+      '@pnpm/exe.linux-ppc64': 12.5.1
+      '@pnpm/exe.linux-riscv64': 12.5.1
+      '@pnpm/exe.linux-s390x': 12.5.1
+      '@pnpm/exe.linux-x64': 12.5.1
+      '@pnpm/exe.linux-x64-musl': 12.5.1
+      '@pnpm/exe.win32-arm64': 12.5.1
+      '@pnpm/exe.win32-x64': 12.5.1
 
 ---
 lockfileVersion: '9.0'
@@ -167,17 +167,17 @@ importers:
   .:
     devDependencies:
       '@biomejs/biome':
-        specifier: 2.5.13
-        version: 2.5.13
+        specifier: 2.5.14
+        version: 2.5.14
       '@salesforce/cli':
         specifier: ^2.150.6
-        version: 2.150.6(@types/node@26.5.1)(@types/react@18.3.31)(supports-color@8.1.1)
+        version: 2.150.6(@types/node@26.6.2)(@types/react@18.3.31)(supports-color@8.1.1)
       '@types/node':
-        specifier: 26.5.1
-        version: 26.5.1
+        specifier: 26.6.2
+        version: 26.6.2
       '@vitest/coverage-v8':
-        specifier: 5.0.0
-        version: 5.0.0(vitest@5.0.0)
+        specifier: 5.0.1
+        version: 5.0.1(vitest@5.0.1)
       lefthook:
         specifier: 2.1.14
         version: 2.1.14
@@ -185,17 +185,17 @@ importers:
         specifier: 0.23.0
         version: 0.23.0(typescript@7.0.2)
       turbo:
-        specifier: 2.10.13
-        version: 2.10.13
+        specifier: 2.11.2
+        version: 2.11.2
       typescript:
         specifier: 7.0.2
         version: 7.0.2
       valibot:
-        specifier: 1.4.2
-        version: 1.4.2(typescript@7.0.2)
+        specifier: 1.5.0
+        version: 1.5.0(typescript@7.0.2)
       vitest:
-        specifier: 5.0.0
-        version: 5.0.0(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(@vitest/coverage-v8@5.0.0)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+        specifier: 5.0.1
+        version: 5.0.1(@opentelemetry/api@1.9.1)(@types/node@26.6.2)(@vitest/coverage-v8@5.0.1)(vite@8.3.0(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
 
   apps/docs:
     dependencies:
@@ -209,8 +209,8 @@ importers:
         specifier: 1.168.56
         version: 1.168.56(crossws@0.4.12(srvx@1.0.5))(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.8)(supports-color@8.1.1)(vite@8.3.0(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
       cn:
-        specifier: ^0.3.0
-        version: 0.3.0
+        specifier: ^0.3.2
+        version: 0.3.2
       fumadocs-core:
         specifier: 16.15.12
         version: 16.15.12(@mdx-js/mdx@3.1.1(supports-color@8.1.1))(@tanstack/react-router@1.170.38(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@types/estree-jsx@1.0.5)(@types/hast@3.0.5)(@types/mdast@4.0.4)(@types/react@19.3.0)(lucide-react@1.47.0(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@8.1.1)(zod@4.6.5)
@@ -252,7 +252,7 @@ importers:
         specifier: ^2.0.14
         version: 2.0.14
       '@types/node':
-        specifier: ^26.6.1
+        specifier: ^26.6.2
         version: 26.6.2
       '@types/react':
         specifier: ^19.3.0
@@ -282,20 +282,20 @@ importers:
         specifier: workspace:*
         version: link:../rest
       '@oclif/core':
-        specifier: 4.14.0
-        version: 4.14.0
+        specifier: 5.0.0
+        version: 5.0.0
       jiti:
         specifier: 2.7.0
         version: 2.7.0
       valibot:
-        specifier: 1.4.2
-        version: 1.4.2(typescript@7.0.2)
+        specifier: 1.5.0
+        version: 1.5.0(typescript@7.0.2)
 
   packages/core:
     dependencies:
       valibot:
-        specifier: 1.4.2
-        version: 1.4.2(typescript@7.0.2)
+        specifier: 1.5.0
+        version: 1.5.0(typescript@7.0.2)
 
   packages/debug:
     dependencies:
@@ -310,10 +310,10 @@ importers:
         version: link:../core
       jsforce:
         specifier: 3.10.25
-        version: 3.10.25(@types/node@26.5.1)
+        version: 3.10.25(@types/node@26.6.2)
       valibot:
-        specifier: 1.4.2
-        version: 1.4.2(typescript@7.0.2)
+        specifier: 1.5.0
+        version: 1.5.0(typescript@7.0.2)
 
   packages/rest:
     dependencies:
@@ -461,59 +461,59 @@ packages:
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
 
-  '@biomejs/biome@2.5.13':
-    resolution: {integrity: sha512-+SEC/mFk1a+5mvUANZgbZTaiZXs1nj4iMhL/PHiqDT5TPUEPFIlliEtkKKZB4N862yylHC3UI+/Sj2I0HJEqhA==}
+  '@biomejs/biome@2.5.14':
+    resolution: {integrity: sha512-0FabLIjd4M/dm8VFI86RMaLLdgepzbdfiAL2R8cr7V81OYYrP1w7Z73KfAwPK5h9SrEBXTzNG2y+mBwPo9xRnw==}
     engines: {node: '>=14.21.3'}
     hasBin: true
 
-  '@biomejs/cli-darwin-arm64@2.5.13':
-    resolution: {integrity: sha512-nYSuDJ6zgVqZUkAkJkvhXxsF2PYIrUk/g638K4voCXz7foI9f7b6C2/7+oAihsHQlivZNMUrm/y8ywlcHQtZOw==}
+  '@biomejs/cli-darwin-arm64@2.5.14':
+    resolution: {integrity: sha512-UnzaXO65L4tsZimFITFP2M121GyhDcWFrT3pL5ZJ5U4XcS/0L5VHYytVohdCf/gnDUFHgl2I9xnt5bV/J1kxHQ==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [darwin]
 
-  '@biomejs/cli-darwin-x64@2.5.13':
-    resolution: {integrity: sha512-KVy1ceEDuJ3AzFxjT9kkxbVy+UANw1pjEMUS6lvKfxjJ+fmkRvc7sQn1Xo6ETgseEI7wUQoV03KSga3XfE8YRQ==}
+  '@biomejs/cli-darwin-x64@2.5.14':
+    resolution: {integrity: sha512-kiy8qA16K93J7uvFfWi4LgjqDpnRKyePAna6A0Y4jxyUga35SYpIZ2cNWlhy0lsfgqRenCpfymnJWEZ6mgpRgA==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [darwin]
 
-  '@biomejs/cli-linux-arm64-musl@2.5.13':
-    resolution: {integrity: sha512-CH32xpep3dNS5EVJpAHlYchkBYznxyVZQrx0b6YYYlPL9u9ZeD2NtqiK/6s64+HFS2a7hGnryLlqqZAOh8ax5g==}
+  '@biomejs/cli-linux-arm64-musl@2.5.14':
+    resolution: {integrity: sha512-SJ9PrZkBnnH9dHJDnxk34vKs0GB2dbsioaft6/hPhWJ7AHpwYH83Isnhj0FSRpFkGgpVfJ1lds23ApB2czUDLQ==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [linux]
     libc: [musl]
 
-  '@biomejs/cli-linux-arm64@2.5.13':
-    resolution: {integrity: sha512-VlNMtoxOqs0dUR6drxxHr18SNUvI7xxAuHZlH4s/dstYSf3g6RaqVgo8JRnhcOhKz9afWrvtJTboNG1JuYlIDQ==}
+  '@biomejs/cli-linux-arm64@2.5.14':
+    resolution: {integrity: sha512-vO/9BaU1n30CiFNLx49gMTMtbCAAqlo/EqFoG0BU3deQInTbJrmXSmTQ9e3FoDZIKQnvSLDVNL4lx1ci7y1T1Q==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [linux]
     libc: [glibc]
 
-  '@biomejs/cli-linux-x64-musl@2.5.13':
-    resolution: {integrity: sha512-F3pmwl+VHoUuVJN/tbNLKeLt0SVK3EIyN1jXlMcNyQGYRQQTVqXF+GgkP0/CjGXFN87e/mv0sBfUnWqWza5PKQ==}
+  '@biomejs/cli-linux-x64-musl@2.5.14':
+    resolution: {integrity: sha512-2kI5PrMgW5dcEZYrstLPmUmCwkUwZY39rP4BN93Vxbwcs2O57LDQOktUZZYPvvspN5i0mhGr3TJtF5sU26NUWg==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [linux]
     libc: [musl]
 
-  '@biomejs/cli-linux-x64@2.5.13':
-    resolution: {integrity: sha512-Fi6gIxbUaJ3ZCIXeG3ggIBPF76O2DjDN67WrPX/ODRv54GeXPm2gbEPC96Yb0yrJoiH0Eax1JLx1Pi0XbsNFZQ==}
+  '@biomejs/cli-linux-x64@2.5.14':
+    resolution: {integrity: sha512-VHZRa7CCQBUWKxNwUvHJeuW03WFRgN5NWO//SDGOitc9QIeNyfA42V9zlKm+x82xFSG9Bzi5fi+hbhm9anO8yA==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
 
-  '@biomejs/cli-win32-arm64@2.5.13':
-    resolution: {integrity: sha512-+WD13qshXrr0Icv4BfsAdzm8Fs3TL+nZ59zEQxsYNd8lcgZJ0A5+OrlwsL1PipVCmWeRpxgIPD6DAcEd7smkCQ==}
+  '@biomejs/cli-win32-arm64@2.5.14':
+    resolution: {integrity: sha512-pHgAFffmZtaYoxavEsWEYNvcA7NwOIjLyqw2HXyLbt16xYryX0L4fMV2u0G9ag6LNYPIoqWaWqzUcnc6rLGGXg==}
     engines: {node: '>=14.21.3'}
     cpu: [arm64]
     os: [win32]
 
-  '@biomejs/cli-win32-x64@2.5.13':
-    resolution: {integrity: sha512-VOofU/nW761XWzUeUNE8zzYNyPrxuMuNFMizL0qz7J75yeV8N7WFheUlk1/K6dOkaFpH9wJ+lDKlwjAbw0346w==}
+  '@biomejs/cli-win32-x64@2.5.14':
+    resolution: {integrity: sha512-oJWmBhoHsnhUKIke+0gXDX0mltJrWHA1UyHsrTlXwX0TL64ilVZAo+TYZm97baecV0esBdpzy3k96q+09JaZUQ==}
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [win32]
@@ -1032,6 +1032,10 @@ packages:
   '@oclif/core@4.14.0':
     resolution: {integrity: sha512-QCJIZoVJxV7jywgVAUlsQwl3dr3Sa21kfi5z9KrYolbexWJUtFSEtMoNiBWojD05mYycLnB50gp/VxlGdaOCRA==}
     engines: {node: '>=18.0.0'}
+
+  '@oclif/core@5.0.0':
+    resolution: {integrity: sha512-24ZsN528VButCtvqjBoHw7cEpqXZZILH7Zp0d8oFKrWbqU2BqYrxLd5aGU8LyqRev7CCjAHg+/m1Bewz4V7AmQ==}
+    engines: {node: '>=22.0.0'}
 
   '@oclif/multi-stage-output@0.8.44':
     resolution: {integrity: sha512-MKRyLqvg1w1j5fU5BPZd7ncZAvXTvtTezyzGBF+QCLnZWDGIEzwtitbZsRzpauiINrYaiDREmZkkj34ChGCDWw==}
@@ -1757,33 +1761,33 @@ packages:
   '@tootallnate/quickjs-emscripten@0.23.0':
     resolution: {integrity: sha512-C5Mc6rdnsaJDjO3UpGW/CQTHtCKaYlScZTly4JIu97Jxo/odCiH0ITnDXSJPTOrEKk/ycSZ0AOgTmkDtkOsvIA==}
 
-  '@turbo/darwin-64@2.10.13':
-    resolution: {integrity: sha512-m5DBcpkxmcKpEJHHFUfqf9GLUjSmw3cDnBJM9nghPW3kjCNb5OyNKmzG7/yT5x5AwzOO+HMwKN+UI4iVKL87YA==}
+  '@turbo/darwin-64@2.11.2':
+    resolution: {integrity: sha512-0pGfE4Lpxrbd+6gUD9z025Tn4z9uMaSNZ3VX0H/hkUPZkjY5xrCa1NfTqocs09NM5NiYE3wEVcoYBadrhayRCA==}
     cpu: [x64]
     os: [darwin]
 
-  '@turbo/darwin-arm64@2.10.13':
-    resolution: {integrity: sha512-vfKPvSuoY8BJGj8M8yN+a7aq1g+CejbEacDSDlJLDkSbPN3J/U1DbYAmPG8Ype5XvImI0SgfvUhIorNnFj67zw==}
+  '@turbo/darwin-arm64@2.11.2':
+    resolution: {integrity: sha512-Ub7hTbu0bPSiW156ciuLCexG5/SfuZM/QWeBBh9o8P4XyKiZwKqubT6Y9DdJjdp4ZY2wS47Prdl06Xxzt0q6zw==}
     cpu: [arm64]
     os: [darwin]
 
-  '@turbo/linux-64@2.10.13':
-    resolution: {integrity: sha512-Zp0N5M6j9iEjJtFLTA2L+52TLuYy0VbXT3zLZzfMeqqdKSUJ7pDo2pA1NhqjoQcF2dIsktZ8xZRW3pGI6T81fw==}
+  '@turbo/linux-64@2.11.2':
+    resolution: {integrity: sha512-8ipdmgmvSomfQ8E9afUsefO+BLO6QMW7srrHqMOCXD3BPX4FlYqqWAJY1GvbQotZMWKzNohdVkevrUYM6ZzYKA==}
     cpu: [x64]
     os: [android, linux]
 
-  '@turbo/linux-arm64@2.10.13':
-    resolution: {integrity: sha512-M8XcfWdS2D4EP3wzd5ehUyCANucMIOsRE6gZuV0Mr2NIn+FpsUjXFCh7r9HY7GnNcjXH4tUnT76OsCDg2c0Fng==}
+  '@turbo/linux-arm64@2.11.2':
+    resolution: {integrity: sha512-tsftYXAzgc+GdosqyRP8+Zzk2evJ8ej7Otal7/DU+6GVekVZ3kqM/z7zlGuF4TSHeetWxX04KN1I64LkmvYzgg==}
     cpu: [arm64]
     os: [android, linux]
 
-  '@turbo/windows-64@2.10.13':
-    resolution: {integrity: sha512-QFd3KBMpBBCc31TbxMnxgdBivie8lxJXV8EqmanH8fg8l2e1BdCLWpZJbxk48VNvcF4LHUnwO0FJOq+veKN1cw==}
+  '@turbo/windows-64@2.11.2':
+    resolution: {integrity: sha512-p5LDVcGmC8W6FCrJPehr1t0ZvYqM8xvG3Va+LkwtDMK3Rl0NhSsJOYbYZVBfMbkm+9RKcCvekFCbSVtQ9Eyuqg==}
     cpu: [x64]
     os: [win32]
 
-  '@turbo/windows-arm64@2.10.13':
-    resolution: {integrity: sha512-rM+cFO1P8iAHXdasOdMyK9nDk0UGII7VEFLIA8+jwv/+rh48pnVBbF2OSjJDBOw57pxNLIOEDA0JyKcarTBcIw==}
+  '@turbo/windows-arm64@2.11.2':
+    resolution: {integrity: sha512-u0M3m1aXo9lpDM/2iQhxlGzgWjHFq/MC4TqHn1YAvxk8g1wGtzRB2QBx/SLqRChhPhC29mzaB8eLcxKh/pcM1g==}
     cpu: [arm64]
     os: [win32]
 
@@ -2019,11 +2023,11 @@ packages:
       oxc-transform-react:
         optional: true
 
-  '@vitest/coverage-v8@5.0.0':
-    resolution: {integrity: sha512-toMg6PZGCIa/lQNCDoASrfb1ly4hsUKXFtFYC9kD4t78o5Y6LyNJU7AENt8eHPr3quYdxaxK7hj2mnbFfUk9NA==}
+  '@vitest/coverage-v8@5.0.1':
+    resolution: {integrity: sha512-FRC8ACiudC3dI6MTplzRSYWHDRnIv2IPfbzs4FdoJNsMal/35sWV8hwIfV8ZcqzSPy+uXHeMVONt9CEqtOU17w==}
     peerDependencies:
-      '@vitest/browser': 5.0.0
-      vitest: 5.0.0
+      '@vitest/browser': 5.0.1
+      vitest: 5.0.1
     peerDependenciesMeta:
       '@vitest/browser':
         optional: true
@@ -2036,8 +2040,8 @@ packages:
     resolution: {integrity: sha512-1EOLRfsTMnyAr3+kEAsP4o9dhaDlGPpD7H5iLBBeq//YpNB1VIahkPhB+eRp9N2Dkfw8oySROjE3yf9XDeaIkQ==}
     engines: {node: '>=22'}
 
-  '@vitest/mocker@5.0.0':
-    resolution: {integrity: sha512-66PGTMIiVJP3t4a5yxU9qPtf7MdTBs8jmToMvy+HVflB3Yy13WJZTtPePdvU+wjRV02SKK5doLbSA6o9pwOmiA==}
+  '@vitest/mocker@5.0.1':
+    resolution: {integrity: sha512-6K1DoBNAPGvuOcSsGA4D6x+5zEEff/KmOOP3uetT2TrGpVfI+HRHRnJJfKi5ib/g1vx8IYHQD8s0pbJz8WQI7Q==}
     peerDependencies:
       msw: ^2.4.9
       vite: ^6.0.0 || ^7.0.0 || ^8.0.0
@@ -2047,8 +2051,8 @@ packages:
       vite:
         optional: true
 
-  '@vitest/spy@5.0.0':
-    resolution: {integrity: sha512-uy+luWBAPw9XfthoHi5AkfHUnuPYEESjl0p/r+meoBnU8bxg5GDQ3Ey8MjcJ6sqahkL4PFyrvfMJJBw7LbU06g==}
+  '@vitest/spy@5.0.1':
+    resolution: {integrity: sha512-rbto/mF/SGERxEgYOek7Xm6B9b+y+mVoo+f4b2LymYO8zM1b7uB5nHuhVMTP2hxdzgxvGiZYGxGIaMvL5y180Q==}
 
   '@yuku-analyzer/binding-android-arm64@0.10.2':
     resolution: {integrity: sha512-xt4Vy3RTBw1NfszBlf4A0Rr6ZjA/th2Pj9XlWFLQHW9A1qOCtxNCoIWSzn/INtnZLMB4jO2gWdEtSaHUtK73wA==}
@@ -2601,6 +2605,11 @@ packages:
 
   cn@0.3.0:
     resolution: {integrity: sha512-qRoU0ARrZD3Bbj1wKFftEKxPjSnzTEdFkf22NVhW+zU9D/wajhoP+qUZ5DChhhSOBCH1onV12hrmGqfu1+5Z2Q==}
+    engines: {node: '>=20'}
+    hasBin: true
+
+  cn@0.3.2:
+    resolution: {integrity: sha512-RKzY5Edavc8B2Ka6tjJecKFC4nm0p7lADY72xzICmiJSf4TkaxWXt0fHsib2P2G4FkFyXfSDi9oDtIBuCZvY2g==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -5215,8 +5224,8 @@ packages:
   tunnel-agent@0.6.0:
     resolution: {integrity: sha512-McnNiV1l8RYeY8tBgEpuodCC1mLUdbSN+CYBL7kJsJNInOP8UjDDEwdk6Mw60vdLLrr5NHKZhMAOSrR2NZuQ+w==}
 
-  turbo@2.10.13:
-    resolution: {integrity: sha512-69MkPbjk+G8oyC7pC2DeBk0rPdbLz51wuH5eAT0Q4BVJkzq/b1XM4kUUidsARbmDjwIELSJwd1ezITULY9kWNw==}
+  turbo@2.11.2:
+    resolution: {integrity: sha512-s0GhnWXlAAN+wb2GRMQxnZgFweRWTAceRWW/4Lk9iHj7QuLZMjDxQQqu+Xoh7Nckuy8UiSim520w6yqP2+ertw==}
     hasBin: true
 
   type-fest@0.21.3:
@@ -5360,8 +5369,8 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
-  valibot@1.4.2:
-    resolution: {integrity: sha512-gjdCvJ6d3RyHAneqxMYMW9QMCwYMb3jpOO0IyHZV1bnRHFBHrX3VkIILt5XYR0WhwHiH7Mty8ovuPZ/O3gamrg==}
+  valibot@1.5.0:
+    resolution: {integrity: sha512-nil6AkP2TChWL43Z5uJ6GTxX01CUA+g8LWUM+N/rB9NBbkUMaUsi9PUNzlUPgoKASgmx9f7eGOYpJ04/fSa6FQ==}
     peerDependencies:
       typescript: '>=5'
     peerDependenciesMeta:
@@ -5436,20 +5445,20 @@ packages:
       vite:
         optional: true
 
-  vitest@5.0.0:
-    resolution: {integrity: sha512-gpsMNoRhMjMktVxPtstOH4/PJuPyovVaMDr4oDilXaGH1EcqM2OE96SoHT2VIQ6fTGtTjqmHDrEu2X9RQiXf8Q==}
+  vitest@5.0.1:
+    resolution: {integrity: sha512-iA95lQbKEkvrtTkdAgnWbXfbipWiiWe/hDl2P5tMi6WFwD76G0NxXAGp/M9EOcYupeGJRr6wppMc7CoA41TQjg==}
     engines: {node: ^22.12.0 || ^24.0.0 || >=26.0.0}
     hasBin: true
     peerDependencies:
       '@edge-runtime/vm': '*'
       '@opentelemetry/api': ^1.9.0
       '@types/node': ^22.0.0 || >=24.0.0
-      '@vitest/browser-playwright': 5.0.0
-      '@vitest/browser-preview': 5.0.0
+      '@vitest/browser-playwright': 5.0.1
+      '@vitest/browser-preview': 5.0.1
       '@vitest/browser-webdriverio': ^5.0.0-beta.5 || >=5.0.0
-      '@vitest/coverage-istanbul': 5.0.0
-      '@vitest/coverage-v8': 5.0.0
-      '@vitest/ui': 5.0.0
+      '@vitest/coverage-istanbul': 5.0.1
+      '@vitest/coverage-v8': 5.0.1
+      '@vitest/ui': 5.0.1
       happy-dom: '*'
       jsdom: '*'
       vite: ^6.4.0 || ^7.0.0 || ^8.0.0
@@ -5830,39 +5839,39 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@biomejs/biome@2.5.13':
+  '@biomejs/biome@2.5.14':
     optionalDependencies:
-      '@biomejs/cli-darwin-arm64': 2.5.13
-      '@biomejs/cli-darwin-x64': 2.5.13
-      '@biomejs/cli-linux-arm64': 2.5.13
-      '@biomejs/cli-linux-arm64-musl': 2.5.13
-      '@biomejs/cli-linux-x64': 2.5.13
-      '@biomejs/cli-linux-x64-musl': 2.5.13
-      '@biomejs/cli-win32-arm64': 2.5.13
-      '@biomejs/cli-win32-x64': 2.5.13
+      '@biomejs/cli-darwin-arm64': 2.5.14
+      '@biomejs/cli-darwin-x64': 2.5.14
+      '@biomejs/cli-linux-arm64': 2.5.14
+      '@biomejs/cli-linux-arm64-musl': 2.5.14
+      '@biomejs/cli-linux-x64': 2.5.14
+      '@biomejs/cli-linux-x64-musl': 2.5.14
+      '@biomejs/cli-win32-arm64': 2.5.14
+      '@biomejs/cli-win32-x64': 2.5.14
 
-  '@biomejs/cli-darwin-arm64@2.5.13':
+  '@biomejs/cli-darwin-arm64@2.5.14':
     optional: true
 
-  '@biomejs/cli-darwin-x64@2.5.13':
+  '@biomejs/cli-darwin-x64@2.5.14':
     optional: true
 
-  '@biomejs/cli-linux-arm64-musl@2.5.13':
+  '@biomejs/cli-linux-arm64-musl@2.5.14':
     optional: true
 
-  '@biomejs/cli-linux-arm64@2.5.13':
+  '@biomejs/cli-linux-arm64@2.5.14':
     optional: true
 
-  '@biomejs/cli-linux-x64-musl@2.5.13':
+  '@biomejs/cli-linux-x64-musl@2.5.14':
     optional: true
 
-  '@biomejs/cli-linux-x64@2.5.13':
+  '@biomejs/cli-linux-x64@2.5.14':
     optional: true
 
-  '@biomejs/cli-win32-arm64@2.5.13':
+  '@biomejs/cli-win32-arm64@2.5.14':
     optional: true
 
-  '@biomejs/cli-win32-x64@2.5.13':
+  '@biomejs/cli-win32-x64@2.5.14':
     optional: true
 
   '@colors/colors@1.5.0':
@@ -6014,59 +6023,59 @@ snapshots:
       ansi-escapes: 4.3.2
       yoctocolors-cjs: 2.1.3
 
-  '@inquirer/checkbox@4.3.2(@types/node@26.5.1)':
+  '@inquirer/checkbox@4.3.2(@types/node@26.6.2)':
     dependencies:
       '@inquirer/ansi': 1.0.2
-      '@inquirer/core': 10.3.2(@types/node@26.5.1)
+      '@inquirer/core': 10.3.2(@types/node@26.6.2)
       '@inquirer/figures': 1.0.15
-      '@inquirer/type': 3.0.10(@types/node@26.5.1)
+      '@inquirer/type': 3.0.10(@types/node@26.6.2)
       yoctocolors-cjs: 2.1.3
     optionalDependencies:
-      '@types/node': 26.5.1
+      '@types/node': 26.6.2
 
   '@inquirer/confirm@3.2.0':
     dependencies:
       '@inquirer/core': 9.2.1
       '@inquirer/type': 1.5.5
 
-  '@inquirer/confirm@5.1.21(@types/node@26.5.1)':
+  '@inquirer/confirm@5.1.21(@types/node@26.6.2)':
     dependencies:
-      '@inquirer/core': 10.3.2(@types/node@26.5.1)
-      '@inquirer/type': 3.0.10(@types/node@26.5.1)
+      '@inquirer/core': 10.3.2(@types/node@26.6.2)
+      '@inquirer/type': 3.0.10(@types/node@26.6.2)
     optionalDependencies:
-      '@types/node': 26.5.1
+      '@types/node': 26.6.2
 
-  '@inquirer/confirm@6.3.2(@types/node@26.5.1)':
+  '@inquirer/confirm@6.3.2(@types/node@26.6.2)':
     dependencies:
-      '@inquirer/core': 12.0.3(@types/node@26.5.1)
-      '@inquirer/type': 4.1.1(@types/node@26.5.1)
+      '@inquirer/core': 12.0.3(@types/node@26.6.2)
+      '@inquirer/type': 4.1.1(@types/node@26.6.2)
     optionalDependencies:
-      '@types/node': 26.5.1
+      '@types/node': 26.6.2
 
-  '@inquirer/core@10.3.2(@types/node@26.5.1)':
+  '@inquirer/core@10.3.2(@types/node@26.6.2)':
     dependencies:
       '@inquirer/ansi': 1.0.2
       '@inquirer/figures': 1.0.15
-      '@inquirer/type': 3.0.10(@types/node@26.5.1)
+      '@inquirer/type': 3.0.10(@types/node@26.6.2)
       cli-width: 4.1.0
       mute-stream: 2.0.0
       signal-exit: 4.1.0
       wrap-ansi: 6.2.0
       yoctocolors-cjs: 2.1.3
     optionalDependencies:
-      '@types/node': 26.5.1
+      '@types/node': 26.6.2
 
-  '@inquirer/core@12.0.3(@types/node@26.5.1)':
+  '@inquirer/core@12.0.3(@types/node@26.6.2)':
     dependencies:
       '@inquirer/ansi': 2.0.8
       '@inquirer/figures': 2.0.9
-      '@inquirer/type': 4.1.1(@types/node@26.5.1)
+      '@inquirer/type': 4.1.1(@types/node@26.6.2)
       cli-width: 4.1.0
       fast-wrap-ansi: 0.2.2
       mute-stream: 3.0.0
       signal-exit: 4.1.0
     optionalDependencies:
-      '@types/node': 26.5.1
+      '@types/node': 26.6.2
 
   '@inquirer/core@3.1.2':
     dependencies:
@@ -6099,28 +6108,28 @@ snapshots:
       wrap-ansi: 6.2.0
       yoctocolors-cjs: 2.1.3
 
-  '@inquirer/editor@4.2.23(@types/node@26.5.1)':
+  '@inquirer/editor@4.2.23(@types/node@26.6.2)':
     dependencies:
-      '@inquirer/core': 10.3.2(@types/node@26.5.1)
-      '@inquirer/external-editor': 1.0.3(@types/node@26.5.1)
-      '@inquirer/type': 3.0.10(@types/node@26.5.1)
+      '@inquirer/core': 10.3.2(@types/node@26.6.2)
+      '@inquirer/external-editor': 1.0.3(@types/node@26.6.2)
+      '@inquirer/type': 3.0.10(@types/node@26.6.2)
     optionalDependencies:
-      '@types/node': 26.5.1
+      '@types/node': 26.6.2
 
-  '@inquirer/expand@4.0.23(@types/node@26.5.1)':
+  '@inquirer/expand@4.0.23(@types/node@26.6.2)':
     dependencies:
-      '@inquirer/core': 10.3.2(@types/node@26.5.1)
-      '@inquirer/type': 3.0.10(@types/node@26.5.1)
+      '@inquirer/core': 10.3.2(@types/node@26.6.2)
+      '@inquirer/type': 3.0.10(@types/node@26.6.2)
       yoctocolors-cjs: 2.1.3
     optionalDependencies:
-      '@types/node': 26.5.1
+      '@types/node': 26.6.2
 
-  '@inquirer/external-editor@1.0.3(@types/node@26.5.1)':
+  '@inquirer/external-editor@1.0.3(@types/node@26.6.2)':
     dependencies:
       chardet: 2.2.0
       iconv-lite: 0.7.3
     optionalDependencies:
-      '@types/node': 26.5.1
+      '@types/node': 26.6.2
 
   '@inquirer/figures@1.0.15': {}
 
@@ -6131,67 +6140,67 @@ snapshots:
       '@inquirer/core': 9.2.1
       '@inquirer/type': 1.5.5
 
-  '@inquirer/input@4.3.1(@types/node@26.5.1)':
+  '@inquirer/input@4.3.1(@types/node@26.6.2)':
     dependencies:
-      '@inquirer/core': 10.3.2(@types/node@26.5.1)
-      '@inquirer/type': 3.0.10(@types/node@26.5.1)
+      '@inquirer/core': 10.3.2(@types/node@26.6.2)
+      '@inquirer/type': 3.0.10(@types/node@26.6.2)
     optionalDependencies:
-      '@types/node': 26.5.1
+      '@types/node': 26.6.2
 
-  '@inquirer/number@3.0.23(@types/node@26.5.1)':
+  '@inquirer/number@3.0.23(@types/node@26.6.2)':
     dependencies:
-      '@inquirer/core': 10.3.2(@types/node@26.5.1)
-      '@inquirer/type': 3.0.10(@types/node@26.5.1)
+      '@inquirer/core': 10.3.2(@types/node@26.6.2)
+      '@inquirer/type': 3.0.10(@types/node@26.6.2)
     optionalDependencies:
-      '@types/node': 26.5.1
+      '@types/node': 26.6.2
 
-  '@inquirer/password@4.0.23(@types/node@26.5.1)':
+  '@inquirer/password@4.0.23(@types/node@26.6.2)':
     dependencies:
       '@inquirer/ansi': 1.0.2
-      '@inquirer/core': 10.3.2(@types/node@26.5.1)
-      '@inquirer/type': 3.0.10(@types/node@26.5.1)
+      '@inquirer/core': 10.3.2(@types/node@26.6.2)
+      '@inquirer/type': 3.0.10(@types/node@26.6.2)
     optionalDependencies:
-      '@types/node': 26.5.1
+      '@types/node': 26.6.2
 
-  '@inquirer/password@5.2.2(@types/node@26.5.1)':
+  '@inquirer/password@5.2.2(@types/node@26.6.2)':
     dependencies:
       '@inquirer/ansi': 2.0.8
-      '@inquirer/core': 12.0.3(@types/node@26.5.1)
-      '@inquirer/type': 4.1.1(@types/node@26.5.1)
+      '@inquirer/core': 12.0.3(@types/node@26.6.2)
+      '@inquirer/type': 4.1.1(@types/node@26.6.2)
     optionalDependencies:
-      '@types/node': 26.5.1
+      '@types/node': 26.6.2
 
-  '@inquirer/prompts@7.10.1(@types/node@26.5.1)':
+  '@inquirer/prompts@7.10.1(@types/node@26.6.2)':
     dependencies:
-      '@inquirer/checkbox': 4.3.2(@types/node@26.5.1)
-      '@inquirer/confirm': 5.1.21(@types/node@26.5.1)
-      '@inquirer/editor': 4.2.23(@types/node@26.5.1)
-      '@inquirer/expand': 4.0.23(@types/node@26.5.1)
-      '@inquirer/input': 4.3.1(@types/node@26.5.1)
-      '@inquirer/number': 3.0.23(@types/node@26.5.1)
-      '@inquirer/password': 4.0.23(@types/node@26.5.1)
-      '@inquirer/rawlist': 4.1.11(@types/node@26.5.1)
-      '@inquirer/search': 3.2.2(@types/node@26.5.1)
-      '@inquirer/select': 4.4.2(@types/node@26.5.1)
+      '@inquirer/checkbox': 4.3.2(@types/node@26.6.2)
+      '@inquirer/confirm': 5.1.21(@types/node@26.6.2)
+      '@inquirer/editor': 4.2.23(@types/node@26.6.2)
+      '@inquirer/expand': 4.0.23(@types/node@26.6.2)
+      '@inquirer/input': 4.3.1(@types/node@26.6.2)
+      '@inquirer/number': 3.0.23(@types/node@26.6.2)
+      '@inquirer/password': 4.0.23(@types/node@26.6.2)
+      '@inquirer/rawlist': 4.1.11(@types/node@26.6.2)
+      '@inquirer/search': 3.2.2(@types/node@26.6.2)
+      '@inquirer/select': 4.4.2(@types/node@26.6.2)
     optionalDependencies:
-      '@types/node': 26.5.1
+      '@types/node': 26.6.2
 
-  '@inquirer/rawlist@4.1.11(@types/node@26.5.1)':
+  '@inquirer/rawlist@4.1.11(@types/node@26.6.2)':
     dependencies:
-      '@inquirer/core': 10.3.2(@types/node@26.5.1)
-      '@inquirer/type': 3.0.10(@types/node@26.5.1)
+      '@inquirer/core': 10.3.2(@types/node@26.6.2)
+      '@inquirer/type': 3.0.10(@types/node@26.6.2)
       yoctocolors-cjs: 2.1.3
     optionalDependencies:
-      '@types/node': 26.5.1
+      '@types/node': 26.6.2
 
-  '@inquirer/search@3.2.2(@types/node@26.5.1)':
+  '@inquirer/search@3.2.2(@types/node@26.6.2)':
     dependencies:
-      '@inquirer/core': 10.3.2(@types/node@26.5.1)
+      '@inquirer/core': 10.3.2(@types/node@26.6.2)
       '@inquirer/figures': 1.0.15
-      '@inquirer/type': 3.0.10(@types/node@26.5.1)
+      '@inquirer/type': 3.0.10(@types/node@26.6.2)
       yoctocolors-cjs: 2.1.3
     optionalDependencies:
-      '@types/node': 26.5.1
+      '@types/node': 26.6.2
 
   '@inquirer/select@2.5.0':
     dependencies:
@@ -6201,15 +6210,15 @@ snapshots:
       ansi-escapes: 4.3.2
       yoctocolors-cjs: 2.1.3
 
-  '@inquirer/select@4.4.2(@types/node@26.5.1)':
+  '@inquirer/select@4.4.2(@types/node@26.6.2)':
     dependencies:
       '@inquirer/ansi': 1.0.2
-      '@inquirer/core': 10.3.2(@types/node@26.5.1)
+      '@inquirer/core': 10.3.2(@types/node@26.6.2)
       '@inquirer/figures': 1.0.15
-      '@inquirer/type': 3.0.10(@types/node@26.5.1)
+      '@inquirer/type': 3.0.10(@types/node@26.6.2)
       yoctocolors-cjs: 2.1.3
     optionalDependencies:
-      '@types/node': 26.5.1
+      '@types/node': 26.6.2
 
   '@inquirer/type@1.5.5':
     dependencies:
@@ -6219,13 +6228,13 @@ snapshots:
     dependencies:
       mute-stream: 1.0.0
 
-  '@inquirer/type@3.0.10(@types/node@26.5.1)':
+  '@inquirer/type@3.0.10(@types/node@26.6.2)':
     optionalDependencies:
-      '@types/node': 26.5.1
+      '@types/node': 26.6.2
 
-  '@inquirer/type@4.1.1(@types/node@26.5.1)':
+  '@inquirer/type@4.1.1(@types/node@26.6.2)':
     optionalDependencies:
-      '@types/node': 26.5.1
+      '@types/node': 26.6.2
 
   '@isaacs/cliui@9.0.0': {}
 
@@ -6367,6 +6376,27 @@ snapshots:
       wrap-ansi: 7.0.0
       wsl-utils: 0.4.0
 
+  '@oclif/core@5.0.0':
+    dependencies:
+      ansi-escapes: 4.3.2
+      ansis: 3.17.0
+      clean-stack: 3.0.1
+      cli-spinners: 2.9.2
+      debug: 4.4.3(supports-color@8.1.1)
+      ejs: 6.0.1
+      get-package-type: 0.1.0
+      indent-string: 4.0.0
+      lilconfig: 3.1.3
+      minimatch: 10.2.6
+      semver: 7.8.5
+      string-width: 4.2.3
+      supports-color: 8.1.1
+      tinyglobby: 0.2.17
+      widest-line: 3.1.0
+      wordwrap: 1.0.0
+      wrap-ansi: 7.0.0
+      wsl-utils: 0.4.0
+
   '@oclif/multi-stage-output@0.8.44':
     dependencies:
       '@oclif/core': 4.14.0
@@ -6405,9 +6435,9 @@ snapshots:
     dependencies:
       '@oclif/core': 4.14.0
 
-  '@oclif/plugin-not-found@3.3.0(@types/node@26.5.1)':
+  '@oclif/plugin-not-found@3.3.0(@types/node@26.6.2)':
     dependencies:
-      '@inquirer/prompts': 7.10.1(@types/node@26.5.1)
+      '@inquirer/prompts': 7.10.1(@types/node@26.6.2)
       '@oclif/core': 4.14.0
       ansis: 3.17.0
       fast-levenshtein: 3.0.0
@@ -6691,14 +6721,14 @@ snapshots:
       istanbul-reports: 3.2.0
       json-stream-stringify: 3.1.7
 
-  '@salesforce/cli@2.150.6(@types/node@26.5.1)(@types/react@18.3.31)(supports-color@8.1.1)':
+  '@salesforce/cli@2.150.6(@types/node@26.6.2)(@types/react@18.3.31)(supports-color@8.1.1)':
     dependencies:
       '@inquirer/select': 2.5.0
       '@oclif/core': 4.14.0
       '@oclif/plugin-autocomplete': 3.3.0(supports-color@8.1.1)
       '@oclif/plugin-commands': 4.2.0
       '@oclif/plugin-help': 6.3.0
-      '@oclif/plugin-not-found': 3.3.0(@types/node@26.5.1)
+      '@oclif/plugin-not-found': 3.3.0(@types/node@26.6.2)
       '@oclif/plugin-plugins': 5.5.1(supports-color@8.1.1)
       '@oclif/plugin-search': 1.3.0
       '@oclif/plugin-update': 4.8.0(supports-color@8.1.1)
@@ -6707,25 +6737,25 @@ snapshots:
       '@oclif/plugin-which': 3.3.0
       '@salesforce/core': 9.1.11
       '@salesforce/kit': 4.0.0
-      '@salesforce/plugin-agent': 2.0.5(@types/node@26.5.1)(@types/react@18.3.31)(supports-color@8.1.1)
-      '@salesforce/plugin-apex': 4.1.1(@types/node@26.5.1)
-      '@salesforce/plugin-api': 2.0.9(@types/node@26.5.1)(supports-color@8.1.1)
-      '@salesforce/plugin-auth': 5.0.6(@types/node@26.5.1)(supports-color@8.1.1)
-      '@salesforce/plugin-data': 5.1.7(@types/node@26.5.1)
-      '@salesforce/plugin-deploy-retrieve': 4.1.2(@types/node@26.5.1)(supports-color@8.1.1)
-      '@salesforce/plugin-info': 4.0.9(@types/node@26.5.1)(supports-color@8.1.1)
-      '@salesforce/plugin-limits': 4.0.4(@types/node@26.5.1)
-      '@salesforce/plugin-marketplace': 2.0.5(@types/node@26.5.1)(supports-color@8.1.1)
-      '@salesforce/plugin-org': 6.0.11(@types/node@26.5.1)(supports-color@8.1.1)
-      '@salesforce/plugin-packaging': 3.0.6(@types/node@26.5.1)(supports-color@8.1.1)
-      '@salesforce/plugin-schema': 4.0.6(@types/node@26.5.1)
-      '@salesforce/plugin-settings': 3.0.6(@types/node@26.5.1)
-      '@salesforce/plugin-sobject': 2.0.5(@types/node@26.5.1)
-      '@salesforce/plugin-telemetry': 4.0.6(@types/node@26.5.1)(supports-color@8.1.1)
-      '@salesforce/plugin-templates': 57.0.11(@types/node@26.5.1)
-      '@salesforce/plugin-trust': 4.0.10(@types/node@26.5.1)(supports-color@8.1.1)
-      '@salesforce/plugin-user': 5.0.2(@types/node@26.5.1)
-      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.5.1)
+      '@salesforce/plugin-agent': 2.0.5(@types/node@26.6.2)(@types/react@18.3.31)(supports-color@8.1.1)
+      '@salesforce/plugin-apex': 4.1.1(@types/node@26.6.2)
+      '@salesforce/plugin-api': 2.0.9(@types/node@26.6.2)(supports-color@8.1.1)
+      '@salesforce/plugin-auth': 5.0.6(@types/node@26.6.2)(supports-color@8.1.1)
+      '@salesforce/plugin-data': 5.1.7(@types/node@26.6.2)
+      '@salesforce/plugin-deploy-retrieve': 4.1.2(@types/node@26.6.2)(supports-color@8.1.1)
+      '@salesforce/plugin-info': 4.0.9(@types/node@26.6.2)(supports-color@8.1.1)
+      '@salesforce/plugin-limits': 4.0.4(@types/node@26.6.2)
+      '@salesforce/plugin-marketplace': 2.0.5(@types/node@26.6.2)(supports-color@8.1.1)
+      '@salesforce/plugin-org': 6.0.11(@types/node@26.6.2)(supports-color@8.1.1)
+      '@salesforce/plugin-packaging': 3.0.6(@types/node@26.6.2)(supports-color@8.1.1)
+      '@salesforce/plugin-schema': 4.0.6(@types/node@26.6.2)
+      '@salesforce/plugin-settings': 3.0.6(@types/node@26.6.2)
+      '@salesforce/plugin-sobject': 2.0.5(@types/node@26.6.2)
+      '@salesforce/plugin-telemetry': 4.0.6(@types/node@26.6.2)(supports-color@8.1.1)
+      '@salesforce/plugin-templates': 57.0.11(@types/node@26.6.2)
+      '@salesforce/plugin-trust': 4.0.10(@types/node@26.6.2)(supports-color@8.1.1)
+      '@salesforce/plugin-user': 5.0.2(@types/node@26.6.2)
+      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.6.2)
       ansis: 3.17.0
     transitivePeerDependencies:
       - '@types/node'
@@ -6786,16 +6816,16 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@salesforce/plugin-agent@2.0.5(@types/node@26.5.1)(@types/react@18.3.31)(supports-color@8.1.1)':
+  '@salesforce/plugin-agent@2.0.5(@types/node@26.6.2)(@types/react@18.3.31)(supports-color@8.1.1)':
     dependencies:
-      '@inquirer/core': 10.3.2(@types/node@26.5.1)
-      '@inquirer/prompts': 7.10.1(@types/node@26.5.1)
+      '@inquirer/core': 10.3.2(@types/node@26.6.2)
+      '@inquirer/prompts': 7.10.1(@types/node@26.6.2)
       '@oclif/core': 4.14.0
       '@oclif/multi-stage-output': 0.8.44
       '@salesforce/agents': 2.3.1(supports-color@8.1.1)
       '@salesforce/core': 9.1.11
       '@salesforce/kit': 4.0.0
-      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.5.1)
+      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.6.2)
       '@salesforce/source-deploy-retrieve': 13.3.2(supports-color@8.1.1)
       '@salesforce/types': 1.7.1
       ansis: 3.17.0
@@ -6814,12 +6844,12 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@salesforce/plugin-apex@4.1.1(@types/node@26.5.1)':
+  '@salesforce/plugin-apex@4.1.1(@types/node@26.6.2)':
     dependencies:
       '@salesforce/apex-node': 9.1.1
       '@salesforce/core': 9.1.11
       '@salesforce/kit': 4.0.0
-      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.5.1)
+      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.6.2)
       ansis: 3.17.0
     transitivePeerDependencies:
       - '@types/node'
@@ -6827,12 +6857,12 @@ snapshots:
       - react-devtools-core
       - utf-8-validate
 
-  '@salesforce/plugin-api@2.0.9(@types/node@26.5.1)(supports-color@8.1.1)':
+  '@salesforce/plugin-api@2.0.9(@types/node@26.6.2)(supports-color@8.1.1)':
     dependencies:
       '@oclif/core': 4.14.0
       '@salesforce/core': 9.1.11
       '@salesforce/kit': 4.0.0
-      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.5.1)
+      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.6.2)
       '@salesforce/ts-types': 3.2.0
       ansis: 3.17.0
       form-data: 4.0.6
@@ -6845,15 +6875,15 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@salesforce/plugin-auth@5.0.6(@types/node@26.5.1)(supports-color@8.1.1)':
+  '@salesforce/plugin-auth@5.0.6(@types/node@26.6.2)(supports-color@8.1.1)':
     dependencies:
       '@inquirer/checkbox': 2.5.0
       '@inquirer/select': 2.5.0
       '@oclif/core': 4.14.0
       '@salesforce/core': 9.1.11
       '@salesforce/kit': 4.0.0
-      '@salesforce/plugin-info': 4.0.9(@types/node@26.5.1)(supports-color@8.1.1)
-      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.5.1)
+      '@salesforce/plugin-info': 4.0.9(@types/node@26.6.2)(supports-color@8.1.1)
+      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.6.2)
       '@salesforce/ts-types': 3.2.0
       open: 11.0.4
       which: 4.0.0
@@ -6864,13 +6894,13 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@salesforce/plugin-data@5.1.7(@types/node@26.5.1)':
+  '@salesforce/plugin-data@5.1.7(@types/node@26.6.2)':
     dependencies:
       '@jsforce/jsforce-node': 3.10.25
       '@oclif/multi-stage-output': 0.8.44
       '@salesforce/core': 9.1.11
       '@salesforce/kit': 4.0.0
-      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.5.1)
+      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.6.2)
       '@salesforce/ts-types': 3.2.0
       ansis: 3.17.0
       change-case: 5.4.4
@@ -6886,16 +6916,16 @@ snapshots:
       - react-devtools-core
       - utf-8-validate
 
-  '@salesforce/plugin-deploy-retrieve@4.1.2(@types/node@26.5.1)(supports-color@8.1.1)':
+  '@salesforce/plugin-deploy-retrieve@4.1.2(@types/node@26.6.2)(supports-color@8.1.1)':
     dependencies:
-      '@inquirer/prompts': 7.10.1(@types/node@26.5.1)
+      '@inquirer/prompts': 7.10.1(@types/node@26.6.2)
       '@oclif/core': 4.14.0
       '@oclif/multi-stage-output': 0.8.44
       '@salesforce/apex-node': 9.1.1
       '@salesforce/core': 9.1.11
       '@salesforce/kit': 4.0.0
-      '@salesforce/plugin-info': 4.0.9(@types/node@26.5.1)(supports-color@8.1.1)
-      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.5.1)
+      '@salesforce/plugin-info': 4.0.9(@types/node@26.6.2)(supports-color@8.1.1)
+      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.6.2)
       '@salesforce/source-deploy-retrieve': 13.3.2(supports-color@8.1.1)
       '@salesforce/source-tracking': 8.1.3(supports-color@8.1.1)
       '@salesforce/ts-types': 3.2.0
@@ -6908,14 +6938,14 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@salesforce/plugin-info@4.0.9(@types/node@26.5.1)(supports-color@8.1.1)':
+  '@salesforce/plugin-info@4.0.9(@types/node@26.6.2)(supports-color@8.1.1)':
     dependencies:
       '@inquirer/input': 2.3.0
       '@jsforce/jsforce-node': 3.10.25
       '@oclif/core': 4.14.0
       '@salesforce/core': 9.1.11
       '@salesforce/kit': 4.0.0
-      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.5.1)
+      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.6.2)
       got: 13.0.0
       marked: 4.3.0
       marked-terminal: 4.2.0(marked@4.3.0)
@@ -6930,21 +6960,21 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@salesforce/plugin-limits@4.0.4(@types/node@26.5.1)':
+  '@salesforce/plugin-limits@4.0.4(@types/node@26.6.2)':
     dependencies:
       '@salesforce/core': 9.1.11
-      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.5.1)
+      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.6.2)
     transitivePeerDependencies:
       - '@types/node'
       - bufferutil
       - react-devtools-core
       - utf-8-validate
 
-  '@salesforce/plugin-marketplace@2.0.5(@types/node@26.5.1)(supports-color@8.1.1)':
+  '@salesforce/plugin-marketplace@2.0.5(@types/node@26.6.2)(supports-color@8.1.1)':
     dependencies:
       '@salesforce/core': 9.1.11
       '@salesforce/kit': 4.0.0
-      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.5.1)
+      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.6.2)
       got: 13.0.0
       proxy-agent: 6.5.0(supports-color@8.1.1)
     transitivePeerDependencies:
@@ -6954,13 +6984,13 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@salesforce/plugin-org@6.0.11(@types/node@26.5.1)(supports-color@8.1.1)':
+  '@salesforce/plugin-org@6.0.11(@types/node@26.6.2)(supports-color@8.1.1)':
     dependencies:
       '@oclif/core': 4.14.0
       '@oclif/multi-stage-output': 0.8.44
       '@salesforce/core': 9.1.11
       '@salesforce/kit': 4.0.0
-      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.5.1)
+      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.6.2)
       '@salesforce/source-deploy-retrieve': 13.3.2(supports-color@8.1.1)
       '@salesforce/ts-types': 3.2.0
       ansis: 3.17.0
@@ -6975,13 +7005,13 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@salesforce/plugin-packaging@3.0.6(@types/node@26.5.1)(supports-color@8.1.1)':
+  '@salesforce/plugin-packaging@3.0.6(@types/node@26.6.2)(supports-color@8.1.1)':
     dependencies:
       '@oclif/core': 4.14.0
       '@salesforce/core': 9.1.11
       '@salesforce/kit': 4.0.0
       '@salesforce/packaging': 5.0.12(supports-color@8.1.1)
-      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.5.1)
+      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.6.2)
       '@salesforce/ts-types': 3.2.0
       chalk: 5.6.2
     transitivePeerDependencies:
@@ -6991,22 +7021,22 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@salesforce/plugin-schema@4.0.6(@types/node@26.5.1)':
+  '@salesforce/plugin-schema@4.0.6(@types/node@26.6.2)':
     dependencies:
       '@oclif/core': 4.14.0
       '@salesforce/core': 9.1.11
-      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.5.1)
+      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.6.2)
     transitivePeerDependencies:
       - '@types/node'
       - bufferutil
       - react-devtools-core
       - utf-8-validate
 
-  '@salesforce/plugin-settings@3.0.6(@types/node@26.5.1)':
+  '@salesforce/plugin-settings@3.0.6(@types/node@26.6.2)':
     dependencies:
       '@oclif/core': 4.14.0
       '@salesforce/core': 9.1.11
-      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.5.1)
+      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.6.2)
       fast-levenshtein: 3.0.0
     transitivePeerDependencies:
       - '@types/node'
@@ -7014,7 +7044,7 @@ snapshots:
       - react-devtools-core
       - utf-8-validate
 
-  '@salesforce/plugin-sobject@2.0.5(@types/node@26.5.1)':
+  '@salesforce/plugin-sobject@2.0.5(@types/node@26.6.2)':
     dependencies:
       '@inquirer/confirm': 3.2.0
       '@inquirer/input': 2.3.0
@@ -7022,7 +7052,7 @@ snapshots:
       '@oclif/core': 4.14.0
       '@salesforce/core': 9.1.11
       '@salesforce/kit': 4.0.0
-      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.5.1)
+      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.6.2)
       fast-glob: 3.3.3
       fast-xml-parser: 5.11.1
       js2xmlparser: 4.0.2
@@ -7032,12 +7062,12 @@ snapshots:
       - react-devtools-core
       - utf-8-validate
 
-  '@salesforce/plugin-telemetry@4.0.6(@types/node@26.5.1)(supports-color@8.1.1)':
+  '@salesforce/plugin-telemetry@4.0.6(@types/node@26.6.2)(supports-color@8.1.1)':
     dependencies:
       '@oclif/core': 4.14.0
       '@salesforce/core': 9.1.11
       '@salesforce/kit': 4.0.0
-      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.5.1)
+      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.6.2)
       '@salesforce/telemetry': 7.0.6(supports-color@8.1.1)
       '@salesforce/ts-types': 3.2.0
       debug: 4.4.3(supports-color@8.1.1)
@@ -7049,10 +7079,10 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@salesforce/plugin-templates@57.0.11(@types/node@26.5.1)':
+  '@salesforce/plugin-templates@57.0.11(@types/node@26.6.2)':
     dependencies:
       '@salesforce/core': 9.1.11
-      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.5.1)
+      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.6.2)
       '@salesforce/templates': 66.16.0
     transitivePeerDependencies:
       - '@types/node'
@@ -7060,13 +7090,13 @@ snapshots:
       - react-devtools-core
       - utf-8-validate
 
-  '@salesforce/plugin-trust@4.0.10(@types/node@26.5.1)(supports-color@8.1.1)':
+  '@salesforce/plugin-trust@4.0.10(@types/node@26.6.2)(supports-color@8.1.1)':
     dependencies:
       '@oclif/core': 4.14.0
       '@salesforce/core': 9.1.11
       '@salesforce/kit': 4.0.0
-      '@salesforce/plugin-info': 4.0.9(@types/node@26.5.1)(supports-color@8.1.1)
-      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.5.1)
+      '@salesforce/plugin-info': 4.0.9(@types/node@26.6.2)(supports-color@8.1.1)
+      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.6.2)
       cross-spawn: 7.0.6
       got: 13.0.0
       npm: 11.19.1
@@ -7081,11 +7111,11 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@salesforce/plugin-user@5.0.2(@types/node@26.5.1)':
+  '@salesforce/plugin-user@5.0.2(@types/node@26.6.2)':
     dependencies:
       '@salesforce/core': 9.1.11
       '@salesforce/kit': 4.0.0
-      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.5.1)
+      '@salesforce/sf-plugins-core': 13.0.3(@types/node@26.6.2)
       '@salesforce/ts-types': 3.2.0
     transitivePeerDependencies:
       - '@types/node'
@@ -7095,10 +7125,10 @@ snapshots:
 
   '@salesforce/schemas@1.10.3': {}
 
-  '@salesforce/sf-plugins-core@13.0.3(@types/node@26.5.1)':
+  '@salesforce/sf-plugins-core@13.0.3(@types/node@26.6.2)':
     dependencies:
-      '@inquirer/confirm': 6.3.2(@types/node@26.5.1)
-      '@inquirer/password': 5.2.2(@types/node@26.5.1)
+      '@inquirer/confirm': 6.3.2(@types/node@26.6.2)
+      '@inquirer/password': 5.2.2(@types/node@26.6.2)
       '@oclif/core': 4.14.0
       '@oclif/table': 0.5.9
       '@salesforce/core': 9.1.11
@@ -7534,22 +7564,22 @@ snapshots:
 
   '@tootallnate/quickjs-emscripten@0.23.0': {}
 
-  '@turbo/darwin-64@2.10.13':
+  '@turbo/darwin-64@2.11.2':
     optional: true
 
-  '@turbo/darwin-arm64@2.10.13':
+  '@turbo/darwin-arm64@2.11.2':
     optional: true
 
-  '@turbo/linux-64@2.10.13':
+  '@turbo/linux-64@2.11.2':
     optional: true
 
-  '@turbo/linux-arm64@2.10.13':
+  '@turbo/linux-arm64@2.11.2':
     optional: true
 
-  '@turbo/windows-64@2.10.13':
+  '@turbo/windows-64@2.11.2':
     optional: true
 
-  '@turbo/windows-arm64@2.10.13':
+  '@turbo/windows-arm64@2.11.2':
     optional: true
 
   '@types/cacheable-request@6.0.3':
@@ -7728,7 +7758,7 @@ snapshots:
       '@rolldown/pluginutils': 1.0.1
       vite: 8.3.0(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
 
-  '@vitest/coverage-v8@5.0.0(vitest@5.0.0)':
+  '@vitest/coverage-v8@5.0.1(vitest@5.0.1)':
     dependencies:
       '@bcoe/v8-coverage': 1.0.2
       '@vitest/istanbul-lib-coverage': 1.0.1
@@ -7738,7 +7768,7 @@ snapshots:
       obug: 2.2.1
       std-env: 4.2.0
       tinyrainbow: 3.1.1
-      vitest: 5.0.0(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(@vitest/coverage-v8@5.0.0)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+      vitest: 5.0.1(@opentelemetry/api@1.9.1)(@types/node@26.6.2)(@vitest/coverage-v8@5.0.1)(vite@8.3.0(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
 
   '@vitest/istanbul-lib-coverage@1.0.1': {}
 
@@ -7746,16 +7776,16 @@ snapshots:
     dependencies:
       '@vitest/istanbul-lib-coverage': 1.0.1
 
-  '@vitest/mocker@5.0.0(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))':
+  '@vitest/mocker@5.0.1(vite@8.3.0(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
-      '@vitest/spy': 5.0.0
+      '@vitest/spy': 5.0.1
       estree-walker: 3.0.3
       magic-string: 1.4.1
     optionalDependencies:
-      vite: 8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
+      vite: 8.3.0(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
 
-  '@vitest/spy@5.0.0': {}
+  '@vitest/spy@5.0.1': {}
 
   '@yuku-analyzer/binding-android-arm64@0.10.2':
     optional: true
@@ -8210,6 +8240,8 @@ snapshots:
   clsx@2.1.1: {}
 
   cn@0.3.0: {}
+
+  cn@0.3.2: {}
 
   code-excerpt@4.0.0:
     dependencies:
@@ -9147,9 +9179,9 @@ snapshots:
       figures: 5.0.0
       picocolors: 1.1.1
 
-  inquirer@8.2.7(@types/node@26.5.1):
+  inquirer@8.2.7(@types/node@26.6.2):
     dependencies:
-      '@inquirer/external-editor': 1.0.3(@types/node@26.5.1)
+      '@inquirer/external-editor': 1.0.3(@types/node@26.6.2)
       ansi-escapes: 4.3.2
       chalk: 4.1.2
       cli-cursor: 3.1.0
@@ -9305,7 +9337,7 @@ snapshots:
 
   jsesc@3.1.0: {}
 
-  jsforce@3.10.25(@types/node@26.5.1):
+  jsforce@3.10.25(@types/node@26.6.2):
     dependencies:
       '@babel/runtime': 7.29.7
       '@babel/runtime-corejs3': 7.29.7
@@ -9317,7 +9349,7 @@ snapshots:
       csv-stringify: 6.8.3
       faye: 1.4.2
       form-data: 4.0.6
-      inquirer: 8.2.7(@types/node@26.5.1)
+      inquirer: 8.2.7(@types/node@26.6.2)
       multistream: 3.1.0
       open: 7.4.2
       undici: 8.10.2
@@ -11066,14 +11098,14 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  turbo@2.10.13:
+  turbo@2.11.2:
     optionalDependencies:
-      '@turbo/darwin-64': 2.10.13
-      '@turbo/darwin-arm64': 2.10.13
-      '@turbo/linux-64': 2.10.13
-      '@turbo/linux-arm64': 2.10.13
-      '@turbo/windows-64': 2.10.13
-      '@turbo/windows-arm64': 2.10.13
+      '@turbo/darwin-64': 2.11.2
+      '@turbo/darwin-arm64': 2.11.2
+      '@turbo/linux-64': 2.11.2
+      '@turbo/linux-arm64': 2.11.2
+      '@turbo/windows-64': 2.11.2
+      '@turbo/windows-arm64': 2.11.2
 
   type-fest@0.21.3: {}
 
@@ -11212,7 +11244,7 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  valibot@1.4.2(typescript@7.0.2):
+  valibot@1.5.0(typescript@7.0.2):
     optionalDependencies:
       typescript: 7.0.2
 
@@ -11235,20 +11267,6 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1):
-    dependencies:
-      lightningcss: 1.33.0
-      picomatch: 4.0.7
-      postcss: 8.5.28
-      rolldown: 1.2.8
-      tinyglobby: 0.2.17
-    optionalDependencies:
-      '@types/node': 26.5.1
-      esbuild: 0.28.2
-      fsevents: 2.3.3
-      jiti: 2.7.0
-      yaml: 2.9.1
-
   vite@8.3.0(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1):
     dependencies:
       lightningcss: 1.33.0
@@ -11267,10 +11285,10 @@ snapshots:
     optionalDependencies:
       vite: 8.3.0(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
 
-  vitest@5.0.0(@opentelemetry/api@1.9.1)(@types/node@26.5.1)(@vitest/coverage-v8@5.0.0)(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)):
+  vitest@5.0.1(@opentelemetry/api@1.9.1)(@types/node@26.6.2)(@vitest/coverage-v8@5.0.1)(vite@8.3.0(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)):
     dependencies:
       '@types/chai': 5.2.3
-      '@vitest/mocker': 5.0.0(vite@8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+      '@vitest/mocker': 5.0.1(vite@8.3.0(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
       chai: 6.2.2
       es-module-lexer: 2.3.2
       expect-type: 1.4.0
@@ -11281,12 +11299,12 @@ snapshots:
       tinybench: 6.1.4
       tinyexec: 1.3.0
       tinyglobby: 0.2.17
-      vite: 8.3.0(@types/node@26.5.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
+      vite: 8.3.0(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
-      '@types/node': 26.5.1
-      '@vitest/coverage-v8': 5.0.0(vitest@5.0.0)
+      '@types/node': 26.6.2
+      '@vitest/coverage-v8': 5.0.1(vitest@5.0.1)
     transitivePeerDependencies:
       - msw
 
