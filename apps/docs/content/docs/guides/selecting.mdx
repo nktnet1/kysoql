@@ -1,0 +1,104 @@
+---
+title: "Selecting fields"
+description: "Select explicit fields, use FIELDS selectors, and understand the returned shape."
+---
+
+## Explicit selections
+
+Start with an object API name and select the fields you need:
+
+```ts
+import { db } from "./db";
+
+const query = db
+  .selectFrom("Account")
+  .select("Id")
+  .select(["Name", "AnnualRevenue"])
+  .limit(25);
+
+const accounts = await query.execute();
+for (const account of accounts) {
+  console.log(account.Id, account.Name, account.AnnualRevenue);
+}
+```
+
+Selections accumulate. The object and fields must exist in your generated
+schema. Use exact API names such as `AnnualRevenue`, not display labels. You
+must select something before compiling a valid query. There is no `SELECT *`
+method and no arbitrary string-expression selection.
+
+Prefer explicit fields for predictable payload size, data minimisation, and
+resilience to newly added org fields.
+
+## FIELDS selectors
+
+`selectFields("standard" | "custom" | "all")` expands the inferred result using
+generated standard/custom metadata and emits the matching SOQL function:
+
+```ts
+import { db } from "./db";
+
+const query = db.selectFrom("Account").selectFields("all").limit(100);
+console.log(query.compile().soql);
+// SELECT FIELDS(ALL) FROM Account LIMIT 100
+```
+
+`FIELDS(CUSTOM)` and `FIELDS(ALL)` are unbounded selectors. The compiler requires
+a literal `LIMIT` of at most 200 or a direct `Id` filter provably bounded to no
+more than 200 IDs. A larger limit is not made safe by promising to discard
+records in application code.
+
+```ts
+import { db } from "./db";
+
+const ids = ["001000000000001AAA", "001000000000002AAA"];
+const query = db
+  .selectFrom("Account")
+  .selectFields("all")
+  .where("Id", "in", ids);
+```
+
+The IDs above are placeholders; use actual IDs when executing. `Id IN` lists
+and supported combinations of direct `Id = ...` tests can establish the bound.
+Indirect relationship filters or an Apex-bound limit do not establish it.
+
+Apex supports only `selectFields("standard")`; switching a query containing
+`"custom"` or `"all"` to Apex is rejected even with a small limit. Child
+subqueries also support selectors and are validated in their own query context.
+
+Do not overlap selectors with explicitly selected direct fields. For example,
+`select("Id").selectFields("all")` duplicates `Id`. If an object has no generated
+custom fields, `FIELDS(CUSTOM)` cannot be the entire selection; an independent
+explicit field must come first if you still need that selector.
+
+## Returned values
+
+| Selection | Inferred shape |
+| --- | --- |
+| Direct field | Value from Describe, with `null` when nullable. |
+| Date, datetime, or time field | String, not JavaScript `Date`. |
+| Location field | `{ latitude: number; longitude: number }`, with applicable nullability. |
+| Parent path | Nested related object, with applicable relationship nullability. |
+| Child subquery | `{ totalSize, done, records, nextRecordsUrl? }`. |
+| Function alias | A property named by `.as(...)`. |
+
+Salesforce may include transport properties such as `attributes`; ordinary
+selections do not infer every possible response property. `TYPEOF` deliberately
+models `attributes.type` for discriminated unions.
+
+## Replace a selection
+
+```ts
+import { db } from "./db";
+
+const base = db.selectFrom("Account").select(["Id", "Name"]);
+const idsOnly = base.clearSelect().select("Id");
+```
+
+`clearSelect()` resets inferred output before new selections are added. It does
+not remove filters or sorting. It is not available on every specialised builder;
+finish ordinary selections before entering Apex.
+
+Continue with [filtering](/docs/guides/filtering),
+[parent/child selections](/docs/guides/relationships), or
+[function selections](/docs/guides/select-functions).

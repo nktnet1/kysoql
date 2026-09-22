@@ -1,0 +1,144 @@
+---
+title: "Schema and result types"
+description: "Understand generated metadata and create a small offline schema safely."
+---
+
+## Prefer generated schemas
+
+The [generator](/docs/getting-started/schema-generation) captures org-specific
+capabilities. A handwritten schema is useful for a tutorial or unit test, but
+inventing capabilities can make the type system accept a query Salesforce will
+reject. Keep real application schemas generated from Describe.
+
+## Minimal compile-only example
+
+This complete example needs only `@kysoql/core`; it does not authenticate or
+query Salesforce:
+
+```ts
+import {
+  Kysoql,
+  type SalesforceField,
+  type SalesforceObject,
+} from "@kysoql/core";
+
+interface DemoSchema {
+  readonly Account: SalesforceObject<{
+    readonly Id: SalesforceField<string, {
+      readonly salesforceType: "id";
+      readonly nullable: false;
+      readonly filterable: true;
+      readonly sortable: true;
+      readonly groupable: true;
+      readonly aggregatable: true;
+    }>;
+    readonly Name: SalesforceField<string, {
+      readonly salesforceType: "string";
+      readonly nullable: false;
+      readonly filterable: true;
+      readonly sortable: true;
+      readonly groupable: true;
+    }>;
+  }>;
+}
+
+const db = new Kysoql<DemoSchema>();
+const query = db.selectFrom("Account").select(["Id", "Name"]).limit(10);
+console.log(query.compile().soql);
+```
+
+This metadata is illustrative, not a replacement for your org's actual
+Describe result. The named metadata-object form is preferred over the older
+positional `SalesforceField` generic parameters retained for compatibility.
+
+## Field metadata
+
+`SalesforceField<Value, Metadata>` takes a value type and these capabilities:
+
+| Property | Required | Meaning |
+| --- | --- | --- |
+| `salesforceType` | Yes | Salesforce type string such as `currency`, `datetime`, or `reference`. |
+| `nullable` | Yes | Whether returned/filter values can include null. |
+| `filterable` | Yes | Whether typed WHERE references may use the field. |
+| `sortable` | Yes | Whether typed field ordering may use it. |
+| `groupable` | Yes | Whether typed grouping may use it. |
+| `aggregatable` | No, defaults false | Whether field aggregate helpers may use it. |
+| `custom` | No, defaults false | Standard/custom grouping for `FIELDS`. |
+| `polymorphic` | No, defaults false | Enables supported polymorphic paths. |
+| `referenceTo` | No, defaults never | Referenced object-name union. |
+| `relationshipName` | No, defaults never | Parent relationship API name. |
+| `activePicklistValue` | No, defaults never | Active stored-value union for supported multipicklist filters. |
+
+The generated value type maps booleans to `boolean`; currency/double/int/percent
+to `number`; supported text, ID, reference, and temporal types to `string`;
+location to `SalesforceGeolocation`; and unknown Salesforce types to `unknown`.
+The metadata's nullable flag adds null separately.
+
+## Object metadata
+
+`SalesforceObject` has generic parameters in this order:
+
+```text
+SalesforceObject<
+  Fields,
+  Parents,
+  Children,
+  SupportedScope,
+  DataCategoryGroups,
+  MruEnabled,
+  SetOptionsCapability
+>
+```
+
+Only `Fields` is required. Parent and child maps default to empty maps, scopes
+to no known scope, categories to an empty map, MRU to an unspecified boolean,
+and set-options capability to `"none"`.
+
+`SalesforceParentRelationship<ObjectName, FieldName, Nullable>` records the
+referenced object(s), lookup field, and lookup nullability.
+`SalesforceChildRelationship<ObjectName, FieldName>` identifies a child object
+and its reference field. Map keys are relationship names used in queries.
+
+Data 360 capabilities are `"none"`, `"data360-dlo"`, or `"data360-dmo"`.
+Use the generated values rather than manually enabling features on CRM objects.
+
+## Utility types
+
+| Type | Use |
+| --- | --- |
+| `SalesforceFieldValue<Field>` | Returned field value with metadata nullability. |
+| `SalesforceFieldFilterValue<Field>` | Filter value; temporal types become literal-helper types. |
+| `SalesforceRow<Object>` | All direct fields as a row; not the selected output of a particular query. |
+| `SalesforceQueryResult<Row>` | Child/query envelope: `totalSize`, `done`, `records`, `nextRecordsUrl?`. |
+| `SalesforceRecordAttributes<ObjectName>` | `{ type, url }` record attributes. |
+| `SalesforceGeolocation` | `{ latitude, longitude }`. |
+| `SalesforceObjectSupportedScope<Object>` | Generated scope union. |
+| `SalesforceObjectMruEnabled<Object>` | Object MRU capability. |
+| `SalesforceObjectDataCategoryGroup<Object>` | Category-group names. |
+| `SalesforceObjectDataCategory<Object, Group>` | Category names for a group. |
+| `SalesforceObjectSetOptionsCapability<Object>` | Data 360 option capability. |
+| `CompiledQuery<Output>` | Compiled text/AST with a type-only output carrier. |
+
+The exported `SalesforceSchema` from core is a broad schema description. Use your
+own generated interface as the `Kysoql` parameter to retain precise object and
+field checking.
+
+## Infer application result types
+
+Prefer inference from a query or a typed application function rather than
+writing a second interface by hand:
+
+```ts
+import { db } from "./db";
+
+export function loadAccountNames() {
+  return db.selectFrom("Account").select(["Id", "Name"]).limit(100).execute();
+}
+
+export type AccountNames = Awaited<ReturnType<typeof loadAccountNames>>;
+export type AccountName = AccountNames[number];
+```
+
+`readonly` is a TypeScript contract, not proof that every runtime response object
+was deeply frozen. Runtime validation of external row contents remains a
+separate concern.

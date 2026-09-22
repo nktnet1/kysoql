@@ -1,0 +1,87 @@
+---
+title: "Polymorphic relationships"
+description: "Filter relationship types and select type-specific fields with TYPEOF."
+---
+
+A polymorphic reference can point to more than one kind of Salesforce object.
+The generated field must be explicitly marked polymorphic; a multi-target
+reference alone does not enable these helpers.
+
+## Filter with the virtual Type qualifier
+
+```ts
+import { db } from "./db";
+
+const query = db
+  .selectFrom("Event")
+  .select(["Id", "What.Type"])
+  .where("What.Type", "in", ["Account", "Opportunity"])
+  .where("What.Type", "like", "Acc%");
+```
+
+Equality and set values are constrained to generated reference targets.
+`like` accepts a string pattern. `.Type` can be selected or filtered, but is not
+synthesized as sortable, groupable, or aggregatable. Generating all referenced
+target objects is unnecessary when this virtual qualifier is all you need.
+
+## Select different fields by runtime type
+
+Generate `Event`, `Account`, and `Opportunity` for the following example:
+
+```ts
+import { db } from "./db";
+
+const events = await db
+  .selectFrom("Event")
+  .select(["Id", "Subject"])
+  .selectTypeOf("What", (typeOf) =>
+    typeOf
+      .when("Account", ["Phone", "NumberOfEmployees"])
+      .when("Opportunity", ["Amount", "CloseDate"]),
+  )
+  .limit(25)
+  .execute();
+
+type RelatedRecord = NonNullable<(typeof events)[number]["What"]>;
+
+function isObjectType<T extends RelatedRecord["attributes"]["type"]>(
+  record: RelatedRecord | null,
+  objectType: T,
+): record is Extract<RelatedRecord, { readonly attributes: { readonly type: T } }> {
+  return record?.attributes.type === objectType;
+}
+
+for (const event of events) {
+  const related = event.What;
+  if (isObjectType(related, "Account")) {
+    console.log(related.Phone, related.NumberOfEmployees);
+  } else if (isObjectType(related, "Opportunity")) {
+    console.log(related.Amount, related.CloseDate);
+  }
+}
+```
+
+Use the relationship name `What`, not `WhatId`. Each `when` field list is
+checked against its target object. Results are discriminated by Salesforce's
+returned `attributes.type`. Nullable lookups remain nullable, and unmatched
+runtime targets add `null` when there is no `else` branch. The type guard narrows
+the containing record from its nested discriminator; checking
+`record.attributes.type` alone does not reliably narrow the whole union. This
+guard assumes the declared response shape, not arbitrary unvalidated JSON.
+
+## ELSE and selection constraints
+
+A final `.else(["Name"])` is available when that field is valid across every
+remaining generated target. Kysoql's typing is intentionally conservative:
+it does not model Salesforce's complete `Name` pseudo-object surface. Do not
+force a failing `else` branch with a type assertion; generate the missing target
+or select explicit supported branches instead.
+
+`TYPEOF` cannot be mixed with SELECT-function expressions or aggregate/grouping
+queries. Do not select an ordinary field path through the same polymorphic
+relationship alongside its `TYPEOF` selection. A filter on `What.Type` remains
+valid, allowing a query to restrict runtime types without duplicating selections.
+
+Nested polymorphic paths such as `Event__r.What` retain parent nullability, but
+require the corresponding generated relationship metadata. Relationship counts
+still apply; see [relationships](/docs/guides/relationships).

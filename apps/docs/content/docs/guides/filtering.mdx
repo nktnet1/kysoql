@@ -1,0 +1,127 @@
+---
+title: "Filtering records"
+description: "Use typed comparisons, grouped logic, lists, and multipicklist filters."
+---
+
+## Basic conditions
+
+Repeated `where` calls are combined with `AND`. Values are passed separately
+from field names, never interpolated into a SOQL string:
+
+```ts
+import { db } from "./db";
+
+const query = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where("Name", "like", "Acme%")
+  .where("AnnualRevenue", ">=", 100_000);
+```
+
+## Operators and values
+
+| Operator | Accepted values and restrictions |
+| --- | --- |
+| `=`, `!=` | Field-appropriate values; `null` only when the generated field permits it. |
+| `<`, `<=`, `>`, `>=` | Ordered field types and non-null values. |
+| `like` | Supported string-like fields and a string pattern. |
+| `in`, `not in` | Non-empty homogeneous, field-appropriate lists; compatible ID/reference subqueries are also supported. |
+| `includes`, `excludes` | Non-empty lists of generated active values for multipicklist fields. |
+
+Operator names are lowercase in TypeScript; emitted SOQL uses uppercase
+keywords. `is`, `is not`, `between`, `ilike`, `not like`, and SQL `exists` are
+not part of this API. To negate a supported predicate, use `eb.not(...)`.
+Location fields require [distance expressions](/docs/guides/geolocation).
+
+Null uses `where("Field", "=", null)` or `"!="`, not a string containing
+`"null"`. Date/time fields use [literal helpers](/docs/guides/literals), not plain
+strings or JavaScript `Date` objects.
+
+## Group AND, OR, and NOT
+
+The expression builder is callable as `eb(field, operator, value)` and exposes
+`and`, `or`, and `not`:
+
+```ts
+import { db } from "./db";
+
+const query = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where((eb) =>
+    eb.and([
+      eb.or([
+        eb("Name", "like", "Acme%"),
+        eb("Name", "like", "Example%"),
+      ]),
+      eb.not(eb("Name", "like", "%Test%")),
+    ]),
+  );
+```
+
+Use non-empty groups; do not depend on empty `and([])` or `or([])` having an
+SQL-style identity. Build optional conditions with
+[`$if`](/docs/guides/composition) instead.
+
+## IN and NOT IN lists
+
+```ts
+import { db } from "./db";
+
+const ids: readonly string[] = ["001000000000001AAA"];
+if (ids.length === 0) {
+  throw new Error("Choose at least one account ID");
+}
+
+const query = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where("Id", "in", ids);
+```
+
+An empty list is rejected. For application helpers, decide explicitly whether
+an empty input means "no matches", "invalid request", or "omit this optional
+filter". Omitting an authorisation filter can unintentionally widen a query.
+
+For related-record existence checks, use a
+[semi-join or anti-join](/docs/guides/relationships#semi-joins-and-anti-joins)
+instead of first fetching all IDs into JavaScript.
+
+## Multipicklists
+
+This example requires a custom multipicklist `Account.Interests__c` whose
+Describe metadata includes active values `Email` and `Events`:
+
+```ts
+import { db } from "./db";
+
+const query = db
+  .selectFrom("Account")
+  .select(["Id", "Interests__c"])
+  .where("Interests__c", "includes", ["Email", "Events"]);
+```
+
+The normal field-left overload accepts active values from the generated schema,
+not arbitrary raw SOQL or right-hand Apex binds. It does not provide a general
+escape hatch for hand-built semicolon expressions. Apex has a separate
+[bind-left INCLUDES form](/docs/apex/bindings#bind-left-includes).
+
+## LIKE patterns and input safety
+
+The compiler escapes string literals, including quotes and backslashes. It does
+not interpret your intent for wildcard characters: `%` and `_` remain LIKE
+pattern characters. A pattern built from user input can therefore match more
+than a literal substring. Define and test your application's wildcard policy;
+do not describe compiler escaping as a literal-search or authorisation feature.
+
+Use allowlisted field names and operators for user-controlled sorting/filtering.
+Do not cast arbitrary request strings to schema keys. See
+[security](/docs/reference/security).
+
+## Filters over functions
+
+Expression callbacks also expose date functions, `toLabel`, and `distance` via
+`eb.fn`. Supported beta arithmetic lives under `eb.beta`, not `eb.fn`.
+See [date functions](/docs/guides/date-functions),
+[translated labels](/docs/guides/select-functions#translated-labels), and
+[experimental features](/docs/advanced/experimental).

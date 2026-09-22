@@ -1,0 +1,101 @@
+---
+title: "Knowledge and feed queries"
+description: "Meet required filters and use object-specific category, tracking, and feed clauses."
+---
+
+Generate the relevant Knowledge/feed objects and their metadata first. These
+examples are not guaranteed to exist in every org or to be visible to every
+integration identity.
+
+## Knowledge requires a root filter
+
+`KnowledgeArticleVersion` and article types ending in `__kav` require a root
+`WHERE` predicate on `PublishStatus` or `Id`. Compilation checks this rather
+than waiting for an avoidable Salesforce error.
+
+```ts
+import { db } from "./db";
+
+const query = db
+  .selectFrom("KnowledgeArticleVersion")
+  .select(["Id", "Title"])
+  .where("PublishStatus", "=", "Online")
+  .limit(50);
+```
+
+The compiler's supported-shape validation is not a substitute for every
+Salesforce Knowledge query restriction. Apex Knowledge article queries reject
+bind expressions, including binds in otherwise supported positions.
+
+## WITH DATA CATEGORY
+
+This example requires the shown category groups and categories in generated
+metadata; replace them with categories visible in your org:
+
+```ts
+import { db } from "./db";
+
+const query = db
+  .selectFrom("KnowledgeArticleVersion")
+  .select(["Id", "Title"])
+  .where("PublishStatus", "=", "Online")
+  .withDataCategory("Geography__c", "at", ["usa__c", "france__c"])
+  .withDataCategory("Product__c", "below", "mobile_phones__c");
+```
+
+`withDataCategory(group, selector, categories)` accepts `"at"`, `"above"`,
+`"below"`, and `"above_or_below"`. The category argument is one generated
+category name or a non-empty list. A query permits at most three conditions,
+with no repeated category group.
+
+These conditions accumulate within one `WITH DATA CATEGORY` clause. They do
+not combine with another filtering `WITH` form. The child-query builder does
+not expose this method. See [schema generation](/docs/getting-started/schema-generation#knowledge-categories)
+for visibility and REST discovery limitations.
+
+## Knowledge tracking and view statistics
+
+```ts
+import { db } from "./db";
+
+const query = db
+  .selectFrom("FAQ__kav")
+  .select(["Id", "Title"])
+  .where("PublishStatus", "=", "Online")
+  .updateTracking()
+  .updateViewstat();
+// ... UPDATE TRACKING, VIEWSTAT
+```
+
+`updateTracking()` and `updateViewstat()` are available only on
+`KnowledgeArticleVersion` and `__kav` article objects, not `Question` or ordinary
+objects. The modes accumulate and emit canonical `UPDATE TRACKING, VIEWSTAT`
+when both are selected. They can follow an eligible `FOR VIEW`/`FOR REFERENCE`
+clause, but do not silently enable MRU tracking.
+
+These clauses affect tracking/statistics rather than changing selected fields.
+Consider their side effects before retrying a request automatically.
+
+## UserProfileFeed
+
+```ts
+import { db } from "./db";
+
+const query = db
+  .selectFrom("UserProfileFeed")
+  .select(["Id", "CreatedDate"])
+  .withUserId("005000000000001AAA")
+  .orderBy("CreatedDate", "desc")
+  .limit(20);
+```
+
+Replace the placeholder with a real user ID. `withUserId` is available only for
+`UserProfileFeed`, requires a non-empty string, and replaces the previous value.
+The compiler rejects a UserProfileFeed query without the clause. It cannot
+coexist with another filtering `WITH` form.
+
+Both `NewsFeed` and `UserProfileFeed` reject relationship-path sorting; order
+only by fields on the root object. Permission-dependent row caps are left to
+the Salesforce execution context, not treated as unconditional compiler limits.
+Other required-filter objects are listed in
+[limitations](/docs/reference/limitations#object-specific-query-shapes).

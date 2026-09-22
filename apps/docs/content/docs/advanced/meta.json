@@ -1,0 +1,9 @@
+{
+  "title": "Salesforce-specific features",
+  "pages": [
+    "scopes-and-visibility",
+    "knowledge-and-feeds",
+    "data-360",
+    "experimental"
+  ]
+}

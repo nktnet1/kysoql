@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -96,8 +96,10 @@ describe("kysoql oclif CLI", () => {
   it("declares deterministic defaults and repeatable object flags", () => {
     expect(Generate.flags.object.multiple).toBe(true);
     expect(Generate.flags.object.multipleNonGreedy).toBe(true);
-    expect(Generate.flags.output.default).toBe("salesforce.generated.ts");
-    expect(Generate.flags["schema-name"].default).toBe("SalesforceSchema");
+    // Defaults are applied after config loading, not by oclif before merging.
+    expect(Generate.flags.output.default).toBeUndefined();
+    expect(Generate.flags["schema-name"].default).toBeUndefined();
+    expect(Generate.flags.config.exclusive).toContain("no-config");
   });
 
   it("requires an access token before constructing the connection", async () => {
@@ -140,7 +142,7 @@ describe("kysoql oclif CLI", () => {
     expect(process.exitCode).toBe(1);
   });
 
-  it.each(["--object", "--output", "--schema-name"])(
+  it.each(["--object", "--output", "--schema-name", "--config"])(
     "lets oclif reject a missing value for %s",
     async (flag) => {
       await expect(runGenerate([flag])).rejects.toThrow(
@@ -270,6 +272,85 @@ describe("kysoql oclif CLI", () => {
       const source = await readFile(output, "utf8");
       expect(source.match(/readonly "Geography__c"/g)).toHaveLength(2);
       expect(source).toContain('"All" | "usa__c"');
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("uses configured output and schema name without CLI defaults masking them", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "kysoql-cli-config-"));
+    const configFile = join(directory, "kysoql.config.ts");
+    const output = join(directory, "generated", "schema.ts");
+    vi.spyOn(Command.prototype, "log").mockImplementation(() => undefined);
+    process.env.SF_ACCESS_TOKEN = "token";
+    process.env.SF_INSTANCE_URL = "https://example.my.salesforce.com";
+    mocks.describeGlobal.mockResolvedValue({
+      sobjects: [
+        { name: "Account", queryable: true },
+        { name: "Contact", queryable: true },
+      ],
+    });
+    mocks.describe.mockImplementation(async (name: string) => ({
+      name,
+      fields: [],
+    }));
+
+    try {
+      await writeFile(
+        configFile,
+        `export default ${JSON.stringify({
+          objects: ["Contact"],
+          output: "generated/schema.ts",
+          schemaName: "ConfiguredSchema",
+        })};`,
+      );
+      await runGenerate(["--config", configFile]);
+      expect(mocks.describe).toHaveBeenCalledOnce();
+      expect(mocks.describe).toHaveBeenCalledWith("Contact");
+      await expect(readFile(output, "utf8")).resolves.toContain(
+        "export interface ConfiguredSchema",
+      );
+
+      mocks.describe.mockClear();
+      const override = join(directory, "override.ts");
+      await runGenerate([
+        "--config",
+        configFile,
+        "--object",
+        "Account",
+        "--output",
+        override,
+        "--schema-name",
+        "OverrideSchema",
+      ]);
+      expect(mocks.describe).toHaveBeenCalledOnce();
+      expect(mocks.describe).toHaveBeenCalledWith("Account");
+      await expect(readFile(override, "utf8")).resolves.toContain(
+        "export interface OverrideSchema",
+      );
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects conflicting config flags before connecting", async () => {
+    await expect(
+      runGenerate(["--config", "kysoql.config.ts", "--no-config"]),
+    ).rejects.toThrow();
+    expect(mocks.Connection).not.toHaveBeenCalled();
+  });
+
+  it("validates configuration before reading credentials or connecting", async () => {
+    const directory = await mkdtemp(
+      join(tmpdir(), "kysoql-cli-invalid-config-"),
+    );
+    const configFile = join(directory, "kysoql.config.ts");
+    try {
+      await writeFile(configFile, 'export default { output: "" };');
+      await expect(runGenerate(["--config", configFile])).rejects.toThrow(
+        /Invalid Kysoql config/,
+      );
+      expect(mocks.Connection).not.toHaveBeenCalled();
     } finally {
       await rm(directory, { recursive: true, force: true });
     }

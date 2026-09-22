@@ -18,5 +18,6 @@
       "@/*": ["./src/*"]
     },
     "noEmit": true
-  }
+  },
+  "exclude": ["examples", ".cache", "node_modules", ".output"]
 }

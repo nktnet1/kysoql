@@ -1,0 +1,82 @@
+---
+title: "Troubleshooting"
+description: "Resolve installation, type, compilation, execution, and result-shape errors."
+---
+
+## First isolate the failing layer
+
+Check the installed package versions, generated schema, selected Salesforce
+instance/API version, and query context. Use `compile()` separately from
+`execute()` to distinguish a local query-construction error from a transport or
+Salesforce failure. Inspect SOQL in a safe local environment, not an unrestricted
+production log.
+
+A useful reproduction includes the smallest relevant schema, query, sanitized
+error message, and whether it uses API, static Apex, or dynamic Apex. Never share
+an access token or production record payload.
+
+## Installation and code generation
+
+| Symptom | Likely cause and action |
+| --- | --- |
+| Package not found in the registry | The supplied packages are `0.0.0` and may not be published. Use the local workspace or your configured private registry. |
+| Unsupported engine/version warning | Activate the repository's Node 26 range and pnpm 12.4.1. Do not silently change the lockfile to suit a different environment. |
+| Cannot resolve `dist/index.mjs` or CLI binary | Build the workspace packages before consuming their default exports. |
+| `kysoql: command not found` | Install codegen in the invoking application and run `pnpm exec kysoql`; in the workspace use the built CLI path. |
+| Missing environment variable | Supply both SF_INSTANCE_URL and SF_ACCESS_TOKEN in the process running codegen. A `.env` file is not loaded automatically. |
+| Unknown or non-queryable object | Use an object API name visible/queryable to that token, not a label. Check the org and permissions. |
+| Missing relationship fields after generation | Include all traversed parent/child/TYPEOF targets in the object list and regenerate. |
+| Invalid Describe response | Check your transport/API version and response validation; do not bypass the parser with a cast. |
+
+## Type errors
+
+| Symptom | What to check |
+| --- | --- |
+| A field/path is rejected or appears as `never` | It must exist in the correct generated object, with the capability required by this method. Generate relationship targets. |
+| A date string is rejected | Use `soqlDate`, `soqlDateTime`, or `soqlTime` in ordinary filters. |
+| `includes` rejects a value | It must be a generated active multipicklist value; ordinary strings/picklists have different operators. |
+| A selected property is missing | Select it explicitly; `$if` additions are optional and parent relationships can be null. |
+| An aggregate has no usable result key | Alias selected row-producing functions with `.as(...)`. |
+| `groupBy` or aggregate `select` is unavailable | Start from an unselected root or an aggregate builder; group before selecting ordinary grouped fields. |
+| `having`/ordering rejects an alias | Use a grouped field or an unaliased function expression, not the selected alias. |
+| `.select`/`.orderBy` disappears after `.apex()` | Finish ordinary structure before entering the narrower compile-only context. |
+| `.execute` disappears after `.apex()` | Expected: Apex builders only compile. Execute in an appropriate Apex caller. |
+| `contacts.offset` is missing | Child offset is deliberately only under `pilot`, not a production child API. |
+| `$if` changes the query type incompatibly | Keep the same structural mode or branch outside the builder. |
+
+## Compiler and value errors
+
+| Error/condition | Resolution |
+| --- | --- |
+| Empty field list | Select at least one valid field/expression before compilation. |
+| Empty IN/NOT IN or boolean group | Handle empty application inputs explicitly; do not generate empty predicates. |
+| Invalid literal or pagination value | Check formats, finite values, safe integers, and offset 0..2000. |
+| Unbounded FIELDS selection | Use an API query with LIMIT at most 200 or a provably bounded direct Id filter; Apex permits STANDARD only. |
+| Duplicate/overlapping selections | Remove the explicit field overlapping a FIELDS selector or conflicting function alias. |
+| Semi-join restriction | Keep at most two at root WHERE level with compatible direct ID/reference fields; do not nest or wrap in OR/NOT. |
+| WITH conflict | Choose one filtering WITH form instead of combining data category, visibility, UserId, and Apex mode clauses. |
+| Required object predicate | Follow the object-specific shape in [limitations](/docs/reference/limitations#object-specific-query-shapes). |
+| FOR UPDATE plus ORDER BY/ALL ROWS | Remove the incompatible clause; use a dedicated locking query. |
+| clearGroupBy fails | Rebuild a clean aggregate query; grouped selections/HAVING/order/limit/offset may still depend on grouping. |
+| Child pilot offset fails | The immediate parent needs a literal LIMIT 1; a bound or ancestor limit is insufficient. |
+| Knowledge Apex bind rejected | Use a supported literal query shape; binds are intentionally disallowed for these objects. |
+
+## Execution and result issues
+
+| Symptom | Resolution |
+| --- | --- |
+| `No query executor configured` | Pass an executor when constructing Kysoql; compile-only construction is valid without one. |
+| Executor does not support QueryAll/count | Implement the specific optional hook or use the JSforce adapter. Ordinary query support is not sufficient. |
+| `Invalid JSforce query result` | The adapter expected a valid envelope and record-object array. Inspect sanitized transport output. |
+| Incomplete response without `nextRecordsUrl` | Fix the transport/test double; the adapter refuses to silently truncate a root result. |
+| Incomplete SOQL COUNT response | Scalar count must be complete and include a valid non-negative totalSize. |
+| Child contacts are not an array | Read `account.Contacts.records` and inspect the envelope's `done` flag. |
+| Child records appear incomplete | Root pagination does not drain nested child locators. Query the child object directly or handle its transport pagination. |
+| High memory use | `execute()` accumulates root pages. Apply an intentional limit or use an export/streaming transport. |
+| `executeAll()` includes unexpected deleted rows | QueryAll is a data-visibility mode, not just pagination. Use ordinary `execute()` when appropriate. |
+| Salesforce rejects otherwise typed SOQL | Check live metadata, permissions, API version, feature enrollment, object restrictions, and execution context. |
+
+Authentication and Salesforce errors propagate from JSforce. Refresh expired
+sessions through the connection layer and retry only according to an explicit
+policy. Do not convert all failures to `[]`: that hides outages as legitimate
+"no matching records" results.

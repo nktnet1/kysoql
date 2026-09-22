@@ -1,0 +1,80 @@
+---
+title: "Security and production use"
+description: "Treat typed queries as one layer of a secure Salesforce integration."
+---
+
+## Keep credentials on the server
+
+Use your approved Salesforce OAuth flow, store tokens in a secret manager or
+protected process environment, and manage token refresh/revocation in the
+connection layer. Do not include access tokens in browser bundles, code examples,
+committed `.env` files, generated schemas, or documentation-site environment
+variables. Vite variables prefixed `VITE_` are public build-time configuration.
+
+The generator needs an existing token; it is not a credential vault or an OAuth
+client. Use an integration identity with only the access required for the task.
+See [JSforce authentication](https://jsforce.github.io/document/#connection) and
+Salesforce's [OAuth documentation](https://developer.salesforce.com/docs/platform/mobile-sdk/guide/intro-oauth.html)
+for supported connection flows.
+
+## Pass values through the builder
+
+The default compiler escapes literal values and uses structured expressions.
+Do not concatenate request input into the compiled SOQL afterward. Do not force
+untrusted object names, field names, or operators into types using `as any` or
+an unchecked schema-key assertion.
+
+A runtime API endpoint should validate input lengths, allowed operators, list
+sizes, and sortable fields before query construction. Define a small allowlist
+for user-selectable fields. TypeScript types disappear at runtime and do not
+validate a JSON request.
+
+Escaping is not authorisation. Every query still needs the application's
+appropriate tenant, account, or access scope. `clearWhere()` removes **all**
+filters, including any security condition you placed there. Treat optional
+filters and empty input lists deliberately to avoid broadening a query.
+
+LIKE escaping is also not a wildcard policy: the compiler preserves `%` and `_`
+as pattern characters. Decide whether users may submit patterns or only literal
+search terms, and test your implementation against Salesforce.
+
+## Respect Salesforce access control
+
+Describe-generated fields are not a guarantee of current permission. Use an
+identity appropriate to the user/task and let Salesforce enforce the selected
+execution context. An old generated schema or a cast cannot grant a permission.
+
+For Apex, choose an explicit access mode where appropriate. `withSystemMode()`
+is a security-sensitive design choice, not a fix for an inconvenient exception.
+Kysoql does not audit the caller's sharing, CRUD/FLS, or governor-limit design.
+
+## Avoid accidental data exposure
+
+Select the minimum fields needed. `FIELDS(ALL)` can expand as the org changes,
+so it is usually unsuitable as a stable public API response contract. Treat
+compiled SOQL and complete error responses as potentially sensitive: they can
+contain names, IDs, email addresses, and filter values.
+
+Prefer request IDs, object names, duration, success/failure, and sanitized error
+codes in operational telemetry. Do not log tokens or full record payloads by
+default. Schema files do not contain queried records, but can expose internal
+object names and business structure; review them before publishing.
+
+## Bound resource use and side effects
+
+The bundled adapter accumulates all root pages in memory. Use intentional limits
+or a dedicated transport for large exports, rate controls, cancellation, and
+retry policies. A large valid query is not automatically a safe HTTP endpoint.
+
+`FOR VIEW`, `FOR REFERENCE`, Knowledge tracking, and Apex locking can have side
+effects. Account for those before caching, retrying, or using the query in a
+background job. QueryAll can reveal eligible deleted/archived data to authorised
+callers; it should not be enabled as a generic "get more rows" option.
+
+## Validate at each boundary
+
+Generate metadata from the right org; typecheck application code; test compiled
+queries; validate untrusted transport payloads where necessary; and run
+integration tests against a non-production org for the exact feature/context
+combination you deploy. Experimental syntax deserves explicit opt-in and
+fallback behaviour, not a silent dependency on a future Salesforce rollout.

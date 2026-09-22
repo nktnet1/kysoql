@@ -1,0 +1,189 @@
+---
+title: "Quickstart"
+description: "Generate a schema, compile SOQL, and execute your first typed query."
+---
+
+This walkthrough uses a TypeScript application with `tsx`, configured as described in
+[installation](/docs/getting-started/installation), a Salesforce org with API
+access, and an access token for a user allowed to describe and query `Account`
+and `Contact`.
+
+## 1. Supply credentials
+
+Use a token obtained through your application's approved Salesforce OAuth flow.
+Set credentials in the process environment, not in source control:
+
+```bash
+export SF_INSTANCE_URL="https://your-domain.my.salesforce.com"
+# Inject SF_ACCESS_TOKEN from your secret manager or local shell environment.
+# SF_ACCESS_TOKEN must be the access token for this instance and user.
+```
+
+The instance URL is the org URL returned by authentication, not a generic login
+URL. The CLI reads `SF_INSTANCE_URL` and `SF_ACCESS_TOKEN`; it does not load a
+`.env` file automatically. See [security](/docs/reference/security).
+
+## 2. Configure and generate your schema
+
+Create `kysoql.config.ts` beside the application's `package.json`:
+
+```ts title="kysoql.config.ts"
+import { defineConfig } from "@kysoql/codegen";
+
+export default defineConfig({
+  objects: ["Account", "Contact"],
+  output: "src/salesforce.generated.ts",
+  schemaName: "SalesforceSchema",
+});
+```
+
+Run from that directory:
+
+```bash
+pnpm run schema:generate
+```
+
+The script runs `kysoql generate`, which discovers the config. Credentials still
+come from the environment, not this file. See
+[configuration](/docs/getting-started/configuration) for overrides, multiple orgs,
+and path rules. The CLI also works [without a config](/docs/getting-started/schema-generation#cli-reference).
+
+The output describes the fields and relationships visible to the connected user.
+It is a TypeScript type definition, not a cache of records. Regenerate it when
+metadata changes. Add any other objects used in your queries to `objects`;
+codegen does not automatically include relationship targets.
+
+## 3. Compile without making a query request
+
+Create `src/compile.ts`:
+
+```ts title="src/compile.ts"
+import { Kysoql } from "@kysoql/core";
+import type { SalesforceSchema } from "./salesforce.generated";
+
+const db = new Kysoql<SalesforceSchema>();
+const compiled = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where("Name", "like", "Acme%")
+  .orderBy("Name")
+  .limit(25)
+  .compile();
+
+console.log(compiled.soql);
+```
+
+Run it:
+
+```bash
+pnpm run typecheck
+pnpm exec tsx src/compile.ts
+```
+
+Expected SOQL:
+
+```sql
+SELECT Id, Name FROM Account WHERE Name LIKE 'Acme%' ORDER BY Name LIMIT 25
+```
+
+`compile()` creates `{ soql, query }`, where `query` is the typed operation tree.
+It neither authenticates nor sends a request. A fresh process can run this
+compile-only example without Salesforce credentials after the schema exists.
+
+## 4. Configure execution
+
+Create `src/db.ts`:
+
+```typescript title="src/db.ts"
+import { Kysoql } from "@kysoql/core";
+import { createJsforceExecutor } from "@kysoql/jsforce";
+import { Connection } from "jsforce";
+import type { SalesforceSchema } from "./salesforce.generated";
+
+function requiredEnv(name: string): string {
+  const value = process.env[name];
+  if (!value?.trim()) {
+    throw new Error(`Missing environment variable: ${name}`);
+  }
+  return value;
+}
+
+const connection = new Connection({
+  instanceUrl: requiredEnv("SF_INSTANCE_URL"),
+  accessToken: requiredEnv("SF_ACCESS_TOKEN"),
+});
+
+export const db = new Kysoql<SalesforceSchema>({
+  executor: createJsforceExecutor(connection),
+});
+```
+
+This uses an existing access token. Configure refresh/re-authentication on the
+JSforce connection for a long-running service; Kysoql does not manage token
+lifecycle. See the official [JSforce connection documentation](https://jsforce.github.io/document/#connection).
+
+Create `src/query.ts`:
+
+```ts title="src/query.ts"
+import { db } from "./db";
+
+async function main(): Promise<void> {
+  const accounts = await db
+    .selectFrom("Account")
+    .select(["Id", "Name"])
+    .where("Name", "like", "Acme%")
+    .orderBy("Name")
+    .limit(25)
+    .execute();
+
+  for (const account of accounts) {
+    console.log(account.Id, account.Name);
+  }
+}
+
+main().catch((error: unknown) => {
+  // Do not log tokens, full SOQL, or complete Salesforce responses in production.
+  console.error(error instanceof Error ? error.message : "Query failed");
+  process.exitCode = 1;
+});
+```
+
+```bash
+pnpm run typecheck
+pnpm start
+```
+
+The result is a readonly array of rows containing the selected fields. No matches
+return an empty array. Types come from your generated schema, including field
+nullability; fields you did not select are not in the inferred result.
+
+## 5. Query related contacts
+
+```ts
+import { db } from "./db";
+
+const accounts = await db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .selectSubquery("Contacts", (contacts) =>
+    contacts.select(["Id", "LastName"]).orderBy("LastName").limit(10),
+  )
+  .limit(25)
+  .execute();
+
+for (const account of accounts) {
+  for (const contact of account.Contacts.records) {
+    console.log(account.Name, contact.LastName);
+  }
+}
+```
+
+A child relationship is a Salesforce query-result envelope, not a direct array.
+The adapter drains root pages, not nested child envelopes; see
+[relationships](/docs/guides/relationships#read-child-results).
+
+## Where to go next
+
+[Filtering](/docs/guides/filtering) covers grouped conditions and typed values.
+[Schema generation](/docs/getting-started/schema-generation) documents every CLI
+option. [Execution](/docs/guides/execution) explains QueryAll and count results.

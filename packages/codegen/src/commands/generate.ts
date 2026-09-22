@@ -1,16 +1,14 @@
 import { Command, Flags } from "@oclif/core";
 import { Connection } from "jsforce";
 
+import { loadConfig, resolveGenerateOptions } from "#/config-loader";
 import { generateSchema } from "#/index";
 import type {
   SalesforceDataCategoryGroupsResponse,
   SalesforceGlobalDescription,
   SalesforceObjectDescription,
 } from "#/types";
-import {
-  parseRequiredEnvironmentVariable,
-  parseSchemaName,
-} from "#/validation";
+import { parseRequiredEnvironmentVariable } from "#/validation";
 
 const requiredEnvironmentVariable = (name: string): string =>
   parseRequiredEnvironmentVariable(process.env[name], name);
@@ -19,13 +17,25 @@ export default class Generate extends Command {
   static description =
     `Generate a strongly typed Salesforce schema from Describe metadata.
 
-Authentication requires the SF_INSTANCE_URL and SF_ACCESS_TOKEN environment variables.`;
+Loads kysoql.config.ts (or another supported JS/TS extension) from the current directory.
+CLI flags override configuration. Authentication requires SF_INSTANCE_URL and SF_ACCESS_TOKEN.`;
 
   static examples = [
+    `<%= config.bin %> <%= command.id %>`,
+    `<%= config.bin %> <%= command.id %> --config config/kysoql.sandbox.ts`,
     `<%= config.bin %> <%= command.id %> --object Account --object Contact --output src/salesforce.generated.ts`,
   ];
 
   static flags = {
+    config: Flags.string({
+      description: "Configuration file, relative to the current directory.",
+      helpValue: "<path>",
+      exclusive: ["no-config"],
+    }),
+    "no-config": Flags.boolean({
+      description: "Disable configuration discovery and use only CLI options.",
+      exclusive: ["config"],
+    }),
     object: Flags.string({
       description: "Salesforce object API name to include. Repeat as needed.",
       helpValue: "<api-name>",
@@ -33,13 +43,13 @@ Authentication requires the SF_INSTANCE_URL and SF_ACCESS_TOKEN environment vari
       multipleNonGreedy: true,
     }),
     output: Flags.string({
-      default: "salesforce.generated.ts",
-      description: "Generated TypeScript file.",
+      description:
+        "Generated TypeScript file (default: salesforce.generated.ts unless configured).",
       helpValue: "<path>",
     }),
     "schema-name": Flags.string({
-      default: "SalesforceSchema",
-      description: "Generated schema interface name.",
+      description:
+        "Generated schema interface name (default: SalesforceSchema unless configured).",
       helpValue: "<name>",
     }),
   };
@@ -48,7 +58,11 @@ Authentication requires the SF_INSTANCE_URL and SF_ACCESS_TOKEN environment vari
 
   async run(): Promise<void> {
     const { flags } = await this.parse(Generate);
-    const schemaName = parseSchemaName(flags["schema-name"]);
+    const loaded = await loadConfig({
+      configFile: flags.config,
+      disabled: flags["no-config"],
+    });
+    const options = resolveGenerateOptions(flags, loaded);
     const connection = new Connection({
       accessToken: requiredEnvironmentVariable("SF_ACCESS_TOKEN"),
       instanceUrl: requiredEnvironmentVariable("SF_INSTANCE_URL"),
@@ -85,11 +99,9 @@ Authentication requires the SF_INSTANCE_URL and SF_ACCESS_TOKEN environment vari
           return loadKnowledgeDataCategoryGroups();
         },
       },
-      objects: flags.object ?? [],
-      output: flags.output,
-      schemaName,
+      ...options,
     });
 
-    this.log(`Generated ${flags.output}`);
+    this.log(`Generated ${options.output}`);
   }
 }

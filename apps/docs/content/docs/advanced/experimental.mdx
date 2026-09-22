@@ -1,0 +1,71 @@
+---
+title: "Beta and pilot features"
+description: "Opt in explicitly to experimental Salesforce syntax and keep it out of ordinary production paths."
+---
+
+The namespaces on this page deliberately signal features with narrower
+availability and stability guarantees. Their presence in TypeScript does not
+prove your Salesforce org or API version enables them.
+
+## FORMULA arithmetic beta
+
+```ts
+import { db } from "./db";
+
+const query = db
+  .selectFrom("Opportunity")
+  .select(["Id", "Amount", "ExpectedRevenue"])
+  .where((eb) =>
+    eb(eb.beta.formula("Amount", "-", "ExpectedRevenue"), ">", 100),
+  );
+// WHERE FORMULA('Amount - ExpectedRevenue') > 100
+```
+
+Use `eb.beta.formula(leftField, "+" | "-", rightField)`, not `eb.fn.formula`
+or a raw formula string. Both operands must be filterable fields with supported
+`currency`, `double`, `int`, `date`, or `datetime` types. Percent, string,
+arbitrary formulas, multiplication, and division are outside this helper.
+
+Numeric arithmetic produces numeric comparison values. Date or DateTime with a
+numeric field produces the corresponding temporal value; subtracting fields of
+the same temporal type produces a number. Incompatible Date/DateTime mixing and
+unsupported operand orders are rejected by the types.
+
+Only `WHERE` is modeled. It is not a SELECT or `HAVING` feature. Apex WHERE
+callbacks retain the helper and permit appropriately typed binds on the
+comparison side, subject to the caller's context.
+
+Salesforce labels this service beta in its [FORMULA reference](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-formula.html).
+Its [release notes](https://help.salesforce.com/s/articleView?id=release-notes.rn_api_soql_where.htm&language=en_US&type=5)
+describe API-version and org-type availability; verify these before use rather
+than assuming a generic scratch org or production org supports it. The normal
+repository Salesforce setup does not opt into experimental access for you.
+
+## Child subquery OFFSET pilot
+
+```ts
+import { db } from "./db";
+
+const query = db
+  .selectFrom("Account")
+  .select("Id")
+  .selectSubquery("Contacts", (contacts) =>
+    contacts
+      .select(["Id", "LastName"])
+      .orderBy("LastName")
+      .limit(20)
+      .pilot.offset(20),
+  )
+  .limit(1);
+```
+
+The explicit `pilot.offset(n)` method is available instead of a normal child
+`offset` method. The value follows the usual 0..2000 bounds. The **immediate
+parent** must contain a literal `LIMIT 1`; a bound Apex limit or a limit on a
+more distant ancestor does not satisfy that rule. Compilation checks nested
+parent/child pairs recursively.
+
+`pilot.clearOffset()` removes it immutably. The [Salesforce OFFSET documentation](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-offset.html)
+identifies subquery offset as a pilot not intended for production. For production
+child paging, prefer a direct query on the child object with a parent-ID filter
+and supported root pagination.

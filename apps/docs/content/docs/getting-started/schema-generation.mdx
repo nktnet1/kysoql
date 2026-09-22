@@ -1,0 +1,151 @@
+---
+title: "Schema generation"
+description: "Generate and maintain org-specific types with the CLI or library API."
+---
+
+`@kysoql/codegen` turns Salesforce Describe metadata into a schema for
+`Kysoql<YourSchema>`. Generate with an identity representative of your application,
+and regenerate after changes to fields, relationships, picklists, or permissions.
+
+For repeatable settings, create a
+[`kysoql.config.ts`](/docs/getting-started/configuration). The CLI automatically
+loads it from the working directory. Explicit CLI flags override config values;
+use `--no-config` for a completely CLI-driven run.
+
+## CLI reference
+
+```bash
+pnpm exec kysoql generate --no-config \
+  --object Account \
+  --object Contact \
+  --object Opportunity \
+  --object User \
+  --output src/salesforce.generated.ts \
+  --schema-name SalesforceSchema
+```
+
+| Option | Default | Behaviour |
+| --- | --- | --- |
+| `--config <path>` | Discover in the working directory | Select a JS/TS config explicitly; a missing file fails. |
+| `--no-config` | `false` | Skip config discovery and evaluation; conflicts with `--config`. |
+| `--object <api-name>` | Configured list or all queryable objects | Repeat once per object. Replaces, rather than appends to, the configured list. |
+| `--output <path>` | Configured output or `salesforce.generated.ts` | Writes UTF-8 and creates parent directories. CLI paths use the working directory. |
+| `--schema-name <name>` | Configured name or `SalesforceSchema` | Name of the generated interface; must pass identifier validation. |
+| `--help` | N/A | Displays generated oclif help. |
+
+| Environment variable | Required | Meaning |
+| --- | --- | --- |
+| `SF_INSTANCE_URL` | Yes | Instance URL for the authenticated org. |
+| `SF_ACCESS_TOKEN` | Yes | Existing Salesforce access token. |
+
+```bash
+pnpm exec kysoql --help
+pnpm exec kysoql generate --help
+```
+
+There are no CLI username, password, login-URL, or API-version flags in this
+implementation. Supply an authenticated token through the environment. The CLI
+uses its installed JSforce version's connection defaults.
+
+Without a configured `objects` list, omitting `--object` includes all queryable
+objects from global Describe. For a
+large org, start with an explicit list: `loadSchema` describes the selected
+objects concurrently, without a configurable concurrency limiter or retry
+policy. Object names are deduplicated and sorted; unknown or non-queryable
+objects produce an error rather than an incomplete file. An empty programmatic
+object list also means all queryable objects.
+
+## Include relationship targets
+
+Generating `Contact` alone does not automatically generate `Account` or `User`.
+For a query selecting `Account.Name` or `CreatedBy.Alias`, generate those target
+objects as well. Generate children used by `selectSubquery` and the referenced
+objects used in `TYPEOF` branches.
+
+The virtual polymorphic `.Type` qualifier is an exception: it is derived from
+reference metadata and does not require every target object to be generated.
+
+## What the schema preserves
+
+The generator captures field value types and nullability, filter/sort/group/
+aggregate capabilities, standard/custom field status, parent and child
+relationships, reference targets, polymorphic flags, active picklist values,
+object scopes, MRU capability, and supported Data 360 option capabilities.
+
+Picklist fields are returned as strings; active values are separately retained
+for supported multipicklist operations. Dates, datetimes, and times are strings
+in query results. Location fields use `{ latitude, longitude }`. Unknown
+Salesforce field types fall back conservatively; inspect the generated output
+when introducing an unfamiliar field type.
+
+Generated files have a `Do not edit manually` header. Empty metadata maps use
+`Record<string, never>`. Imports are generated only when needed.
+
+## Knowledge categories
+
+For `KnowledgeArticleVersion` and objects ending in `__kav`, the bundled CLI
+also requests the visible category tree from the REST data-category resource.
+The same discovered Knowledge tree is reused within a run. Visibility depends
+on the connected user.
+
+REST discovery does not cover `Question` here. Programmatic clients can provide
+`describeDataCategoryGroups` when a different transport, such as SOAP, can supply
+that metadata. The callback is optional; without it, only categories already
+present in the supplied object descriptions can be emitted.
+
+## Programmatic generation
+
+The public API accepts a `SalesforceDescribeClient`, not a live schema attached
+to `Kysoql`. It does not load `kysoql.config.ts`; pass options explicitly.
+Programmatic relative output paths use the process working directory, as before. Implement that interface with your authenticated transport and
+validated Describe responses.
+
+```ts
+import {
+  generateSchema,
+  loadSchema,
+  renderSchema,
+  type SalesforceDescribeClient,
+} from "@kysoql/codegen";
+
+export async function regenerate(client: SalesforceDescribeClient): Promise<void> {
+  await generateSchema({
+    client,
+    objects: ["Account", "Contact"],
+    output: "src/salesforce.generated.ts",
+    schemaName: "SalesforceSchema",
+  });
+}
+
+export async function preview(client: SalesforceDescribeClient): Promise<string> {
+  const objects = await loadSchema(client, ["Account", "Contact"]);
+  return renderSchema(objects, "SalesforceSchema");
+}
+```
+
+| Export | Contract |
+| --- | --- |
+| `defineConfig(config)` | Typed identity helper for a plain `KysoqlConfig` object. |
+| `KysoqlConfig` | Optional `objects`, `output`, and `schemaName` for the CLI config file. |
+| `generateSchema(options)` | Loads metadata and writes the file. Resolves to `void`; does not discover config files. |
+| `loadSchema(client, requestedObjects?)` | Loads and validates descriptions; returns a readonly list. |
+| `renderSchema(objects, schemaName?)` | Renders supplied descriptions to a TypeScript string without network or filesystem access. |
+| `SalesforceDescribeClient` | `describeGlobal()`, `describe(objectName)`, and optional `describeDataCategoryGroups(objectName)`. |
+| `GenerateSchemaOptions` | Required `client` and `output`; optional `objects` and `schemaName`. |
+
+The package exports the normalized Describe interfaces for objects, fields,
+relationships, scopes, picklist entries, and category responses. Invalid
+Describe payloads are rejected at the codegen boundary.
+
+## Keep generated types current
+
+Keep the generator command in an application script. Either commit generated
+types and review diffs, or regenerate in a reproducible build step with secure
+credentials. Do not make every application startup depend on Describe calls.
+Generate separately for materially different org schemas; an interface generated
+from one org is not proof that another org has the same capabilities.
+
+Run application typechecks after regeneration. Do not suppress new errors with
+`any`: they may identify a removed field, a missing relationship target, or a
+changed capability. See [schema types](/docs/reference/schema-types) for a small
+handwritten schema suitable for offline examples.

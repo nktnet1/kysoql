@@ -1,0 +1,18 @@
+{
+  "title": "Build and run queries",
+  "pages": [
+    "mental-model",
+    "selecting",
+    "filtering",
+    "literals",
+    "ordering-and-pagination",
+    "relationships",
+    "polymorphism",
+    "aggregates",
+    "date-functions",
+    "select-functions",
+    "geolocation",
+    "composition",
+    "execution"
+  ]
+}

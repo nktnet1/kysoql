@@ -1,0 +1,61 @@
+---
+title: "Geolocation and distance"
+description: "Select, filter, and order distances using structured coordinates."
+---
+
+This page assumes a custom geolocation field `Account.Office__c` exists and is
+included in your generated schema with `filterable: true` and `sortable: true`
+for this example. Replace it with your actual location field.
+The generated value type is `SalesforceGeolocation`, with `latitude` and
+`longitude` numeric properties.
+
+## Query nearby records
+
+```ts
+import { db } from "./db";
+
+const nearby = db
+  .selectFrom("Account")
+  .select(["Id", "Office__c"])
+  .select(({ fn }) =>
+    fn.distance("Office__c", fn.geolocation(-33.8688, 151.2093), "km")
+      .as("distanceFromSydney"),
+  )
+  .where((eb) =>
+    eb(
+      eb.fn.distance(
+        "Office__c",
+        eb.fn.geolocation(-33.8688, 151.2093),
+        "km",
+      ),
+      "<",
+      25,
+    ),
+  )
+  .orderBy(({ fn }) =>
+    fn.distance("Office__c", fn.geolocation(-33.8688, 151.2093), "km"),
+  )
+  .limit(50);
+```
+
+`fn.geolocation(latitude, longitude)` creates a fixed destination and validates
+finite coordinates within latitude -90..90 and longitude -180..180.
+`fn.distance(locationField, destination, unit)` accepts `"mi"` or `"km"`.
+The destination can also be a compatible location-field reference.
+
+When using a fixed `GEOLOCATION`, the location field stays first in the emitted
+`DISTANCE` expression. Selected distances require aliases and return numbers,
+including null when field/relationship nullability requires it.
+
+## Supported contexts
+
+`distance` is available for aliased record selection, `WHERE` with `<` or `>`,
+and ordering. Filtering requires generated filterable location metadata;
+ordering requires sortable location metadata for the distance operands. Remove
+the corresponding clause when your generated field does not permit it. Use the
+function again for ordering; the selected alias is not a field name.
+
+`geolocation` is intentionally only a distance argument. The API does not expose
+ordinary location equality, raw location ordering, distance equality or
+`<=`/`>=` filters, or location aggregate/grouping operations. Do not cast around
+these restrictions to force an unsupported expression.

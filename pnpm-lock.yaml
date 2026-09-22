@@ -233,6 +233,15 @@ importers:
         specifier: ^19.3.0
         version: 19.3.0(react@19.3.0)
     devDependencies:
+      '@kysoql/codegen':
+        specifier: workspace:*
+        version: link:../../packages/codegen
+      '@kysoql/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@kysoql/jsforce':
+        specifier: workspace:*
+        version: link:../../packages/jsforce
       '@tailwindcss/vite':
         specifier: ^4.3.3
         version: 4.3.3(vite@8.3.0(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
@@ -269,6 +278,9 @@ importers:
       '@oclif/core':
         specifier: 4.14.0
         version: 4.14.0
+      jiti:
+        specifier: 2.7.0
+        version: 2.7.0
       jsforce:
         specifier: 3.10.25
         version: 3.10.25(@types/node@26.5.1)

@@ -1,6 +1,7 @@
 import { expectTypeOf, it } from "vitest";
 import type {
   GenerateSchemaOptions,
+  KysoqlConfig,
   SalesforceChildRelationshipDescription,
   SalesforceDataCategoryGroupDescription,
   SalesforceDataCategoryGroupResponse,
@@ -14,9 +15,23 @@ import type {
   SalesforcePicklistValue,
   SalesforceSupportedScopeDescription,
 } from "#/index";
-import { generateSchema, loadSchema, renderSchema } from "#/index";
+import {
+  defineConfig,
+  generateSchema,
+  loadSchema,
+  renderSchema,
+} from "#/index";
 
 it("exports the complete codegen public API from the package entrypoint", () => {
+  expectTypeOf(defineConfig).toBeFunction();
+  expectTypeOf(
+    defineConfig({ objects: ["Account"] }),
+  ).toEqualTypeOf<KysoqlConfig>();
+  expectTypeOf<KysoqlConfig>().toEqualTypeOf<{
+    readonly objects?: readonly string[];
+    readonly output?: string;
+    readonly schemaName?: string;
+  }>();
   expectTypeOf(generateSchema).toBeFunction();
   expectTypeOf(loadSchema).toBeFunction();
   expectTypeOf(renderSchema).toBeFunction();

@@ -1,0 +1,104 @@
+---
+title: "Ordering and pagination"
+description: "Sort predictably, limit results, and choose OFFSET or cursor-based retrieval."
+---
+
+## Order by generated sortable fields
+
+```ts
+import { db } from "./db";
+
+const query = db
+  .selectFrom("Account")
+  .select(["Id", "Name", "AnnualRevenue"])
+  .orderBy("AnnualRevenue", "desc", "last")
+  .orderBy("Name", "asc")
+  .orderBy("Id")
+  .limit(25);
+```
+
+`orderBy(field, direction?, nulls?)` accepts `"asc"` or `"desc"`, and `"first"`
+or `"last"` for null placement. Omitting direction leaves Salesforce's default
+ascending order. Use `undefined` as the second argument to specify only null
+placement: `.orderBy("AnnualRevenue", undefined, "last")`.
+
+Calls append sorting terms. Use a stable tie-breaker such as `Id` when paging.
+Generated `sortable: true` is required; location fields need distance ordering,
+and the virtual polymorphic `.Type` field is not made sortable. Explicit null
+placement is deliberately unavailable for nullable reference-ID fields in this
+implementation.
+
+## Limit and offset
+
+```ts
+import { db } from "./db";
+
+const secondPage = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .orderBy("Name")
+  .orderBy("Id")
+  .limit(25)
+  .offset(25);
+```
+
+`limit(n)` accepts a non-negative safe integer, including zero. `offset(n)`
+accepts a safe integer from zero through 2000. Invalid numeric inputs throw
+`RangeError`. Repeated limit or offset calls replace the previous value rather
+than adding another clause.
+
+`clearLimit()`, `clearOffset()`, and `clearOrderBy()` remove their respective
+clauses immutably. Numeric limits are validated independently of Salesforce's
+object-specific or execution-context limits.
+
+## OFFSET is not a bulk export mechanism
+
+The JSforce adapter's normal `execute()` follows root `queryMore` responses.
+For a query without a limit, this can accumulate a large result in memory.
+`executeAll()` is not needed to drain pages; it enables QueryAll, including
+eligible deleted records and archived activities.
+
+For a small page-based UI, `LIMIT` with `OFFSET` can be appropriate. Offset
+queries are independent requests, so concurrent data changes can shift rows.
+For larger datasets, use Salesforce query locators or a deliberate keyset
+strategy. Salesforce documents the 2000-row offset bound and the differences
+from `queryMore` in its [OFFSET reference](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-offset.html).
+
+## Keyset example
+
+This application-level pattern orders by one stable field and resumes after the
+last value. It is not a server-side snapshot or a built-in Kysoql cursor API:
+
+```ts
+import { db } from "./db";
+
+export async function loadPage(afterId?: string) {
+  let query = db
+    .selectFrom("Account")
+    .select(["Id", "Name"])
+    .orderBy("Id")
+    .limit(100);
+
+  if (afterId !== undefined) {
+    query = query.where("Id", ">", afterId);
+  }
+
+  return query.execute();
+}
+```
+
+Use the last returned row's `Id` for the next call. When sorting by a non-unique
+field such as `CreatedDate`, include a tie-breaker and encode both values in the
+cursor; a lone `CreatedDate > lastDate` predicate can skip rows sharing a date.
+
+## Special query modes
+
+Grouped aggregate builders support `LIMIT` and `OFFSET` after grouping, and can
+order by grouped fields or supported unaliased expressions. Ungrouped aggregate
+results do not expose valid grouped pagination. Bare `COUNT()` is limit-only.
+
+Child subqueries have no normal `offset()` method. The explicit
+[`pilot.offset()`](/docs/advanced/experimental#child-subquery-offset-pilot)
+requires an immediate parent with a literal `LIMIT 1` and is not recommended for
+production. Apex binds have separate
+[limit and offset rules](/docs/apex/bindings#limits-and-offsets).

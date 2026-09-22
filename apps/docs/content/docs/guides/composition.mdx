@@ -1,0 +1,100 @@
+---
+title: "Reusable and conditional queries"
+description: "Compose immutable builders with $call, $if, and clause-clearing methods."
+---
+
+## Reuse a base query
+
+```ts
+import { db } from "./db";
+
+const base = db.selectFrom("Account").select(["Id", "Name"]);
+const firstPage = base.orderBy("Name").limit(25);
+const search = base.where("Name", "like", "Acme%").limit(10);
+```
+
+Neither derived query modifies the other. Always use the return value of builder
+methods; this is not a mutable query object.
+
+## $call returns the callback result
+
+```ts
+import { db } from "./db";
+
+const soql = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .$call((query) => query.where("Name", "like", "Acme%"))
+  .$call((query) => query.compile().soql);
+```
+
+The callback receives the current specialised builder. It may return a modified
+builder, a compiled query, a promise, or another value; `$call` returns that
+value unchanged. It is useful for shared application functions without losing
+the current query type.
+
+## Conditional filters and selections
+
+```ts
+import { db } from "./db";
+
+export function accountSearch(prefix: string, includeRevenue: boolean) {
+  return db
+    .selectFrom("Account")
+    .select(["Id", "Name"])
+    .$if(prefix.length > 0, (query) => query.where("Name", "like", `${prefix}%`))
+    .$if(includeRevenue, (query) => query.select("AnnualRevenue"))
+    .limit(25);
+}
+```
+
+`$if(condition, callback)` runs the callback only when true. Fields added inside
+it become optional in the inferred output, in addition to any existing
+nullability. Check for `undefined` before assuming a conditionally selected field
+was returned.
+
+Both branches must retain compatible structural query modes. Do not use `$if`
+to switch a record query to an aggregate, introduce a different grouping mode,
+or cross API/static-Apex/dynamic-Apex boundaries. Branch outside the builder when
+the query structure genuinely differs.
+
+Be explicit about empty filters. A false condition that removes an optional
+search filter is different from omitting a tenant or access-control restriction.
+See [security](/docs/reference/security).
+
+## Clear clauses deliberately
+
+| Method | Effect |
+| --- | --- |
+| `clearWhere()` | Removes all accumulated `WHERE` filters, not one selected condition. |
+| `clearOrderBy()` | Removes all order terms. |
+| `clearLimit()` | Removes the result limit. |
+| `clearOffset()` | Removes root/grouped offset. |
+| `clearSelect()` | Removes selections and resets inferred output on builders that expose it. |
+| `clearGroupBy()` | Removes aggregate grouping only when no dependent clauses/selections remain. |
+| `pilot.clearOffset()` | Removes a child subquery's pilot offset. |
+
+```ts
+import { db } from "./db";
+
+const query = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where("Name", "like", "Acme%")
+  .orderBy("Name")
+  .limit(25);
+
+const ids = query.clearSelect().select("Id").clearOrderBy();
+const unrestrictedNames = query.clearWhere();
+```
+
+Clearing preserves the earlier builder. `clearWhere` can invalidate required
+filters on Knowledge and other restricted objects; the compiler still rejects
+those queries. It can also remove an application security boundary, so prefer
+small, deliberate reusable functions rather than clearing arbitrary queries.
+
+Methods exist only where their clause is modeled. Semi-joins expose `clearWhere`
+but no ordering or pagination to clear. Bare count has no selection reset or
+offset. Apex builders keep narrower interfaces; see the
+[API reference](/docs/reference/api). There is no generic `clear()` or
+`clearHaving()` in this snapshot.

@@ -1,0 +1,155 @@
+---
+title: "Relationships and joins"
+description: "Traverse parents, select child records, and filter with semi-joins or anti-joins."
+---
+
+Generate every referenced object before using these examples. Relationship
+names are Salesforce API relationship names, not arbitrary SQL aliases.
+
+## Child-to-parent paths
+
+Use a dotted path in selection, filtering, or sorting:
+
+```ts
+import { db } from "./db";
+
+const contacts = await db
+  .selectFrom("Contact")
+  .select(["Id", "LastName", "Account.Name"])
+  .where("Account.Name", "like", "Acme%")
+  .orderBy("Account.Name")
+  .limit(25)
+  .execute();
+
+for (const contact of contacts) {
+  console.log(contact.LastName, contact.Account?.Name);
+}
+```
+
+The related terminal field retains its generated capability checks. A nullable
+lookup makes the nested parent value nullable. The builder supports up to five
+child-to-parent relationship levels. For custom lookups, use the generated
+relationship name such as `Account__r`, not the foreign-key field `Account__c`.
+
+A `WHERE` predicate does not generally narrow the inferred nullability of a
+selected relationship. Keep the appropriate null checks.
+
+## Parent-to-child subqueries
+
+Use `selectSubquery(relationshipName, callback)`:
+
+```ts
+import { db } from "./db";
+
+const query = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .selectSubquery("Contacts", (contacts) =>
+    contacts
+      .select(["Id", "LastName", "CreatedBy.Alias"])
+      .where("LastName", "like", "A%")
+      .orderBy("LastName")
+      .limit(10),
+  )
+  .limit(25);
+```
+
+This example additionally needs `User` in the generated schema for
+`CreatedBy.Alias`. `Contacts` is a child relationship on `Account`; using
+`Contact` as a guessed subquery `FROM` name is not equivalent.
+
+The dedicated child builder supports ordinary fields, supported select
+functions, `FIELDS` selectors, scalar/grouped filters, ordering, limits,
+composition helpers, and further child subqueries. It intentionally omits root
+execution, semi-joins, aggregates, and root-only Salesforce clauses. Nested child
+queries are capped at four child levels below the root by the typed surface;
+actual support depends on the Salesforce API and execution context. Do not
+assume a deeply nested REST query is valid in Apex.
+
+## Read child results
+
+```ts
+import { db } from "./db";
+
+const accounts = await db
+  .selectFrom("Account")
+  .select("Id")
+  .selectSubquery("Contacts", (contacts) =>
+    contacts.select(["Id", "LastName"]).limit(10),
+  )
+  .limit(25)
+  .execute();
+
+for (const account of accounts) {
+  const childResult = account.Contacts;
+  console.log(childResult.totalSize, childResult.done);
+  for (const contact of childResult.records) {
+    console.log(contact.Id, contact.LastName);
+  }
+  if (!childResult.done) {
+    // Use a separate child query or handle the child locator in your transport.
+    console.warn("Child relationship has additional pages");
+  }
+}
+```
+
+The inferred value is `SalesforceQueryResult<Row>` with `totalSize`, `done`,
+`records`, and optional `nextRecordsUrl`. **The JSforce adapter only drains root
+pages.** It does not recursively fetch incomplete child envelopes. For complete
+child exports, querying `Contact` directly with an `AccountId` filter is often
+simpler than recursively following child result locators.
+
+## Semi-joins and anti-joins
+
+Use `in` to keep parents with matching child records, or `not in` to exclude
+parents with matching child records:
+
+```ts
+import { db } from "./db";
+
+const accountsWithOpenOpportunities = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where("Id", "in", (subquery) =>
+    subquery
+      .selectFrom("Opportunity")
+      .select("AccountId")
+      .where("IsClosed", "=", false),
+  );
+
+const accountsWithoutContacts = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where("Id", "not in", (subquery) =>
+    subquery.selectFrom("Contact").select("AccountId"),
+  );
+```
+
+Both operands must identify compatible Salesforce object types. The outer
+operand is a direct ID/reference field; the subquery selects exactly one
+compatible direct ID/reference field. This uses generated `referenceTo`
+metadata rather than treating every ID-looking string as interchangeable.
+
+A semi-join is a filter only. It does not select child rows into the output.
+
+Restrictions enforced by the builder/compiler include:
+
+- At most two semi/anti-joins per query, as top-level `WHERE` terms; not under
+  `OR` or `NOT`.
+- No same-object outer/inner query, nested semi-joins, relationship-path selected
+  fields, ordering, limit, or offset in the subquery.
+- No semi-joins inside a relationship subquery or `HAVING` expression.
+
+To negate existence, use `not in`, not `eb.not(...)` around a semi-join.
+
+## Query-wide relationship limits
+
+Compilation counts relationships across the full query: at most 20
+parent-to-child and 55 child-to-parent relationships. Repeated use of a parent
+path shares a counted relationship; a deeper traversal adds another one.
+`TYPEOF` targets also affect this count, with the compiler's direct-root-ID
+single-record exception. These checks are not a promise that all API transports
+support every relationship depth or object combination.
+
+See [polymorphism](/docs/guides/polymorphism) for `What.Type` and `TYPEOF`, and
+[limitations](/docs/reference/limitations) for execution-context boundaries.

@@ -1,31 +1,79 @@
 ---
-title: Hello World
-description: Your favourite docs framework.
-icon: Rocket
+title: "Kysoql"
+description: "A type-safe Salesforce SOQL query builder for TypeScript."
 ---
 
-Hey there! Fumadocs is the docs framework that also works on Tanstack Start!
+Kysoql builds Salesforce Object Query Language (SOQL) queries using your org's
+Describe metadata. Select fields, filter records, traverse relationships, and
+build aggregate reports with inferred TypeScript results.
 
-## Heading
+It is a query builder, not an ORM: it does not create records, update records,
+manage transactions, or generate Salesforce objects. You can compile queries
+without a connection, execute API queries through an adapter, or produce
+compile-only SOQL for an Apex caller.
 
-Hello World!
+## Start here
 
-<Cards>
-  <Card title="Learn more about Tanstack Start" href="https://tanstack.com/start" />
-  <Card title="Learn more about Fumadocs" href="https://fumadocs.dev" />
-</Cards>
-
-### CodeBlock
+[Install the packages](/docs/getting-started/installation), then follow the
+[quickstart](/docs/getting-started/quickstart) to generate an org-specific schema,
+compile a query, and execute it with JSforce.
 
 ```ts
-console.log('Hello World');
+import { Kysoql } from "@kysoql/core";
+import type { SalesforceSchema } from "./salesforce.generated";
+
+const db = new Kysoql<SalesforceSchema>();
+
+const query = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where("Name", "like", "Acme%")
+  .orderBy("Name")
+  .limit(25);
+
+console.log(query.compile().soql);
+// SELECT Id, Name FROM Account WHERE Name LIKE 'Acme%'
+// ORDER BY Name LIMIT 25
 ```
 
-#### Table
+This example only compiles. Calling `execute()` requires an
+[executor](/docs/guides/execution).
 
-| Head                            | Description                         |
-| ------------------------------- | ----------------------------------- |
-| `hello`                         | Hello World                         |
-| very **important**              | Hey                                 |
-| _Surprisingly_                  | Fumadocs                            |
-| very long text that looks weird | hello world hello world hello world |
+## Packages
+
+| Package | Purpose |
+| --- | --- |
+| `@kysoql/core` | Query builders, schema types, SOQL compiler, and executor contract. |
+| `@kysoql/jsforce` | JSforce adapter, root-result pagination, scalar counts, and QueryAll. |
+| `@kysoql/codegen` | Describe-driven schema generation and the `kysoql` CLI. |
+
+These docs use the repository's existing `@kysoql` scope. The supplied package
+manifests are version `0.0.0`; installation examples assume the packages have
+been published to your configured registry. They do not imply a public release
+is available. See [local workspace use](/docs/getting-started/installation#use-the-workspace-before-publication).
+
+## Find the right guide
+
+| Task | Read |
+| --- | --- |
+| Understand builders and inferred results | [Mental model](/docs/guides/mental-model) |
+| Select fields and build search filters | [Selecting](/docs/guides/selecting) and [filtering](/docs/guides/filtering) |
+| Query parents, children, and related records | [Relationships and joins](/docs/guides/relationships) |
+| Build grouped reports | [Aggregates](/docs/guides/aggregates) and [date functions](/docs/guides/date-functions) |
+| Run queries or include deleted records | [Execution](/docs/guides/execution) |
+| Produce SOQL with Apex binds | [Apex overview](/docs/apex/overview) |
+| Check an available method or a restriction | [API reference](/docs/reference/api) and [limitations](/docs/reference/limitations) |
+| Diagnose an error | [Troubleshooting](/docs/reference/troubleshooting) |
+
+## What validation does and does not guarantee
+
+Generated types constrain object names, field names, relationship paths, values,
+and capabilities such as `filterable` or `groupable`. Builder and compiler
+validation also reject many invalid clause combinations. Neither replaces the
+Salesforce server: org permissions, API versions, enabled features, current
+metadata, query selectivity, and runtime governor limits still apply.
+
+All guides describe the API in this repository snapshot. Beta and pilot features
+are [explicitly separated](/docs/advanced/experimental), not presented as ordinary
+production features. There is no arbitrary raw-SOQL escape hatch in the public
+builder API.

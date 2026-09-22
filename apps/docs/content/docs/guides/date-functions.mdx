@@ -1,0 +1,116 @@
+---
+title: "Date functions and timezones"
+description: "Filter, group, and order temporal expressions with typed function identities."
+---
+
+Temporal helper factories create values; `fn` date functions create expressions
+**over fields**. The function input must be an appropriate generated temporal
+field or a supported timezone-converted datetime expression.
+
+## Supported functions
+
+| TypeScript function | SOQL function | Input / output |
+| --- | --- | --- |
+| `calendarMonth` | `CALENDAR_MONTH` | Date or DateTime / number. |
+| `calendarQuarter` | `CALENDAR_QUARTER` | Date or DateTime / number. |
+| `calendarYear` | `CALENDAR_YEAR` | Date or DateTime / number. |
+| `dayInMonth` | `DAY_IN_MONTH` | Date or DateTime / number. |
+| `dayInWeek` | `DAY_IN_WEEK` | Date or DateTime / number. |
+| `dayInYear` | `DAY_IN_YEAR` | Date or DateTime / number. |
+| `fiscalMonth` | `FISCAL_MONTH` | Date or DateTime / number. |
+| `fiscalQuarter` | `FISCAL_QUARTER` | Date or DateTime / number. |
+| `fiscalYear` | `FISCAL_YEAR` | Date or DateTime / number. |
+| `weekInMonth` | `WEEK_IN_MONTH` | Date or DateTime / number. |
+| `weekInYear` | `WEEK_IN_YEAR` | Date or DateTime / number. |
+| `hourInDay` | `HOUR_IN_DAY` | DateTime only / number. |
+| `dayOnly` | `DAY_ONLY` | DateTime only / date string. |
+| `convertTimezone` | `convertTimezone` | DateTime only / input for a date function, not a standalone selection. |
+
+Output nullability follows field and relationship metadata. Fiscal behaviour
+and availability depend on the org's calendar configuration; types cannot
+validate that setup.
+
+## Filter without grouping
+
+```ts
+import { soqlDate } from "@kysoql/core";
+import { db } from "./db";
+
+const query = db
+  .selectFrom("Opportunity")
+  .select(["Id", "Name"])
+  .where((eb) =>
+    eb.and([
+      eb(eb.fn.calendarYear("CloseDate"), "=", 2026),
+      eb(
+        eb.fn.dayOnly(eb.fn.convertTimezone("CreatedDate")),
+        ">=",
+        soqlDate("2026-09-01"),
+      ),
+    ]),
+  );
+```
+
+`WHERE` uses the field's `filterable` metadata, not its `groupable` flag.
+Numeric functions compare with numbers; `dayOnly` compares with `soqlDate`.
+The expression builder supports the operators appropriate to each result.
+
+## Group by an exact expression
+
+```ts
+import { db } from "./db";
+
+const byYear = db
+  .selectFrom("Opportunity")
+  .select(({ fn }) => fn.sum("Amount").as("totalAmount"))
+  .groupBy(({ fn }) => fn.calendarYear("CloseDate"))
+  .select(({ fn }) => fn.calendarYear("CloseDate").as("closeYear"))
+  .having((eb) => eb(eb.fn.calendarYear("CloseDate"), ">=", 2025))
+  .orderBy(({ fn }) => fn.calendarYear("CloseDate"));
+```
+
+The same expression identity must be grouped before it is selected, used in
+`HAVING`, or ordered. `calendarYear("CloseDate")` is not interchangeable with
+`calendarMonth("CloseDate")` or an expression over a different field.
+
+## Group in the querying user's timezone
+
+```ts
+import { db } from "./db";
+
+const activity = db
+  .selectFrom("Opportunity")
+  .select(({ fn }) => fn.count("Id").as("opportunityCount"))
+  .groupBy(({ fn }) => fn.hourInDay(fn.convertTimezone("CreatedDate")))
+  .select(({ fn }) =>
+    fn.hourInDay(fn.convertTimezone("CreatedDate")).as("localHour"),
+  )
+  .orderBy(({ fn }) => fn.hourInDay(fn.convertTimezone("CreatedDate")));
+```
+
+`convertTimezone` uses the querying Salesforce user's timezone, not the Node.js
+host's timezone. A converted expression has a different grouped identity from
+the same expression over the unconverted field. It is not a client-side string
+formatting API.
+
+## The raw Date grouping exception
+
+For ordinary `GROUP BY` on a raw Date field, selecting a date function over that
+same field is also supported:
+
+```ts
+import { db } from "./db";
+
+const byExactDate = db
+  .selectFrom("Opportunity")
+  .select(({ fn }) => fn.count("Id").as("opportunityCount"))
+  .groupBy("CloseDate")
+  .select(({ fn }) => fn.calendarYear("CloseDate").as("closeYear"));
+```
+
+This still groups by each exact date, not by year. The exception applies only
+to SELECT over Date fields. It does not extend to DateTime, `HAVING`, date-function
+ordering, `ROLLUP`, or `CUBE`.
+
+See Salesforce's [date function reference](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-date-functions.html)
+for server-side calendar semantics.

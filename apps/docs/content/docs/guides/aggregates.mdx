@@ -1,0 +1,190 @@
+---
+title: "Counts and aggregate reports"
+description: "Count records, group data, filter totals, and generate rollups or cubes."
+---
+
+Generate `Opportunity` before running these examples. Capabilities such as
+`aggregatable` and `groupable` come from the connected org's Describe metadata.
+
+## Scalar COUNT versus row-producing COUNT
+
+```ts
+import { db } from "./db";
+
+const count = await db
+  .selectFrom("Opportunity")
+  .where("IsClosed", "=", false)
+  .select(({ fn }) => fn.count())
+  .execute();
+// count is a number.
+
+const rows = await db
+  .selectFrom("Opportunity")
+  .select(({ fn }) => fn.count("Id").as("opportunityCount"))
+  .execute();
+// rows is a readonly array with an opportunityCount property on each row.
+```
+
+Bare `fn.count()` compiles to `COUNT()` and uses a dedicated scalar builder.
+It has no alias, additional selections, grouping, ordering, or offset. The
+executor needs `executeCountQuery`; the JSforce adapter implements it using
+Salesforce's validated `totalSize` response.
+
+`fn.count(field)` and `fn.countDistinct(field)` are row-producing aggregate
+expressions. Every selected aggregate needs `.as(...)`. Do not rely on
+Salesforce's generated `expr0` property names.
+
+## Aggregate functions
+
+```ts
+import { db } from "./db";
+
+const totals = db
+  .selectFrom("Opportunity")
+  .select(({ fn }) => [
+    fn.count("Id").as("opportunityCount"),
+    fn.countDistinct("AccountId").as("accountCount"),
+    fn.sum("Amount").as("totalAmount"),
+    fn.avg("Amount").as("averageAmount"),
+    fn.min("CloseDate").as("firstCloseDate"),
+    fn.max("CloseDate").as("lastCloseDate"),
+  ])
+  .where("IsClosed", "=", false);
+```
+
+| Function | Selected result |
+| --- | --- |
+| `count(field)`, `countDistinct(field)` | `number` |
+| `sum(field)`, `avg(field)` | `number \| null`; numeric aggregatable fields only. |
+| `min(field)`, `max(field)` | Field-derived value, including `null`. |
+| `format(aggregate)` | Localized string, retaining aggregate nullability. |
+
+Use finite numeric filters for numeric aggregates and the corresponding temporal
+literal when comparing a temporal `min` or `max`. An alias must be a valid,
+unique identifier; aliases are not references for `HAVING` or `ORDER BY`.
+
+## Group before selecting ordinary fields
+
+```ts
+import { db } from "./db";
+
+const byStage = db
+  .selectFrom("Opportunity")
+  .select(({ fn }) => fn.sum("Amount").as("totalAmount"))
+  .groupBy("StageName")
+  .select("StageName")
+  .orderBy("StageName")
+  .limit(20)
+  .offset(20);
+```
+
+Grouping calls accumulate fields. Ordinary selected fields must already be
+part of the grouping set. Begin aggregate selection on an unselected root
+builder; do not select ordinary fields first and then attempt to convert them
+into an aggregate query.
+
+Standard parent paths can be grouped when their fields permit it. Queries using
+`GROUP BY` reject custom relationship expressions containing `__r`, including
+such expressions elsewhere in that grouped query.
+
+## Distinct grouped values without a dummy aggregate
+
+```ts
+import { db } from "./db";
+
+const stages = db
+  .selectFrom("Opportunity")
+  .groupBy("StageName")
+  .select("StageName")
+  .orderBy("StageName");
+```
+
+Start `groupBy` from the unselected root builder. This returns grouped values,
+including null where applicable; it is not a general SQL `distinct()` method.
+
+## Filter groups with HAVING
+
+```ts
+import { db } from "./db";
+
+const significantStages = db
+  .selectFrom("Opportunity")
+  .select(({ fn }) => [
+    fn.count("Id").as("opportunityCount"),
+    fn.sum("Amount").as("totalAmount"),
+  ])
+  .where("IsClosed", "=", false)
+  .groupBy("StageName")
+  .select("StageName")
+  .having((eb) =>
+    eb.and([
+      eb(eb.fn.count("Id"), ">", 5),
+      eb(eb.fn.sum("Amount"), ">=", 100_000),
+    ]),
+  );
+```
+
+`WHERE` filters input records; `HAVING` filters grouped results. Direct `having`
+field operands must be grouped. Callbacks support `and`, `or`, and `not` plus
+supported aggregate/date/grouping expressions. They do not allow semi-joins.
+
+## Order by aggregate expressions
+
+```ts
+import { db } from "./db";
+
+const ranked = db
+  .selectFrom("Opportunity")
+  .select(({ fn }) => fn.sum("Amount").as("totalAmount"))
+  .groupBy("StageName")
+  .select("StageName")
+  .orderBy(({ fn }) => fn.sum("Amount"), "desc", "last")
+  .orderBy("StageName");
+```
+
+Use an unaliased expression in the callback, not `"totalAmount"` as a field
+name. An ordering expression need not be selected. Bare `fn.count()` cannot
+be used for ordering; fielded `fn.count("Id")` can.
+
+## ROLLUP, CUBE, and GROUPING
+
+```ts
+import { db } from "./db";
+
+const pipeline = db
+  .selectFrom("Opportunity")
+  .select(({ fn }) => fn.sum("Amount").as("totalAmount"))
+  .groupByRollup(["StageName", "Type"])
+  .select(["StageName", "Type"])
+  .select(({ fn }) => [
+    fn.grouping("StageName").as("stageSubtotal"),
+    fn.grouping("Type").as("typeSubtotal"),
+  ])
+  .having((eb) => eb(eb.fn.grouping("StageName"), "=", 0))
+  .orderBy(({ fn }) => fn.grouping("Type"));
+```
+
+Use `groupByCube` instead for cube grouping. These forms accept at most three
+fields across calls. Ordinary grouping, rollup, and cube modes cannot be mixed;
+these advanced forms do not accept date-function expressions.
+
+Subtotal and grand-total rows make selected grouping fields nullable, even if
+the source field is non-nullable. `fn.grouping(field)` returns `0 | 1` and is
+available only for fields already in the rollup/cube set: `1` identifies a
+subtotal for that field, while `0` identifies an ordinary grouped row.
+
+## Pagination, execution, and clearing
+
+`LIMIT` and `OFFSET` are available after grouping; offset stays within 0..2000.
+Ungrouped aggregate rows and bare counts have different surfaces. Salesforce
+can reject aggregate result sets that require unsupported cursor behaviour;
+do not assume the adapter's root pagination can bypass aggregate restrictions.
+
+`clearGroupBy()` refuses to leave behind grouped selections, grouping-dependent
+functions, `HAVING`, ordering, limit, or offset. There is no `clearHaving()`
+helper in this snapshot. Rebuild a clean query when removing grouping would
+invalidate the remaining structure.
+
+Build grouping, selections, and `HAVING` before switching to the narrower
+[Apex context](/docs/apex/overview). For calendar reports, continue with
+[date functions](/docs/guides/date-functions).

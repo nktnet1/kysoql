@@ -1,0 +1,138 @@
+---
+title: "Custom executors and testing"
+description: "Implement the execution contract, preserve capabilities, and test without Salesforce."
+---
+
+## Executor contract
+
+Core does not depend on a specific transport. A custom executor implements this
+public interface:
+
+```ts
+import type { CompiledQuery } from "@kysoql/core";
+
+interface ExampleExecutorContract {
+  executeQuery<O>(query: CompiledQuery<O>): Promise<readonly O[]>;
+  executeAllQuery?<O>(query: CompiledQuery<O>): Promise<readonly O[]>;
+  executeCountQuery?(query: CompiledQuery<number>): Promise<number>;
+  executeAllCountQuery?(query: CompiledQuery<number>): Promise<number>;
+}
+```
+
+Only `executeQuery` is required. The builder checks optional capabilities and
+throws when a requested mode is unsupported; it does not silently fall back
+from QueryAll to ordinary execution or reinterpret row arrays as counts.
+
+A transport implementation is responsible for authentication, sending SOQL,
+validating untrusted responses, pagination policy, errors, and returning the
+contract's result shape. The generic `O` is erased at runtime. Merely asserting
+an arbitrary JSON response as `O[]` does not validate it.
+
+## Wrap an existing executor without inventing capabilities
+
+This wrapper records duration without logging tokens or SOQL values. It only
+exposes optional methods actually supported by its delegate:
+
+```ts
+import type { QueryExecutor } from "@kysoql/core";
+
+export function timedExecutor(
+  inner: QueryExecutor,
+  observe: (method: string, milliseconds: number) => void,
+): QueryExecutor {
+  async function timed<T>(method: string, run: () => Promise<T>): Promise<T> {
+    const start = performance.now();
+    try {
+      return await run();
+    } finally {
+      // A telemetry failure must not replace a query result or original error.
+      try {
+        observe(method, performance.now() - start);
+      } catch {
+        // Report telemetry failures through a separate, non-throwing channel.
+      }
+    }
+  }
+
+  const wrapped: QueryExecutor = {
+    executeQuery: (query) => timed("executeQuery", () => inner.executeQuery(query)),
+  };
+  const executeAllQuery = inner.executeAllQuery?.bind(inner);
+  const executeCountQuery = inner.executeCountQuery?.bind(inner);
+  const executeAllCountQuery = inner.executeAllCountQuery?.bind(inner);
+
+  if (executeAllQuery) {
+    wrapped.executeAllQuery = (query) =>
+      timed("executeAllQuery", () => executeAllQuery(query));
+  }
+  if (executeCountQuery) {
+    wrapped.executeCountQuery = (query) =>
+      timed("executeCountQuery", () => executeCountQuery(query));
+  }
+  if (executeAllCountQuery) {
+    wrapped.executeAllCountQuery = (query) =>
+      timed("executeAllCountQuery", () => executeAllCountQuery(query));
+  }
+  return wrapped;
+}
+```
+
+Supply the wrapper as the `executor` option on `Kysoql`. Preserving the delegate's
+`this` binding is important when adapting class-based executors.
+
+## A complete offline adapter test
+
+This is a test double for exactly one query, not an executor that returns valid
+results for arbitrary queries. It exercises the real JSforce adapter without
+credentials or network calls:
+
+```ts
+import assert from "node:assert/strict";
+import { Kysoql } from "@kysoql/core";
+import { createJsforceExecutor, type JsforceConnection } from "@kysoql/jsforce";
+import type { SalesforceSchema } from "./salesforce.generated";
+
+const connection: JsforceConnection = {
+  async query(soql) {
+    assert.equal(soql, "SELECT Id, Name FROM Account LIMIT 1");
+    return {
+      done: true,
+      records: [{ Id: "001000000000001AAA", Name: "Example account" }],
+    };
+  },
+  async queryMore() {
+    throw new Error("Unexpected pagination in this test");
+  },
+};
+
+const db = new Kysoql<SalesforceSchema>({
+  executor: createJsforceExecutor(connection),
+});
+const rows = await db.selectFrom("Account").select(["Id", "Name"]).limit(1).execute();
+assert.equal(rows[0]?.Name, "Example account");
+```
+
+Add tests for multi-page responses, incomplete responses without a locator,
+scalar count envelopes, QueryAll options, and propagated transport failures.
+Use compile-only tests to assert expected SOQL, and TypeScript negative tests to
+protect rejected field/operator/mode combinations.
+
+## Custom compiler
+
+`QueryCompiler.compileQuery<O>(query, context?)` receives a `SelectQueryNode`
+and optional `QueryCompileContext` flags (`apex`, `dynamicApex`) and returns a
+`CompiledQuery<O>`. `DefaultQueryCompiler` is the public default implementation.
+
+Replacing it is an advanced extension point, not a raw-SOQL shortcut. A custom
+compiler must preserve escaping and context/structural validation; otherwise it
+can remove guarantees described elsewhere in these docs. Operation-node exports
+from core are primarily types for inspection, not public runtime constructors.
+
+## Repository checks
+
+From the repository root, `pnpm validate` runs source/test typechecks, unit
+tests, builds, and publish/release checks. `pnpm test` runs local unit tests;
+Salesforce integration scripts are separate and need explicitly configured test
+org credentials. Do not run scratch-org provisioning against production.
+
+The documentation app has its own maintainer instructions in `apps/docs/README.md`.

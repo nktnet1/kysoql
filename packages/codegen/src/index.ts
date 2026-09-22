@@ -12,6 +12,7 @@ import {
   parseSalesforceObjectDescription,
 } from "#/validation";
 
+export { defineConfig, type KysoqlConfig } from "#/config";
 export { renderSchema } from "#/render";
 export type {
   SalesforceChildRelationshipDescription,

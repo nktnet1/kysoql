@@ -1,0 +1,182 @@
+---
+title: "Apex bindings and expressions"
+description: "Use typed variable references instead of raw Apex or SOQL fragments."
+---
+
+These helpers are exported by `@kysoql/core`. Use them only after entering
+`apex()` or `dynamicApex()`; they are intentionally unavailable on normal
+API-executable builders. Read the [context overview](/docs/apex/overview) first.
+
+## Scalar and collection binds
+
+```ts
+import { apexBind } from "@kysoql/core";
+import { db } from "./db";
+
+const compiled = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .apex()
+  .where((eb) =>
+    eb.or([
+      eb("Name", "=", apexBind<string>("filters.accountName")),
+      eb("Id", "in", apexBind<readonly string[]>("accountIds")),
+    ]),
+  )
+  .compile();
+```
+
+`apexBind<T>(expression)` accepts only identifiers or dotted member paths:
+letters, digits, and underscores, with no path segment beginning with a digit.
+Do not include the leading colon. `accountIds` becomes `:accountIds`.
+
+Calls, indexing, whitespace, and raw arithmetic text are rejected. Use the
+structured helpers below instead of `apexBind("name.substring(0, 2)")` or
+`apexBind("limit + 1")`.
+
+`T` is checked against the selected field's expected value. Collection binds
+use `readonly T[]` for `in`/`not in`. The TypeScript parameter does not prove
+that an Apex variable exists, has that type, or contains valid data at runtime.
+Temporal Apex binds use the generated field value type rather than a
+`soqlDate`/`soqlDateTime` wrapper; the actual Apex variable must have an appropriate
+Date, DateTime, or Time value.
+
+## Limits and offsets
+
+```ts
+import { apexBind } from "@kysoql/core";
+import { db } from "./db";
+
+const compiled = db
+  .selectFrom("Account")
+  .select("Id")
+  .apex()
+  .limit(apexBind<number>("page.rowLimit"))
+  .offset(apexBind<number>("page.rowOffset"))
+  .compile();
+```
+
+Literal numeric values retain the normal safe-integer/range checks. A bind's
+runtime value cannot be validated in TypeScript; enforce its range in the Apex
+caller. Bare count has no offset, and a bound limit cannot satisfy the child
+OFFSET pilot's requirement for a literal parent `LIMIT 1`.
+
+## Structured addition and concatenation
+
+```ts
+import { apexAdd, apexBind } from "@kysoql/core";
+import { db } from "./db";
+
+const compiled = db
+  .selectFrom("Account")
+  .select("Id")
+  .apex()
+  .where("Name", "=", apexAdd("Ac", "me"))
+  .limit(apexAdd(apexBind<number>("page.baseLimit"), 1))
+  .compile();
+// WHERE Name = :('Ac' + 'me') LIMIT :(page.baseLimit + 1)
+```
+
+`apexAdd` accepts string-plus-string or number-plus-number, including nested
+bind expressions. It is not an arbitrary Apex arithmetic parser and does not
+support mixed string/number coercion.
+
+## String substring
+
+```ts
+import { apexAdd, apexBind, apexSubstring } from "@kysoql/core";
+import { db } from "./db";
+
+const compiled = db
+  .selectFrom("Account")
+  .select("Id")
+  .apex()
+  .where(
+    "Name",
+    "like",
+    apexAdd(apexSubstring(apexBind<string>("filters.name"), 0, 2), "%"),
+  )
+  .compile();
+```
+
+`apexSubstring(value, beginIndex, endIndex)` accepts a string literal or a
+string-valued bind expression. Indices must be non-negative integers, with the
+end not preceding the beginning. The helper cannot check the length of an Apex
+string that will exist only at runtime. Arbitrary method calls are not supported.
+
+## Query-result field access
+
+```ts
+import { apexBind, apexQueryField } from "@kysoql/core";
+import { db } from "./db";
+
+const sourceAccount = db
+  .selectFrom("Account")
+  .select("Name")
+  .apex()
+  .where("Id", "=", apexBind<string>("sourceAccount.Id"));
+
+const compiled = db
+  .selectFrom("Account")
+  .select("Id")
+  .apex()
+  .where("Name", "=", apexQueryField(sourceAccount, "Name"))
+  .compile();
+// WHERE Name = :[SELECT Name FROM Account WHERE Id = :sourceAccount.Id].Name
+```
+
+`apexQueryField(query, field)` requires a plain-mode static Apex record query
+and a simple selected field key. It models single-record bracket-query access,
+not a JavaScript subquery execution or a list result.
+
+Kysoql does not silently add `LIMIT 1`. The Apex caller must constrain the query
+to one record; zero or multiple records can fail at runtime. Do not use this
+helper as a substitute for a proper relationship or semi-join.
+
+## Bind-left INCLUDES
+
+```ts
+import { apexBind } from "@kysoql/core";
+import { db } from "./db";
+
+const compiled = db
+  .selectFrom("Account")
+  .select("Id")
+  .apex()
+  .where(apexBind<string>("account.Type"), "includes", [
+    "Customer - Direct; Customer - Channel",
+  ])
+  .compile();
+```
+
+This is a distinct Apex-only overload: the left side is a string bind and the
+right side is a non-empty literal string list. It supports `includes`, not an
+arbitrary bind-left operator. The ordinary field-left `includes`/`excludes`
+overload does not accept a right-hand Apex bind.
+
+## Binds inside child subqueries
+
+```ts
+import { apexBind } from "@kysoql/core";
+import { db } from "./db";
+
+const compiled = db
+  .selectFrom("Account")
+  .select("Id")
+  .apex()
+  .selectSubquery("Contacts", (contacts) =>
+    contacts
+      .select(["Id", "LastName"])
+      .where("LastName", "like", apexBind<string>("filters.lastName")),
+  )
+  .compile();
+```
+
+Enter Apex before constructing that subquery to enable typed child WHERE binds.
+Child builders remain restricted: they do not become independent Apex root
+builders, do not expose semi-joins, and their literal pagination surface is not
+a general bind-enabled pagination API.
+
+Knowledge article Apex queries reject all bind forms. These helpers also do not
+add arbitrary `HAVING` binds, raw expressions, or support for unknown Salesforce
+syntax. Refer to [limitations](/docs/reference/limitations).

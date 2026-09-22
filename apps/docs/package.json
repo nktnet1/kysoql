@@ -8,7 +8,10 @@
     "build": "vite build",
     "check": "biome check",
     "preview": "vite preview",
-    "types:check": "tsc --noEmit"
+    "types:check": "tsc --noEmit",
+    "check:content": "node --test scripts/content.test.mjs && node scripts/check-content.mjs",
+    "check:examples": "node scripts/check-examples.mjs",
+    "typecheck:source": "pnpm check:content && pnpm check:examples && pnpm types:check"
   },
   "dependencies": {
     "@tanstack/react-router": "1.170.38",
@@ -24,6 +27,9 @@
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
+    "@kysoql/codegen": "workspace:*",
+    "@kysoql/core": "workspace:*",
+    "@kysoql/jsforce": "workspace:*",
     "@tailwindcss/vite": "^4.3.3",
     "@types/mdx": "^2.0.14",
     "@types/node": "^26.6.1",

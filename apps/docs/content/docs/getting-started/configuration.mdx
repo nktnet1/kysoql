@@ -1,0 +1,153 @@
+---
+title: "Configuration"
+description: "Keep schema-generation settings in kysoql.config.ts and override them safely."
+---
+
+Use a configuration file to make schema generation repeatable across developers
+and CI. The file configures **`kysoql generate` only**. It does not create a
+runtime query builder, configure a JSforce executor, or change application
+queries. Continue to construct your application client as shown in the
+[quickstart](/docs/getting-started/quickstart#4-configure-execution).
+
+## Create a config
+
+Place `kysoql.config.ts` in the directory where you run the CLI, usually beside
+your application's `package.json`:
+
+```ts title="kysoql.config.ts"
+import { defineConfig } from "@kysoql/codegen";
+
+export default defineConfig({
+  objects: ["Account", "Contact", "Opportunity", "User"],
+  output: "src/salesforce.generated.ts",
+  schemaName: "SalesforceSchema",
+});
+```
+
+`defineConfig` provides editor completion and typechecking. It is a typed identity
+helper, not a function that reads files, logs in, or generates a schema. A
+`satisfies` annotation works as well:
+
+```ts title="kysoql.config.ts"
+import type { KysoqlConfig } from "@kysoql/codegen";
+
+export default {
+  objects: ["Account", "Contact"],
+  output: "src/salesforce.generated.ts",
+} satisfies KysoqlConfig;
+```
+
+Run with `SF_INSTANCE_URL` and `SF_ACCESS_TOKEN` already set:
+
+```bash
+pnpm exec kysoql generate
+```
+
+## Settings
+
+| Key | Type | Default | Behaviour |
+| --- | --- | --- | --- |
+| `objects` | `readonly string[]` | All queryable objects | Salesforce API names. `[]` also means all queryable objects. Include relationship targets explicitly. |
+| `output` | `string` | `salesforce.generated.ts` | Generated file, relative to the config directory. Parent directories are created. |
+| `schemaName` | `string` | `SalesforceSchema` | Generated interface name; must pass identifier validation. |
+
+Export a plain object. Configuration factories, promises, and arrays of configs
+are not supported. Optional settings may be omitted. Empty or whitespace-only
+strings, wrong value types, and unknown properties are rejected before a
+Salesforce connection is constructed. Prefer an explicit object list for a
+large org; the current generator describes selected objects concurrently.
+
+## Discovery and module loading
+
+The CLI looks in the **current working directory only** for
+`kysoql.config.ts`, `.mts`, `.cts`, `.js`, `.mjs`, or `.cjs`. It does not walk up
+to a parent workspace. This prevents a workspace package from accidentally
+using another application's org configuration.
+
+If no file is found, existing CLI-only usage continues to work. If more than one
+supported file exists, generation fails with a message asking you to select one.
+For an explicit path, a missing or invalid file is an error, not a silent
+fallback to defaults.
+
+TypeScript and ESM configs use a default export. `.cjs` and `.cts` files can also
+use `module.exports`. The CLI uses a TypeScript-aware loader, so extensionless
+relative imports of local helpers work. For example, a config may import a list
+from `./salesforce-objects` when that module exports the required array. This
+loader applies to the config, not your application runtime. Do not assume
+application-specific bundler plugins or path aliases are available to it.
+
+A config and its imports are **executable code**. Only run trusted configuration
+files. In particular, do not give an untrusted pull request access to Salesforce
+credentials just because the job only runs codegen.
+
+## Overrides and paths
+
+```bash
+pnpm exec kysoql generate --config config/kysoql.sandbox.ts
+pnpm exec kysoql generate --object Account --output tmp/account.ts
+pnpm exec kysoql generate --no-config --object Account --output tmp/account.ts
+```
+
+Precedence is **explicit CLI flags, then config settings, then built-in
+defaults**. A supplied `--object` list replaces the configured list; it does not
+append to it. Settings not overridden on the command line remain configured.
+
+`--config` is resolved relative to the current working directory. A configured
+`output`, including the default output when omitted from a loaded config, is
+resolved relative to the config file's directory. A CLI `--output` override is
+always relative to the current working directory. Absolute paths stay absolute.
+For example, a config at `config/kysoql.sandbox.ts` with
+`output: "../src/sandbox.generated.ts"` writes under `src/` beside `config/`.
+
+`--no-config` disables discovery and evaluation entirely. It cannot be combined
+with `--config`. Use it with no `--object` flags to explicitly generate all
+queryable objects, ignoring any configured allowlist:
+
+```bash
+pnpm exec kysoql generate --no-config --output src/all.generated.ts
+```
+
+## Multiple orgs and CI
+
+Keep settings for different orgs in separate files and select one explicitly:
+
+```json title="package.json"
+{
+  "scripts": {
+    "schema:sandbox": "kysoql generate --config config/kysoql.sandbox.ts",
+    "schema:production": "kysoql generate --config config/kysoql.production.ts"
+  }
+}
+```
+
+The file does **not** choose the authenticated org. Supply that org's instance
+URL and access token through the corresponding environment or CI secret store.
+Use different output files and schema names when retaining more than one org's
+types. Generate after metadata changes, review the diff, and run application
+typechecks before deploying.
+
+Do not store tokens in committed config files. The CLI does not automatically
+read `.env` files; arrange environment loading explicitly before generation.
+A config may execute your chosen environment loader as part of its module
+initialisation, but that loader is your responsibility. No credentials are
+copied to the generated type file.
+
+## Troubleshooting
+
+**The wrong output file is being updated:** check which directory contains the
+config. Configured output paths use that directory; CLI output overrides use the
+working directory.
+
+**A configured setting appears ignored:** check for flags in package scripts.
+Explicit flags win. Also confirm the command is run from the config's directory
+or uses `--config`; discovery does not search parents.
+
+**The config fails to load:** read the reported filename and underlying import or
+syntax error. Check the default export and any imported modules. Configuration
+validation also rejects misspelled settings such as `out` instead of `output`.
+
+**The editor accepts the config but generation fails:** `defineConfig` checks
+types, not Salesforce metadata or authentication. Describe permissions, object
+availability, token validity, and schema identifier validation still apply.
+See [schema generation](/docs/getting-started/schema-generation) and
+[troubleshooting](/docs/reference/troubleshooting).

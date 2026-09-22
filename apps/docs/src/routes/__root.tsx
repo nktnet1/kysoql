@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-router";
 import { RootProvider } from "fumadocs-ui/provider/tanstack";
 import SearchDialog from "@/components/search";
+import { appDescription, appName } from "@/lib/shared";
 import appCss from "@/styles/app.css?url";
 
 export const Route = createRootRoute({
@@ -19,7 +20,11 @@ export const Route = createRootRoute({
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "Fumadocs on TanStack Start",
+        title: `${appName} | Salesforce Query Builder`,
+      },
+      {
+        name: "description",
+        content: appDescription,
       },
     ],
     links: [{ rel: "stylesheet", href: appCss }],

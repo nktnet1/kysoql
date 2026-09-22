@@ -1,0 +1,135 @@
+---
+title: "Installation"
+description: "Choose the packages, configure TypeScript, and use the unpublished workspace."
+---
+
+## Requirements
+
+The supplied package manifests declare **Node.js `>=26.0.0 <27`** and ESM
+(`"type": "module"`). The workspace pins Node.js `26.8.2` in `.node-version`
+and pnpm `12.4.1` in `packageManager`. Use those versions for repository work;
+these are the project's declared requirements, not a claim about other versions
+being tested.
+
+Use TypeScript with strict null checking. The workspace pins TypeScript `7.0.2`.
+No minimum consumer TypeScript version is declared, so use the workspace version
+when reproducing type errors rather than assuming older compilers are supported.
+
+## Install packages
+
+For normal API execution:
+
+```bash
+pnpm add @kysoql/core @kysoql/jsforce jsforce
+pnpm add -D @kysoql/codegen typescript @types/node tsx
+```
+
+Equivalent npm commands:
+
+```bash
+npm install @kysoql/core @kysoql/jsforce jsforce
+npm install --save-dev @kysoql/codegen typescript @types/node tsx
+```
+
+For compile-only use, install `@kysoql/core`; add codegen only when generating
+schemas. The `@kysoql/jsforce` adapter is optional if you provide a
+[custom executor](/docs/reference/custom-executors). Declare `jsforce` directly
+when your application imports it instead of relying on a transitive dependency.
+Keep the three Kysoql packages on aligned versions.
+
+## Configure a TypeScript application
+
+The examples use **extensionless local imports** such as `./db` and
+`./salesforce.generated`. This walkthrough runs TypeScript with `tsx` and uses
+TypeScript's `Bundler` resolution for matching typechecks. Keep your existing
+Vite or other bundler setup if it already supports those imports.
+
+Merge these settings into your application rather than replacing unrelated
+configuration.
+
+```json title="package.json"
+{
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "schema:generate": "kysoql generate",
+    "start": "tsx src/query.ts"
+  }
+}
+```
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts", "kysoql.config.ts"]
+}
+```
+
+Use `import type` for generated schemas. `tsx` runs the examples but does not
+check their types: run `pnpm run typecheck` as a separate step and in CI.
+For deployment, use your application's existing build tool to produce runnable
+JavaScript, or make the TypeScript runner available in the deployment image.
+A dev-only `tsx` installation is not present in a production-only install.
+
+Do not switch to plain `tsc` emission followed by native Node.js execution
+without revisiting module resolution. TypeScript's `Bundler` setting accepts
+extensionless imports; it does not rewrite them for Node.js ESM. See the official
+[TypeScript module-resolution reference](https://www.typescriptlang.org/tsconfig/moduleResolution.html)
+and [tsx typechecking guide](https://tsx.is/typescript).
+
+## Use the workspace before publication
+
+The packages in the supplied repository are version `0.0.0`. If they are not
+available in your registry, work inside the pnpm workspace instead of repeatedly
+trying the public registry.
+
+From the repository root, with the required Node.js and pnpm versions active:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm --filter @kysoql/core build
+pnpm --filter @kysoql/jsforce build
+pnpm --filter @kysoql/codegen build
+```
+
+An application package inside the workspace can declare:
+
+```json
+{
+  "dependencies": {
+    "@kysoql/core": "workspace:*",
+    "@kysoql/jsforce": "workspace:*"
+  },
+  "devDependencies": {
+    "@kysoql/codegen": "workspace:*"
+  }
+}
+```
+
+Run `pnpm install` after adding those declarations. Build the libraries before
+running an application through their default package exports. For schema
+generation from the repository root, the built CLI is also directly runnable:
+
+```bash
+node packages/codegen/dist/cli.mjs generate --help
+```
+
+`@kysoql/debug` is a workspace playground, not a required application dependency.
+
+## Next step
+
+Continue with the [quickstart](/docs/getting-started/quickstart). It starts with
+an existing Salesforce access token; Kysoql does not implement an OAuth login
+flow for you.

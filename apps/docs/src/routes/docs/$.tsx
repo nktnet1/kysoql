@@ -14,17 +14,28 @@ import {
 import { Suspense, use } from "react";
 import { useMDXComponents } from "@/components/mdx";
 import { baseOptions } from "@/lib/layout.shared";
-import { getPageMarkdownUrl, gitConfig } from "@/lib/shared";
+import {
+  appDescription,
+  appName,
+  getPageMarkdownUrl,
+  getPageSourceUrl,
+} from "@/lib/shared";
 import { docs, source } from "@/lib/source";
 
 export const Route = createFileRoute("/docs/$")({
   component: Page,
   loader: async ({ params }) => {
-    const slugs = params._splat?.split("/") ?? [];
+    const slugs = params._splat?.split("/").filter(Boolean) ?? [];
     const data = await loader({ data: slugs });
     await docs.getPage(data.path)?.preload();
     return data;
   },
+  head: ({ loaderData }) => ({
+    meta: [
+      { title: loaderData ? `${loaderData.title} | ${appName}` : appName },
+      { name: "description", content: loaderData?.description ?? appDescription },
+    ],
+  }),
 });
 
 const loader = createServerFn({
@@ -39,6 +50,8 @@ const loader = createServerFn({
     }
 
     return {
+      title: page.data.title,
+      description: page.data.description,
       path: page.path,
       markdownUrl: getPageMarkdownUrl(page).url,
       pageTree: await source.serializePageTree(source.getPageTree()),
@@ -53,6 +66,7 @@ function Content({ path, markdownUrl }: { path: string; markdownUrl: string }) {
 
   const { toc } = use(page.load());
   const MDX = page.body;
+  const sourceUrl = getPageSourceUrl(path);
 
   return (
     <DocsPage toc={toc}>
@@ -62,7 +76,7 @@ function Content({ path, markdownUrl }: { path: string; markdownUrl: string }) {
         <MarkdownCopyButton markdownUrl={markdownUrl} />
         <ViewOptionsPopover
           markdownUrl={markdownUrl}
-          githubUrl={`https://github.com/${gitConfig.user}/${gitConfig.repo}/blob/${gitConfig.branch}/content/docs/${path}`}
+          {...(sourceUrl ? { githubUrl: sourceUrl } : {})}
         />
       </div>
       <DocsBody>

@@ -1,0 +1,86 @@
+---
+title: "Mental model"
+description: "Understand immutability, query modes, metadata, and result inference."
+---
+
+## A schema is compile-time metadata
+
+`new Kysoql<YourSchema>()` uses the generated interface as a type parameter. It
+does not load metadata at runtime. Types prevent many invalid queries while you
+write code; the compiler validates the operation tree and emits SOQL.
+
+Do not import the generic `SalesforceSchema` helper from `@kysoql/core` as a
+substitute for your generated interface. That broad helper cannot describe your
+org's particular objects and fields.
+
+## Builders are immutable
+
+Each clause returns a new builder. Preserve the returned value or chain methods:
+
+```ts
+import { db } from "./db";
+
+const base = db.selectFrom("Account").select(["Id", "Name"]);
+const acme = base.where("Name", "like", "Acme%");
+const firstPage = acme.orderBy("Name").limit(25);
+
+// base has no WHERE, ORDER BY, or LIMIT.
+// acme has a WHERE, but no ORDER BY or LIMIT.
+console.log(firstPage.compile().soql);
+```
+
+Calling `base.where(...)` without using its return value does not change `base`.
+This makes it safe to derive multiple queries from a shared base.
+
+## A query has a mode
+
+| Mode | How to enter it | Result or purpose |
+| --- | --- | --- |
+| Record selection | `select("Id")`, field arrays, supported select functions | Readonly array of selected records. |
+| Aggregate result | An aliased aggregate selection, or `groupBy` before ordinary selections | Readonly array of aggregate rows. |
+| Scalar count | `select(({ fn }) => fn.count())` on an unselected builder | A single `number`. |
+| Apex | Finish API-style selections, then call `apex()` or `dynamicApex()` | Compile-only SOQL. No execution methods. |
+| Relationship subquery | A `selectSubquery` callback | Nested result envelope in the parent row. |
+| Semi-join | An `in` or `not in` subquery callback | A filter, not a separately returned result. |
+
+Methods are intentionally unavailable when they cannot describe valid SOQL.
+For example, an ordinary selected record query does not later become an
+aggregate query, bare `COUNT()` does not expose `OFFSET`, and child-query
+builders do not expose a general `execute()` method.
+
+## Results follow selections
+
+`select(["Id", "Name"])` infers only those fields. Nullable Describe fields
+include `null`; optional selections added by `$if` include `undefined` when
+not selected. Parent paths infer nested objects, and nullable lookups can make
+the parent object `null`.
+
+Aliases on functions are result property names, not raw SOQL fragments. An
+aggregate uses `.as("totalAmount")`; ordinary selected fields are not renamed
+using SQL-style `"Name as name"` strings.
+
+The JSforce adapter validates the query response envelope, not every selected
+field's runtime type. Types are not a runtime data-validation or authorisation
+layer. See [security](/docs/reference/security).
+
+## Compile, inspect, or execute
+
+`compile().soql` gives the SOQL string. `compile().query` and
+`toOperationNode()` expose the operation tree for inspection or testing. Normal
+builders use the default compiler unless a custom `queryCompiler` is supplied.
+
+`execute()` requires an executor. With the JSforce adapter it already drains
+root result pages. `executeAll()` changes the Salesforce query mode to QueryAll;
+it does not simply mean "fetch every page".
+
+## Conventions used in these guides
+
+Query examples import `db` from the [quickstart](/docs/getting-started/quickstart).
+Generate every object used by an example. `Opportunity`, `User`, `Event`,
+Knowledge, Data 360, and custom objects are additional requirements, not objects
+automatically included by the quickstart command. Custom names such as
+`Office__c` and `Interests__c` are illustrative: replace them with real API names
+and regenerate before running those examples.
+
+Examples are independent unless a section explicitly says to continue the same
+snippet. SQL blocks show generated SOQL, not statements to send to a SQL database.
