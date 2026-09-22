@@ -5,7 +5,7 @@ icon: "Rocket"
 ---
 
 This walkthrough uses a TypeScript application with `tsx`, configured as described in
-[installation](/docs/getting-started/installation), a Salesforce org with API
+[installation](/docs/framework/getting-started/installation), a Salesforce org with API
 access, and an access token for a user allowed to describe and query `Account`
 and `Contact`.
 
@@ -181,10 +181,10 @@ for (const account of accounts) {
 
 A child relationship is a Salesforce query-result envelope, not a direct array.
 The adapter drains root pages, not nested child envelopes; see
-[relationships](/docs/guides/relationships#read-child-results).
+[relationships](/docs/framework/guides/relationships#read-child-results).
 
 ## Where to go next
 
-[Filtering](/docs/guides/filtering) covers grouped conditions and typed values.
+[Filtering](/docs/framework/guides/filtering) covers grouped conditions and typed values.
 [Schema generation](/docs/codegen/schema-generation) documents every CLI
 option. [Execution](/docs/rest/execution) explains QueryAll and count results.

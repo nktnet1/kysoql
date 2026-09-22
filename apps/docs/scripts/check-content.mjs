@@ -110,6 +110,31 @@ const allFiles = await walk(contentRoot);
 const metadataFiles = allFiles.filter(
   (file) => path.basename(file) === "meta.json",
 );
+const rootTabs = ["framework", "core", "rest", "codegen", "jsforce"];
+try {
+  const rootMeta = JSON.parse(
+    await readFile(path.join(contentRoot, "meta.json"), "utf8"),
+  );
+  assert.deepEqual(
+    rootMeta.pages,
+    rootTabs,
+    "top-level navigation must contain only the peer documentation roots",
+  );
+  for (const root of rootTabs) {
+    const rootMetaFile = path.join(contentRoot, root, "meta.json");
+    const rootMetaData = JSON.parse(await readFile(rootMetaFile, "utf8"));
+    assert.equal(
+      rootMetaData.root,
+      true,
+      `${root}/meta.json must set root: true so the root toggle stays available`,
+    );
+  }
+} catch (error) {
+  complain(
+    "meta.json",
+    error instanceof Error ? error.message : String(error),
+  );
+}
 const referenced = new Set();
 for (const file of metadataFiles) {
   const label = path.relative(contentRoot, file);

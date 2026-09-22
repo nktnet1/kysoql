@@ -34,7 +34,7 @@ function Home() {
         <div className="flex flex-wrap gap-3">
           <Link
             to="/docs/$"
-            params={{ _splat: "" }}
+            params={{ _splat: "framework" }}
             className="rounded-lg bg-fd-primary px-4 py-2 font-medium text-fd-primary-foreground text-sm"
           >
             Open the framework guide
@@ -48,7 +48,7 @@ function Home() {
           </Link>
           <Link
             to="/docs/$"
-            params={{ _splat: "getting-started/quickstart" }}
+            params={{ _splat: "framework/getting-started/quickstart" }}
             className="rounded-lg px-4 py-2 font-medium text-sm underline underline-offset-4"
           >
             Follow the quickstart

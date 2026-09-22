@@ -29,17 +29,17 @@ an SQL-style parameter array or a runtime row validator.
 
 | Method | Behaviour / guide |
 | --- | --- |
-| `select(fieldOrFields)` | Add direct or parent-path selections. [Selecting](/docs/guides/selecting). |
+| `select(fieldOrFields)` | Add direct or parent-path selections. [Selecting](/docs/framework/guides/selecting). |
 | `select(callback)` | Add supported aliased SELECT functions, or enter count/aggregate mode from an unselected builder. |
 | `selectFields(selector)` | `standard`, `custom`, or `all`; requires a complete field schema and is subject to bounds and overlap checks. |
-| `selectSubquery(relationship, callback)` | Add a generated child relationship. [Relationships](/docs/guides/relationships). |
-| `selectTypeOf(relationship, callback)` | Add polymorphic `when`/`else` selections. [Polymorphism](/docs/guides/polymorphism). |
+| `selectSubquery(relationship, callback)` | Add a generated child relationship. [Relationships](/docs/framework/guides/relationships). |
+| `selectTypeOf(relationship, callback)` | Add polymorphic `when`/`else` selections. [Polymorphism](/docs/framework/guides/polymorphism). |
 | `where(field, operator, value)` | Append a typed predicate with AND. |
-| `where(callback)` | Append grouped or function predicates. [Filtering](/docs/guides/filtering). |
+| `where(callback)` | Append grouped or function predicates. [Filtering](/docs/framework/guides/filtering). |
 | `orderBy(fieldOrCallback, direction?, nulls?)` | Append sortable-field or distance ordering. |
-| `limit(n)`, `offset(n)` | Replace pagination clauses. [Pagination](/docs/guides/ordering-and-pagination). |
+| `limit(n)`, `offset(n)` | Replace pagination clauses. [Pagination](/docs/framework/guides/ordering-and-pagination). |
 | `groupBy(fieldOrFieldsOrCallback)` | Enter ordinary grouped mode only before ordinary selections. |
-| `$call(callback)`, `$if(condition, callback)` | Compose while retaining specialised types. [Composition](/docs/guides/composition). |
+| `$call(callback)`, `$if(condition, callback)` | Compose while retaining specialised types. [Composition](/docs/framework/guides/composition). |
 | `clearSelect()`, `clearWhere()`, `clearOrderBy()`, `clearLimit()`, `clearOffset()` | Reset the named clause immutably. |
 | `execute()`, `executeAll()` | Execute ordinary/QueryAll mode with a configured executor. |
 | `apex()`, `dynamicApex()` | Switch to a compile-only specialised builder. |
@@ -47,7 +47,7 @@ an SQL-style parameter array or a runtime row validator.
 ## Aggregate query
 
 Enter using aliased aggregate `select` on an unselected root, or ordinary
-`groupBy` on an unselected root. See [aggregates](/docs/guides/aggregates).
+`groupBy` on an unselected root. See [aggregates](/docs/framework/guides/aggregates).
 
 | Method | Behaviour |
 | --- | --- |
@@ -105,7 +105,7 @@ There is no ordering, pagination, nested semi-join, or independent execution.
 
 `TypeOfBuilder.when(object, fields)` adds a typed branch;
 `else(fields)` completes a supported fallback. See
-[polymorphism](/docs/guides/polymorphism) for restrictions and returned unions.
+[polymorphism](/docs/framework/guides/polymorphism) for restrictions and returned unions.
 
 ## Apex builders
 
@@ -145,7 +145,7 @@ result nullability, context, and grouping-identity requirements.
 ## Top-level value helpers
 
 `soqlDate`, `soqlDateTime`, `soqlTime`, `soqlRelativeDate`, and `soqlCurrency`
-construct [validated literals](/docs/guides/literals).
+construct [validated literals](/docs/framework/guides/literals).
 `apexBind`, `apexAdd`, `apexSubstring`, and `apexQueryField` construct
 [Apex expression nodes](/docs/core/apex/bindings).
 

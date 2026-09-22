@@ -89,6 +89,12 @@ describe("documentation code fences", () => {
     }
   });
 
+  it("accepts Fumadocs npm package-manager blocks", () => {
+    const [example] = codeBlocks(block("npm", "npm install @kysoql/core"));
+    assert.equal(example.language, "npm");
+    assert.deepEqual(codeBlockIssues(example), []);
+  });
+
   it("still checks JSON syntax when metadata is present", () => {
     const [example] = codeBlocks(
       block('json title="package.json"', "{ nope }"),

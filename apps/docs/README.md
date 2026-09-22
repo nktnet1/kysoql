@@ -29,17 +29,17 @@ for the workspace's pinned toolchain when investigating type errors.
 
 | Root | Purpose |
 | --- | --- |
-| `index.mdx`, `getting-started/`, `guides/` | Framework-level usage: setup, query building, and common Salesforce concepts. |
+| `framework/` | Framework-level usage: setup, query building, and common Salesforce concepts. |
 | `core/` | `@kysoql/core`: Apex compilation, schema/result types, advanced features, and core references. |
 | `rest/` | `@kysoql/rest`: native execution, pagination, authentication, and REST API reference. |
 | `codegen/` | `@kysoql/codegen`: configuration, schema generation, field filtering, and codegen API reference. |
 | `jsforce/` | `@kysoql/jsforce`: the optional JSforce adapter and its API reference. |
 
-The top-level docs tree is the default **Framework** view. The four package
-folders are Fumadocs root folders (`"root": true`), so the generated layout-tab
-toggle switches from general usage into deeper package-specific documentation.
-Each package directory has a `meta.json` with an explicit `pages` array; add new
-pages there rather than
+`framework/`, `core/`, `rest/`, `codegen/`, and `jsforce/` are peer Fumadocs
+root folders (`"root": true`). The layout root toggle therefore stays available
+while browsing Framework or any individual package; no package root is nested
+inside another. `/docs` redirects to the Framework root by default. Each root has
+a `meta.json` with an explicit `pages` array; add new pages there rather than
 relying on alphabetical ordering. Keep package-specific pages inside the matching
 root so navigation and search filtering stay aligned.
 
@@ -56,7 +56,7 @@ description: "Explain what the reader will accomplish."
 
 Use H2 and lower headings in the body; the page layout renders the H1 from
 `title`. Use descriptive headings, language-tagged code fences, descriptive link
-text, and absolute internal links such as `/docs/guides/filtering`. Use stable
+text, and absolute internal links such as `/docs/framework/guides/filtering`. Use stable
 heading anchors for deep links. Tables work well for signatures and capability
 comparisons; explain decisions and caveats in prose.
 
@@ -72,6 +72,12 @@ plain `tsc`-then-Node workflow that cannot resolve extensionless imports. Show
 prerequisites for custom fields, object metadata, and feature availability. Use `text` for output,
 `sql` for SOQL, and `apex` for Apex examples; do not label partial or invalid
 pseudo-code as executable TypeScript.
+
+For consumer package installation, write one `npm` code fence with npm syntax.
+Fumadocs' npm remark plugin expands it into npm, pnpm, yarn, and bun tabs, and
+`source.config.ts` persists the selected package manager under the shared
+`package-manager` group. Keep repository-only commands in pnpm when they depend
+on this monorepo's pinned pnpm workspace.
 
 Document the source as it exists, not planned methods. Check changes against
 `packages/core/src/index.ts`, the builders/compiler, codegen, and adapter tests.

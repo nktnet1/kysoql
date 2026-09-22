@@ -13,22 +13,22 @@ field or a supported timezone-converted datetime expression.
 
 ## Supported functions
 
-| TypeScript function | SOQL function | Input / output |
-| --- | --- | --- |
-| `calendarMonth` | `CALENDAR_MONTH` | Date or DateTime / number. |
-| `calendarQuarter` | `CALENDAR_QUARTER` | Date or DateTime / number. |
-| `calendarYear` | `CALENDAR_YEAR` | Date or DateTime / number. |
-| `dayInMonth` | `DAY_IN_MONTH` | Date or DateTime / number. |
-| `dayInWeek` | `DAY_IN_WEEK` | Date or DateTime / number. |
-| `dayInYear` | `DAY_IN_YEAR` | Date or DateTime / number. |
-| `fiscalMonth` | `FISCAL_MONTH` | Date or DateTime / number. |
-| `fiscalQuarter` | `FISCAL_QUARTER` | Date or DateTime / number. |
-| `fiscalYear` | `FISCAL_YEAR` | Date or DateTime / number. |
-| `weekInMonth` | `WEEK_IN_MONTH` | Date or DateTime / number. |
-| `weekInYear` | `WEEK_IN_YEAR` | Date or DateTime / number. |
-| `hourInDay` | `HOUR_IN_DAY` | DateTime only / number. |
-| `dayOnly` | `DAY_ONLY` | DateTime only / date string. |
-| `convertTimezone` | `convertTimezone` | DateTime only / input for a date function, not a standalone selection. |
+| TypeScript function | SOQL function | Input | Output |
+| --- | --- | --- | --- |
+| `calendarMonth` | `CALENDAR_MONTH` | Date or DateTime | Number |
+| `calendarQuarter` | `CALENDAR_QUARTER` | Date or DateTime | Number |
+| `calendarYear` | `CALENDAR_YEAR` | Date or DateTime | Number |
+| `dayInMonth` | `DAY_IN_MONTH` | Date or DateTime | Number |
+| `dayInWeek` | `DAY_IN_WEEK` | Date or DateTime | Number |
+| `dayInYear` | `DAY_IN_YEAR` | Date or DateTime | Number |
+| `fiscalMonth` | `FISCAL_MONTH` | Date or DateTime | Number |
+| `fiscalQuarter` | `FISCAL_QUARTER` | Date or DateTime | Number |
+| `fiscalYear` | `FISCAL_YEAR` | Date or DateTime | Number |
+| `weekInMonth` | `WEEK_IN_MONTH` | Date or DateTime | Number |
+| `weekInYear` | `WEEK_IN_YEAR` | Date or DateTime | Number |
+| `hourInDay` | `HOUR_IN_DAY` | DateTime | Number |
+| `dayOnly` | `DAY_ONLY` | DateTime | Date string |
+| `convertTimezone` | `convertTimezone` | DateTime | DateTime expression for another date function |
 
 Output nullability follows field and relationship metadata. Fiscal behaviour
 and availability depend on the org's calendar configuration; types cannot

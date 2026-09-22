@@ -1,14 +1,11 @@
 {
-  "title": "Framework",
-  "description": "General Kysoql usage across schema generation, query building, and execution.",
+  "title": "Kysoql",
+  "description": "Type-safe Salesforce SOQL queries for TypeScript.",
   "pages": [
-    "index",
-    "getting-started",
-    "guides",
+    "framework",
     "core",
     "rest",
     "codegen",
     "jsforce"
-  ],
-  "icon": "House"
+  ]
 }

@@ -58,6 +58,7 @@ const languages = new Set([
   "text",
   "sql",
   "apex",
+  "npm",
 ]);
 
 /**

@@ -15,7 +15,6 @@
     "date-functions",
     "select-functions",
     "geolocation",
-    "composition",
-    "external:[ExternalLink][Salesforce SOQL reference](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql.html)"
+    "composition"
   ]
 }

@@ -35,10 +35,10 @@ const query = db
 Operator names are lowercase in TypeScript; emitted SOQL uses uppercase
 keywords. `is`, `is not`, `between`, `ilike`, `not like`, and SQL `exists` are
 not part of this API. To negate a supported predicate, use `eb.not(...)`.
-Location fields require [distance expressions](/docs/guides/geolocation).
+Location fields require [distance expressions](/docs/framework/guides/geolocation).
 
 Null uses `where("Field", "=", null)` or `"!="`, not a string containing
-`"null"`. Date/time fields use [literal helpers](/docs/guides/literals), not plain
+`"null"`. Date/time fields use [literal helpers](/docs/framework/guides/literals), not plain
 strings or JavaScript `Date` objects.
 
 ## Group AND, OR, and NOT
@@ -65,7 +65,7 @@ const query = db
 
 Use non-empty groups; do not depend on empty `and([])` or `or([])` having an
 SQL-style identity. Build optional conditions with
-[`$if`](/docs/guides/composition) instead.
+[`$if`](/docs/framework/guides/composition) instead.
 
 ## IN and NOT IN lists
 
@@ -88,7 +88,7 @@ an empty input means "no matches", "invalid request", or "omit this optional
 filter". Omitting an authorisation filter can unintentionally widen a query.
 
 For related-record existence checks, use a
-[semi-join or anti-join](/docs/guides/relationships#semi-joins-and-anti-joins)
+[semi-join or anti-join](/docs/framework/guides/relationships#semi-joins-and-anti-joins)
 instead of first fetching all IDs into JavaScript.
 
 ## Multipicklists
@@ -126,6 +126,6 @@ Do not cast arbitrary request strings to schema keys. See
 
 Expression callbacks also expose date functions, `toLabel`, and `distance` via
 `eb.fn`. Supported beta arithmetic lives under `eb.beta`, not `eb.fn`.
-See [date functions](/docs/guides/date-functions),
-[translated labels](/docs/guides/select-functions#translated-labels), and
+See [date functions](/docs/framework/guides/date-functions),
+[translated labels](/docs/framework/guides/select-functions#translated-labels), and
 [experimental features](/docs/core/advanced/experimental).
