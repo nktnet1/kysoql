@@ -226,6 +226,7 @@ export type {
   SalesforceObject,
   SalesforceObjectDataCategory,
   SalesforceObjectDataCategoryGroup,
+  SalesforceObjectFieldsComplete,
   SalesforceObjectMruEnabled,
   SalesforceObjectSetOptionsCapability,
   SalesforceObjectSupportedScope,

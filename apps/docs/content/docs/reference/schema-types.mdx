@@ -86,13 +86,27 @@ SalesforceObject<
   SupportedScope,
   DataCategoryGroups,
   MruEnabled,
-  SetOptionsCapability
+  SetOptionsCapability,
+  FieldsComplete
 >
 ```
 
 Only `Fields` is required. Parent and child maps default to empty maps, scopes
 to no known scope, categories to an empty map, MRU to an unspecified boolean,
-and set-options capability to `"none"`.
+set-options capability to `"none"`, and field completeness to `true`.
+
+The eighth parameter is exposed as optional `fieldsComplete` metadata so older
+structural schemas remain assignable. Codegen sets it to `false`
+for any object with an explicit [field rule](/docs/getting-started/field-filtering),
+even if a rule currently removes no fields. `selectFields(...)` is rejected for
+those objects at the type level because Salesforce's group expansion cannot be
+restricted by generated types. Explicit selections, predicates, grouping, and
+relationship traversal use the retained metadata as usual. `SalesforceRow` and
+the broad `SalesforceSchema` type support both complete and partial objects.
+
+The new parameter is trailing and defaults to `true`; existing generated
+`SalesforceObject<...>` declarations remain compatible. Update both core and
+codegen before regenerating filtered schemas.
 
 `SalesforceParentRelationship<ObjectName, FieldName, Nullable>` records the
 referenced object(s), lookup field, and lookup nullability.
@@ -113,6 +127,7 @@ Use the generated values rather than manually enabling features on CRM objects.
 | `SalesforceRecordAttributes<ObjectName>` | `{ type, url }` record attributes. |
 | `SalesforceGeolocation` | `{ latitude, longitude }`. |
 | `SalesforceObjectSupportedScope<Object>` | Generated scope union. |
+| `SalesforceObjectFieldsComplete<Object>` | Whether the object can use server-expanded `FIELDS(...)`; absent legacy metadata defaults to true. |
 | `SalesforceObjectMruEnabled<Object>` | Object MRU capability. |
 | `SalesforceObjectDataCategoryGroup<Object>` | Category-group names. |
 | `SalesforceObjectDataCategory<Object, Group>` | Category names for a group. |

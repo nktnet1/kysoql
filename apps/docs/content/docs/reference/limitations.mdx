@@ -25,6 +25,7 @@ Normal fields cannot be renamed using SQL-style strings. There are no
 | `LIMIT` | Non-negative safe integer; additional query/object rules may apply. |
 | Root/grouped `OFFSET` | Integer from 0 to 2000; grouped aggregate mode required for aggregate offset. |
 | Child `OFFSET` | Pilot namespace only; immediate parent literal `LIMIT 1`. |
+| `FIELDS(...)` on filtered objects | All selectors are blocked at the type level; explicit selections remain available. |
 | `FIELDS(CUSTOM/ALL)` | API only, provably bounded to at most 200 records; no overlapping selections. |
 | Parent paths | Up to five child-to-parent levels in typed references. |
 | Nested child subqueries | Up to four levels below root in the builder; actual context support varies. |

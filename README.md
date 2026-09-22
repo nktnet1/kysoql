@@ -60,6 +60,22 @@ the packages to be built first; `pnpm validate` handles that ordering
 automatically. `pnpm verify:release` can run independently because it checks
 manifest/documentation metadata rather than build artifacts.
 
+`pnpm typecheck:source` first runs the dependency-free task-configuration
+regressions (`pnpm test:tasks`). Turbo then owns the dependency builds: package
+source-typecheck scripts must not rebuild or clean another package's `dist/`.
+A second core build can otherwise remove declarations while docs or another
+consumer is reading them, even after a successful Turbo cache restore.
+
+To check only docs and the debug playground with their build prerequisites:
+
+```bash
+pnpm exec turbo run typecheck:source --filter=docs --filter=@kysoql/debug
+```
+
+Direct package scripts such as `pnpm --filter @kysoql/debug typecheck:source`
+bypass Turbo and require dependency builds to exist already. Prefer the Turbo
+command for a clean checkout; no separate manual build is needed.
+
 Vitest is configured at the workspace root and discovers tests under
 `packages/**/tests/**/*.test.ts` plus `scripts/**/*.test.ts`. `pnpm typecheck:test`
 checks those test files with their package-specific TypeScript configs and also

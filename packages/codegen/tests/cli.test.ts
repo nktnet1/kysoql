@@ -9,6 +9,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { COMMANDS } from "#/commands";
 import Generate from "#/commands/generate";
 
+import { field } from "./fixtures/field-filtering.js";
+
 const mocks = vi.hoisted(() => {
   const describeGlobal = vi.fn();
   const describe = vi.fn();
@@ -363,5 +365,70 @@ describe("kysoql oclif CLI", () => {
 
     await expect(runGenerate([])).rejects.toBe("connection failed");
     expect(process.exitCode).toBe(1);
+  });
+});
+
+describe("CLI field filtering", () => {
+  it("keeps selected objects' rules through overrides and bypasses them with --no-config", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "kysoql-cli-fields-"));
+    const configFile = join(directory, "kysoql.config.ts");
+    const output = join(directory, "filtered.ts");
+    process.env.SF_ACCESS_TOKEN = "token";
+    process.env.SF_INSTANCE_URL = "https://example.my.salesforce.com";
+    vi.spyOn(Command.prototype, "log").mockImplementation(() => undefined);
+    mocks.describeGlobal.mockResolvedValue({
+      sobjects: [
+        { name: "Account", queryable: true },
+        { name: "Contact", queryable: true },
+      ],
+    });
+    mocks.describe.mockImplementation(async (name: string) => ({
+      name,
+      fields: [field("Id"), field("Name")],
+    }));
+    try {
+      await writeFile(configFile, `export default ${JSON.stringify({
+        objects: ["Contact"],
+        fields: {
+          Account: { include: ["Id"] },
+          Contact: { include: ["NotDescribed"] },
+        },
+        output: "filtered.ts",
+      })};`);
+      await runGenerate(["--config", configFile, "--object", "Account"]);
+      expect(mocks.describe).toHaveBeenCalledOnce();
+      expect(mocks.describe).toHaveBeenCalledWith("Account");
+      const filtered = await readFile(output, "utf8");
+      expect(filtered).toContain('readonly "Id": SalesforceField<');
+      expect(filtered).not.toContain('readonly "Name": SalesforceField<');
+      expect(filtered).toContain('    "none",\n    false\n  >;');
+
+      const fullOutput = join(directory, "full.ts");
+      await runGenerate([
+        "--no-config", "--object", "Account", "--output", fullOutput,
+      ]);
+      expect(await readFile(fullOutput, "utf8")).toContain(
+        'readonly "Name": SalesforceField<',
+      );
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects invalid field rules before credentials or a connection are needed", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "kysoql-cli-invalid-fields-"));
+    const configFile = join(directory, "kysoql.config.ts");
+    try {
+      await writeFile(configFile,
+        'export default { fields: { Account: { include: [] } } };',
+      );
+      await expect(runGenerate(["--config", configFile])).rejects.toThrow(
+        /kysoql\.config\.ts: fields\.Account\.include/,
+      );
+      expect(mocks.Connection).not.toHaveBeenCalled();
+      expect(mocks.describeGlobal).not.toHaveBeenCalled();
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
   });
 });

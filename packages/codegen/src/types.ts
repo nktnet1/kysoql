@@ -60,6 +60,8 @@ export interface SalesforceDataCategoryGroupDescription {
 }
 
 export interface SalesforceObjectDescription {
+  /** Codegen annotation, not a Salesforce Describe property. Omission means full. */
+  readonly fieldsComplete?: boolean;
   readonly name: string;
   readonly fields: readonly SalesforceFieldDescription[];
   readonly mruEnabled?: boolean;

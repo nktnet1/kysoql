@@ -85,8 +85,18 @@ org support.
 
 ## Validate changes
 
-Run these checks from the repository root. For standalone example checks, build
-the libraries first so the docs exercise their public declaration files:
+Run the workspace source check from the repository root, or use Turbo to check
+only docs with its dependency builds:
+
+```bash
+pnpm typecheck:source
+# Docs only, including its library build prerequisites:
+pnpm exec turbo run typecheck:source --filter=docs
+```
+
+Both commands schedule library builds before the docs checks. Package-local
+commands below bypass Turbo; for standalone example checks, build the libraries
+first so the docs exercise their public declaration files:
 
 ```bash
 pnpm exec turbo run build --filter=@kysoql/core --filter=@kysoql/jsforce --filter=@kysoql/codegen
@@ -97,8 +107,9 @@ pnpm --filter docs build
 ```
 
 `pnpm --filter docs typecheck:source` combines content checks, example
-typechecks, and site typechecks. It also participates in the workspace's source-typecheck task. The workspace lint command
-for this app remains `pnpm --filter docs check`.
+typechecks, and site typechecks but does not build dependencies itself. The same
+script participates in the workspace's source-typecheck task through Turbo.
+The workspace lint command for this app remains `pnpm --filter docs check`.
 
 ### Content validation
 
@@ -135,6 +146,21 @@ A complete workspace dependency installation is also required. The generated
 `manifest.json` maps each example filename to its MDX page and first code line.
 Diagnostic line 1 is that first code line; add the diagnostic line minus one to
 find its location in the original page.
+
+If declarations disappear during a Turbo run after a successful build or cache
+restore, check for a consumer script that rebuilds or cleans a dependency.
+`tsdown` cleans `dist/` before building; a nested rebuild can remove files while
+other typechecks read them. In particular, the debug source-typecheck task must
+only run `tsc --noEmit`, not launch another core build. Keep the existing
+`^build` prerequisites and `dist/**` cached outputs in `turbo.json`; do not
+work around this race by disabling cleaning, skipping declaration checks, or
+falling back to source aliases.
+
+The root `pnpm test:tasks` command checks these task-configuration invariants
+without installed dependencies (it can also be run as
+`node --test scripts/typecheck-tasks.test.mjs`). The root source-typecheck
+command runs it before invoking Turbo. These are configuration regressions,
+not substitutes for a full typecheck with the pinned toolchain.
 
 The schema in `examples/` is a **synthetic test fixture**, not an org schema or
 sample production configuration. It deliberately supplies the custom fields,

@@ -399,6 +399,7 @@ export interface SelectQueryBuilder<
       AvailableSelectExpression<DB, TB, O, SE>,
   ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>, Mode>;
 
+  /** Select a server-expanded group; unavailable on field-filtered schemas. */
   selectFields<Selector extends FieldsSelector>(
     selector: Selector,
     ...check: FieldsSelectionCheck<DB, TB, O, Selector>

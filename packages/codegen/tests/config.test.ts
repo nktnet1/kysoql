@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 import { afterEach, describe, expect, expectTypeOf, it } from "vitest";
 
-import { defineConfig, type KysoqlConfig } from "#/config";
+import { defineConfig, type KysoqlConfig, type ObjectFieldFilters } from "#/config";
 import {
   loadConfig,
   parseKysoqlConfig,
@@ -316,5 +316,43 @@ describe("generation option precedence", () => {
     const output = resolve("absolute/generated.ts");
     expect(resolveGenerateOptions({ output }, loaded, cwd).output).toBe(output);
     expect(loaded.config.output).toBe("generated/schema.ts");
+  });
+});
+
+describe("field filter configuration", () => {
+  const fields: ObjectFieldFilters = {
+    Account: { include: ["Id", "Name"] },
+    Contact: { exclude: ["Description"] },
+  };
+
+  it("exports the typed configuration and preserves field rules", () => {
+    expect(defineConfig({ fields }).fields).toBe(fields);
+    expect(parseKysoqlConfig({ fields })).toEqual({ fields });
+    // @ts-expect-error Each object must use exactly one filtering mode.
+    defineConfig({ fields: { Account: { include: ["Id"], exclude: ["Name"] } } });
+    // @ts-expect-error Field rules cannot be empty objects.
+    defineConfig({ fields: { Account: {} } });
+    // @ts-expect-error Only arrays of exact API names are supported.
+    defineConfig({ fields: { Account: { include: /__c$/ } } });
+  });
+
+  it("validates JavaScript field rules with the config filename", () => {
+    expect(() => parseKysoqlConfig({ fields: { Account: { include: [] } } }, "config in kysoql.config.ts"))
+      .toThrow(/kysoql\.config\.ts: fields\.Account\.include/);
+  });
+
+  it("loads field filters from a real TypeScript config", async () => {
+    const directory = await temporaryDirectory();
+    await writeConfig(directory, `export default ${JSON.stringify({ fields })};`);
+    expect((await loadConfig({ cwd: directory }))?.config.fields).toEqual(fields);
+  });
+
+  it("does not implicitly add objects and retains rules through CLI overrides", () => {
+    const loaded = { filename: resolve("kysoql.config.ts"), config: { objects: ["Account", "Contact"], fields } };
+    const options = resolveGenerateOptions({ object: ["Account"] }, loaded);
+    expect(options.objects).toEqual(["Account"]);
+    expect(options.fields).toEqual(fields);
+    expect(resolveGenerateOptions({}, { ...loaded, config: { fields } }).objects).toEqual([]);
+    expect(loaded.config.objects).toEqual(["Account", "Contact"]);
   });
 });

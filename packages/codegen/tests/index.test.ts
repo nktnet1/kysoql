@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -402,6 +402,81 @@ describe("generateSchema", () => {
       const source = await readFile(output, "utf8");
       expect(source).toContain("export interface SalesforceSchema");
       expect(source).toContain('readonly "Account"');
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("field-filtered generation", () => {
+  it("applies rules after Describe without adding objects or API calls", async () => {
+    const client = createClient();
+    const objects = await loadSchema(client, ["Account"], {
+      Account: { include: ["Id"] },
+      // Valid object, but not selected: do not Describe or validate its fields.
+      Kysoql_Record__c: { include: ["NotDescribed"] },
+    });
+    expect(objects[0]?.fields.map((field) => field.name)).toEqual(["Id"]);
+    expect(objects[0]?.fieldsComplete).toBe(false);
+    expect(client.describeGlobal).toHaveBeenCalledOnce();
+    expect(client.describe).toHaveBeenCalledOnce();
+    expect(client.describe).toHaveBeenCalledWith("Account");
+  });
+
+  it("applies rules when objects are discovered rather than explicitly listed", async () => {
+    const objects = await loadSchema(createClient(), undefined, { Account: { exclude: ["Name"] } });
+    expect(objects.map((object) => object.name)).toEqual(["Account", "Kysoql_Record__c"]);
+    expect(objects[0]?.fields.map((field) => field.name)).toEqual(["Id"]);
+    expect(objects[1]?.fieldsComplete).toBeUndefined();
+  });
+
+  it("validates malformed API options before Describe", async () => {
+    const client = createClient();
+    await expect(loadSchema(client, ["Account"], { Account: { include: [] } })).rejects.toThrow(/fields\.Account\.include/);
+    expect(client.describeGlobal).not.toHaveBeenCalled();
+    expect(client.describe).not.toHaveBeenCalled();
+  });
+
+  it.each(["Accont", "Contact"])("rejects unknown or non-queryable rule object %s", async (objectName) => {
+    const client = createClient();
+    await expect(loadSchema(client, ["Account"], { [objectName]: { include: ["Id"] } })).rejects.toThrow(
+      `Unknown or non-queryable Salesforce object(s) in field filters: fields.${objectName}`,
+    );
+    expect(client.describeGlobal).toHaveBeenCalledOnce();
+    expect(client.describe).not.toHaveBeenCalled();
+  });
+
+  it("reports unknown or unavailable fields in the selected object's Describe", async () => {
+    await expect(loadSchema(createClient(), ["Account"], { Account: { include: ["Id", "Missing"] } })).rejects.toThrow(
+      /fields\.Account\.include: unknown or unavailable field\(s\): "Missing"/,
+    );
+  });
+
+  it("keeps retained Knowledge metadata when filtering fields", async () => {
+    const client = createClient();
+    client.describeDataCategoryGroups = vi.fn(async () => ({
+      categoryGroups: [{ name: "Region", topCategories: [{ name: "All" }] }],
+    }));
+    const objects = await loadSchema(client, ["Account"], { Account: { include: ["Id"] } });
+    expect(objects[0]?.dataCategoryGroups).toEqual([{ name: "Region", categories: ["All"] }]);
+  });
+
+  it("writes a filtered schema and leaves an existing file untouched on validation errors", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "kysoql-fields-"));
+    const output = join(directory, "schema.ts");
+    try {
+      await generateSchema({ client: createClient(), output, objects: ["Account"], fields: { Account: { include: ["Id"] } } });
+      const source = await readFile(output, "utf8");
+      expect(source).toContain('readonly "Id": SalesforceField<');
+      expect(source).not.toContain('readonly "Name": SalesforceField<');
+      expect(source).toContain('    "none",\n    false\n  >;');
+      await writeFile(output, "previous schema");
+      await expect(generateSchema({ client: createClient(), output, objects: ["Account"], fields: { Account: { exclude: ["Id", "Name"] } } }))
+        .rejects.toThrow(/removes every field/);
+      expect(await readFile(output, "utf8")).toBe("previous schema");
+      await expect(generateSchema({ client: createClient(), output, objects: ["Account"], fields: { Account: { include: ["Missing"] } } }))
+        .rejects.toThrow(/unknown or unavailable/);
+      expect(await readFile(output, "utf8")).toBe("previous schema");
     } finally {
       await rm(directory, { recursive: true, force: true });
     }

@@ -78,3 +78,13 @@ queries; validate untrusted transport payloads where necessary; and run
 integration tests against a non-production org for the exact feature/context
 combination you deploy. Experimental syntax deserves explicit opt-in and
 fallback behaviour, not a silent dependency on a future Salesforce rollout.
+
+
+## Generated field filters are not access controls
+
+[Field rules](/docs/getting-started/field-filtering) restrict generated TypeScript
+metadata, not Salesforce permissions or runtime response contents. They cannot
+prevent JavaScript, a cast, another client, or direct SOQL from requesting an
+excluded field. Apply authentication, authorisation, field-level security, and
+explicit application query policies independently. Neither `fieldsComplete`
+nor the `selectFields` type guard is a runtime enforcement mechanism.

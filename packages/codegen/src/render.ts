@@ -309,7 +309,8 @@ const renderObject = (object: SalesforceObjectDescription): string => {
     `    ${supportedScopeType},`,
     `${renderBlock(dataCategoryGroups)},`,
     `    ${object.mruEnabled === undefined ? "boolean" : booleanLiteral(object.mruEnabled)},`,
-    `    ${JSON.stringify(setOptionsCapability)}`,
+    `    ${JSON.stringify(setOptionsCapability)}${object.fieldsComplete === false ? "," : ""}`,
+    ...(object.fieldsComplete === false ? ["    false"] : []),
     "  >;",
   ].join("\n");
 };

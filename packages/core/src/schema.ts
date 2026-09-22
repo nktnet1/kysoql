@@ -158,6 +158,7 @@ export interface SalesforceObject<
   DataCategoryGroups extends Record<string, string> = Record<string, never>,
   MruEnabled extends boolean = boolean,
   SetOptionsCapability extends SalesforceSetOptionsCapability = "none",
+  FieldsComplete extends boolean = true,
 > {
   readonly fields: Fields;
   readonly parents: Parents;
@@ -166,6 +167,8 @@ export interface SalesforceObject<
   readonly dataCategoryGroups: DataCategoryGroups;
   readonly mruEnabled: MruEnabled;
   readonly setOptionsCapability: SetOptionsCapability;
+  /** False for field-filtered schemas; server-side FIELDS() cannot be narrowed. */
+  readonly fieldsComplete?: FieldsComplete;
 }
 
 export type SalesforceSchema = Record<
@@ -177,9 +180,17 @@ export type SalesforceSchema = Record<
     string,
     Record<string, string>,
     boolean,
-    SalesforceSetOptionsCapability
+    SalesforceSetOptionsCapability,
+    boolean
   >
 >;
+
+/** Legacy structural schemas without this metadata retain their old behaviour. */
+export type SalesforceObjectFieldsComplete<ObjectType> = ObjectType extends {
+  readonly fieldsComplete?: infer Complete extends boolean;
+}
+  ? Complete
+  : true;
 
 export type SalesforceObjectDataCategoryGroup<ObjectType> = ObjectType extends {
   readonly dataCategoryGroups: infer Groups;
@@ -264,7 +275,8 @@ export type SalesforceRow<ObjectType> =
     string,
     Record<string, string>,
     boolean,
-    SalesforceSetOptionsCapability
+    SalesforceSetOptionsCapability,
+    boolean
   >
     ? {
         readonly [FieldName in keyof Fields]: SalesforceFieldValue<

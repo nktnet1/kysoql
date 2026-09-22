@@ -18,6 +18,7 @@ export default class Generate extends Command {
     `Generate a strongly typed Salesforce schema from Describe metadata.
 
 Loads kysoql.config.ts (or another supported JS/TS extension) from the current directory.
+Use config fields to include or exclude exact field API names per object.
 CLI flags override configuration. Authentication requires SF_INSTANCE_URL and SF_ACCESS_TOKEN.`;
 
   static examples = [

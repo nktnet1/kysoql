@@ -2,6 +2,8 @@ import { expectTypeOf, it } from "vitest";
 import type {
   GenerateSchemaOptions,
   KysoqlConfig,
+  ObjectFieldFilter,
+  ObjectFieldFilters,
   SalesforceChildRelationshipDescription,
   SalesforceDataCategoryGroupDescription,
   SalesforceDataCategoryGroupResponse,
@@ -29,6 +31,7 @@ it("exports the complete codegen public API from the package entrypoint", () => 
   ).toEqualTypeOf<KysoqlConfig>();
   expectTypeOf<KysoqlConfig>().toEqualTypeOf<{
     readonly objects?: readonly string[];
+    readonly fields?: ObjectFieldFilters;
     readonly output?: string;
     readonly schemaName?: string;
   }>();
@@ -40,6 +43,7 @@ it("exports the complete codegen public API from the package entrypoint", () => 
     readonly client: SalesforceDescribeClient;
     readonly output: string;
     readonly objects?: readonly string[];
+    readonly fields?: ObjectFieldFilters;
     readonly schemaName?: string;
   }>();
 
@@ -94,4 +98,12 @@ it("exports the complete codegen public API from the package entrypoint", () => 
       objectName: string,
     ): Promise<SalesforceDataCategoryGroupsResponse | undefined>;
   }>();
+});
+
+
+it("exports field rules for both configuration and programmatic generation", () => {
+  expectTypeOf<ObjectFieldFilter>().toMatchTypeOf<
+    { readonly include: readonly string[] } | { readonly exclude: readonly string[] }
+  >();
+  expectTypeOf<GenerateSchemaOptions["fields"]>().toEqualTypeOf<ObjectFieldFilters | undefined>();
 });

@@ -80,3 +80,26 @@ Authentication and Salesforce errors propagate from JSforce. Refresh expired
 sessions through the connection layer and retry only according to an explicit
 policy. Do not convert all failures to `[]`: that hides outages as legitimate
 "no matching records" results.
+
+
+## Field-filter validation fails
+
+Check the full path in the error, for example `fields.Account.include`.
+`include` and `exclude` cannot coexist, include lists cannot be empty, and a rule
+cannot remove every described field. Names must match exact API names visible to
+the Describe user; dotted relationship paths, labels, wildcards, and patterns
+are not field names. An unknown or unavailable field may reflect changed
+permissions rather than a typo. No output is written on a field validation error.
+
+A field-rule object name must be queryable in global Describe, even when it is
+not selected for the current run. Field names are checked only for selected
+objects. See [field filtering](/docs/getting-started/field-filtering).
+
+## selectFields requires a complete field schema
+
+An explicit field rule marks the generated object partial, even when the rule
+currently retains every field. All `selectFields` selectors are then rejected,
+including in child subqueries. Use `.select(...)`, or remove that object's rule
+and regenerate a full schema. `clearSelect()`, an explicit `Id` selection, and a
+smaller limit do not make Salesforce's field expansion follow your configured
+field set.

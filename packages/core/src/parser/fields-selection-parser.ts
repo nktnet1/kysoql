@@ -20,7 +20,11 @@ import type {
   FieldsOf,
 } from "#/parser/reference-parser";
 import type { TraversesTypeOfRelationship } from "#/parser/type-of-parser";
-import type { SalesforceFieldCustom, SalesforceFieldValue } from "#/schema";
+import type {
+  SalesforceFieldCustom,
+  SalesforceFieldValue,
+  SalesforceObjectFieldsComplete,
+} from "#/schema";
 import type { Simplify } from "#/util/type-utils";
 
 type FieldMatchesSelector<
@@ -65,8 +69,9 @@ export type FieldsSelectionCheck<
   TB extends keyof DB,
   O,
   Selector extends FieldsSelector,
-> =
-  Extract<keyof O, keyof FieldsSelection<DB, TB, Selector>> extends never
+> = false extends SalesforceObjectFieldsComplete<DB[TB]>
+  ? readonly [requiresCompleteFieldSchema: never]
+  : Extract<keyof O, keyof FieldsSelection<DB, TB, Selector>> extends never
     ? EmptyCustomSelectionCheck<DB, TB, O, Selector>
     : readonly [overlappingFields: never];
 

@@ -4,7 +4,8 @@ import { dirname, extname, resolve } from "node:path";
 import { createJiti } from "jiti";
 import * as v from "valibot";
 
-import type { KysoqlConfig } from "#/config";
+import type { KysoqlConfig, ObjectFieldFilters } from "#/config";
+import { parseFieldFilters } from "#/field-filters";
 import { parseSchemaName } from "#/validation";
 
 const extensions = [".ts", ".mts", ".cts", ".js", ".mjs", ".cjs"];
@@ -14,6 +15,8 @@ const nonBlankString = v.pipe(
 );
 const configSchema = v.strictObject({
   objects: v.optional(v.array(nonBlankString)),
+  // Shared with the programmatic API; validation reports the exact rule path.
+  fields: v.optional(v.unknown()),
   output: v.optional(nonBlankString),
   schemaName: v.optional(nonBlankString),
 });
@@ -37,6 +40,7 @@ export interface GenerateFlagOverrides {
 
 export interface ResolvedGenerateOptions {
   readonly objects: readonly string[];
+  readonly fields?: ObjectFieldFilters;
   readonly output: string;
   readonly schemaName: string;
 }
@@ -58,9 +62,12 @@ export const parseKysoqlConfig = (
       `Invalid Kysoql ${source}:\n${v.summarize(result.issues)}`,
     );
   }
-  const { objects, output, schemaName } = result.output;
+  const { objects, fields, output, schemaName } = result.output;
   return {
     ...(objects === undefined ? {} : { objects }),
+    ...(fields === undefined
+      ? {}
+      : { fields: parseFieldFilters(fields, `${source}: fields`) }),
     ...(output === undefined ? {} : { output }),
     ...(schemaName === undefined
       ? {}
@@ -186,6 +193,7 @@ export const resolveGenerateOptions = (
 
   return {
     objects: config.objects ?? [],
+    ...(config.fields === undefined ? {} : { fields: config.fields }),
     output: resolve(
       outputDirectory,
       config.output ?? "salesforce.generated.ts",

@@ -335,6 +335,7 @@ export interface RelationshipSubqueryBuilder<
     ApexMode
   >;
 
+  /** Select a server-expanded group; unavailable on field-filtered schemas. */
   selectFields<Selector extends FieldsSelector>(
     selector: Selector,
     ...check: FieldsSelectionCheck<DB, TB, O, Selector>

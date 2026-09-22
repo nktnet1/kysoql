@@ -1,0 +1,204 @@
+---
+title: "Field filtering"
+description: "Generate only the fields your application uses, with strict validation and safe relationship metadata."
+---
+
+Use per-object field rules to keep generated schemas focused on the fields your
+application depends on. All described fields remain the default. Filtering is
+optional and takes place during schema generation, not when a query executes.
+
+Update both `@kysoql/core` and `@kysoql/codegen` before generating filtered
+schemas: core must understand the new field-completeness metadata.
+
+## Configure include or exclude lists
+
+```ts title="kysoql.config.ts"
+import { defineConfig } from "@kysoql/codegen";
+
+export default defineConfig({
+  objects: ["Account", "Contact", "User"],
+  fields: {
+    Account: {
+      include: ["Id", "Name", "Industry", "OwnerId"],
+    },
+    Contact: {
+      exclude: ["Description"],
+    },
+  },
+  output: "src/salesforce.generated.ts",
+  schemaName: "SalesforceSchema",
+});
+```
+
+With the usual [Salesforce environment variables](/docs/getting-started/schema-generation#cli-reference) set, run:
+
+```bash
+pnpm exec kysoql generate
+```
+
+`Account` contains only the listed fields. `Contact` contains every described
+field except `Description`. `User` has no rule and therefore retains every
+described field. Generated field capabilities and nullability remain unchanged.
+
+## Rules and validation
+
+| Configuration | Result |
+| --- | --- |
+| No `fields`, an empty map, or no rule for a selected object | Keep all its described fields. |
+| `include: ["Id", "Name"]` | Retain exactly these fields, including their original metadata. |
+| `exclude: ["Description"]` | Retain every described field except this one. |
+| `exclude: []` | Retain every field, but still mark the object explicitly field-filtered. |
+| Both modes, neither mode, or unknown rule properties | Reject the rule. |
+| `include: []`, or a rule that removes every field | Reject the rule; never fall back to all fields. |
+| Duplicate field names | Deduplicate them; generated ordering remains deterministic. |
+| Unknown or unavailable field name | Reject the selected object's rule with its configuration path. |
+
+Names are exact, case-sensitive Salesforce API names. Use `OwnerId`, not an
+object label, `Owner.Name`, a wildcard, a regular expression, or a callback.
+Invalid shapes and empty include lists are rejected before Describe requests.
+Unknown fields and empty filtered results are rejected after Describe but before
+creating or overwriting the generated file.
+
+An error identifies the affected object, mode, and name, for example:
+
+```text
+Invalid Kysoql fields.Account.include: unknown or unavailable field(s): "AnnualRevnue". Use exact API names visible to the authenticated Describe user.
+```
+
+File-based configuration shape errors also include the config filename. A field
+may be unavailable because it was renamed, removed, or is not visible to the
+Describe user. Check metadata and permissions before treating it as a typo.
+
+**Include every field your queries depend on**, not just fields returned to the
+caller. This includes WHERE, ORDER BY, GROUP BY, aggregates, semi-joins, required
+object-specific predicates, and the lookup fields used for relationships. No
+field, including `Id`, is silently added back.
+
+## Objects and command-line overrides
+
+The `objects` list and field rules are independent. A field rule never adds an
+object to the generated schema. Omitting `objects`, or setting it to `[]`, still
+means all queryable objects; only matching field rules are applied.
+
+```bash
+pnpm exec kysoql generate --object Account
+```
+
+This generates only `Account`, retaining its configured field rule. A valid
+`Contact` rule remains in the config but does not cause a Contact Describe call.
+All field-rule object names must exist in global Describe and be queryable,
+even when not selected; this catches object-name typos. Field names are validated
+only for selected objects, not for inactive rules.
+
+There are no `--field` or `--exclude-field` flags. Use the config or programmatic
+API for field rules. To explicitly generate a full Account schema without
+loading any configuration:
+
+```bash
+pnpm exec kysoql generate --no-config --object Account --output src/account-full.generated.ts
+```
+
+## Relationship dependencies
+
+For `Contact.Account.Name`, generate both objects, retain `Contact.AccountId`,
+and retain `Account.Name`. For `Account.Contacts`, generate Contact and retain its
+`AccountId` lookup. The parent Account does not have a `Contacts` field to put
+in an include list; it is child-relationship metadata.
+
+Removing a lookup removes the parent path derived from it and the corresponding
+inverse child relationship. With field filtering active, child relationships
+whose target objects or lookup fields are unavailable are omitted. When multiple
+Describe entries share a child relationship name, every branch must remain
+available; the generator does not silently narrow the relationship to one branch.
+
+A retained reference field keeps its complete `referenceTo` union and polymorphic
+flags. Omitting Lead from an object list does not turn `Task.WhoId`, whose targets
+include Contact and Lead, into a Contact-only lookup. The virtual `Who.Type`
+qualifier still follows the original metadata; `TYPEOF` branches can use generated
+targets and retained target fields. Ordinary parent traversal and `TYPEOF` ELSE
+continue to require the relevant target schemas. See
+[polymorphic relationships](/docs/guides/polymorphism).
+
+## FIELDS selectors and partial schemas
+
+An object with any explicit field rule is generated with `fieldsComplete: false`,
+using the eighth, trailing `SalesforceObject` type parameter. Objects without
+rules retain the default `true`. This annotation is type metadata, not a
+Salesforce Describe field or runtime enforcement mechanism.
+
+All three `selectFields` selectors (`"all"`, `"standard"`, and `"custom"`) are
+rejected at the type level for partial objects, including in nested child
+subqueries. Salesforce expands
+[`FIELDS(...)` on the server](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-fields.html),
+not against our generated declarations. A type-only field filter cannot restrict
+that expansion or redefine what `FIELDS(ALL)` means.
+
+Use explicit selections instead:
+
+```ts
+import { db } from "./db";
+
+const query = db.selectFrom("Account").select(["Id", "Name"]);
+console.log(query.compile().soql);
+// SELECT Id, Name FROM Account
+```
+
+An explicit rule remains partial even when it currently retains every field,
+such as `exclude: []` or an include list matching the current Describe response.
+Remove the object's rule and regenerate to restore `selectFields(...)`.
+`clearSelect()`, a smaller LIMIT, or selecting `Id` first does not change the
+object's completeness. Do not suppress the error with a cast.
+
+## Programmatic generation
+
+The same `ObjectFieldFilters` type is accepted by `generateSchema` and the third
+argument of `loadSchema`. Neither API discovers configuration files.
+
+```ts
+import {
+  generateSchema,
+  loadSchema,
+  renderSchema,
+  type ObjectFieldFilters,
+  type SalesforceDescribeClient,
+} from "@kysoql/codegen";
+
+const fields = {
+  Account: { include: ["Id", "Name", "OwnerId"] },
+  Contact: { exclude: ["Description"] },
+} satisfies ObjectFieldFilters;
+
+const objects = ["Account", "Contact", "User"];
+
+export async function generate(client: SalesforceDescribeClient): Promise<void> {
+  await generateSchema({
+    client,
+    objects,
+    fields,
+    output: "src/salesforce.generated.ts",
+  });
+}
+
+export async function preview(client: SalesforceDescribeClient): Promise<string> {
+  const descriptions = await loadSchema(client, objects, fields);
+  return renderSchema(descriptions, "SalesforceSchema");
+}
+```
+
+`loadSchema` validates rules and annotates filtered descriptions. `renderSchema`
+preserves those annotations but does not fetch metadata or accept a separate
+rule map. Relative output paths in `generateSchema` use the working directory.
+
+## Scope and migration
+
+Filtering reduces generated field metadata and narrows the typed query surface.
+It does not reduce Describe requests, enforce Salesforce field-level security,
+validate response fields at runtime, or automatically reduce query payloads.
+Query payloads still depend on actual SOQL selections. Any typechecking performance
+improvement should be measured rather than assumed.
+
+Start with objects whose query dependencies are understood. Regenerate, review
+the diff, and run application typechecks. Replace affected `selectFields(...)`
+calls with explicit selections and add genuinely required fields to the rules.
+Keep authentication, authorisation, and application query policies separate:
+field rules are not a [security boundary](/docs/reference/security).

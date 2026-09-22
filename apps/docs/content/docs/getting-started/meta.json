@@ -4,7 +4,8 @@
     "installation",
     "quickstart",
     "configuration",
-    "schema-generation"
+    "schema-generation",
+    "field-filtering"
   ],
   "defaultOpen": true
 }

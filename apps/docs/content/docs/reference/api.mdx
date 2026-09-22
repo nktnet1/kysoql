@@ -30,7 +30,7 @@ an SQL-style parameter array or a runtime row validator.
 | --- | --- |
 | `select(fieldOrFields)` | Add direct or parent-path selections. [Selecting](/docs/guides/selecting). |
 | `select(callback)` | Add supported aliased SELECT functions, or enter count/aggregate mode from an unselected builder. |
-| `selectFields(selector)` | `standard`, `custom`, or `all`; subject to bounds and overlap checks. |
+| `selectFields(selector)` | `standard`, `custom`, or `all`; requires a complete field schema and is subject to bounds and overlap checks. |
 | `selectSubquery(relationship, callback)` | Add a generated child relationship. [Relationships](/docs/guides/relationships). |
 | `selectTypeOf(relationship, callback)` | Add polymorphic `when`/`else` selections. [Polymorphism](/docs/guides/polymorphism). |
 | `where(field, operator, value)` | Append a typed predicate with AND. |
@@ -155,7 +155,7 @@ construct [validated literals](/docs/guides/literals).
 `JsforceCountQueryResult`.
 
 `@kysoql/codegen` exports `generateSchema`, `loadSchema`, `renderSchema`,
-`GenerateSchemaOptions`, `SalesforceDescribeClient`, and normalized Describe
+`GenerateSchemaOptions` (including optional `fields`), `SalesforceDescribeClient`, and normalized Describe
 interfaces. See [schema generation](/docs/getting-started/schema-generation).
 
 Core exports [schema helpers](/docs/reference/schema-types), builder/expression
@@ -167,7 +167,8 @@ private `#/...` package paths.
 
 ## Codegen configuration
 
-`@kysoql/codegen` exports `defineConfig` and the `KysoqlConfig` type for
+`@kysoql/codegen` exports `defineConfig`, `KysoqlConfig`, `ObjectFieldFilter`,
+and `ObjectFieldFilters` for
 [`kysoql.config.ts`](/docs/getting-started/configuration). They configure the CLI's
-object list, output file, and schema interface name. They are separate from
+object list, per-object field rules, output file, and schema interface name. They are separate from
 `QueryCreatorConfig`, which configures runtime query construction and execution.

@@ -55,6 +55,18 @@ policy. Object names are deduplicated and sorted; unknown or non-queryable
 objects produce an error rather than an incomplete file. An empty programmatic
 object list also means all queryable objects.
 
+## Filter generated fields
+
+The optional [`fields` map](/docs/getting-started/field-filtering) supports one
+exact-name `include` or `exclude` list per object, in both `kysoql.config.ts` and
+`generateSchema` options. `loadSchema` also accepts it as a third argument.
+Omitting a rule keeps that object's full described field set.
+
+Filtering happens after Describe. It does not reduce Describe requests, change
+Salesforce permissions, or implicitly select additional objects. Filtered objects
+carry `fieldsComplete: false`, so typed `selectFields(...)` is unavailable for
+them. Explicit `.select(...)` still works with the retained fields.
+
 ## Include relationship targets
 
 Generating `Contact` alone does not automatically generate `Account` or `User`.
@@ -126,12 +138,13 @@ export async function preview(client: SalesforceDescribeClient): Promise<string>
 | Export | Contract |
 | --- | --- |
 | `defineConfig(config)` | Typed identity helper for a plain `KysoqlConfig` object. |
-| `KysoqlConfig` | Optional `objects`, `output`, and `schemaName` for the CLI config file. |
+| `KysoqlConfig` | Optional `objects`, `fields`, `output`, and `schemaName` for the CLI config file. |
+| `ObjectFieldFilter` / `ObjectFieldFilters` | Mutually exclusive include/exclude rule, and the readonly object-name-to-rule map. |
 | `generateSchema(options)` | Loads metadata and writes the file. Resolves to `void`; does not discover config files. |
-| `loadSchema(client, requestedObjects?)` | Loads and validates descriptions; returns a readonly list. |
+| `loadSchema(client, requestedObjects?, fields?)` | Loads and validates descriptions, applies field rules, and returns a readonly list. |
 | `renderSchema(objects, schemaName?)` | Renders supplied descriptions to a TypeScript string without network or filesystem access. |
 | `SalesforceDescribeClient` | `describeGlobal()`, `describe(objectName)`, and optional `describeDataCategoryGroups(objectName)`. |
-| `GenerateSchemaOptions` | Required `client` and `output`; optional `objects` and `schemaName`. |
+| `GenerateSchemaOptions` | Required `client` and `output`; optional `objects`, `fields`, and `schemaName`. |
 
 The package exports the normalized Describe interfaces for objects, fields,
 relationships, scopes, picklist entries, and category responses. Invalid

@@ -41,8 +41,8 @@ pnpm exec kysoql generate --no-config \
 
 ## Configuration
 
-`defineConfig` is a typed identity helper. `KysoqlConfig` has three optional
-properties: `objects`, `output`, and `schemaName`. Export a plain object; functions,
+`defineConfig` is a typed identity helper. `KysoqlConfig` has four optional
+properties: `objects`, `fields`, `output`, and `schemaName`. Export a plain object; functions,
 promises, and config arrays are not supported. Unknown keys, invalid types, blank
 strings, and invalid schema names fail before connecting to Salesforce.
 
@@ -94,6 +94,50 @@ Less common metadata is emitted only when it is meaningful. For example,
 `custom`, and `polymorphic` are omitted when they have their default
 `never`/`false` values.
 
+## Per-object field filters
+
+Keep all fields by default, or opt into one exact-name rule per object:
+
+```ts
+import { defineConfig } from "@kysoql/codegen";
+
+export default defineConfig({
+  objects: ["Account", "Contact", "User"],
+  fields: {
+    Account: { include: ["Id", "Name", "OwnerId"] },
+    Contact: { exclude: ["Description"] },
+  },
+  output: "src/salesforce.generated.ts",
+});
+```
+
+`User` retains all described fields. `include` and `exclude` are mutually
+exclusive. Empty includes, unknown or unavailable fields, and rules that remove
+every field fail generation without updating the output. Empty excludes are
+allowed. Field names are exact and case-sensitive; wildcards, regular
+expressions, and dotted relationship paths are not supported.
+
+Rules never add objects. `--object` replaces the object list, while rules for
+selected objects still apply; rules for other known objects are not described.
+All rule object names must be queryable in global Describe, even when inactive.
+Use `--no-config` to bypass configured rules entirely. There are no field CLI flags.
+
+Retain fields used in predicates, sorting, grouping, and lookups as well as
+selections. No fields (including `Id`) are silently restored. Removing a lookup
+removes its parent path and inverse child relationship. Polymorphic target unions
+remain intact; omitted targets are never reclassified as a single target.
+
+Every explicitly filtered object uses the trailing `SalesforceObject` parameter
+`FieldsComplete = false`. All typed `selectFields(...)` selectors are disabled on
+those objects and child subqueries; use explicit selections. This also applies
+to a no-op rule such as `exclude: []`. Update both codegen and core before
+regenerating. Unfiltered output is unchanged.
+
+Filtering reduces generated metadata, not Describe requests or runtime access.
+It is not a security boundary. The
+[field filtering guide](../../apps/docs/content/docs/getting-started/field-filtering.mdx)
+covers relationship dependencies, validation, and migration.
+
 ## Library API
 
 The package also exports `generateSchema`, `loadSchema`, `renderSchema`, and the
@@ -101,3 +145,10 @@ normalized Salesforce Describe types for programmatic generation workflows.
 
 Programmatic generation does not discover config files: pass options explicitly.
 Its relative output paths continue to use the process working directory.
+
+
+`generateSchema({ client, output, objects, fields })` uses the same
+`ObjectFieldFilters` rules as the config. For a preview without writing a file,
+pass them to `loadSchema(client, objects, fields)` and then call `renderSchema`.
+`loadSchema` annotates filtered descriptions with `fieldsComplete: false`, and
+`renderSchema` preserves that annotation in the generated object type.
