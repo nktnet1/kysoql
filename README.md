@@ -1240,11 +1240,13 @@ pnpm salesforce:setup
 The setup script installs from the lockfile, uses the workspace-local Salesforce
 CLI via `pnpm sf`, creates a scratch org, deploys metadata, assigns permissions,
 seeds deterministic data, and runs both the existing Salesforce smoke fixtures and
-a generated-query E2E suite. The E2E suite builds `@kysoql/core`, compiles
-representative record, relationship, pagination, grouping, and aggregate queries
-with the public kysoql builder, then sends the generated SOQL to the scratch org.
-It refuses to replace an existing org alias unless `--recreate` is explicitly
-supplied.
+a generated-query E2E suite. The E2E suite uses a dedicated Vitest configuration:
+it builds `@kysoql/core`, asserts exact SOQL compiled for representative record,
+relationship, pagination, grouping, and aggregate queries, sends that SOQL to the
+scratch org, and asserts deterministic returned values. It remains separate from
+`pnpm test` and `pnpm validate` because it requires live Salesforce credentials.
+The setup script refuses to replace an existing org alias unless `--recreate` is
+explicitly supplied.
 
 Re-run only the generated-query suite against an existing authenticated fixture
 org with:

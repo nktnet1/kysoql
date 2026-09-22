@@ -214,8 +214,8 @@ pnpm salesforce:e2e -- --target-org my-scratch-org
 KYSOQL_TARGET_ORG=my-scratch-org pnpm salesforce:e2e
 ```
 
-The runner builds `@kysoql/core` first, then compiles and executes deterministic
-cases for:
+The runner builds `@kysoql/core` first, then starts a dedicated Vitest suite that
+compiles and executes deterministic cases for:
 
 - scalar filtering, ordering, and `LIMIT`;
 - root `OFFSET` plus explicit null placement on a nullable scalar field;
@@ -224,9 +224,12 @@ cases for:
 - direct non-aggregate `GROUP BY`; and
 - grouped aggregate selection.
 
-Each case is sent through the workspace-local `pnpm sf data query --json` command
-and asserts the seeded fixture shape. This catches mismatches between kysoql's
-compiler output and Salesforce's real parser/runtime that unit tests cannot.
+Every test asserts the exact SOQL produced by kysoql before sending it through the
+workspace-local `pnpm sf data query --json` command, then asserts deterministic
+returned values or relationship shapes from the seeded fixture. The dedicated
+`vitest.salesforce.config.ts` includes only `test/salesforce-e2e/**/*.test.mjs`, so
+these credential-dependent tests are not collected by normal `pnpm test` or
+`pnpm validate`.
 
 The generic fixture intentionally does not claim live coverage for org-dependent
 or non-production surfaces that cannot be enabled reliably in a fresh scratch org,

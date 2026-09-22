@@ -48,17 +48,17 @@ SQL escape hatch.
 
 ## Current baseline
 
-The accepted continuation baseline is through **`v1.0.140`**. The researched
+The accepted continuation baseline is through **`v1.0.142`**. The researched
 feature roadmap is complete: direct non-aggregate grouping, grouped API `OFFSET`,
 typed Data 360 `SET OPTIONS`, managed dynamic-Apex query options, Beta `FORMULA()`
 filters, and pilot-namespaced relationship-subquery `OFFSET` are all represented at
 the documented safety boundary. The project is now in a hardening/release phase.
 
 The Salesforce fixture also has a generated-query E2E harness. `pnpm
-salesforce:e2e` builds `@kysoql/core`, compiles representative queries through the
-public builder, executes the generated SOQL against the authenticated fixture org,
-and asserts deterministic results. Keep this separate from `pnpm validate`
-because it requires Salesforce credentials and a live org.
+salesforce:e2e` builds `@kysoql/core`, then runs a dedicated Vitest configuration
+that asserts exact builder-generated SOQL and deterministic live-org values and
+relationship shapes. Keep this separate from normal `pnpm test` and `pnpm
+validate` because it requires Salesforce credentials and a live org.
 
 The implementation already covers the broad production SOQL surface:
 
@@ -125,12 +125,13 @@ Do not restart feature expansion unless Salesforce documents new syntax or a
 concrete correctness gap is found. Work through these in order, combining only
 small, closely related fixes:
 
-1. **Generated Salesforce E2E coverage.** The initial v1.0.140 harness executes
-   builder-generated record filters/order/pagination, child-to-parent and
-   parent-to-child relationships, direct `GROUP BY`, and grouped aggregates on the
-   deterministic scratch fixture. Extend this suite when later audits expose a
-   production-safe query family that the generic scratch org can exercise.
-2. **API/type consistency audit.** Check `clearX()` semantics, immutable cloning,
+1. **Generated Salesforce E2E coverage - complete baseline.** v1.0.142 runs the
+   harness through a dedicated Vitest config, asserts exact compiled SOQL, and
+   checks deterministic Salesforce values for record filters/order/pagination,
+   child-to-parent and parent-to-child relationships, direct `GROUP BY`, and grouped
+   aggregates. Extend it only when later audits expose another stable query family
+   the generic scratch org can exercise.
+2. **API/type consistency audit - next.** Check `clearX()` semantics, immutable cloning,
    compiler-boundary validation versus fluent type restrictions, and transitions
    across record, aggregate, `.apex()`, and `.dynamicApex()` builders. Add focused
    regressions for every concrete mismatch found; do not refactor for style alone.

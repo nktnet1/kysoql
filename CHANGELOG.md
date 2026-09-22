@@ -62,10 +62,10 @@ version is cut.
   or build-only public API drift.
 - A real-org static-Apex bind-expression smoke fixture, run automatically by the
   scratch-org setup and independently through `pnpm salesforce:apex-binds`.
-- A generated-query Salesforce E2E harness, run through `pnpm salesforce:e2e`,
-  which builds `@kysoql/core`, compiles representative fixture queries with the
-  public kysoql builder, executes that SOQL through the workspace Salesforce CLI,
-  and asserts deterministic scratch-org results.
+- A generated-query Salesforce E2E harness, run through a dedicated Vitest config
+  with `pnpm salesforce:e2e`, which builds `@kysoql/core`, asserts exact SOQL
+  compiled by the public builder, executes it through the workspace Salesforce CLI,
+  and asserts deterministic scratch-org values and relationship shapes.
 - Typed SOQL date-function predicates in ordinary `WHERE` expression callbacks,
   including all thirteen calendar/fiscal functions, filterable date/datetime
   metadata gating, set/ordered operand typing, and `convertTimezone()` composition.
