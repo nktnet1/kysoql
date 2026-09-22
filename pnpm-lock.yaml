@@ -242,6 +242,9 @@ importers:
       '@kysoql/jsforce':
         specifier: workspace:*
         version: link:../../packages/jsforce
+      '@kysoql/rest':
+        specifier: workspace:*
+        version: link:../../packages/rest
       '@tailwindcss/vite':
         specifier: ^4.3.3
         version: 4.3.3(vite@8.3.0(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
@@ -275,15 +278,15 @@ importers:
 
   packages/codegen:
     dependencies:
+      '@kysoql/rest':
+        specifier: workspace:*
+        version: link:../rest
       '@oclif/core':
         specifier: 4.14.0
         version: 4.14.0
       jiti:
         specifier: 2.7.0
         version: 2.7.0
-      jsforce:
-        specifier: 3.10.25
-        version: 3.10.25(@types/node@26.5.1)
       valibot:
         specifier: 1.4.2
         version: 1.4.2(typescript@7.0.2)
@@ -311,6 +314,12 @@ importers:
       valibot:
         specifier: 1.4.2
         version: 1.4.2(typescript@7.0.2)
+
+  packages/rest:
+    dependencies:
+      '@kysoql/core':
+        specifier: workspace:*
+        version: link:../core
 
 packages:
 

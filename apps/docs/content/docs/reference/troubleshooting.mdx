@@ -66,17 +66,21 @@ an access token or production record payload.
 | Symptom | Resolution |
 | --- | --- |
 | `No query executor configured` | Pass an executor when constructing Kysoql; compile-only construction is valid without one. |
-| Executor does not support QueryAll/count | Implement the specific optional hook or use the JSforce adapter. Ordinary query support is not sufficient. |
+| Executor does not support QueryAll/count | Implement the specific optional hook or use a bundled REST/JSforce executor. Ordinary query support is not sufficient. |
+| Native `SalesforceResponseError` | Rejects invalid JSON/envelopes, unsafe/repeated locators, or incomplete counts; inspect sanitized metadata rather than suppressing the error. |
+| `SalesforceQueryLimitError` | Root page/record budget exceeded; narrow the query or explicitly adjust the budget. |
 | `Invalid JSforce query result` | The adapter expected a valid envelope and record-object array. Inspect sanitized transport output. |
 | Incomplete response without `nextRecordsUrl` | Fix the transport/test double; the adapter refuses to silently truncate a root result. |
 | Incomplete SOQL COUNT response | Scalar count must be complete and include a valid non-negative totalSize. |
 | Child contacts are not an array | Read `account.Contacts.records` and inspect the envelope's `done` flag. |
 | Child records appear incomplete | Root pagination does not drain nested child locators. Query the child object directly or handle its transport pagination. |
-| High memory use | `execute()` accumulates root pages. Apply an intentional limit or use an export/streaming transport. |
+| High memory use | `execute()` accumulates root pages. Apply explicit limits/budgets or use native REST async iteration; child envelopes still occupy memory. |
 | `executeAll()` includes unexpected deleted rows | QueryAll is a data-visibility mode, not just pagination. Use ordinary `execute()` when appropriate. |
 | Salesforce rejects otherwise typed SOQL | Check live metadata, permissions, API version, feature enrollment, object restrictions, and execution context. |
 
-Authentication and Salesforce errors propagate from JSforce. Refresh expired
+Authentication and Salesforce errors propagate from the selected transport.
+For native REST, inspect `SalesforceRestError.status` and sanitized error codes;
+use a provider for one `INVALID_SESSION_ID` refresh/replay. Refresh expired
 sessions through the connection layer and retry only according to an explicit
 policy. Do not convert all failures to `[]`: that hides outages as legitimate
 "no matching records" results.

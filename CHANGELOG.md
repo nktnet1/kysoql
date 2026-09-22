@@ -8,6 +8,17 @@ version is cut.
 
 ### Added
 
+- `@kysoql/rest`: JSforce-free native Query/QueryAll execution, scalar counts,
+  validated root pagination, page/record async iterators, explicit continuation,
+  resource budgets, cancellation/timeouts, structured errors, and OAuth
+  client-credentials/refresh-token helpers with shared provider-backed renewal.
+- Native REST Describe factory and CLI transport in `@kysoql/codegen`, removing
+  its direct JSforce dependency. Config `apiVersion`, `--api-version`, and
+  `SF_API_VERSION` support a pinned `65.0` default. JSforce remains an optional
+  execution adapter; runtime options do not automatically load CLI settings.
+- REST-first documentation, mocked HTTP regressions, optional-adapter migration
+  guidance, and workspace/release checks for the new package.
+
 - `@kysoql/core`: type-safe SOQL query construction, immutable AST/compiler
   primitives, relationship traversal, aggregate/grouping support, typed SOQL
   functions, object-specific query guards, and transport-neutral execution.

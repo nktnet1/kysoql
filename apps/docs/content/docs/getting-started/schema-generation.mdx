@@ -26,6 +26,7 @@ pnpm exec kysoql generate --no-config \
 
 | Option | Default | Behaviour |
 | --- | --- | --- |
+| `--api-version <version>` | Config, `SF_API_VERSION`, or `65.0` | REST version without a `v` prefix; explicit flags take precedence. |
 | `--config <path>` | Discover in the working directory | Select a JS/TS config explicitly; a missing file fails. |
 | `--no-config` | `false` | Skip config discovery and evaluation; conflicts with `--config`. |
 | `--object <api-name>` | Configured list or all queryable objects | Repeat once per object. Replaces, rather than appends to, the configured list. |
@@ -37,15 +38,17 @@ pnpm exec kysoql generate --no-config \
 | --- | --- | --- |
 | `SF_INSTANCE_URL` | Yes | Instance URL for the authenticated org. |
 | `SF_ACCESS_TOKEN` | Yes | Existing Salesforce access token. |
+| `SF_API_VERSION` | No | Version fallback when neither flag nor config specifies it. |
 
 ```bash
 pnpm exec kysoql --help
 pnpm exec kysoql generate --help
 ```
 
-There are no CLI username, password, login-URL, or API-version flags in this
-implementation. Supply an authenticated token through the environment. The CLI
-uses its installed JSforce version's connection defaults.
+The CLI uses the native REST Describe client, not JSforce. Supply an authenticated
+token through the environment; there are no username, password, client-secret, or
+login-URL flags. API version is pinned to `65.0` unless overridden. Match your
+runtime query client's version and verify feature support in your org.
 
 Without a configured `objects` list, omitting `--object` includes all queryable
 objects from global Describe. For a
@@ -109,8 +112,28 @@ present in the supplied object descriptions can be emitted.
 
 The public API accepts a `SalesforceDescribeClient`, not a live schema attached
 to `Kysoql`. It does not load `kysoql.config.ts`; pass options explicitly.
-Programmatic relative output paths use the process working directory, as before. Implement that interface with your authenticated transport and
-validated Describe responses.
+Programmatic relative output paths use the process working directory. Use the
+bundled native factory, or implement the interface for another transport:
+
+```ts
+import { createRestDescribeClient, generateSchema } from "@kysoql/codegen";
+
+export async function generateForOrg(instanceUrl: string, accessToken: string) {
+  await generateSchema({
+    client: createRestDescribeClient({ instanceUrl, accessToken, apiVersion: "65.0" }),
+    objects: ["Account", "Contact"],
+    fields: { Account: { include: ["Id", "Name"] } },
+    output: "src/salesforce.generated.ts",
+  });
+}
+```
+
+`createRestDescribeClient` also accepts a shared `RestClient` from `@kysoql/rest`,
+including token-provider, cancellation, and timeout configuration. It validates
+Describe metadata, checks that the returned object matches the requested name,
+and loads full Knowledge category trees with `topCategoriesOnly=false`. Failed
+taxonomy requests are not cached permanently. No JSforce dependency is installed
+by the published codegen package.
 
 ```ts
 import {
@@ -137,8 +160,9 @@ export async function preview(client: SalesforceDescribeClient): Promise<string>
 
 | Export | Contract |
 | --- | --- |
+| `createRestDescribeClient(clientOrOptions)` | Native validated Describe transport; accepts `RestClient` or `RestClientOptions`. |
 | `defineConfig(config)` | Typed identity helper for a plain `KysoqlConfig` object. |
-| `KysoqlConfig` | Optional `objects`, `fields`, `output`, and `schemaName` for the CLI config file. |
+| `KysoqlConfig` | Optional `apiVersion`, `objects`, `fields`, `output`, and `schemaName` for the CLI config file. |
 | `ObjectFieldFilter` / `ObjectFieldFilters` | Mutually exclusive include/exclude rule, and the readonly object-name-to-rule map. |
 | `generateSchema(options)` | Loads metadata and writes the file. Resolves to `void`; does not discover config files. |
 | `loadSchema(client, requestedObjects?, fields?)` | Loads and validates descriptions, applies field rules, and returns a readonly list. |

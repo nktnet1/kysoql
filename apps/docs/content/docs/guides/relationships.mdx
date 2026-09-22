@@ -94,7 +94,7 @@ for (const account of accounts) {
 ```
 
 The inferred value is `SalesforceQueryResult<Row>` with `totalSize`, `done`,
-`records`, and optional `nextRecordsUrl`. **The JSforce adapter only drains root
+`records`, and optional `nextRecordsUrl`. **The REST and JSforce executors only drain root
 pages.** It does not recursively fetch incomplete child envelopes. For complete
 child exports, querying `Contact` directly with an `AccountId` filter is often
 simpler than recursively following child result locators.

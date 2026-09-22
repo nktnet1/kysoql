@@ -6,8 +6,10 @@ A type-safe, Kysely-inspired SOQL query builder for TypeScript.
 
 - [`@kysoql/core`](packages/core/README.md) — typed SOQL AST, query builder,
   compiler, executor contract, and result inference.
-- [`@kysoql/jsforce`](packages/jsforce/README.md) — JSforce
-  authentication/execution adapter.
+- [`@kysoql/rest`](packages/rest/README.md) - native REST query execution,
+  pagination, async iteration, cancellation, and OAuth token helpers.
+- [`@kysoql/jsforce`](packages/jsforce/README.md) - optional execution adapter
+  for applications with an existing JSforce connection.
 - [`@kysoql/codegen`](packages/codegen/README.md) — CLI for generating strongly
   typed Salesforce schemas from Describe metadata.
 - `@kysoql/debug` — minimal TypeScript runtime playground that logs query-builder ASTs.
@@ -946,7 +948,7 @@ const significantStages = await db
 
 Bare `COUNT()` uses a dedicated scalar result builder because Salesforce returns
 the count through the query-result count rather than an aggregate record. It
-supports scalar `WHERE` filters and `LIMIT`, and the JSforce executor maps the
+supports scalar `WHERE` filters and `LIMIT`, and both bundled executors map the
 validated query result to a `number`.
 
 ```ts
@@ -1213,8 +1215,51 @@ const apexCount = db
   .compile();
 ```
 
-Execution stays transport-neutral in core. Configure the JSforce adapter to run
-compiled SOQL through an existing JSforce connection:
+## Native REST execution
+
+Execution stays transport-neutral in core. Install `@kysoql/core` and
+`@kysoql/rest` for the default native workflow, plus `@kysoql/codegen` as a
+schema-generation development dependency. None of these packages depends on
+JSforce. Runtime local imports below assume a TypeScript runner or bundler.
+
+```ts
+import { Kysoql } from "@kysoql/core";
+import { createRestExecutor } from "@kysoql/rest";
+import type { SalesforceSchema } from "./salesforce.generated";
+
+export function createDatabase(instanceUrl: string, accessToken: string) {
+  const executor = createRestExecutor(
+    { instanceUrl, accessToken, apiVersion: "65.0" },
+    { maxPages: 100, maxRecords: 100_000 },
+  );
+  return { db: new Kysoql<SalesforceSchema>({ executor }), executor };
+}
+```
+
+Build queries normally and call `.execute()` or `.executeAll()`. Both collect all
+root pages within the configured budgets; `.executeAll()` enables Salesforce
+QueryAll rather than merely enabling pagination. Bare `COUNT()` returns a number.
+For bounded-memory processing, call `executor.iterateQuery(query.compile())` or
+`queryPages(...)`. These also accept QueryAll mode, abort signals, and timeouts.
+A failed budget throws instead of silently truncating records.
+
+The native API version is pinned to `65.0` unless explicitly configured. Token
+providers can renew credentials once after `INVALID_SESSION_ID`; native
+`authenticateClientCredentials` and `refreshAccessToken` helpers are available.
+Do not put secrets in config files. See the [REST package](packages/rest/README.md)
+and the [authentication guide](apps/docs/content/docs/guides/authentication.mdx)
+for supported flows, resource controls, and security boundaries.
+
+Codegen's CLI uses native REST Describe and accepts `--api-version` or config
+`apiVersion`, then `SF_API_VERSION`, then the pinned default. Runtime REST options
+do not automatically load those CLI settings. A full monorepo installation still
+includes the optional JSforce workspace and Salesforce CLI development tooling;
+those are not dependencies of a native-only consumer application.
+
+## Optional JSforce execution
+
+Existing JSforce integrations remain supported without changing the adapter:
+
 
 ```ts
 import { Kysoql } from "@kysoql/core";
@@ -1290,7 +1335,7 @@ incremental milestone.
 - SOQL-native semantics instead of pretending Salesforce is SQL.
 - Generated schemas for standard and custom objects/fields.
 - Compile-time validation of fields, relationships, operators, grouping, sorting, and projections.
-- JSforce used for Salesforce authentication and transport.
+- Native REST execution and authentication helpers, with JSforce as an optional adapter.
 - No raw-string escape hatch in the safe API.
 
 ## Development continuity

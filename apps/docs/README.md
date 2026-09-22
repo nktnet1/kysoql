@@ -99,7 +99,7 @@ commands below bypass Turbo; for standalone example checks, build the libraries
 first so the docs exercise their public declaration files:
 
 ```bash
-pnpm exec turbo run build --filter=@kysoql/core --filter=@kysoql/jsforce --filter=@kysoql/codegen
+pnpm exec turbo run build --filter=@kysoql/core --filter=@kysoql/rest --filter=@kysoql/jsforce --filter=@kysoql/codegen
 pnpm --filter docs check:content
 pnpm --filter docs check:examples
 pnpm --filter docs types:check
@@ -138,7 +138,7 @@ JSforce through its adapter workspace. Each source package has its own `#/*`
 path mapping, so those sources must not be flattened into one docs compiler
 project. No custom development export condition is used for consumer examples.
 
-The docs declare workspace development dependencies on all three packages, so
+The docs declare workspace development dependencies on all four packages, so
 the root Turbo source-typecheck task builds them before checking examples. For a
 standalone check, use the build command above. Missing declarations produce an
 actionable error rather than falling back to incomplete source resolution.

@@ -15,13 +15,19 @@ const mocks = vi.hoisted(() => {
   const describeGlobal = vi.fn();
   const describe = vi.fn();
   const request = vi.fn();
-  const connection = { describeGlobal, describe, request };
-  const Connection = vi.fn(function MockConnection() {
-    return connection;
-  });
+  const createRestClient = vi.fn((options: { apiVersion?: string }) => ({
+    apiVersion: options.apiVersion ?? "65.0",
+    request: async (path: string) => {
+      if (path === "/sobjects/") {
+        return describeGlobal();
+      }
+      const object = /^\/sobjects\/([A-Za-z0-9_]+)\/describe$/.exec(path);
+      return object ? describe(object[1]) : request(path);
+    },
+  }));
   const execute = vi.fn();
 
-  return { Connection, describe, describeGlobal, execute, request };
+  return { createRestClient, describe, describeGlobal, execute, request };
 });
 
 vi.mock("@oclif/core", async (importOriginal) => ({
@@ -29,7 +35,10 @@ vi.mock("@oclif/core", async (importOriginal) => ({
   execute: mocks.execute,
 }));
 
-vi.mock("jsforce", () => ({ Connection: mocks.Connection }));
+vi.mock("@kysoql/rest", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@kysoql/rest")>()),
+  createRestClient: mocks.createRestClient,
+}));
 
 const codegenRoot = fileURLToPath(new URL("..", import.meta.url));
 const commandLoadOptions = {
@@ -44,9 +53,10 @@ const commandLoadOptions = {
 const originalExitCode = process.exitCode;
 const originalAccessToken = process.env.SF_ACCESS_TOKEN;
 const originalInstanceUrl = process.env.SF_INSTANCE_URL;
+const originalApiVersion = process.env.SF_API_VERSION;
 
 const restoreEnvironmentVariable = (
-  name: "SF_ACCESS_TOKEN" | "SF_INSTANCE_URL",
+  name: "SF_ACCESS_TOKEN" | "SF_INSTANCE_URL" | "SF_API_VERSION",
   value: string | undefined,
 ): void => {
   if (value === undefined) {
@@ -61,7 +71,7 @@ const runGenerate = async (args: readonly string[]): Promise<void> => {
 };
 
 beforeEach(() => {
-  mocks.Connection.mockClear();
+  mocks.createRestClient.mockClear();
   mocks.describe.mockReset();
   mocks.describeGlobal.mockReset();
   mocks.execute.mockReset();
@@ -69,12 +79,14 @@ beforeEach(() => {
   process.exitCode = undefined;
   delete process.env.SF_ACCESS_TOKEN;
   delete process.env.SF_INSTANCE_URL;
+  delete process.env.SF_API_VERSION;
 });
 
 afterEach(() => {
   process.exitCode = originalExitCode;
   restoreEnvironmentVariable("SF_ACCESS_TOKEN", originalAccessToken);
   restoreEnvironmentVariable("SF_INSTANCE_URL", originalInstanceUrl);
+  restoreEnvironmentVariable("SF_API_VERSION", originalApiVersion);
   vi.restoreAllMocks();
 });
 
@@ -110,7 +122,7 @@ describe("kysoql oclif CLI", () => {
     await expect(runGenerate([])).rejects.toThrow(
       "SF_ACCESS_TOKEN is required.",
     );
-    expect(mocks.Connection).not.toHaveBeenCalled();
+    expect(mocks.createRestClient).not.toHaveBeenCalled();
     expect(process.exitCode).toBe(1);
   });
 
@@ -120,7 +132,7 @@ describe("kysoql oclif CLI", () => {
     await expect(runGenerate([])).rejects.toThrow(
       "SF_INSTANCE_URL is required.",
     );
-    expect(mocks.Connection).not.toHaveBeenCalled();
+    expect(mocks.createRestClient).not.toHaveBeenCalled();
     expect(process.exitCode).toBe(1);
   });
 
@@ -132,7 +144,7 @@ describe("kysoql oclif CLI", () => {
       process.env[name] = "";
 
       await expect(runGenerate([])).rejects.toThrow(`${name} is required.`);
-      expect(mocks.Connection).not.toHaveBeenCalled();
+      expect(mocks.createRestClient).not.toHaveBeenCalled();
       expect(process.exitCode).toBe(1);
     },
   );
@@ -140,18 +152,18 @@ describe("kysoql oclif CLI", () => {
   it("lets oclif reject unknown flags", async () => {
     await expect(runGenerate(["--unknown"])).rejects.toThrow(/--unknown/);
 
-    expect(mocks.Connection).not.toHaveBeenCalled();
+    expect(mocks.createRestClient).not.toHaveBeenCalled();
     expect(process.exitCode).toBe(1);
   });
 
-  it.each(["--object", "--output", "--schema-name", "--config"])(
+  it.each(["--object", "--output", "--schema-name", "--config", "--api-version"])(
     "lets oclif reject a missing value for %s",
     async (flag) => {
       await expect(runGenerate([flag])).rejects.toThrow(
         new RegExp(flag.replace("--", "")),
       );
 
-      expect(mocks.Connection).not.toHaveBeenCalled();
+      expect(mocks.createRestClient).not.toHaveBeenCalled();
       expect(process.exitCode).toBe(1);
     },
   );
@@ -163,7 +175,7 @@ describe("kysoql oclif CLI", () => {
     await expect(runGenerate(["--schema-name", "not-valid"])).rejects.toThrow(
       "Invalid schema name: not-valid",
     );
-    expect(mocks.Connection).not.toHaveBeenCalled();
+    expect(mocks.createRestClient).not.toHaveBeenCalled();
   });
 
   it("connects, describes requested objects, writes the schema, and reports the output path", async () => {
@@ -209,7 +221,8 @@ describe("kysoql oclif CLI", () => {
         "CliSchema",
       ]);
 
-      expect(mocks.Connection).toHaveBeenCalledWith({
+      expect(mocks.createRestClient).toHaveBeenCalledWith({
+        apiVersion: "65.0",
         accessToken: "token",
         instanceUrl: "https://example.my.salesforce.com",
       });
@@ -339,7 +352,7 @@ describe("kysoql oclif CLI", () => {
     await expect(
       runGenerate(["--config", "kysoql.config.ts", "--no-config"]),
     ).rejects.toThrow();
-    expect(mocks.Connection).not.toHaveBeenCalled();
+    expect(mocks.createRestClient).not.toHaveBeenCalled();
   });
 
   it("validates configuration before reading credentials or connecting", async () => {
@@ -352,7 +365,7 @@ describe("kysoql oclif CLI", () => {
       await expect(runGenerate(["--config", configFile])).rejects.toThrow(
         /Invalid Kysoql config/,
       );
-      expect(mocks.Connection).not.toHaveBeenCalled();
+      expect(mocks.createRestClient).not.toHaveBeenCalled();
     } finally {
       await rm(directory, { recursive: true, force: true });
     }
@@ -425,10 +438,44 @@ describe("CLI field filtering", () => {
       await expect(runGenerate(["--config", configFile])).rejects.toThrow(
         /kysoql\.config\.ts: fields\.Account\.include/,
       );
-      expect(mocks.Connection).not.toHaveBeenCalled();
+      expect(mocks.createRestClient).not.toHaveBeenCalled();
       expect(mocks.describeGlobal).not.toHaveBeenCalled();
     } finally {
       await rm(directory, { recursive: true, force: true });
     }
+  });
+});
+
+describe("native REST CLI version selection", () => {
+  it("applies flag > config > environment > pinned default without masking other settings", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "kysoql-cli-version-"));
+    const configFile = join(directory, "kysoql.config.ts");
+    const output = join(directory, "schema.ts");
+    vi.spyOn(Command.prototype, "log").mockImplementation(() => undefined);
+    process.env.SF_ACCESS_TOKEN = "token";
+    process.env.SF_INSTANCE_URL = "https://example.my.salesforce.com";
+    mocks.describeGlobal.mockResolvedValue({ sobjects: [{ name: "Account", queryable: true }] });
+    mocks.describe.mockResolvedValue({ name: "Account", fields: [] });
+    try {
+      await writeFile(configFile, 'export default { objects: ["Account"], apiVersion: "66.0" };');
+      process.env.SF_API_VERSION = "64.0";
+      await runGenerate(["--no-config", "--object", "Account", "--output", output]);
+      expect(mocks.createRestClient).toHaveBeenLastCalledWith(expect.objectContaining({ apiVersion: "64.0" }));
+      await runGenerate(["--config", configFile, "--output", output]);
+      expect(mocks.createRestClient).toHaveBeenLastCalledWith(expect.objectContaining({ apiVersion: "66.0" }));
+      await runGenerate(["--config", configFile, "--api-version", "67.0", "--output", output]);
+      expect(mocks.createRestClient).toHaveBeenLastCalledWith(expect.objectContaining({ apiVersion: "67.0" }));
+      delete process.env.SF_API_VERSION;
+      await runGenerate(["--no-config", "--object", "Account", "--output", output]);
+      expect(mocks.createRestClient).toHaveBeenLastCalledWith(expect.objectContaining({ apiVersion: "65.0" }));
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it.each(["", "v65.0", "../query"])("rejects invalid SF_API_VERSION %j before connecting", async (value) => {
+    process.env.SF_API_VERSION = value;
+    await expect(runGenerate(["--no-config"])).rejects.toThrow(/apiVersion/);
+    expect(mocks.createRestClient).not.toHaveBeenCalled();
   });
 });

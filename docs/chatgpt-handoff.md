@@ -37,8 +37,12 @@ Package boundaries are intentional:
   remain JSforce-independent.
 - `@kysoql/codegen` consumes Salesforce Describe metadata and generates the
   schema/capability metadata used by core.
-- `@kysoql/jsforce` is the Salesforce transport/execution adapter and validates
-  external query/pagination payloads.
+- `@kysoql/rest` is the default native fetch transport, with bounded root
+  pagination, QueryAll/counts, streaming iterators, cancellation, and OAuth token
+  helpers. Core and codegen have no JSforce dependency. Codegen's CLI uses the
+  native Describe factory; version precedence is flag/config/environment/default.
+- `@kysoql/jsforce` is an optional adapter for existing JSforce connections and
+  validates external query/pagination payloads.
 - `@kysoql/debug` is a private TypeScript playground and is not a publishable
   package.
 
@@ -92,7 +96,8 @@ The implementation already covers the broad production SOQL surface:
   `FOR VIEW`, `FOR REFERENCE`, Knowledge tracking/view-stat clauses, and the
   currently modeled object-specific query restrictions;
 - `ORDER BY` including null placement, `LIMIT`, and `OFFSET`;
-- transport-neutral compilation/execution plus JSforce pagination and QueryAll;
+- transport-neutral compilation/execution plus native REST and optional JSforce
+  pagination, scalar counts, and QueryAll;
 - compile-only Apex query contexts with `FOR UPDATE`, `ALL ROWS`, explicit
   `WITH USER_MODE` / `WITH SYSTEM_MODE`, typed bind expressions, relationship
   subquery binds, bind-left `INCLUDES`, structured addition/substring expressions,
@@ -118,7 +123,8 @@ Preserve these unless a change is explicitly justified:
   wrappers;
 - core execution remains transport-neutral and `@kysoql/core` never imports
   JSforce;
-- JSforce execution must not silently truncate paginated results;
+- Neither REST nor JSforce execution may silently truncate paginated results;
+  REST budget overflow must throw, not return partial success;
 - Apex-only syntax stays behind compile-only Apex boundaries: `.apex()` models
   static Apex SOQL, while `.dynamicApex()` is reserved for documented dynamic-only
   forms and must not silently widen static-Apex semantics;

@@ -13,6 +13,8 @@
     "select-functions",
     "geolocation",
     "composition",
-    "execution"
+    "execution",
+    "authentication",
+    "jsforce"
   ]
 }

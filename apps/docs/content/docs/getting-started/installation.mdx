@@ -20,22 +20,22 @@ when reproducing type errors rather than assuming older compilers are supported.
 For normal API execution:
 
 ```bash
-pnpm add @kysoql/core @kysoql/jsforce jsforce
+pnpm add @kysoql/core @kysoql/rest
 pnpm add -D @kysoql/codegen typescript @types/node tsx
 ```
 
 Equivalent npm commands:
 
 ```bash
-npm install @kysoql/core @kysoql/jsforce jsforce
+npm install @kysoql/core @kysoql/rest
 npm install --save-dev @kysoql/codegen typescript @types/node tsx
 ```
 
 For compile-only use, install `@kysoql/core`; add codegen only when generating
-schemas. The `@kysoql/jsforce` adapter is optional if you provide a
-[custom executor](/docs/reference/custom-executors). Declare `jsforce` directly
-when your application imports it instead of relying on a transitive dependency.
-Keep the three Kysoql packages on aligned versions.
+schemas. Native execution and codegen do not depend on JSforce. Install
+`@kysoql/jsforce` and `jsforce` only for the [optional adapter](/docs/guides/jsforce),
+or implement a [custom executor](/docs/reference/custom-executors).
+Keep the Kysoql packages you use on aligned versions.
 
 ## Configure a TypeScript application
 
@@ -99,9 +99,7 @@ From the repository root, with the required Node.js and pnpm versions active:
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm --filter @kysoql/core build
-pnpm --filter @kysoql/jsforce build
-pnpm --filter @kysoql/codegen build
+pnpm exec turbo run build --filter=@kysoql/codegen
 ```
 
 An application package inside the workspace can declare:
@@ -110,7 +108,7 @@ An application package inside the workspace can declare:
 {
   "dependencies": {
     "@kysoql/core": "workspace:*",
-    "@kysoql/jsforce": "workspace:*"
+    "@kysoql/rest": "workspace:*"
   },
   "devDependencies": {
     "@kysoql/codegen": "workspace:*"
@@ -131,5 +129,8 @@ node packages/codegen/dist/cli.mjs generate --help
 ## Next step
 
 Continue with the [quickstart](/docs/getting-started/quickstart). It starts with
-an existing Salesforce access token; Kysoql does not implement an OAuth login
-flow for you.
+an existing Salesforce access token. Native
+[authentication helpers](/docs/guides/authentication) also support client-credentials
+and refresh-token exchanges. A full repository install still includes the optional
+JSforce workspace and Salesforce CLI development tooling; an application installing
+only core, REST, and codegen does not inherit those workspace development dependencies.

@@ -10,6 +10,7 @@ const PUBLISHABLE_PACKAGES: readonly string[] = [
   "packages/core",
   "packages/codegen",
   "packages/jsforce",
+  "packages/rest",
 ];
 
 type JsonObject = Readonly<Record<string, unknown>>;

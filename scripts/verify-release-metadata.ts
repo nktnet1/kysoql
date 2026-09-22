@@ -6,6 +6,7 @@ const PUBLISHABLE_PACKAGES: readonly string[] = [
   "packages/core",
   "packages/codegen",
   "packages/jsforce",
+  "packages/rest",
 ];
 const REQUIRED_KEYWORDS: readonly string[] = [
   "salesforce",

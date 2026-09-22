@@ -7,7 +7,7 @@ const workspace = path.resolve(docsRoot, "../..");
 // Check the public declaration surface consumers receive. Each source package
 // owns its own #/* aliases; one docs tsconfig cannot merge those local mappings.
 const missing = [];
-for (const name of ["core", "jsforce", "codegen"]) {
+for (const name of ["core", "rest", "jsforce", "codegen"]) {
   try {
     await access(path.join(workspace, "packages", name, "dist/index.d.mts"));
   } catch {
@@ -18,7 +18,7 @@ if (missing.length) {
   console.error(`Missing package declarations: ${missing.join(", ")}.`);
   console.error(
     "Build them first: pnpm exec turbo run build --filter=@kysoql/core " +
-      "--filter=@kysoql/jsforce --filter=@kysoql/codegen",
+      "--filter=@kysoql/rest --filter=@kysoql/jsforce --filter=@kysoql/codegen",
   );
   process.exit(1);
 }

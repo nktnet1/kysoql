@@ -5,7 +5,7 @@ description: "Keep API execution separate from static and dynamic Apex SOQL."
 
 Apex builders produce SOQL for code that will run **inside Salesforce Apex**.
 They do not execute Apex, deploy classes, resolve variables, or send queries
-through JSforce. Both `apex()` and `dynamicApex()` are compile-only contexts.
+through REST or JSforce. Both `apex()` and `dynamicApex()` are compile-only contexts.
 
 ## Build the ordinary structure first
 
@@ -84,7 +84,7 @@ const compiled = db
 ```
 
 `allRows()` is available on Apex record, aggregate, and count builders. Normal
-API builders instead use [`executeAll()`](/docs/guides/execution#queryall-is-a-different-salesforce-mode).
+API builders instead use [`executeAll()`](/docs/guides/execution#queryall-is-not-pagination).
 The adapter does not execute an Apex query merely because its output is a
 string.
 

@@ -5,7 +5,7 @@ description: "Keep schema-generation settings in kysoql.config.ts and override t
 
 Use a configuration file to make schema generation repeatable across developers
 and CI. The file configures **`kysoql generate` only**. It does not create a
-runtime query builder, configure a JSforce executor, or change application
+runtime query builder, configure a REST or JSforce executor, or change application
 queries. Continue to construct your application client as shown in the
 [quickstart](/docs/getting-started/quickstart#4-configure-execution).
 
@@ -47,6 +47,7 @@ pnpm exec kysoql generate
 
 | Key | Type | Default | Behaviour |
 | --- | --- | --- | --- |
+| `apiVersion` | `string` | `SF_API_VERSION` or `65.0` | REST version for the CLI, without `v`. Overridden by `--api-version`. |
 | `objects` | `readonly string[]` | All queryable objects | Salesforce API names. `[]` also means all queryable objects. Include relationship targets explicitly. |
 | `fields` | `ObjectFieldFilters` | All described fields | Optional per-object exact include/exclude rules. See [field filtering](/docs/getting-started/field-filtering). |
 | `output` | `string` | `salesforce.generated.ts` | Generated file, relative to the config directory. Parent directories are created. |
@@ -115,7 +116,15 @@ pnpm exec kysoql generate --no-config --object Account --output tmp/account.ts
 ```
 
 Precedence is **explicit CLI flags, then config settings, then built-in
-defaults**. A supplied `--object` list replaces the configured list; it does not
+defaults**. API version has an extra fallback: **`--api-version`, then config
+`apiVersion`, then `SF_API_VERSION`, then the pinned `65.0` default**. Use a version
+supported by your org; this is not automatic API-version negotiation. For example:
+
+```bash
+pnpm exec kysoql generate --api-version 65.0
+```
+
+A supplied `--object` list replaces the configured list; it does not
 append to it. Settings not overridden on the command line remain configured.
 
 `--config` is resolved relative to the current working directory. A configured

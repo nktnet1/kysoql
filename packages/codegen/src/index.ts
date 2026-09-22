@@ -21,6 +21,7 @@ export {
   type ObjectFieldFilters,
 } from "#/config";
 export { renderSchema } from "#/render";
+export { createRestDescribeClient } from "#/rest-client";
 export type {
   SalesforceChildRelationshipDescription,
   SalesforceDataCategoryGroupDescription,

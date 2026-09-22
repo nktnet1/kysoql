@@ -1,114 +1,225 @@
 ---
-title: "Execution with JSforce"
-description: "Run typed queries, understand QueryAll, and handle pagination and failures."
+title: "Native REST execution"
+description: "Run SOQL with native fetch, paginate safely, stream root results, and control requests."
 ---
 
-## Connect an executor
+`@kysoql/rest` executes queries using native `fetch`. Neither it nor
+`@kysoql/codegen` depends on JSforce. Core remains transport-independent; an
+[optional JSforce adapter](/docs/guides/jsforce) and
+[custom executors](/docs/reference/custom-executors) remain supported.
 
-Install `@kysoql/core`, `@kysoql/jsforce`, and `jsforce`. The
-[quickstart connection](/docs/getting-started/quickstart#4-configure-execution)
-shows a complete environment-checked `src/db.ts`.
+## Configure an executor
 
-`createJsforceExecutor(connection)` accepts a compatible connection exposing
-`query(soql, options?)` and `queryMore(locator)`. Pass the result as
-`new Kysoql<YourSchema>({ executor })`. Authentication, refresh tokens,
-connection lifetime, and choosing an API version are application/JSforce
-responsibilities, not Kysoql configuration options.
+```ts
+import { Kysoql } from "@kysoql/core";
+import { createRestExecutor } from "@kysoql/rest";
+import type { SalesforceSchema } from "./salesforce.generated";
 
-Use an established OAuth flow and keep the connection on the server. Consult
-[JSforce's connection documentation](https://jsforce.github.io/document/#connection)
-for authentication and refresh configuration.
+export function createDatabase(instanceUrl: string, accessToken: string) {
+  const executor = createRestExecutor(
+    { instanceUrl, accessToken, apiVersion: "65.0", timeoutMs: 30_000 },
+    { batchSize: 1000, maxPages: 100, maxRecords: 100_000 },
+  );
+  const db = new Kysoql<SalesforceSchema>({ executor });
+  return { db, executor };
+}
+```
 
-## Normal execution
+Use the authenticated org's HTTPS origin, not a generic login URL. The example's
+page and record budgets are application choices. The default `maxPages` is
+10,000; there is no configured record cap unless you supply `maxRecords`.
+`batchSize` accepts integers from 200 to 2000, and is a requested batch size,
+not a guaranteed page size. It does not change your SOQL `LIMIT`.
+
+The client pins API version `65.0` by default; it does not negotiate or silently
+upgrade versions. Supply an explicit version supported by your org and query
+features, without a `v` prefix. Runtime options do **not** read environment
+variables or `kysoql.config.ts` automatically. See
+[authentication](/docs/guides/authentication) for renewable credentials.
+
+## Execute records, aggregates, and counts
+
+With a configured `db`, the query-building API is unchanged:
 
 ```ts
 import { db } from "./db";
 
-const rows = await db
+const accounts = await db
   .selectFrom("Account")
   .select(["Id", "Name"])
+  .where("Name", "like", "Acme%")
   .limit(100)
+  .execute();
+
+const count = await db
+  .selectFrom("Account")
+  .select(({ fn }) => fn.count())
   .execute();
 ```
 
-Record and aggregate builders return `Promise<readonly Row[]>`. Bare `COUNT()`
-returns `Promise<number>`. A builder created without an executor still compiles,
-but execution throws rather than silently returning an empty result.
+Record and grouped aggregate queries return readonly row arrays. Both ordinary
+execution and QueryAll follow all available **root** continuation pages, subject
+to your budgets. Bare `COUNT()` returns a number from a complete count response;
+`COUNT(field)` and aliased aggregates remain row-producing queries. No matches
+return `[]` or `0`, respectively. Errors are never converted to empty success.
 
-There are no `executeTakeFirst`, `executeTakeFirstOrThrow`, streaming, async
-iterator, or cancellation methods in the current public builder. For one row,
-use `limit(1)`, execute, and handle an empty array explicitly.
+A compile-only `Kysoql` instance still needs no credentials, but throws on
+execution without an executor. There is no `executeTakeFirst` method; use
+`limit(1)` and handle a possibly empty array.
 
-## QueryAll is a different Salesforce mode
+## QueryAll is not pagination
 
 ```ts
 import { db } from "./db";
 
-const rowsIncludingDeleted = await db
+const recordsIncludingDeleted = await db
   .selectFrom("Account")
   .select(["Id", "Name", "IsDeleted"])
   .limit(100)
   .executeAll();
 
-const totalIncludingDeleted = await db
+const countIncludingDeleted = await db
   .selectFrom("Account")
   .select(({ fn }) => fn.count())
   .executeAll();
 ```
 
-With this adapter, `executeAll()` calls `connection.query(soql, { scanAll: true })`
-for the first request, then follows the associated query locators. It enables
-Salesforce QueryAll semantics for eligible soft-deleted records and archived
-activities. It does not bypass permissions or recover permanently removed data.
+`execute()` starts at REST `/query`; `executeAll()` starts at `/queryAll` and
+includes qualifying deleted records and archived activities. Both paginate.
+A QueryAll continuation can use a `/query/` locator without losing its QueryAll
+semantics. The executor follows that locator rather than reconstructing the query.
+QueryAll does not bypass permissions or recover permanently removed records.
+Apex `allRows()` is a different, compile-only context.
 
-Do not confuse three different operations:
+## Iterate without accumulating every root record
 
-| Operation | Meaning |
-| --- | --- |
-| `execute()` | Ordinary query; adapter already drains root pages. |
-| `executeAll()` | QueryAll mode; adapter also drains root pages. |
-| `apex().allRows().compile()` | Compiles Apex-only `ALL ROWS`; does not execute anything. |
-
-## What the adapter validates
-
-For record results it checks `done`, optional `nextRecordsUrl`, and an array of
-record objects. When `done` is false, it requires a usable next locator and
-calls `queryMore` until complete. All root records are accumulated in memory.
-
-It does not recursively drain child envelopes, validate each selected field
-against Describe, stream large results, add automatic retries, or impose an
-application-level page/record budget. Set deliberate limits and use a custom
-transport for large exports or specialised resource controls.
-
-For bare `COUNT()`, the adapter validates a complete response and a non-negative
-safe-integer `totalSize`, then returns that number. An incomplete scalar count
-response is an error, not a request to paginate the count.
-
-## Handle failures at the application boundary
+Use the executor directly with a compiled query. These methods are on
+`RestExecutor`, not on the core builder:
 
 ```ts
+import type { RestExecutor } from "@kysoql/rest";
 import { db } from "./db";
 
-export async function loadAccounts() {
-  try {
-    return await db
-      .selectFrom("Account")
-      .select(["Id", "Name"])
-      .limit(100)
-      .execute();
-  } catch (cause) {
-    // Map to your service's error policy; do not turn failures into empty success.
-    throw new Error("Unable to load Salesforce accounts", { cause });
+export async function processAccounts(executor: RestExecutor, signal: AbortSignal) {
+  const query = db.selectFrom("Account").select(["Id", "Name"]).compile();
+  for await (const account of executor.iterateQuery(query, { signal })) {
+    // Replace with application work; do not log sensitive records in production.
+    console.log(account.Id);
   }
 }
 ```
 
-Salesforce/authentication/transport failures propagate. Decide centrally which
-failures are retryable, how to refresh expired sessions, and what sanitized
-telemetry to record. Avoid blindly retrying queries that carry side effects such
-as MRU or Knowledge tracking clauses.
+`queryPages(query, options?)` yields envelopes containing `records`, `totalSize`,
+`done`, and optional `nextRecordsUrl`. `iterateQuery` yields individual records.
+Pass `{ queryAll: true }` to either method for QueryAll. Bare counts must use
+`executeCountQuery` or `executeAllCountQuery`, not the row iterators.
 
-The adapter cannot turn server-rejected aggregate pagination, unsupported object
-features, or insufficient permissions into successful queries. See
-[troubleshooting](/docs/reference/troubleshooting) and
-[custom executors](/docs/reference/custom-executors).
+Iteration is lazy: the first request starts when iteration starts, and the next
+page is requested only when needed. Breaking out does not prefetch more pages.
+One page is buffered at a time; this is not byte-by-byte JSON streaming. A page
+can still be large, especially with child subqueries. Earlier yielded rows cannot
+be rolled back when a later page fails, so design resumable consumers accordingly.
+
+## Cancellation and deadlines
+
+```ts
+import type { RestExecutor } from "@kysoql/rest";
+import { db } from "./db";
+
+export async function loadAccounts(executor: RestExecutor, signal: AbortSignal) {
+  const query = db.selectFrom("Account").select(["Id", "Name"]).compile();
+  return executor.executeQuery(query, { signal, timeoutMs: 15_000 });
+}
+```
+
+All REST request methods accept `signal` and `timeoutMs`. The default timeout is
+30 seconds **per HTTP request**, including token acquisition, the single allowed
+session-refresh retry, and reading the response body. It is not a deadline for
+an entire multi-page query. Use an overall `AbortSignal.timeout(...)`, or combine
+it with a request-disconnect signal, for an operation-wide deadline.
+
+Client-level and per-call signals are combined. Aborting one request's wait for
+a shared token refresh does not cancel other requests using that refresh. A
+client-level signal cancels all requests on that client, so avoid reusing a
+request-scoped client for unrelated requests. Native abort/timeout reasons propagate.
+
+Core `.execute()` and `.executeAll()` signatures have not changed. Use a
+request-scoped client or call the executor with `.compile()` for per-call options.
+An injected `fetch` must honour `signal` and `redirect: "error"`.
+
+## Child relationships and continuation
+
+Child results remain Salesforce envelopes; they are **not** recursively drained.
+Use `executor.queryMore<Row>(nextRecordsUrl, options?)` to fetch one child or root
+continuation page deliberately:
+
+```ts
+import type { SalesforceQueryResult } from "@kysoql/core";
+import type { RestExecutor } from "@kysoql/rest";
+
+export async function readNextContacts(
+  executor: RestExecutor,
+  contacts: SalesforceQueryResult<{ Id: string; LastName: string }>,
+) {
+  if (contacts.done || !contacts.nextRecordsUrl) return undefined;
+  return executor.queryMore<{ Id: string; LastName: string }>(contacts.nextRecordsUrl);
+}
+```
+
+`queryMore` returns one validated page; a manual loop must enforce its own budget
+and detect repeated locators. Its generic type is your responsibility, not a
+runtime field validator. Nested envelopes and record `attributes` are preserved.
+See [relationships](/docs/guides/relationships#read-child-results).
+
+## Errors and safety controls
+
+| Error | Meaning and handling |
+| --- | --- |
+| `SalesforceRestError` | Non-success HTTP status. Inspect `status` and sanitized `errors[].errorCode`; details can contain business data. |
+| `SalesforceResponseError` | Invalid JSON/envelope, unsafe locator, repeated locator, or invalid count response. Do not treat it as an empty query. |
+| `SalesforceQueryLimitError` | A `maxPages` or `maxRecords` budget would be exceeded. Increase deliberately, narrow the query, or change processing strategy. |
+| `SalesforceOAuthError` | A token exchange failed; see authentication guidance. |
+| Native fetch/abort errors | Network, cancellation, redirect, or timeout failures; retain their cause at the application boundary. |
+
+Root page/record budgets apply to collection and iteration. They throw instead
+of returning a silently truncated result. A page that exceeds the record budget
+is rejected before it is yielded. Budgets do not cap nested records, count values,
+or standalone `queryMore` calls. No limit bypasses Salesforce's own restrictions,
+including aggregate queries that cannot continue through a query locator.
+
+Requests use HTTPS and reject redirects. Continuation URLs must be root-relative,
+match the configured API version, and identify a query locator. Tokens are not
+sent to a server-provided foreign host. Kysoql's structured HTTP/OAuth error messages omit credentials,
+SOQL, and server descriptions; opt-in `errors` details may still be sensitive.
+
+The only automatic retry is one replay after `401 INVALID_SESSION_ID` when an
+access-token provider is configured. There is no automatic rate-limit, network,
+5xx, or generic query retry. Do not blindly retry queries with tracking or other
+side effects. Row fields are trusted as the inferred projection after envelope
+validation; generated types are not runtime data validation.
+
+## Share a native client
+
+```ts
+import { createRestClient, createRestExecutor } from "@kysoql/rest";
+import { createRestDescribeClient } from "@kysoql/codegen";
+
+export function clients(instanceUrl: string, accessToken: string) {
+  const client = createRestClient({ instanceUrl, accessToken });
+  return {
+    executor: createRestExecutor(client),
+    describe: createRestDescribeClient(client),
+  };
+}
+```
+
+`RestClient.request(path, options?)` is a lower-level **GET-only** operation
+returning `unknown`. It accepts version-relative paths such as `/sobjects/` and
+same-version `/services/data/v65.0/...` paths. Validate raw responses yourself;
+prefer the typed executor and Describe factory for their supported operations.
+This is not a DML, SOSL, Bulk API, Apex execution, or unrestricted HTTP SDK.
+
+For platform details, see Salesforce's
+[Query resource](https://developer.salesforce.com/docs/platform/api-rest/guide/resources-query.html),
+[QueryAll continuation](https://developer.salesforce.com/docs/platform/api-rest/guide/resources-queryall-more-results.html),
+and [query-options header](https://developer.salesforce.com/docs/platform/api-rest/guide/headers-queryoptions.html).

@@ -344,4 +344,6 @@ compile. Normal `.execute()` delegates to `QueryExecutor.executeQuery()` (or the
 dedicated count hook for bare `COUNT()`). Root query builders also expose
 `.executeAll()` for Salesforce QueryAll semantics; executors can opt into that
 capability with `executeAllQuery()` and `executeAllCountQuery()`.
-`@kysoql/jsforce` provides the first-party adapter with both execution modes.
+`@kysoql/rest` provides the default native adapter with both execution modes,
+root pagination, iteration, and cancellation. `@kysoql/jsforce` remains an optional
+adapter for existing JSforce connections.

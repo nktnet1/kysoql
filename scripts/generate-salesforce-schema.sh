@@ -4,7 +4,7 @@ set -Eeuo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
-pnpm --filter @kysoql/codegen build
+pnpm exec turbo run build --filter=@kysoql/codegen
 
 if [[ "${1:-}" == "--" ]]; then
   shift

@@ -17,7 +17,7 @@ function Home() {
           </h1>
           <p className="text-fd-muted-foreground text-lg leading-relaxed">
             Generate types from your org, compose SOQL with an immutable builder,
-            and execute through JSforce or compile for Apex.
+            and execute through native REST or compile for Apex.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">

@@ -83,30 +83,33 @@ Supply the wrapper as the `executor` option on `Kysoql`. Preserving the delegate
 ## A complete offline adapter test
 
 This is a test double for exactly one query, not an executor that returns valid
-results for arbitrary queries. It exercises the real JSforce adapter without
+results for arbitrary queries. It exercises the native REST adapter without
 credentials or network calls:
 
 ```ts
 import assert from "node:assert/strict";
 import { Kysoql } from "@kysoql/core";
-import { createJsforceExecutor, type JsforceConnection } from "@kysoql/jsforce";
+import { createRestExecutor } from "@kysoql/rest";
 import type { SalesforceSchema } from "./salesforce.generated";
 
-const connection: JsforceConnection = {
-  async query(soql) {
-    assert.equal(soql, "SELECT Id, Name FROM Account LIMIT 1");
-    return {
-      done: true,
-      records: [{ Id: "001000000000001AAA", Name: "Example account" }],
-    };
-  },
-  async queryMore() {
-    throw new Error("Unexpected pagination in this test");
-  },
+const fetch: typeof globalThis.fetch = async (input, options) => {
+  const url = new URL(String(input));
+  assert.equal(url.pathname, "/services/data/v65.0/query");
+  assert.equal(url.searchParams.get("q"), "SELECT Id, Name FROM Account LIMIT 1");
+  assert.equal(options?.method, "GET");
+  return Response.json({
+    done: true,
+    totalSize: 1,
+    records: [{ Id: "001000000000001AAA", Name: "Example account" }],
+  });
 };
 
 const db = new Kysoql<SalesforceSchema>({
-  executor: createJsforceExecutor(connection),
+  executor: createRestExecutor({
+    instanceUrl: "https://example.my.salesforce.com",
+    accessToken: "test-only-token",
+    fetch,
+  }),
 });
 const rows = await db.selectFrom("Account").select(["Id", "Name"]).limit(1).execute();
 assert.equal(rows[0]?.Name, "Example account");

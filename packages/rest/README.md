@@ -1,0 +1,124 @@
+# @kysoql/rest
+
+Native Salesforce REST transport for Kysoql. Uses `fetch`; JSforce is not a
+runtime dependency. Supports ordinary queries, QueryAll, scalar counts, root
+pagination, async iteration, cancellation, and OAuth token exchanges.
+
+## Install and query
+
+```bash
+pnpm add @kysoql/core @kysoql/rest
+pnpm add -D @kysoql/codegen
+```
+
+Requires the workspace's Node 26 ESM environment. Generate your schema first;
+see [codegen](../codegen/README.md). Local imports below are extensionless and
+assume a TypeScript runner or bundler, as documented by the docs quickstart.
+
+```ts
+import { Kysoql } from "@kysoql/core";
+import { createRestExecutor } from "@kysoql/rest";
+import type { SalesforceSchema } from "./salesforce.generated";
+
+function requiredEnv(name: string): string {
+  const value = process.env[name];
+  if (!value?.trim()) throw new Error(`Missing environment variable: ${name}`);
+  return value;
+}
+
+const executor = createRestExecutor(
+  {
+    instanceUrl: requiredEnv("SF_INSTANCE_URL"),
+    accessToken: requiredEnv("SF_ACCESS_TOKEN"),
+    apiVersion: process.env.SF_API_VERSION ?? "65.0",
+    timeoutMs: 30_000,
+  },
+  { batchSize: 1000, maxPages: 100, maxRecords: 100_000 },
+);
+const db = new Kysoql<SalesforceSchema>({ executor });
+const accounts = await db.selectFrom("Account").select(["Id", "Name"]).execute();
+const count = await db.selectFrom("Account").select(({ fn }) => fn.count()).execute();
+```
+
+Both `.execute()` and `.executeAll()` drain root pages. The latter uses Salesforce
+QueryAll to include qualifying deleted/archived records; it is not a pagination
+switch. Counts return `number`; fielded counts and other aggregates return rows.
+No core query-building API changes are required.
+
+## Resource controls
+
+The example's budgets are application choices. Defaults are a 30-second timeout
+per HTTP request (including token acquisition/body), `maxPages: 10_000`, and no
+configured root-record cap. `batchSize` is optional and accepts integers from
+200 to 2000. API version is deliberately pinned to `65.0`, not negotiated.
+
+```ts
+const query = db.selectFrom("Account").select(["Id", "Name"]).compile();
+const signal = AbortSignal.timeout(60_000); // Overall operation deadline.
+for await (const account of executor.iterateQuery(query, { signal })) {
+  // Process one record. Do not log sensitive fields indiscriminately.
+  console.log(account.Id);
+}
+```
+
+`queryPages(query, options?)` yields envelopes; `iterateQuery` yields records.
+Both accept `queryAll`, `signal`, and `timeoutMs`, and reject bare `COUNT()`.
+Collection and iteration throw `SalesforceQueryLimitError` on budget overflow
+instead of silently truncating. Iterators can have yielded earlier pages when
+later pages fail. One JSON page is buffered at a time; this is not a Bulk API
+or byte-streaming client.
+
+For per-call options with collection or counts, use the executor directly with
+`.compile()`, e.g. `executor.executeQuery(query, { signal })`. The core builder's
+`.execute()` signature is unchanged. Client-level signals apply to every request
+on that client; per-call signals affect just that operation.
+
+Parent objects, nested child envelopes, and record `attributes` are preserved.
+Child subqueries are not recursively drained. `queryMore<Row>(locator, options?)`
+fetches one root/child continuation page; manual loops need their own budgets and
+cycle checks. Root record budgets do not count nested records or scalar counts.
+Root envelopes are validated, but generic row types are not runtime validation.
+
+## Authentication and shared clients
+
+`createRestClient(options)` returns a reusable GET-only `RestClient`.
+`createRestExecutor(client)` and codegen's `createRestDescribeClient(client)` can
+share it, including the token cache and refresh coordination. `request(path)`
+returns `unknown`; prefer the executor and Describe factory for validated shapes.
+
+`accessToken` accepts a string or an `AccessTokenProvider`:
+`({ refresh: boolean }) => string | Promise<string>`. The provider is called
+lazily and its token cached. Concurrent acquisition/refresh is single-flight
+within one client. Only `401 INVALID_SESSION_ID` triggers a refresh and at most
+one replay. Static tokens, generic 401s, rate limits, network errors, and 5xx
+responses are not automatically retried. Providers must return tokens for the
+same configured org; recreate the client if authentication changes the instance.
+
+Native helpers `authenticateClientCredentials({ loginUrl, clientId, clientSecret })`
+and `refreshAccessToken({ loginUrl, clientId, refreshToken, clientSecret? })` return
+`{ accessToken, instanceUrl, refreshToken? }`. Both accept request timeouts, signals,
+and injected fetch. They perform one form-encoded token exchange, not interactive
+login or token storage. Configure the Salesforce OAuth app, protect secrets, and
+persist rotated refresh tokens in your application. Coordinate token rotation
+across processes outside Kysoql.
+
+## Errors and transport boundaries
+
+- `SalesforceRestError`: `status` and structured `errors` details. Default messages
+  omit server descriptions, but details can contain sensitive query data.
+- `SalesforceResponseError`: malformed JSON/envelopes, unsafe/repeated locators,
+  or invalid/incomplete count results.
+- `SalesforceQueryLimitError`: `limit` is `maxPages` or `maxRecords`.
+- `SalesforceOAuthError`: token exchange `status` and optional error `code`.
+
+Native network/abort failures propagate. HTTPS is required, redirects are rejected,
+and query locators must be relative paths in the configured API version. An
+injected `fetch` must honour `signal` and `redirect: "error"`. There is no automatic
+DML, SOSL, Apex execution, Bulk API, rate limiter, or general retry policy. OAuth
+application setup, interactive/JWT flows, and credential storage remain outside
+this package's scope. Runtime options do not read CLI configuration or environment
+variables automatically.
+
+Full guides: [execution](../../apps/docs/content/docs/guides/execution.mdx),
+[authentication](../../apps/docs/content/docs/guides/authentication.mdx), and
+[security](../../apps/docs/content/docs/reference/security.mdx).

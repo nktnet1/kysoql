@@ -27,7 +27,7 @@ const rows = await db
 
 Bare `fn.count()` compiles to `COUNT()` and uses a dedicated scalar builder.
 It has no alias, additional selections, grouping, ordering, or offset. The
-executor needs `executeCountQuery`; the JSforce adapter implements it using
+executor needs `executeCountQuery`; both bundled executors implement it using
 Salesforce's validated `totalSize` response.
 
 `fn.count(field)` and `fn.countDistinct(field)` are row-producing aggregate

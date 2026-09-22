@@ -13,7 +13,7 @@ variables. Vite variables prefixed `VITE_` are public build-time configuration.
 
 The generator needs an existing token; it is not a credential vault or an OAuth
 client. Use an integration identity with only the access required for the task.
-See [JSforce authentication](https://jsforce.github.io/document/#connection) and
+See [native authentication](/docs/guides/authentication) and
 Salesforce's [OAuth documentation](https://developer.salesforce.com/docs/platform/mobile-sdk/guide/intro-oauth.html)
 for supported connection flows.
 
@@ -62,9 +62,17 @@ object names and business structure; review them before publishing.
 
 ## Bound resource use and side effects
 
-The bundled adapter accumulates all root pages in memory. Use intentional limits
-or a dedicated transport for large exports, rate controls, cancellation, and
-retry policies. A large valid query is not automatically a safe HTTP endpoint.
+Bundled `.execute()` methods accumulate all root pages in memory. Native REST
+supports `maxPages`/`maxRecords`, async iteration, per-request timeouts, and abort
+signals. Use intentional budgets and an overall operation deadline, not just the
+per-page timeout. Nested records still contribute to memory use and are outside
+root-record budgets. Neither adapter supplies application-wide concurrency or
+rate limiting. A large valid query is not automatically a safe HTTP endpoint.
+
+The REST client requires HTTPS and rejects redirects and unsafe continuation URLs.
+Only a provider-backed `401 INVALID_SESSION_ID` is replayed, at most once; generic
+transport, rate-limit, and server failures are not automatically retried. Handle
+structured error details carefully because server messages can contain query data.
 
 `FOR VIEW`, `FOR REFERENCE`, Knowledge tracking, and Apex locking can have side
 effects. Account for those before caching, retrying, or using the query in a

@@ -96,8 +96,7 @@ Create `src/db.ts`:
 
 ```typescript title="src/db.ts"
 import { Kysoql } from "@kysoql/core";
-import { createJsforceExecutor } from "@kysoql/jsforce";
-import { Connection } from "jsforce";
+import { createRestExecutor } from "@kysoql/rest";
 import type { SalesforceSchema } from "./salesforce.generated";
 
 function requiredEnv(name: string): string {
@@ -108,19 +107,20 @@ function requiredEnv(name: string): string {
   return value;
 }
 
-const connection = new Connection({
+export const executor = createRestExecutor({
   instanceUrl: requiredEnv("SF_INSTANCE_URL"),
   accessToken: requiredEnv("SF_ACCESS_TOKEN"),
+  apiVersion: process.env.SF_API_VERSION ?? "65.0",
 });
 
-export const db = new Kysoql<SalesforceSchema>({
-  executor: createJsforceExecutor(connection),
-});
+export const db = new Kysoql<SalesforceSchema>({ executor });
 ```
 
-This uses an existing access token. Configure refresh/re-authentication on the
-JSforce connection for a long-running service; Kysoql does not manage token
-lifecycle. See the official [JSforce connection documentation](https://jsforce.github.io/document/#connection).
+This uses native `fetch` with an existing access token, without JSforce. For a
+long-running service, use an access-token provider and the native
+[OAuth helpers](/docs/guides/authentication). Runtime environment loading above is
+explicit; the REST client does not read `SF_*` variables on its own. Align its API
+version with schema generation and verify target-org feature support.
 
 Create `src/query.ts`:
 

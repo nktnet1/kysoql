@@ -2,7 +2,7 @@ import { createGetUrl } from "fumadocs-core/source";
 
 export const appName = "Kysoql";
 export const appDescription =
-  "Type-safe Salesforce SOQL queries for TypeScript. Learn schema generation, query composition, JSforce execution, and Apex compilation.";
+  "Type-safe Salesforce SOQL queries for TypeScript. Learn schema generation, query composition, native REST execution, and Apex compilation.";
 export const docsRoute = "/docs";
 
 // VITE_ values are public build-time configuration. Never put credentials here.

@@ -150,11 +150,40 @@ construct [validated literals](/docs/guides/literals).
 
 ## Integration and extension exports
 
+### Native REST
+
+| Export or method | Contract |
+| --- | --- |
+| `createRestClient(options)` | Shared native GET transport with authentication, version, deadline, and URL controls. |
+| `createRestExecutor(clientOrOptions, pagination?)` | A `RestExecutor` implementing all four core execution capabilities. |
+| `executeQuery(query, options?)` / `executeAllQuery(query, options?)` | Collect root rows from ordinary Query / QueryAll. |
+| `executeCountQuery(query, options?)` / `executeAllCountQuery(query, options?)` | Return bare `COUNT()` numbers in the selected mode. |
+| `queryPages(query, options?)` | Async iterator of root `RestQueryPage<O>` envelopes. |
+| `iterateQuery(query, options?)` | Async iterator of root records. |
+| `queryMore<Row>(locator, options?)` | One explicit root/child continuation page. |
+| `authenticateClientCredentials(options)` | One native client-credentials token exchange. |
+| `refreshAccessToken(options)` | One native refresh-token exchange. |
+| `DEFAULT_API_VERSION` | Pinned string `"65.0"`; not automatic version negotiation. |
+
+`@kysoql/rest` exports the corresponding `RestClient`, `RestClientOptions`,
+`RestExecutor`, `RestPaginationOptions`, `RestQueryPage`, `RestQueryOptions`,
+`RestGetOptions`, `RestRequestOptions`, `HttpOptions`, `AccessTokenProvider`,
+`ClientCredentialsOptions`, `RefreshTokenOptions`, and `SalesforceOAuthSession`
+types. Errors are `SalesforceRestError` (plus `SalesforceRestErrorDetail`),
+`SalesforceResponseError`, `SalesforceQueryLimitError`, and `SalesforceOAuthError`.
+
+Request options accept `signal` and `timeoutMs`; query iteration additionally
+accepts `queryAll`. Pagination options accept `batchSize`, `maxPages`, and
+`maxRecords`. See [execution](/docs/guides/execution) and
+[authentication](/docs/guides/authentication) for defaults and boundaries.
+
+### Optional adapters and codegen
+
 `@kysoql/jsforce` exports `createJsforceExecutor` and the public interfaces
 `JsforceConnection`, `JsforceExecutor`, `JsforceQueryResult`, and
 `JsforceCountQueryResult`.
 
-`@kysoql/codegen` exports `generateSchema`, `loadSchema`, `renderSchema`,
+`@kysoql/codegen` exports `createRestDescribeClient`, `generateSchema`, `loadSchema`, `renderSchema`,
 `GenerateSchemaOptions` (including optional `fields`), `SalesforceDescribeClient`, and normalized Describe
 interfaces. See [schema generation](/docs/getting-started/schema-generation).
 
@@ -170,5 +199,5 @@ private `#/...` package paths.
 `@kysoql/codegen` exports `defineConfig`, `KysoqlConfig`, `ObjectFieldFilter`,
 and `ObjectFieldFilters` for
 [`kysoql.config.ts`](/docs/getting-started/configuration). They configure the CLI's
-object list, per-object field rules, output file, and schema interface name. They are separate from
+API version, object list, per-object field rules, output file, and schema interface name. They are separate from
 `QueryCreatorConfig`, which configures runtime query construction and execution.

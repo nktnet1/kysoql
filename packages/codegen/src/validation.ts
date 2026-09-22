@@ -2,6 +2,7 @@ import * as v from "valibot";
 
 import type {
   SalesforceDataCategoryGroupDescription,
+  SalesforceDataCategoryGroupsResponse,
   SalesforceDataCategorySummaryResponse,
   SalesforceGlobalDescription,
   SalesforceObjectDescription,
@@ -111,45 +112,51 @@ const collectDataCategoryNames = (
   }
 };
 
-export const parseSalesforceDataCategoryGroupsResponse = (
+/** Validate and retain the REST tree for native/custom Describe clients. */
+export const parseSalesforceDataCategoryGroups = (
   input: unknown,
   objectName: string,
-): readonly SalesforceDataCategoryGroupDescription[] => {
-  const response = v.safeParse(
-    salesforceDataCategoryGroupsResponseSchema,
-    input,
-  );
+): SalesforceDataCategoryGroupsResponse => {
+  const response = v.safeParse(salesforceDataCategoryGroupsResponseSchema, input);
   if (!response.success) {
     throw new TypeError(
       `Invalid Salesforce data category response for ${objectName}:\n${v.summarize(response.issues)}`,
     );
   }
+  return {
+    categoryGroups: response.output.categoryGroups.map((input) => {
+      const group = v.safeParse(salesforceDataCategoryGroupSchema, input);
+      if (!group.success) {
+        throw new TypeError(
+          `Invalid Salesforce data category response for ${objectName}:\n${v.summarize(group.issues)}`,
+        );
+      }
+      return {
+        name: group.output.name,
+        topCategories: group.output.topCategories.map((category) =>
+          parseDataCategorySummary(category, objectName),
+        ),
+      };
+    }),
+  };
+};
 
+export const parseSalesforceDataCategoryGroupsResponse = (
+  input: unknown,
+  objectName: string,
+): readonly SalesforceDataCategoryGroupDescription[] => {
+  const response = parseSalesforceDataCategoryGroups(input, objectName);
   const groups = new Map<string, Set<string>>();
-
-  for (const groupInput of response.output.categoryGroups) {
-    const group = v.safeParse(salesforceDataCategoryGroupSchema, groupInput);
-    if (!group.success) {
-      throw new TypeError(
-        `Invalid Salesforce data category response for ${objectName}:\n${v.summarize(group.issues)}`,
-      );
-    }
-
-    const categoryNames = groups.get(group.output.name) ?? new Set<string>();
-    const topCategories = group.output.topCategories.map((category) =>
-      parseDataCategorySummary(category, objectName),
-    );
-    collectDataCategoryNames(topCategories, categoryNames);
-    groups.set(group.output.name, categoryNames);
+  for (const group of response.categoryGroups) {
+    const names = groups.get(group.name) ?? new Set<string>();
+    collectDataCategoryNames(group.topCategories, names);
+    groups.set(group.name, names);
   }
-
   return [...groups.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([name, categories]) => ({
       name,
-      categories: [...categories].sort((left, right) =>
-        left.localeCompare(right),
-      ),
+      categories: [...categories].sort((left, right) => left.localeCompare(right)),
     }));
 };
 

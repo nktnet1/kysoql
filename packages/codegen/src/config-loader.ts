@@ -14,6 +14,7 @@ const nonBlankString = v.pipe(
   v.check((value) => value.trim().length > 0, "Expected a non-blank string."),
 );
 const configSchema = v.strictObject({
+  apiVersion: v.optional(v.pipe(v.string(), v.regex(/^[1-9]\d*\.0$/, 'Expected apiVersion such as "65.0", without "v".'))),
   objects: v.optional(v.array(nonBlankString)),
   // Shared with the programmatic API; validation reports the exact rule path.
   fields: v.optional(v.unknown()),
@@ -33,12 +34,14 @@ export interface LoadConfigOptions {
 }
 
 export interface GenerateFlagOverrides {
+  readonly "api-version"?: string | undefined;
   readonly object?: readonly string[] | undefined;
   readonly output?: string | undefined;
   readonly "schema-name"?: string | undefined;
 }
 
 export interface ResolvedGenerateOptions {
+  readonly apiVersion?: string;
   readonly objects: readonly string[];
   readonly fields?: ObjectFieldFilters;
   readonly output: string;
@@ -62,8 +65,9 @@ export const parseKysoqlConfig = (
       `Invalid Kysoql ${source}:\n${v.summarize(result.issues)}`,
     );
   }
-  const { objects, fields, output, schemaName } = result.output;
+  const { apiVersion, objects, fields, output, schemaName } = result.output;
   return {
+    ...(apiVersion === undefined ? {} : { apiVersion }),
     ...(objects === undefined ? {} : { objects }),
     ...(fields === undefined
       ? {}
@@ -180,6 +184,7 @@ export const resolveGenerateOptions = (
 ): ResolvedGenerateOptions => {
   const config = parseKysoqlConfig({
     ...loaded?.config,
+    ...(flags["api-version"] === undefined ? {} : { apiVersion: flags["api-version"] }),
     ...(flags.object === undefined ? {} : { objects: flags.object }),
     ...(flags.output === undefined ? {} : { output: flags.output }),
     ...(flags["schema-name"] === undefined
@@ -192,6 +197,7 @@ export const resolveGenerateOptions = (
       : dirname(loaded.filename);
 
   return {
+    ...(config.apiVersion === undefined ? {} : { apiVersion: config.apiVersion }),
     objects: config.objects ?? [],
     ...(config.fields === undefined ? {} : { fields: config.fields }),
     output: resolve(

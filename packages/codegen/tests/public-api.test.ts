@@ -18,6 +18,7 @@ import type {
   SalesforceSupportedScopeDescription,
 } from "#/index";
 import {
+  createRestDescribeClient,
   defineConfig,
   generateSchema,
   loadSchema,
@@ -25,11 +26,13 @@ import {
 } from "#/index";
 
 it("exports the complete codegen public API from the package entrypoint", () => {
+  expectTypeOf(createRestDescribeClient).toBeFunction();
   expectTypeOf(defineConfig).toBeFunction();
   expectTypeOf(
     defineConfig({ objects: ["Account"] }),
   ).toEqualTypeOf<KysoqlConfig>();
   expectTypeOf<KysoqlConfig>().toEqualTypeOf<{
+    readonly apiVersion?: string;
     readonly objects?: readonly string[];
     readonly fields?: ObjectFieldFilters;
     readonly output?: string;

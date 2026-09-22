@@ -14,6 +14,8 @@ export type ObjectFieldFilters = Readonly<Record<string, ObjectFieldFilter>>;
 
 /** Schema-generation settings; authentication stays in SF_* variables. */
 export interface KysoqlConfig {
+  /** Salesforce REST API version, without v. Applies to CLI generation only. */
+  readonly apiVersion?: string;
   /** API names. Omit or use [] to include all queryable objects. */
   readonly objects?: readonly string[];
   /** Per-object field rules. Omitted objects retain all described fields. */

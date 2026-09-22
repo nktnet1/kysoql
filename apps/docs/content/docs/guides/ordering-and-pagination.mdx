@@ -53,7 +53,9 @@ object-specific or execution-context limits.
 
 ## OFFSET is not a bulk export mechanism
 
-The JSforce adapter's normal `execute()` follows root `queryMore` responses.
+Both bundled executors follow root continuation pages during normal `execute()`.
+Native REST additionally offers page and record iterators; see
+[execution](/docs/guides/execution#iterate-without-accumulating-every-root-record).
 For a query without a limit, this can accumulate a large result in memory.
 `executeAll()` is not needed to drain pages; it enables QueryAll, including
 eligible deleted records and archived activities.

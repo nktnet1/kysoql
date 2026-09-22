@@ -41,8 +41,8 @@ pnpm exec kysoql generate --no-config \
 
 ## Configuration
 
-`defineConfig` is a typed identity helper. `KysoqlConfig` has four optional
-properties: `objects`, `fields`, `output`, and `schemaName`. Export a plain object; functions,
+`defineConfig` is a typed identity helper. `KysoqlConfig` has five optional
+properties: `apiVersion`, `objects`, `fields`, `output`, and `schemaName`. Export a plain object; functions,
 promises, and config arrays are not supported. Unknown keys, invalid types, blank
 strings, and invalid schema names fail before connecting to Salesforce.
 
@@ -55,7 +55,11 @@ in `.cts`/`.cjs`. Multiple discovered configs require explicit selection:
 pnpm exec kysoql generate --config config/kysoql.sandbox.ts
 ```
 
-Explicit flags override config values, then built-in defaults apply. Repeated
+Explicit flags override config values, then built-in defaults apply. API version
+uses `--api-version`, then config `apiVersion`, then `SF_API_VERSION`, then the
+pinned `65.0` default. Versions are strings without `v`, such as `"65.0"`. Keep
+runtime and generation versions aligned and check org support. The CLI now uses
+native REST Describe; JSforce is neither used nor installed by codegen. Repeated
 `--object` flags replace the configured list. Without a list (or with `objects:
 []`), generation includes every queryable object returned by Salesforce. Defaults
 remain `salesforce.generated.ts` and the `SalesforceSchema` interface name.
@@ -140,8 +144,27 @@ covers relationship dependencies, validation, and migration.
 
 ## Library API
 
-The package also exports `generateSchema`, `loadSchema`, `renderSchema`, and the
-normalized Salesforce Describe types for programmatic generation workflows.
+The package exports `createRestDescribeClient`, `generateSchema`, `loadSchema`,
+`renderSchema`, and normalized Salesforce Describe types for programmatic generation.
+
+```ts
+import { createRestDescribeClient, generateSchema } from "@kysoql/codegen";
+
+export async function generateForOrg(instanceUrl: string, accessToken: string) {
+  await generateSchema({
+    client: createRestDescribeClient({ instanceUrl, accessToken, apiVersion: "65.0" }),
+    objects: ["Account", "Contact"],
+    output: "src/salesforce.generated.ts",
+  });
+}
+```
+
+The factory also accepts a shared `RestClient` from `@kysoql/rest`, with renewable
+token providers, fetch injection, cancellation, and timeout settings. It validates
+global/object Describe responses, verifies returned object identity, and loads
+complete Knowledge category trees with `topCategoriesOnly=false`. Failed taxonomy
+requests can be retried by the caller. Existing custom `SalesforceDescribeClient`
+implementations and field filtering remain supported.
 
 Programmatic generation does not discover config files: pass options explicitly.
 Its relative output paths continue to use the process working directory.

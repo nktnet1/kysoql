@@ -59,7 +59,7 @@ Aliases on functions are result property names, not raw SOQL fragments. An
 aggregate uses `.as("totalAmount")`; ordinary selected fields are not renamed
 using SQL-style `"Name as name"` strings.
 
-The JSforce adapter validates the query response envelope, not every selected
+The bundled executors validate the query response envelope, not every selected
 field's runtime type. Types are not a runtime data-validation or authorisation
 layer. See [security](/docs/reference/security).
 
@@ -69,7 +69,7 @@ layer. See [security](/docs/reference/security).
 `toOperationNode()` expose the operation tree for inspection or testing. Normal
 builders use the default compiler unless a custom `queryCompiler` is supplied.
 
-`execute()` requires an executor. With the JSforce adapter it already drains
+`execute()` requires an executor. With either bundled executor it already drains
 root result pages. `executeAll()` changes the Salesforce query mode to QueryAll;
 it does not simply mean "fetch every page".
 
