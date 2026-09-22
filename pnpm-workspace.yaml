@@ -1,10 +1,12 @@
 packages:
+  - apps/*
   - packages/*
 
 allowBuilds:
   '@salesforce/cli': false
   core-js: false
   core-js-pure: false
+  esbuild: false
   lefthook: true
   protobufjs: false
   yarn: false
