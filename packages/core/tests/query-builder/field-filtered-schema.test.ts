@@ -117,14 +117,15 @@ describe("field-filtered generated schemas", () => {
     expectTypeOf<LegacySchema["User"]>().toMatchTypeOf<
       SalesforceSchema[string]
     >();
+    type EmptySelection = Record<never, never>;
     expectTypeOf<
-      FieldsSelectionCheck<UncertainSchema, "User", {}, "all">
+      FieldsSelectionCheck<UncertainSchema, "User", EmptySelection, "all">
     >().toEqualTypeOf<readonly [requiresCompleteFieldSchema: never]>();
     expectTypeOf<
-      FieldsSelectionCheck<MixedSchema, "Object", {}, "all">
+      FieldsSelectionCheck<MixedSchema, "Object", EmptySelection, "all">
     >().toEqualTypeOf<readonly [requiresCompleteFieldSchema: never]>();
     expectTypeOf<
-      FieldsSelectionCheck<LegacySchema, "User", {}, "standard">
+      FieldsSelectionCheck<LegacySchema, "User", EmptySelection, "standard">
     >().toEqualTypeOf<readonly []>();
   });
 
@@ -146,8 +147,9 @@ describe("field-filtered generated schemas", () => {
       db.selectFrom("Contact").select("Account.Industry");
       // @ts-expect-error Parent predicates respect target field rules too.
       db.selectFrom("Contact").where("Account.Industry", "=", "Technology");
+      const account = db.selectFrom("Account");
       // @ts-expect-error Missing child objects have no queryable relationship.
-      db.selectFrom("Account").selectSubquery("Missing__r", (c) => c.select("Id"));
+      account.selectSubquery("Missing__r", (child) => child);
       // @ts-expect-error Missing target objects do not become queryable.
       db.selectFrom("Lead");
       // @ts-expect-error Do not narrow Who to Contact when Lead is absent.
