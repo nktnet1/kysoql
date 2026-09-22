@@ -108,7 +108,7 @@ const query = db
 The normal field-left overload accepts active values from the generated schema,
 not arbitrary raw SOQL or right-hand Apex binds. It does not provide a general
 escape hatch for hand-built semicolon expressions. Apex has a separate
-[bind-left INCLUDES form](/docs/apex/bindings#bind-left-includes).
+[bind-left INCLUDES form](/docs/core/apex/bindings#bind-left-includes).
 
 ## LIKE patterns and input safety
 
@@ -120,7 +120,7 @@ do not describe compiler escaping as a literal-search or authorisation feature.
 
 Use allowlisted field names and operators for user-controlled sorting/filtering.
 Do not cast arbitrary request strings to schema keys. See
-[security](/docs/reference/security).
+[security](/docs/core/reference/security).
 
 ## Filters over functions
 
@@ -128,4 +128,4 @@ Expression callbacks also expose date functions, `toLabel`, and `distance` via
 `eb.fn`. Supported beta arithmetic lives under `eb.beta`, not `eb.fn`.
 See [date functions](/docs/guides/date-functions),
 [translated labels](/docs/guides/select-functions#translated-labels), and
-[experimental features](/docs/advanced/experimental).
+[experimental features](/docs/core/advanced/experimental).

@@ -1,10 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { DynamicCodeBlock } from "fumadocs-ui/components/dynamic-codeblock";
 import { HomeLayout } from "fumadocs-ui/layouts/home";
 import { baseOptions } from "@/lib/layout.shared";
 
 export const Route = createFileRoute("/")({
   component: Home,
 });
+
+const homeExample = `const query = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where("Name", "like", "Acme%")
+  .limit(25);
+
+const { soql } = query.compile();`;
 
 function Home() {
   return (
@@ -25,35 +34,27 @@ function Home() {
         <div className="flex flex-wrap gap-3">
           <Link
             to="/docs/$"
-            params={{ _splat: "getting-started/quickstart" }}
+            params={{ _splat: "" }}
             className="rounded-lg bg-fd-primary px-4 py-2 font-medium text-fd-primary-foreground text-sm"
           >
-            Follow the quickstart
+            Open the framework guide
           </Link>
           <Link
             to="/docs/$"
-            params={{ _splat: "reference/api" }}
+            params={{ _splat: "core/reference/api" }}
             className="rounded-lg border px-4 py-2 font-medium text-sm"
           >
             Browse the API reference
           </Link>
           <Link
             to="/docs/$"
-            params={{ _splat: "" }}
+            params={{ _splat: "getting-started/quickstart" }}
             className="rounded-lg px-4 py-2 font-medium text-sm underline underline-offset-4"
           >
-            Documentation overview
+            Follow the quickstart
           </Link>
         </div>
-        <pre className="overflow-x-auto rounded-xl border bg-fd-card p-5 text-sm leading-relaxed">
-          <code>{`const query = db
-  .selectFrom("Account")
-  .select(["Id", "Name"])
-  .where("Name", "like", "Acme%")
-  .limit(25);
-
-const { soql } = query.compile();`}</code>
-        </pre>
+        <DynamicCodeBlock lang="ts" code={homeExample} />
         <p className="max-w-2xl text-fd-muted-foreground text-sm leading-relaxed">
           Use your generated Salesforce schema. Compile without a connection;
           add an executor when you are ready to query your org.

@@ -9,7 +9,7 @@ icon: "Database"
 and regenerate after changes to fields, relationships, picklists, or permissions.
 
 For repeatable settings, create a
-[`kysoql.config.ts`](/docs/getting-started/configuration). The CLI automatically
+[`kysoql.config.ts`](/docs/codegen/configuration). The CLI automatically
 loads it from the working directory. Explicit CLI flags override config values;
 use `--no-config` for a completely CLI-driven run.
 
@@ -61,7 +61,7 @@ object list also means all queryable objects.
 
 ## Filter generated fields
 
-The optional [`fields` map](/docs/getting-started/field-filtering) supports one
+The optional [`fields` map](/docs/codegen/field-filtering) supports one
 exact-name `include` or `exclude` list per object, in both `kysoql.config.ts` and
 `generateSchema` options. `loadSchema` also accepts it as a third argument.
 Omitting a rule keeps that object's full described field set.
@@ -185,5 +185,5 @@ from one org is not proof that another org has the same capabilities.
 
 Run application typechecks after regeneration. Do not suppress new errors with
 `any`: they may identify a removed field, a missing relationship target, or a
-changed capability. See [schema types](/docs/reference/schema-types) for a small
+changed capability. See [schema types](/docs/core/reference/schema-types) for a small
 handwritten schema suitable for offline examples.

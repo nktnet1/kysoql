@@ -34,8 +34,8 @@ npm install --save-dev @kysoql/codegen typescript @types/node tsx
 
 For compile-only use, install `@kysoql/core`; add codegen only when generating
 schemas. Native execution and codegen do not depend on JSforce. Install
-`@kysoql/jsforce` and `jsforce` only for the [optional adapter](/docs/guides/jsforce),
-or implement a [custom executor](/docs/reference/custom-executors).
+`@kysoql/jsforce` and `jsforce` only for the [optional adapter](/docs/jsforce),
+or implement a [custom executor](/docs/core/reference/custom-executors).
 Keep the Kysoql packages you use on aligned versions.
 
 ## Configure a TypeScript application
@@ -131,7 +131,7 @@ node packages/codegen/dist/cli.mjs generate --help
 
 Continue with the [quickstart](/docs/getting-started/quickstart). It starts with
 an existing Salesforce access token. Native
-[authentication helpers](/docs/guides/authentication) also support client-credentials
+[authentication helpers](/docs/rest/authentication) also support client-credentials
 and refresh-token exchanges. A full repository install still includes the optional
 JSforce workspace and Salesforce CLI development tooling; an application installing
 only core, REST, and codegen does not inherit those workspace development dependencies.

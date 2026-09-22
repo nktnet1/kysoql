@@ -21,7 +21,7 @@ this package's scope.
 
 Normal fields cannot be renamed using SQL-style strings. There are no
 `executeTakeFirst`, `clearHaving`, or universal mutable query methods. The
-[API reference](/docs/reference/api) documents the actual supported surfaces.
+[API reference](/docs/core/reference/api) documents the actual supported surfaces.
 
 ## Structural checks in this snapshot
 
@@ -98,7 +98,7 @@ Both bundled executors validate root response structure but trust field payloads
 as the inferred type. `.execute()` drains root results into memory, not nested
 child results, and neither adapter bypasses Salesforce's aggregate pagination
 restrictions. Native REST offers bounded page/record iteration, explicit child
-continuation requests, and request cancellation. See [execution](/docs/guides/execution).
+continuation requests, and request cancellation. See [execution](/docs/rest/execution).
 A `CompiledQuery` is not a server-validated query plan.
 
 ## Version and feature availability
@@ -109,7 +109,7 @@ static Apex, managed dynamic Apex, external objects, and Data 360 rather than
 assuming a query accepted in one context works in all others.
 
 Beta arithmetic and child-offset pilot support are documented under
-[experimental features](/docs/advanced/experimental). Verify current Salesforce
+[experimental features](/docs/core/advanced/experimental). Verify current Salesforce
 availability before using them. For external platform rules, use the official
 [SOQL object limits reference](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-limits.html)
 and [SOQL SELECT reference](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select.html).

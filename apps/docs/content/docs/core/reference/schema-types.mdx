@@ -6,7 +6,7 @@ icon: "Database"
 
 ## Prefer generated schemas
 
-The [generator](/docs/getting-started/schema-generation) captures org-specific
+The [generator](/docs/codegen/schema-generation) captures org-specific
 capabilities. A handwritten schema is useful for a tutorial or unit test, but
 inventing capabilities can make the type system accept a query Salesforce will
 reject. Keep real application schemas generated from Describe.
@@ -98,7 +98,7 @@ set-options capability to `"none"`, and field completeness to `true`.
 
 The eighth parameter is exposed as optional `fieldsComplete` metadata so older
 structural schemas remain assignable. Codegen sets it to `false`
-for any object with an explicit [field rule](/docs/getting-started/field-filtering),
+for any object with an explicit [field rule](/docs/codegen/field-filtering),
 even if a rule currently removes no fields. `selectFields(...)` is rejected for
 those objects at the type level because Salesforce's group expansion cannot be
 restricted by generated types. Explicit selections, predicates, grouping, and

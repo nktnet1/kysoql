@@ -27,18 +27,21 @@ for the workspace's pinned toolchain when investigating type errors.
 
 ## Content structure
 
-| Section | Purpose |
+| Root | Purpose |
 | --- | --- |
-| `index.mdx` | Product overview, packages, and learning paths. |
-| `getting-started/` | Installation, a complete quickstart, configuration, and schema generation. |
-| `guides/` | Query composition, fields, filters, relationships, functions, aggregates, and execution. |
-| `apex/` | Compile-only Apex contexts and bind expressions. |
-| `advanced/` | Salesforce-specific clauses, Knowledge, feeds, Data 360, and experimental features. |
-| `reference/` | API surfaces, schema types, executor contracts, limitations, security, and troubleshooting. |
+| `index.mdx`, `getting-started/`, `guides/` | Framework-level usage: setup, query building, and common Salesforce concepts. |
+| `core/` | `@kysoql/core`: Apex compilation, schema/result types, advanced features, and core references. |
+| `rest/` | `@kysoql/rest`: native execution, pagination, authentication, and REST API reference. |
+| `codegen/` | `@kysoql/codegen`: configuration, schema generation, field filtering, and codegen API reference. |
+| `jsforce/` | `@kysoql/jsforce`: the optional JSforce adapter and its API reference. |
 
-Each directory has a `meta.json` with an explicit `pages` array. Add new pages
-there rather than relying on alphabetical ordering. Folder entries in the root
-metadata point to their own navigation files.
+The top-level docs tree is the default **Framework** view. The four package
+folders are Fumadocs root folders (`"root": true`), so the generated layout-tab
+toggle switches from general usage into deeper package-specific documentation.
+Each package directory has a `meta.json` with an explicit `pages` array; add new
+pages there rather than
+relying on alphabetical ordering. Keep package-specific pages inside the matching
+root so navigation and search filtering stay aligned.
 
 ## Authoring conventions
 
@@ -172,24 +175,24 @@ Examples are typechecked, not executed. The checker never obtains a token,
 calls Salesforce, provisions an org, or runs a query. Runtime unit tests and
 Salesforce integration tests remain separate responsibilities.
 
-## Optional repository links
+## Repository links
 
-The header and page source controls only show repository links when configured.
-No repository owner or URL is invented. Copy `.env.example` to `.env.local` and
-set these **public build-time** values for the actual hosting repository:
-
-- `VITE_DOCS_REPOSITORY_URL`: an HTTPS GitHub repository URL with exactly an owner
-  and repository path, without a branch, query string, or fragment.
-- `VITE_DOCS_REPOSITORY_BRANCH`: the source branch; defaults to `main`.
-
-Source links include the monorepo path `apps/docs/content/docs/`. Leave the URL
-unset to hide those links. Changing these values requires rebuilding the site.
-Never use a `VITE_` variable for access tokens, instance secrets, or credentials.
+The header and page source controls link to
+`https://github.com/nktnet1/kysoql`. Source links include the monorepo path
+`apps/docs/content/docs/`. `VITE_DOCS_REPOSITORY_BRANCH` can override the source
+branch used by page links; it defaults to `main`. Changing the branch requires
+rebuilding the site. Never use a `VITE_` variable for access tokens, instance
+secrets, or credentials.
 
 ## Search and machine-readable output
 
-The existing source loader supplies all pages to the static search endpoint at
-`/api/search`. The site also exposes:
+The source loader supplies all pages to the static search endpoint at
+`/api/search`. The root documentation is the `framework` section, with package
+pages indexed as `core`, `rest`, `codegen`, and `jsforce`. The search dialog uses
+the same section list in its Fumadocs-style filter popover, including a dedicated
+Framework filter. Unfiltered search still searches every section.
+
+The site also exposes:
 
 - `/docs/index.md` and `/docs/<section>/<page>.md`: processed page Markdown.
 - `/llms.txt`: the documentation index.

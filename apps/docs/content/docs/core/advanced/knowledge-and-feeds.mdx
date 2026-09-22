@@ -51,7 +51,7 @@ with no repeated category group.
 
 These conditions accumulate within one `WITH DATA CATEGORY` clause. They do
 not combine with another filtering `WITH` form. The child-query builder does
-not expose this method. See [schema generation](/docs/getting-started/schema-generation#knowledge-categories)
+not expose this method. See [schema generation](/docs/codegen/schema-generation#knowledge-categories)
 for visibility and REST discovery limitations.
 
 ## Knowledge tracking and view statistics
@@ -99,4 +99,4 @@ Both `NewsFeed` and `UserProfileFeed` reject relationship-path sorting; order
 only by fields on the root object. Permission-dependent row caps are left to
 the Salesforce execution context, not treated as unconditional compiler limits.
 Other required-filter objects are listed in
-[limitations](/docs/reference/limitations#object-specific-query-shapes).
+[limitations](/docs/core/reference/limitations#object-specific-query-shapes).

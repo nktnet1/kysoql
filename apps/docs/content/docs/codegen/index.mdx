@@ -1,0 +1,34 @@
+---
+title: "@kysoql/codegen"
+description: "Generate schema-aware Kysoql types from Salesforce Describe metadata."
+icon: "FileCode"
+---
+
+`@kysoql/codegen` turns Salesforce Describe metadata into the schema types used by
+`@kysoql/core`. It includes the `kysoql generate` CLI as well as programmatic
+Describe, loading, filtering, and rendering APIs.
+
+Native REST is used for CLI metadata requests, so code generation does not require
+JSforce.
+
+## Configure generation
+
+```ts title="kysoql.config.ts"
+import { defineConfig } from "@kysoql/codegen";
+
+export default defineConfig({
+  objects: ["Account", "Contact", "User"],
+  output: "src/salesforce.generated.ts",
+  schemaName: "SalesforceSchema",
+});
+```
+
+You can keep every described field or define exact per-object include/exclude
+rules when an application intentionally exposes a smaller query surface.
+
+## In this package
+
+- [Configuration](/docs/codegen/configuration)
+- [Schema generation](/docs/codegen/schema-generation)
+- [Field filtering](/docs/codegen/field-filtering)
+- [`@kysoql/core`](/docs/core) for consuming the generated schema

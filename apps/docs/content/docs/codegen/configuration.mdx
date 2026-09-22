@@ -50,7 +50,7 @@ pnpm exec kysoql generate
 | --- | --- | --- | --- |
 | `apiVersion` | `string` | `SF_API_VERSION` or `65.0` | REST version for the CLI, without `v`. Overridden by `--api-version`. |
 | `objects` | `readonly string[]` | All queryable objects | Salesforce API names. `[]` also means all queryable objects. Include relationship targets explicitly. |
-| `fields` | `ObjectFieldFilters` | All described fields | Optional per-object exact include/exclude rules. See [field filtering](/docs/getting-started/field-filtering). |
+| `fields` | `ObjectFieldFilters` | All described fields | Optional per-object exact include/exclude rules. See [field filtering](/docs/codegen/field-filtering). |
 | `output` | `string` | `salesforce.generated.ts` | Generated file, relative to the config directory. Parent directories are created. |
 | `schemaName` | `string` | `SalesforceSchema` | Generated interface name; must pass identifier validation. |
 
@@ -82,7 +82,7 @@ export default defineConfig({
 list must also contain fields used for filtering, sorting, grouping, and lookup
 traversals, not just selected fields. Filtered objects deliberately disallow
 `selectFields(...)`; use explicit selections instead. Rules are not access
-controls. Read the [field filtering guide](/docs/getting-started/field-filtering)
+controls. Read the [field filtering guide](/docs/codegen/field-filtering)
 for validation, relationship dependencies, CLI overrides, and the programmatic API.
 
 ## Discovery and module loading
@@ -185,5 +185,5 @@ validation also rejects misspelled settings such as `out` instead of `output`.
 **The editor accepts the config but generation fails:** `defineConfig` checks
 types, not Salesforce metadata or authentication. Describe permissions, object
 availability, token validity, and schema identifier validation still apply.
-See [schema generation](/docs/getting-started/schema-generation) and
-[troubleshooting](/docs/reference/troubleshooting).
+See [schema generation](/docs/codegen/schema-generation) and
+[troubleshooting](/docs/core/reference/troubleshooting).

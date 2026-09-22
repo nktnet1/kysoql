@@ -4,30 +4,11 @@ export const appName = "Kysoql";
 export const appDescription =
   "Type-safe Salesforce SOQL queries for TypeScript. Learn schema generation, query composition, native REST execution, and Apex compilation.";
 export const docsRoute = "/docs";
-
-// VITE_ values are public build-time configuration. Never put credentials here.
-const configuredRepository = import.meta.env.VITE_DOCS_REPOSITORY_URL?.trim();
-export const repositoryUrl = configuredRepository
-  ? configuredRepository.replace(/\/+$/, "")
-  : undefined;
+export const repositoryUrl = "https://github.com/nktnet1/kysoql";
 const repositoryBranch =
   import.meta.env.VITE_DOCS_REPOSITORY_BRANCH?.trim() || "main";
 
-if (
-  repositoryUrl &&
-  !/^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(
-    repositoryUrl,
-  )
-) {
-  throw new Error(
-    "VITE_DOCS_REPOSITORY_URL must be an HTTPS GitHub repository URL without a branch, query, or fragment.",
-  );
-}
-
-export function getPageSourceUrl(path: string): string | undefined {
-  if (!repositoryUrl) {
-    return undefined;
-  }
+export function getPageSourceUrl(path: string): string {
   const filePath = path.split("/").map(encodeURIComponent).join("/");
   return `${repositoryUrl}/blob/${encodeURIComponent(repositoryBranch)}/apps/docs/content/docs/${filePath}`;
 }

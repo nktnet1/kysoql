@@ -9,8 +9,8 @@ icon: "Play"
 
 `@kysoql/rest` executes queries using native `fetch`. Neither it nor
 `@kysoql/codegen` depends on JSforce. Core remains transport-independent; an
-[optional JSforce adapter](/docs/guides/jsforce) and
-[custom executors](/docs/reference/custom-executors) remain supported.
+[optional JSforce adapter](/docs/jsforce) and
+[custom executors](/docs/core/reference/custom-executors) remain supported.
 
 ## Configure an executor
 
@@ -39,7 +39,7 @@ The client pins API version `65.0` by default; it does not negotiate or silently
 upgrade versions. Supply an explicit version supported by your org and query
 features, without a `v` prefix. Runtime options do **not** read environment
 variables or `kysoql.config.ts` automatically. See
-[authentication](/docs/guides/authentication) for renewable credentials.
+[authentication](/docs/rest/authentication) for renewable credentials.
 
 ## Execute records, aggregates, and counts
 

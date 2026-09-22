@@ -1,12 +1,14 @@
 {
-  "title": "Kysoql",
+  "title": "Framework",
+  "description": "General Kysoql usage across schema generation, query building, and execution.",
   "pages": [
     "index",
     "getting-started",
     "guides",
-    "apex",
-    "advanced",
-    "reference"
+    "core",
+    "rest",
+    "codegen",
+    "jsforce"
   ],
-  "icon": "Database"
+  "icon": "House"
 }

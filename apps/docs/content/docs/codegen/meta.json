@@ -1,0 +1,13 @@
+{
+  "title": "Codegen",
+  "description": "Describe-driven schema generation and CLI configuration with @kysoql/codegen.",
+  "root": true,
+  "icon": "FileCode",
+  "pages": [
+    "index",
+    "configuration",
+    "schema-generation",
+    "field-filtering",
+    "api"
+  ]
+}

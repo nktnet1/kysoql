@@ -22,7 +22,7 @@ export SF_INSTANCE_URL="https://your-domain.my.salesforce.com"
 
 The instance URL is the org URL returned by authentication, not a generic login
 URL. The CLI reads `SF_INSTANCE_URL` and `SF_ACCESS_TOKEN`; it does not load a
-`.env` file automatically. See [security](/docs/reference/security).
+`.env` file automatically. See [security](/docs/core/reference/security).
 
 ## 2. Configure and generate your schema
 
@@ -46,8 +46,8 @@ pnpm run schema:generate
 
 The script runs `kysoql generate`, which discovers the config. Credentials still
 come from the environment, not this file. See
-[configuration](/docs/getting-started/configuration) for overrides, multiple orgs,
-and path rules. The CLI also works [without a config](/docs/getting-started/schema-generation#cli-reference).
+[configuration](/docs/codegen/configuration) for overrides, multiple orgs,
+and path rules. The CLI also works [without a config](/docs/codegen/schema-generation#cli-reference).
 
 The output describes the fields and relationships visible to the connected user.
 It is a TypeScript type definition, not a cache of records. Regenerate it when
@@ -119,7 +119,7 @@ export const db = new Kysoql<SalesforceSchema>({ executor });
 
 This uses native `fetch` with an existing access token, without JSforce. For a
 long-running service, use an access-token provider and the native
-[OAuth helpers](/docs/guides/authentication). Runtime environment loading above is
+[OAuth helpers](/docs/rest/authentication). Runtime environment loading above is
 explicit; the REST client does not read `SF_*` variables on its own. Align its API
 version with schema generation and verify target-org feature support.
 
@@ -186,5 +186,5 @@ The adapter drains root pages, not nested child envelopes; see
 ## Where to go next
 
 [Filtering](/docs/guides/filtering) covers grouped conditions and typed values.
-[Schema generation](/docs/getting-started/schema-generation) documents every CLI
-option. [Execution](/docs/guides/execution) explains QueryAll and count results.
+[Schema generation](/docs/codegen/schema-generation) documents every CLI
+option. [Execution](/docs/rest/execution) explains QueryAll and count results.

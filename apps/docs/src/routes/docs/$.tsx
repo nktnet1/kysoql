@@ -77,10 +77,7 @@ function Content({ path, markdownUrl }: { path: string; markdownUrl: string }) {
       <DocsDescription>{page.description}</DocsDescription>
       <div className="-mt-4 flex flex-row items-center gap-2 border-b pb-6">
         <MarkdownCopyButton markdownUrl={markdownUrl} />
-        <ViewOptionsPopover
-          markdownUrl={markdownUrl}
-          {...(sourceUrl ? { githubUrl: sourceUrl } : {})}
-        />
+        <ViewOptionsPopover markdownUrl={markdownUrl} githubUrl={sourceUrl} />
       </div>
       <DocsBody>
         <MDX components={useMDXComponents()} />
@@ -95,7 +92,26 @@ function Page() {
   );
 
   return (
-    <DocsLayout {...baseOptions()} tree={pageTree}>
+    <DocsLayout
+      {...baseOptions()}
+      tree={pageTree}
+      tabs={{
+        transform(option, node) {
+          if (!node.icon) return option;
+
+          return {
+            ...option,
+            icon: (
+              <div
+                className="size-full rounded-lg [&_svg]:size-full max-md:border max-md:p-1.5"
+              >
+                {node.icon}
+              </div>
+            ),
+          };
+        },
+      }}
+    >
       <Link to={markdownUrl} hidden />
       <Suspense>
         <Content path={path} markdownUrl={markdownUrl} />

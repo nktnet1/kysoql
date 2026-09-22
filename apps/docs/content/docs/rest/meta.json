@@ -1,0 +1,12 @@
+{
+  "title": "REST",
+  "description": "Native Salesforce REST execution and OAuth helpers with @kysoql/rest.",
+  "root": true,
+  "icon": "Cloud",
+  "pages": [
+    "index",
+    "execution",
+    "authentication",
+    "api"
+  ]
+}

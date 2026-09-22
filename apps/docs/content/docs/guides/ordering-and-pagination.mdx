@@ -59,7 +59,7 @@ object-specific or execution-context limits.
 
 Both bundled executors follow root continuation pages during normal `execute()`.
 Native REST additionally offers page and record iterators; see
-[execution](/docs/guides/execution#iterate-without-accumulating-every-root-record).
+[execution](/docs/rest/execution#iterate-without-accumulating-every-root-record).
 For a query without a limit, this can accumulate a large result in memory.
 `executeAll()` is not needed to drain pages; it enables QueryAll, including
 eligible deleted records and archived activities.
@@ -104,7 +104,7 @@ order by grouped fields or supported unaliased expressions. Ungrouped aggregate
 results do not expose valid grouped pagination. Bare `COUNT()` is limit-only.
 
 Child subqueries have no normal `offset()` method. The explicit
-[`pilot.offset()`](/docs/advanced/experimental#child-subquery-offset-pilot)
+[`pilot.offset()`](/docs/core/advanced/experimental#child-subquery-offset-pilot)
 requires an immediate parent with a literal `LIMIT 1` and is not recommended for
 production. Apex binds have separate
-[limit and offset rules](/docs/apex/bindings#limits-and-offsets).
+[limit and offset rules](/docs/core/apex/bindings#limits-and-offsets).

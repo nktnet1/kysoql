@@ -18,6 +18,6 @@ export function baseOptions(): BaseLayoutProps {
         </>
       ),
     },
-    ...(repositoryUrl ? { githubUrl: repositoryUrl } : {}),
+    githubUrl: repositoryUrl,
   };
 }

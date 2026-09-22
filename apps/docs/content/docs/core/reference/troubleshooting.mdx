@@ -56,7 +56,7 @@ an access token or production record payload.
 | Duplicate/overlapping selections | Remove the explicit field overlapping a FIELDS selector or conflicting function alias. |
 | Semi-join restriction | Keep at most two at root WHERE level with compatible direct ID/reference fields; do not nest or wrap in OR/NOT. |
 | WITH conflict | Choose one filtering WITH form instead of combining data category, visibility, UserId, and Apex mode clauses. |
-| Required object predicate | Follow the object-specific shape in [limitations](/docs/reference/limitations#object-specific-query-shapes). |
+| Required object predicate | Follow the object-specific shape in [limitations](/docs/core/reference/limitations#object-specific-query-shapes). |
 | FOR UPDATE plus ORDER BY/ALL ROWS | Remove the incompatible clause; use a dedicated locking query. |
 | clearGroupBy fails | Rebuild a clean aggregate query; grouped selections/HAVING/order/limit/offset may still depend on grouping. |
 | Child pilot offset fails | The immediate parent needs a literal LIMIT 1; a bound or ancestor limit is insufficient. |
@@ -98,7 +98,7 @@ permissions rather than a typo. No output is written on a field validation error
 
 A field-rule object name must be queryable in global Describe, even when it is
 not selected for the current run. Field names are checked only for selected
-objects. See [field filtering](/docs/getting-started/field-filtering).
+objects. See [field filtering](/docs/codegen/field-filtering).
 
 ## selectFields requires a complete field schema
 

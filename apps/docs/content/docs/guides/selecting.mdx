@@ -37,7 +37,7 @@ resilience to newly added org fields.
 ## FIELDS selectors
 
 These methods require a **complete field schema**. An object generated with a
-[field rule](/docs/getting-started/field-filtering) disallows all three selectors,
+[field rule](/docs/codegen/field-filtering) disallows all three selectors,
 including inside child subqueries. `FIELDS(...)` expands on Salesforce, so it
 could return fields deliberately omitted from the generated schema. Use
 explicit `.select(...)` for filtered objects; do not bypass the type error with a

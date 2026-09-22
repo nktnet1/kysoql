@@ -38,7 +38,7 @@ console.log(query.compile().soql);
 ```
 
 This example only compiles. Calling `execute()` requires an
-[executor](/docs/guides/execution).
+[executor](/docs/rest/execution).
 
 ## Follow Salesforce concepts
 
@@ -47,16 +47,16 @@ relationships, aggregation, functions, and REST query execution. Each major
 guide links back to the corresponding Salesforce reference so you can compare
 the typed builder with the platform syntax and limits.
 
-[Open the Salesforce reference map](/docs/reference/salesforce).
+[Open the Salesforce reference map](/docs/core/reference/salesforce).
 
 ## Packages
 
 | Package | Purpose |
 | --- | --- |
-| `@kysoql/core` | Query builders, schema types, SOQL compiler, and executor contract. |
-| `@kysoql/rest` | Native query/QueryAll execution, counts, pagination, OAuth helpers, and cancellation. |
-| `@kysoql/jsforce` | Optional adapter for applications that already use JSforce. |
-| `@kysoql/codegen` | Describe-driven schema generation and the `kysoql` CLI. |
+| [`@kysoql/core`](/docs/core) | Query builders, schema types, SOQL compiler, and executor contract. |
+| [`@kysoql/rest`](/docs/rest) | Native query/QueryAll execution, counts, pagination, OAuth helpers, and cancellation. |
+| [`@kysoql/codegen`](/docs/codegen) | Describe-driven schema generation and the `kysoql` CLI. |
+| [`@kysoql/jsforce`](/docs/jsforce) | Optional adapter for applications that already use JSforce. |
 
 These docs use the repository's existing `@kysoql` scope. The supplied package
 manifests are version `0.0.0`; installation examples assume the packages have
@@ -71,10 +71,10 @@ is available. See [local workspace use](/docs/getting-started/installation#use-t
 | Select fields and build search filters | [Selecting](/docs/guides/selecting) and [filtering](/docs/guides/filtering) |
 | Query parents, children, and related records | [Relationships and joins](/docs/guides/relationships) |
 | Build grouped reports | [Aggregates](/docs/guides/aggregates) and [date functions](/docs/guides/date-functions) |
-| Run queries or include deleted records | [Execution](/docs/guides/execution) |
-| Produce SOQL with Apex binds | [Apex overview](/docs/apex/overview) |
-| Check an available method or a restriction | [API reference](/docs/reference/api) and [limitations](/docs/reference/limitations) |
-| Diagnose an error | [Troubleshooting](/docs/reference/troubleshooting) |
+| Run queries or include deleted records | [Execution](/docs/rest/execution) |
+| Produce SOQL with Apex binds | [Apex overview](/docs/core/apex/overview) |
+| Check an available method or a restriction | [API reference](/docs/core/reference/api) and [limitations](/docs/core/reference/limitations) |
+| Diagnose an error | [Troubleshooting](/docs/core/reference/troubleshooting) |
 
 ## What validation does and does not guarantee
 
@@ -85,6 +85,6 @@ Salesforce server: org permissions, API versions, enabled features, current
 metadata, query selectivity, and runtime governor limits still apply.
 
 All guides describe the API in this repository snapshot. Beta and pilot features
-are [explicitly separated](/docs/advanced/experimental), not presented as ordinary
+are [explicitly separated](/docs/core/advanced/experimental), not presented as ordinary
 production features. There is no arbitrary raw-SOQL escape hatch in the public
 builder API.

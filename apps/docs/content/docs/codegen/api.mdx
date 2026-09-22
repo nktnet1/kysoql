@@ -1,0 +1,36 @@
+---
+title: "Codegen API reference"
+description: "Reference schema generation, Describe clients, rendering, field filters, and configuration types."
+icon: "FileCode"
+---
+
+`@kysoql/codegen` exposes both the `kysoql generate` CLI and programmatic APIs for
+loading Salesforce metadata and rendering a schema consumed by `@kysoql/core`.
+
+## Generation APIs
+
+| Export | Purpose |
+| --- | --- |
+| `createRestDescribeClient(options)` | Create the native Salesforce REST Describe client used by codegen. |
+| `generateSchema(options)` | Load metadata and write a generated schema file. |
+| `loadSchema(client, objects?, fields?)` | Load and normalise selected Salesforce object metadata. |
+| `renderSchema(objects, schemaName?)` | Render normalised metadata as TypeScript source. |
+| `SalesforceDescribeClient` | Transport-neutral Describe contract for custom metadata transports. |
+| `GenerateSchemaOptions` | Programmatic generation options, including per-object field rules. |
+
+Use [schema generation](/docs/codegen/schema-generation) for CLI and programmatic
+examples, Describe behaviour, relationship metadata, and generated output.
+
+## Configuration APIs
+
+| Export | Purpose |
+| --- | --- |
+| `defineConfig(config)` | Typed identity helper for `kysoql.config.ts`. |
+| `KysoqlConfig` | Configuration shape for API version, objects, fields, output, and schema name. |
+| `ObjectFieldFilter` | One per-object `include` or `exclude` rule. |
+| `ObjectFieldFilters` | Map of object API names to field-filter rules. |
+
+The configuration file affects schema generation only. It does not create a
+runtime query client or contain Salesforce credentials. See
+[configuration](/docs/codegen/configuration) and
+[field filtering](/docs/codegen/field-filtering).

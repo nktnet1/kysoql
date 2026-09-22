@@ -1,0 +1,55 @@
+---
+title: "REST API reference"
+description: "Reference the native Salesforce REST client, executor, pagination, OAuth, and error APIs."
+icon: "FileCode"
+---
+
+`@kysoql/rest` implements the `@kysoql/core` executor contract and also exposes
+lower-level REST helpers for applications that need direct control over paging
+or token acquisition.
+
+## Query execution
+
+| Export or method | Contract |
+| --- | --- |
+| `createRestClient(options)` | Shared native GET transport with authentication, version, deadline, and URL controls. |
+| `createRestExecutor(clientOrOptions, pagination?)` | A `RestExecutor` implementing all four core execution capabilities. |
+| `executeQuery(query, options?)` / `executeAllQuery(query, options?)` | Collect root rows from ordinary Query / QueryAll. |
+| `executeCountQuery(query, options?)` / `executeAllCountQuery(query, options?)` | Return bare `COUNT()` numbers in the selected mode. |
+| `queryPages(query, options?)` | Async iterator of root `RestQueryPage<O>` envelopes. |
+| `iterateQuery(query, options?)` | Async iterator of root records. |
+| `queryMore<Row>(locator, options?)` | Fetch one explicit continuation page. |
+| `DEFAULT_API_VERSION` | Pinned default API-version string; not automatic version negotiation. |
+
+Request options accept `signal` and `timeoutMs`. Query iteration additionally
+accepts `queryAll`. Pagination options accept `batchSize`, `maxPages`, and
+`maxRecords`; exceeding a configured collection budget throws instead of
+returning a silently truncated result.
+
+See [native REST execution](/docs/rest/execution) for page and record iteration,
+QueryAll behaviour, continuation validation, and failure handling.
+
+## Authentication
+
+| Export | Purpose |
+| --- | --- |
+| `authenticateClientCredentials(options)` | Perform one client-credentials token exchange. |
+| `refreshAccessToken(options)` | Exchange a refresh token for a new Salesforce session. |
+| `AccessTokenProvider` | Supply and refresh bearer tokens for a reusable REST client. |
+| `ClientCredentialsOptions` | Client-credentials request settings. |
+| `RefreshTokenOptions` | Refresh-token request settings. |
+| `SalesforceOAuthSession` | Validated token-exchange result. |
+
+Read [authentication and token refresh](/docs/rest/authentication) for lifecycle,
+rotation, concurrency, and secret-handling guidance.
+
+## Public types and errors
+
+The package exports `RestClient`, `RestClientOptions`, `RestExecutor`,
+`RestPaginationOptions`, `RestQueryPage`, `RestQueryOptions`, `RestGetOptions`,
+`RestRequestOptions`, and `HttpOptions`.
+
+Transport and response failures use `SalesforceRestError`,
+`SalesforceRestErrorDetail`, `SalesforceResponseError`,
+`SalesforceQueryLimitError`, and `SalesforceOAuthError` rather than returning
+empty successful results.

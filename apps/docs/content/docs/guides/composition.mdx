@@ -61,7 +61,7 @@ the query structure genuinely differs.
 
 Be explicit about empty filters. A false condition that removes an optional
 search filter is different from omitting a tenant or access-control restriction.
-See [security](/docs/reference/security).
+See [security](/docs/core/reference/security).
 
 ## Clear clauses deliberately
 
@@ -97,5 +97,5 @@ small, deliberate reusable functions rather than clearing arbitrary queries.
 Methods exist only where their clause is modeled. Semi-joins expose `clearWhere`
 but no ordering or pagination to clear. Bare count has no selection reset or
 offset. Apex builders keep narrower interfaces; see the
-[API reference](/docs/reference/api). There is no generic `clear()` or
+[API reference](/docs/core/reference/api). There is no generic `clear()` or
 `clearHaving()` in this snapshot.

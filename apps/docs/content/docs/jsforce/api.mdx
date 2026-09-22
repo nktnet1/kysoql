@@ -1,0 +1,22 @@
+---
+title: "JSforce adapter API reference"
+description: "Reference the optional JSforce executor and its public adapter interfaces."
+icon: "FileCode"
+---
+
+`@kysoql/jsforce` is an optional adapter for applications that already own a
+JSforce connection. Native Kysoql execution uses [`@kysoql/rest`](/docs/rest).
+
+## Exports
+
+| Export | Purpose |
+| --- | --- |
+| `createJsforceExecutor(connection)` | Adapt a compatible JSforce connection to the core `QueryExecutor` contract. |
+| `JsforceConnection` | Public connection surface required by the adapter. |
+| `JsforceExecutor` | Executor type returned by the adapter. |
+| `JsforceQueryResult` | Normal record-query response contract consumed by the adapter. |
+| `JsforceCountQueryResult` | Scalar-count response contract consumed by the adapter. |
+
+The adapter delegates authentication, connection lifecycle, and API-version
+selection to JSforce. See the [package guide](/docs/jsforce) for QueryAll,
+pagination, validation, and failure behaviour.

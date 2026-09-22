@@ -1,12 +1,6 @@
 {
   "title": "Get started",
   "icon": "Rocket",
-  "pages": [
-    "installation",
-    "quickstart",
-    "configuration",
-    "schema-generation",
-    "field-filtering"
-  ],
+  "pages": ["installation", "quickstart"],
   "defaultOpen": true
 }

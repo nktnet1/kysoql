@@ -1,0 +1,35 @@
+---
+title: "@kysoql/rest"
+description: "Execute Kysoql queries through Salesforce REST without JSforce."
+icon: "Cloud"
+---
+
+`@kysoql/rest` is the native Salesforce transport for Kysoql. It implements the
+core executor contract with `fetch`, so applications can run ordinary Query,
+QueryAll, scalar counts, and paginated queries without installing JSforce.
+
+## Connect it to core
+
+```ts
+import { Kysoql } from "@kysoql/core";
+import { createRestExecutor } from "@kysoql/rest";
+import type { SalesforceSchema } from "./salesforce.generated";
+
+export function createDatabase(instanceUrl: string, accessToken: string) {
+  return new Kysoql<SalesforceSchema>({
+    executor: createRestExecutor({ instanceUrl, accessToken }),
+  });
+}
+```
+
+The adapter handles root pagination, QueryAll continuation, structured Salesforce
+errors, cancellation, request deadlines, and bounded collection. It also exposes
+lower-level async page and record iterators when collecting every row in memory is
+not appropriate.
+
+## In this package
+
+- [Native REST execution](/docs/rest/execution)
+- [Authentication and token refresh](/docs/rest/authentication)
+- [`@kysoql/core`](/docs/core) for building the typed queries being executed
+- [`@kysoql/codegen`](/docs/codegen) for generating the Salesforce schema

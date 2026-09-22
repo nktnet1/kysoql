@@ -1,6 +1,6 @@
 ---
-title: "Optional JSforce adapter"
-description: "Run typed queries, understand QueryAll, and handle pagination and failures."
+title: "@kysoql/jsforce"
+description: "Use the optional JSforce adapter when an application already owns a JSforce connection."
 icon: "Plug"
 ---
 
@@ -34,7 +34,7 @@ this connection. See the official
 
 The examples below assume `db` is configured with this adapter. For native
 pagination budgets, async iteration, cancellation, and structured HTTP errors,
-use the [REST execution guide](/docs/guides/execution) instead.
+use the [REST execution guide](/docs/rest/execution) instead.
 
 ## Normal execution
 
@@ -127,5 +127,5 @@ as MRU or Knowledge tracking clauses.
 
 The adapter cannot turn server-rejected aggregate pagination, unsupported object
 features, or insufficient permissions into successful queries. See
-[troubleshooting](/docs/reference/troubleshooting) and
-[custom executors](/docs/reference/custom-executors).
+[troubleshooting](/docs/core/reference/troubleshooting) and
+[custom executors](/docs/core/reference/custom-executors).

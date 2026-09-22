@@ -77,13 +77,13 @@ object/capability-specific constraints:
 
 | Method | Constraint / guide |
 | --- | --- |
-| `usingScope(scope)` | Generated scope union. [Scopes](/docs/advanced/scopes-and-visibility). |
+| `usingScope(scope)` | Generated scope union. [Scopes](/docs/core/advanced/scopes-and-visibility). |
 | `forView()`, `forReference()` | Generated MRU capability; modes replace one another. |
 | `withRecordVisibilityContext(options)` | Non-empty supported options; conflicts with another filtering WITH. |
-| `withDataCategory(group, selector, categories)` | Generated categories; at most three different groups. [Knowledge](/docs/advanced/knowledge-and-feeds). |
+| `withDataCategory(group, selector, categories)` | Generated categories; at most three different groups. [Knowledge](/docs/core/advanced/knowledge-and-feeds). |
 | `updateTracking()`, `updateViewstat()` | Knowledge article objects only; modes accumulate. |
 | `withUserId(userId)` | `UserProfileFeed` only. |
-| `setOptions(options)` | DLO record/aggregate/count, simple DMO record queries. [Data 360](/docs/advanced/data-360). |
+| `setOptions(options)` | DLO record/aggregate/count, simple DMO record queries. [Data 360](/docs/core/advanced/data-360). |
 
 There is no general `with(...)` raw-clause method. Configure these on the normal
 builder before entering Apex where appropriate; the Apex interface does not
@@ -121,7 +121,7 @@ All Apex variants expose `compile`, `toOperationNode`, `where`, `limit`,
 | Dynamic variants | Bound `setOptions(apexBind<ApexDatabaseQueryOptions>(...))`; unavailable in static context. |
 
 Complete ordinary selections, sorting, grouping, and HAVING before the context
-switch. See [Apex](/docs/apex/overview) and [bindings](/docs/apex/bindings).
+switch. See [Apex](/docs/core/apex/overview) and [bindings](/docs/core/apex/bindings).
 
 ## Expression helpers
 
@@ -147,58 +147,19 @@ result nullability, context, and grouping-identity requirements.
 `soqlDate`, `soqlDateTime`, `soqlTime`, `soqlRelativeDate`, and `soqlCurrency`
 construct [validated literals](/docs/guides/literals).
 `apexBind`, `apexAdd`, `apexSubstring`, and `apexQueryField` construct
-[Apex expression nodes](/docs/apex/bindings).
+[Apex expression nodes](/docs/core/apex/bindings).
 
-## Integration and extension exports
+## Integration contracts
 
-### Native REST
-
-| Export or method | Contract |
-| --- | --- |
-| `createRestClient(options)` | Shared native GET transport with authentication, version, deadline, and URL controls. |
-| `createRestExecutor(clientOrOptions, pagination?)` | A `RestExecutor` implementing all four core execution capabilities. |
-| `executeQuery(query, options?)` / `executeAllQuery(query, options?)` | Collect root rows from ordinary Query / QueryAll. |
-| `executeCountQuery(query, options?)` / `executeAllCountQuery(query, options?)` | Return bare `COUNT()` numbers in the selected mode. |
-| `queryPages(query, options?)` | Async iterator of root `RestQueryPage<O>` envelopes. |
-| `iterateQuery(query, options?)` | Async iterator of root records. |
-| `queryMore<Row>(locator, options?)` | One explicit root/child continuation page. |
-| `authenticateClientCredentials(options)` | One native client-credentials token exchange. |
-| `refreshAccessToken(options)` | One native refresh-token exchange. |
-| `DEFAULT_API_VERSION` | Pinned string `"65.0"`; not automatic version negotiation. |
-
-`@kysoql/rest` exports the corresponding `RestClient`, `RestClientOptions`,
-`RestExecutor`, `RestPaginationOptions`, `RestQueryPage`, `RestQueryOptions`,
-`RestGetOptions`, `RestRequestOptions`, `HttpOptions`, `AccessTokenProvider`,
-`ClientCredentialsOptions`, `RefreshTokenOptions`, and `SalesforceOAuthSession`
-types. Errors are `SalesforceRestError` (plus `SalesforceRestErrorDetail`),
-`SalesforceResponseError`, `SalesforceQueryLimitError`, and `SalesforceOAuthError`.
-
-Request options accept `signal` and `timeoutMs`; query iteration additionally
-accepts `queryAll`. Pagination options accept `batchSize`, `maxPages`, and
-`maxRecords`. See [execution](/docs/guides/execution) and
-[authentication](/docs/guides/authentication) for defaults and boundaries.
-
-### Optional adapters and codegen
-
-`@kysoql/jsforce` exports `createJsforceExecutor` and the public interfaces
-`JsforceConnection`, `JsforceExecutor`, `JsforceQueryResult`, and
-`JsforceCountQueryResult`.
-
-`@kysoql/codegen` exports `createRestDescribeClient`, `generateSchema`, `loadSchema`, `renderSchema`,
-`GenerateSchemaOptions` (including optional `fields`), `SalesforceDescribeClient`, and normalized Describe
-interfaces. See [schema generation](/docs/getting-started/schema-generation).
-
-Core exports [schema helpers](/docs/reference/schema-types), builder/expression
-types, `CompiledQuery`, `QueryCompiler`, `QueryCompileContext`, and
+Core exports [schema helpers](/docs/core/reference/schema-types), builder and
+expression types, `CompiledQuery`, `QueryCompiler`, `QueryCompileContext`, and
 `QueryExecutor`. It also exposes operation-node **types** for inspection and
 integration; those type exports are not a supported collection of runtime
 node-factory imports. Prefer the builder to hand-authoring ASTs or depending on
 private `#/...` package paths.
 
-## Codegen configuration
+Transport and schema-generation APIs are documented with their packages:
 
-`@kysoql/codegen` exports `defineConfig`, `KysoqlConfig`, `ObjectFieldFilter`,
-and `ObjectFieldFilters` for
-[`kysoql.config.ts`](/docs/getting-started/configuration). They configure the CLI's
-API version, object list, per-object field rules, output file, and schema interface name. They are separate from
-`QueryCreatorConfig`, which configures runtime query construction and execution.
+- [`@kysoql/rest` API](/docs/rest/api)
+- [`@kysoql/codegen` API](/docs/codegen/api)
+- [`@kysoql/jsforce` API](/docs/jsforce/api)

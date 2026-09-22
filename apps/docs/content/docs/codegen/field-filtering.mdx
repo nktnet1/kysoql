@@ -1,7 +1,7 @@
 ---
 title: "Field filtering"
 description: "Generate only the fields your application uses, with strict validation and safe relationship metadata."
-icon: "Filter"
+icon: "Funnel"
 ---
 
 Use per-object field rules to keep generated schemas focused on the fields your
@@ -31,7 +31,7 @@ export default defineConfig({
 });
 ```
 
-With the usual [Salesforce environment variables](/docs/getting-started/schema-generation#cli-reference) set, run:
+With the usual [Salesforce environment variables](/docs/codegen/schema-generation#cli-reference) set, run:
 
 ```bash
 pnpm exec kysoql generate
@@ -202,4 +202,4 @@ Start with objects whose query dependencies are understood. Regenerate, review
 the diff, and run application typechecks. Replace affected `selectFields(...)`
 calls with explicit selections and add genuinely required fields to the rules.
 Keep authentication, authorisation, and application query policies separate:
-field rules are not a [security boundary](/docs/reference/security).
+field rules are not a [security boundary](/docs/core/reference/security).

@@ -14,7 +14,7 @@ variables. Vite variables prefixed `VITE_` are public build-time configuration.
 
 The generator needs an existing token; it is not a credential vault or an OAuth
 client. Use an integration identity with only the access required for the task.
-See [native authentication](/docs/guides/authentication) and
+See [native authentication](/docs/rest/authentication) and
 Salesforce's [OAuth documentation](https://developer.salesforce.com/docs/platform/mobile-sdk/guide/intro-oauth.html)
 for supported connection flows.
 
@@ -91,7 +91,7 @@ fallback behaviour, not a silent dependency on a future Salesforce rollout.
 
 ## Generated field filters are not access controls
 
-[Field rules](/docs/getting-started/field-filtering) restrict generated TypeScript
+[Field rules](/docs/codegen/field-filtering) restrict generated TypeScript
 metadata, not Salesforce permissions or runtime response contents. They cannot
 prevent JavaScript, a cast, another client, or direct SOQL from requesting an
 excluded field. Apply authentication, authorisation, field-level security, and
