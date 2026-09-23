@@ -17,32 +17,18 @@ see [codegen](../codegen/README.md). Local imports below are extensionless and
 assume a TypeScript runner or bundler, as documented by the docs quickstart.
 
 ```ts
-import { readFile } from "node:fs/promises";
 import { SalesforceAuth } from "@kysoql/auth";
 import { Kysoql } from "@kysoql/core";
 import { createRestExecutor } from "@kysoql/rest";
-import type { SalesforceSchema } from "./salesforce.generated";
+import type { SalesforceSchema } from "./kysoql/salesforce.generated";
 
 const auth = new SalesforceAuth({
   loginUrl: "https://login.salesforce.com",
   clientId: "external-client-app-id",
 });
-const pem = await readFile("./salesforce-auth-key.pem", "utf8");
-const base64 = pem
-  .replace("-----BEGIN PRIVATE KEY-----", "")
-  .replace("-----END PRIVATE KEY-----", "")
-  .replace(/\s/g, "");
-const pkcs8 = Uint8Array.from(Buffer.from(base64, "base64")).buffer;
-const privateKey = await globalThis.crypto.subtle.importKey(
-  "pkcs8",
-  pkcs8,
-  { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-  false,
-  ["sign"],
-);
 const session = await auth.jwtBearer({
   username: "integration@example.com",
-  privateKey,
+  privateKey: "./salesforce-auth-key.pem",
 });
 
 const executor = createRestExecutor(
@@ -59,8 +45,10 @@ const accounts = await db.selectFrom("Account").select(["Id", "Name"]).execute()
 const count = await db.selectFrom("Account").select(({ fn }) => fn.count()).execute();
 ```
 
-Keep the private key outside source control and load it from your application's
-normal secret-management boundary. For long-lived services, use an auth provider
+Keep the private key outside source control. `privateKey` also accepts a raw PEM
+string (trimmed automatically), file URL, or existing `CryptoKey`, so secret
+manager values do not need manual PKCS#8 decoding. For long-lived services, use
+an auth provider
 with refresh-token storage rather than treating the JWT session as permanent.
 
 Both `.execute()` and `.executeAll()` follow Salesforce query locators internally.

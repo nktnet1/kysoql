@@ -1,3 +1,4 @@
+import { statSync } from "node:fs";
 import { stat } from "node:fs/promises";
 import { dirname, extname, resolve } from "node:path";
 
@@ -98,6 +99,25 @@ export const parseKysoqlConfig = (
       : { schemaName: parseSchemaName(schemaName) }),
   };
 };
+
+const isDirectory = (filename: string): boolean => {
+  try {
+    return statSync(filename).isDirectory();
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+      return false;
+    }
+    throw error;
+  }
+};
+
+const defaultOutput = (cwd: string): string =>
+  resolve(
+    cwd,
+    isDirectory(resolve(cwd, "src"))
+      ? "src/kysoql/salesforce.generated.ts"
+      : "kysoql/salesforce.generated.ts",
+  );
 
 const isFile = async (filename: string): Promise<boolean> => {
   try {
@@ -209,10 +229,15 @@ export const resolveGenerateOptions = (
       ? {}
       : { schemaName: flags["schema-name"] }),
   });
-  const outputDirectory =
-    flags.output !== undefined || loaded === undefined
-      ? cwd
-      : dirname(loaded.filename);
+  const output =
+    config.output === undefined
+      ? defaultOutput(resolve(cwd))
+      : resolve(
+          flags.output !== undefined || loaded === undefined
+            ? cwd
+            : dirname(loaded.filename),
+          config.output,
+        );
 
   return {
     ...(config.auth === undefined ? {} : { auth: config.auth }),
@@ -221,10 +246,7 @@ export const resolveGenerateOptions = (
       : { apiVersion: config.apiVersion }),
     objects: config.objects ?? [],
     ...(config.fields === undefined ? {} : { fields: config.fields }),
-    output: resolve(
-      outputDirectory,
-      config.output ?? "salesforce.generated.ts",
-    ),
+    output,
     schemaName: config.schemaName ?? "SalesforceSchema",
   };
 };

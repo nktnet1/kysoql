@@ -16,7 +16,7 @@ type:
 
 ```ts
 import { Kysoql } from "@kysoql/core";
-import type { SalesforceSchema } from "./salesforce.generated";
+import type { SalesforceSchema } from "./kysoql/salesforce.generated";
 
 const db = new Kysoql<SalesforceSchema>();
 
@@ -153,6 +153,8 @@ const data360Rows = db
   .select(["Id", "EmailOptIn__c"])
   .setOptions({ dataspace: "default", honorEmptyStrings: true });
 ```
+
+## Apex compilation
 
 Managed-package dynamic SOQL uses a separate compile-only `.dynamicApex()`
 context. Pass a direct `apexBind<ApexDatabaseQueryOptions>(...)` when the Apex

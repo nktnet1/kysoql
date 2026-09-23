@@ -98,12 +98,14 @@ command:
 kysoql generate \
   --object Account \
   --object Contact \
-  --output src/salesforce.generated.ts \
   --schema-name SalesforceSchema
 ```
 
 `--object` is repeatable. If it is omitted, codegen includes every queryable
-object returned by Salesforce. Generated schemas retain the Describe metadata
+object returned by Salesforce. Output defaults to
+`src/kysoql/salesforce.generated.ts` when the working directory has `src/`, or
+`kysoql/salesforce.generated.ts` otherwise; `--output` and config `output` can
+override it. Generated schemas retain the Describe metadata
 used by the typed builder, including field capabilities, custom/polymorphic
 reference metadata, supported scopes, MRU capability, and data-category metadata
 when available. Generated imports are minimal, and empty metadata maps are
@@ -951,6 +953,147 @@ Filters deliberately require `soqlDate(...)`, `soqlDateTime(...)`, or
 Salesforce literal shape and the compiler emits those values unquoted, avoiding
 the ambiguity between an ordinary SOQL string and a temporal literal.
 
+## Native REST execution
+
+Execution stays transport-neutral in core. Install `@kysoql/core` and
+`@kysoql/rest` for the default native workflow, add `@kysoql/auth` when the
+application should obtain or refresh Salesforce tokens itself, and use
+`@kysoql/codegen` as a schema-generation development dependency. None of these
+packages depends on JSforce. Runtime local imports below assume a TypeScript runner or bundler.
+
+```ts
+import { Kysoql } from "@kysoql/core";
+import { createRestExecutor } from "@kysoql/rest";
+import type { SalesforceSchema } from "./kysoql/salesforce.generated";
+
+export function createDatabase(instanceUrl: string, accessToken: string) {
+  const executor = createRestExecutor(
+    { instanceUrl, accessToken, apiVersion: "65.0" },
+    { maxPages: 100, maxRecords: 100_000 },
+  );
+  return { db: new Kysoql<SalesforceSchema>({ executor }), executor };
+}
+```
+
+Build queries normally and call `.execute()` or `.executeAll()`. Both collect root
+pages within the configured budgets and recursively complete selected relationship
+subqueries. Root and child `LIMIT` clauses determine when each query level is
+complete, so application code never needs to follow `nextRecordsUrl`.
+`.executeAll()` enables Salesforce QueryAll rather than merely enabling pagination.
+Bare `COUNT()` returns a number. For bounded-memory root processing, call
+`executor.iterateQuery(query.compile())` or `queryPages(...)`. These also accept
+QueryAll mode, abort signals, and timeouts. A failed budget throws instead of
+silently truncating records.
+
+The native API version is pinned to `65.0` unless explicitly configured. Token
+providers can renew credentials once after `INVALID_SESSION_ID`.
+`@kysoql/auth` exposes `SalesforceAuth` as the primary client API, with JWT
+bearer/private-key server-to-server authentication as the default, plus current
+Salesforce web-server/PKCE, refresh, client credentials, SAML, token
+exchange, device, hybrid, and Experience Cloud headless flows. Refresh tokens can
+use memory, browser `localStorage`, Redis, or custom persistence.
+`@kysoql/rest` retains its original client-credentials and refresh helpers for
+compatibility. Do not put secrets in config files. See the
+[REST package](packages/rest/README.md) and
+[authentication guide](apps/docs/content/docs/auth/index.mdx).
+
+Codegen's CLI uses native REST Describe and accepts `--api-version` or config
+`apiVersion`, then the pinned default. Authentication comes from config `auth` or
+a trusted `--auth` provider module; codegen does not read Salesforce token/URL
+environment variables. Runtime REST options
+do not automatically load those CLI settings. A full monorepo installation still
+includes the optional JSforce workspace and Salesforce CLI development tooling;
+those are not dependencies of a native-only consumer application.
+
+## Optional JSforce execution
+
+Existing JSforce integrations remain supported without changing the adapter:
+
+
+```ts
+import { Kysoql } from "@kysoql/core";
+import { createJsforceExecutor } from "@kysoql/jsforce";
+
+const db = new Kysoql<SalesforceSchema>({
+  executor: createJsforceExecutor(connection),
+});
+
+const accounts = await db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where("Name", "like", "Acme%")
+  .execute();
+
+const accountsIncludingDeleted = await db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .executeAll();
+```
+
+The JSforce executor follows Salesforce pagination until the query result reports
+`done`, so `.execute()` returns all fetched pages instead of silently stopping at
+the first response. `.executeAll()` uses Salesforce QueryAll semantics instead:
+the first JSforce request sets `scanAll: true`, so soft-deleted records and
+archived activities can be returned while subsequent `queryMore` pages preserve
+the same QueryAll result set. The same execution mode is available on aggregate
+queries and bare `COUNT()` queries.
+
+## Salesforce test org
+
+A reproducible scratch-org fixture is included under `test/salesforce`. It
+contains standard Account/Contact data plus a `Kysoql_Record__c` custom object
+with representative scalar, picklist, external-ID, and relationship fields.
+
+For a complete local setup after authenticating or creating a Dev Hub, run:
+
+```bash
+pnpm salesforce:setup
+```
+
+The setup script installs from the lockfile, uses the workspace-local Salesforce
+CLI via `pnpm sf`, creates a scratch org, deploys metadata, assigns permissions,
+seeds deterministic data, and runs both the existing Salesforce smoke fixtures and
+a generated-query E2E suite. The E2E suite uses a dedicated Vitest configuration:
+it builds `@kysoql/core`, asserts exact SOQL compiled for representative record,
+relationship, pagination, grouping, and aggregate queries, sends that SOQL to the
+scratch org, and asserts deterministic returned values. It remains separate from
+`pnpm test` and `pnpm validate` because it requires live Salesforce credentials.
+The setup script refuses to replace an existing org alias unless `--recreate` is
+explicitly supplied.
+
+Re-run only the generated-query suite against an existing authenticated fixture
+org with:
+
+```bash
+pnpm salesforce:e2e
+# or
+pnpm salesforce:e2e -- --target-org my-scratch-org
+```
+
+See [docs/salesforce-test-org.md](docs/salesforce-test-org.md) for prerequisites,
+manual commands, script options, coverage boundaries, and cleanup instructions.
+
+For future ChatGPT sessions continuing from a project bundle, read
+[docs/chatgpt-handoff.md](docs/chatgpt-handoff.md) first. It records the package
+boundaries, validation workflow, patch discipline, implemented surface, and next
+incremental milestone.
+
+## Design goals
+
+- Kysely-like fluent query API.
+- SOQL-native semantics instead of pretending Salesforce is SQL.
+- Generated schemas for standard and custom objects/fields.
+- Compile-time validation of fields, relationships, operators, grouping, sorting, and projections.
+- Native REST execution and authentication helpers, with JSforce as an optional adapter.
+- No raw-string escape hatch in the safe API.
+
+## Development continuity
+
+- `docs/chatgpt-handoff.md` records the current incremental implementation state.
+- `docs/research-notes.md` records external references and settled findings that are useful to future development sessions.
+
+## Apex compilation
+
 Apex-only query syntax is separated from API execution. Build the normal query
 first, then switch to the compile-only `.apex()` context. Row-producing record
 queries can add locking clauses such as `FOR UPDATE`:
@@ -1199,142 +1342,3 @@ const apexCount = db
   .limit(apexBind<number>("rowLimit"))
   .compile();
 ```
-
-## Native REST execution
-
-Execution stays transport-neutral in core. Install `@kysoql/core` and
-`@kysoql/rest` for the default native workflow, add `@kysoql/auth` when the
-application should obtain or refresh Salesforce tokens itself, and use
-`@kysoql/codegen` as a schema-generation development dependency. None of these
-packages depends on JSforce. Runtime local imports below assume a TypeScript runner or bundler.
-
-```ts
-import { Kysoql } from "@kysoql/core";
-import { createRestExecutor } from "@kysoql/rest";
-import type { SalesforceSchema } from "./salesforce.generated";
-
-export function createDatabase(instanceUrl: string, accessToken: string) {
-  const executor = createRestExecutor(
-    { instanceUrl, accessToken, apiVersion: "65.0" },
-    { maxPages: 100, maxRecords: 100_000 },
-  );
-  return { db: new Kysoql<SalesforceSchema>({ executor }), executor };
-}
-```
-
-Build queries normally and call `.execute()` or `.executeAll()`. Both collect root
-pages within the configured budgets and recursively complete selected relationship
-subqueries. Root and child `LIMIT` clauses determine when each query level is
-complete, so application code never needs to follow `nextRecordsUrl`.
-`.executeAll()` enables Salesforce QueryAll rather than merely enabling pagination.
-Bare `COUNT()` returns a number. For bounded-memory root processing, call
-`executor.iterateQuery(query.compile())` or `queryPages(...)`. These also accept
-QueryAll mode, abort signals, and timeouts. A failed budget throws instead of
-silently truncating records.
-
-The native API version is pinned to `65.0` unless explicitly configured. Token
-providers can renew credentials once after `INVALID_SESSION_ID`.
-`@kysoql/auth` exposes `SalesforceAuth` as the primary client API, with JWT
-bearer/private-key server-to-server authentication as the default, plus current
-Salesforce web-server/PKCE, refresh, client credentials, SAML, token
-exchange, device, hybrid, and Experience Cloud headless flows. Refresh tokens can
-use memory, browser `localStorage`, Redis, or custom persistence.
-`@kysoql/rest` retains its original client-credentials and refresh helpers for
-compatibility. Do not put secrets in config files. See the
-[REST package](packages/rest/README.md) and
-[authentication guide](apps/docs/content/docs/auth/index.mdx).
-
-Codegen's CLI uses native REST Describe and accepts `--api-version` or config
-`apiVersion`, then the pinned default. Authentication comes from config `auth` or
-a trusted `--auth` provider module; codegen does not read Salesforce token/URL
-environment variables. Runtime REST options
-do not automatically load those CLI settings. A full monorepo installation still
-includes the optional JSforce workspace and Salesforce CLI development tooling;
-those are not dependencies of a native-only consumer application.
-
-## Optional JSforce execution
-
-Existing JSforce integrations remain supported without changing the adapter:
-
-
-```ts
-import { Kysoql } from "@kysoql/core";
-import { createJsforceExecutor } from "@kysoql/jsforce";
-
-const db = new Kysoql<SalesforceSchema>({
-  executor: createJsforceExecutor(connection),
-});
-
-const accounts = await db
-  .selectFrom("Account")
-  .select(["Id", "Name"])
-  .where("Name", "like", "Acme%")
-  .execute();
-
-const accountsIncludingDeleted = await db
-  .selectFrom("Account")
-  .select(["Id", "Name"])
-  .executeAll();
-```
-
-The JSforce executor follows Salesforce pagination until the query result reports
-`done`, so `.execute()` returns all fetched pages instead of silently stopping at
-the first response. `.executeAll()` uses Salesforce QueryAll semantics instead:
-the first JSforce request sets `scanAll: true`, so soft-deleted records and
-archived activities can be returned while subsequent `queryMore` pages preserve
-the same QueryAll result set. The same execution mode is available on aggregate
-queries and bare `COUNT()` queries.
-
-## Salesforce test org
-
-A reproducible scratch-org fixture is included under `test/salesforce`. It
-contains standard Account/Contact data plus a `Kysoql_Record__c` custom object
-with representative scalar, picklist, external-ID, and relationship fields.
-
-For a complete local setup after authenticating or creating a Dev Hub, run:
-
-```bash
-pnpm salesforce:setup
-```
-
-The setup script installs from the lockfile, uses the workspace-local Salesforce
-CLI via `pnpm sf`, creates a scratch org, deploys metadata, assigns permissions,
-seeds deterministic data, and runs both the existing Salesforce smoke fixtures and
-a generated-query E2E suite. The E2E suite uses a dedicated Vitest configuration:
-it builds `@kysoql/core`, asserts exact SOQL compiled for representative record,
-relationship, pagination, grouping, and aggregate queries, sends that SOQL to the
-scratch org, and asserts deterministic returned values. It remains separate from
-`pnpm test` and `pnpm validate` because it requires live Salesforce credentials.
-The setup script refuses to replace an existing org alias unless `--recreate` is
-explicitly supplied.
-
-Re-run only the generated-query suite against an existing authenticated fixture
-org with:
-
-```bash
-pnpm salesforce:e2e
-# or
-pnpm salesforce:e2e -- --target-org my-scratch-org
-```
-
-See [docs/salesforce-test-org.md](docs/salesforce-test-org.md) for prerequisites,
-manual commands, script options, coverage boundaries, and cleanup instructions.
-
-For future ChatGPT sessions continuing from a project bundle, read
-[docs/chatgpt-handoff.md](docs/chatgpt-handoff.md) first. It records the package
-boundaries, validation workflow, patch discipline, implemented surface, and next
-incremental milestone.
-
-## Design goals
-
-- Kysely-like fluent query API.
-- SOQL-native semantics instead of pretending Salesforce is SQL.
-- Generated schemas for standard and custom objects/fields.
-- Compile-time validation of fields, relationships, operators, grouping, sorting, and projections.
-- Native REST execution and authentication helpers, with JSforce as an optional adapter.
-- No raw-string escape hatch in the safe API.
-
-## Development continuity
-
-- `docs/chatgpt-handoff.md` records the current incremental implementation state.
-- `docs/research-notes.md` records external references and settled findings that are useful to future development sessions.

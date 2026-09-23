@@ -28,7 +28,6 @@ await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 for (const name of [
   "db.ts",
-  "salesforce-auth-key.ts",
   "salesforce-auth.ts",
   "salesforce.generated.ts",
 ]) {
@@ -37,6 +36,11 @@ for (const name of [
     path.join(output, name),
   );
 }
+await mkdir(path.join(output, "kysoql"), { recursive: true });
+await copyFile(
+  path.join(docsRoot, "examples/salesforce.generated.ts"),
+  path.join(output, "kysoql/salesforce.generated.ts"),
+);
 
 const manifest: Array<{ filename: string; source: string; line: number }> = [];
 for (const page of await readPages()) {

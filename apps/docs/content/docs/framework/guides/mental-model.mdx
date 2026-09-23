@@ -1,7 +1,6 @@
 ---
 title: "Mental model"
 description: "Understand immutability, query modes, metadata, and result inference."
-icon: "BrainCircuit"
 ---
 
 ## A schema is compile-time metadata
@@ -40,9 +39,9 @@ This makes it safe to derive multiple queries from a shared base.
 | Record selection | `select("Id")`, field arrays, supported select functions | Readonly array of selected records. |
 | Aggregate result | An aliased aggregate selection, or `groupBy` before ordinary selections | Readonly array of aggregate rows. |
 | Scalar count | `select(({ fn }) => fn.count())` on an unselected builder | A single `number`. |
-| Apex | Finish API-style selections, then call `apex()` or `dynamicApex()` | Compile-only SOQL. No execution methods. |
 | Relationship subquery | A `selectSubquery` callback | Nested result envelope in the parent row. |
 | Semi-join | An `in` or `not in` subquery callback | A filter, not a separately returned result. |
+| Apex | Finish API-style selections, then call `apex()` or `dynamicApex()` | Compile-only SOQL. No execution methods. |
 
 Methods are intentionally unavailable when they cannot describe valid SOQL.
 For example, an ordinary selected record query does not later become an

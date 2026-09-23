@@ -288,12 +288,21 @@ describe("generation option precedence", () => {
     },
   };
 
-  it("keeps the existing defaults when no config is present", () => {
+  it("defaults to kysoql/ when the working directory has no src directory", () => {
     expect(resolveGenerateOptions({}, undefined, cwd)).toEqual({
       objects: [],
-      output: join(cwd, "salesforce.generated.ts"),
+      output: join(cwd, "kysoql", "salesforce.generated.ts"),
       schemaName: "SalesforceSchema",
     });
+  });
+
+  it("defaults to src/kysoql/ when the working directory has a src directory", async () => {
+    const directory = await temporaryDirectory();
+    await mkdir(join(directory, "src"));
+
+    expect(resolveGenerateOptions({}, undefined, directory).output).toBe(
+      join(directory, "src", "kysoql", "salesforce.generated.ts"),
+    );
   });
 
   it("uses configured values and resolves output beside the config", () => {
@@ -328,10 +337,10 @@ describe("generation option precedence", () => {
     );
   });
 
-  it("resolves the default output beside a loaded config", () => {
+  it("resolves the default output from cwd even when a config is loaded", () => {
     expect(
       resolveGenerateOptions({}, { filename, config: {} }, cwd).output,
-    ).toBe(join(dirname(filename), "salesforce.generated.ts"));
+    ).toBe(join(cwd, "kysoql", "salesforce.generated.ts"));
   });
 
   it("preserves absolute output paths and never mutates the config", () => {

@@ -1,7 +1,6 @@
 ---
 title: "Installation"
 description: "Install Kysoql and configure a TypeScript application."
-icon: "Package"
 ---
 
 ## Requirements
@@ -31,8 +30,8 @@ packages in an application on aligned versions.
 ## Configure a TypeScript application
 
 The examples use **extensionless local imports** such as `./db` and
-`./salesforce.generated`. This walkthrough runs TypeScript with `tsx` and uses
-TypeScript's `Bundler` resolution for matching typechecks. Keep your existing
+`./kysoql/salesforce.generated`. This walkthrough runs TypeScript with `tsx` and
+uses TypeScript's `Bundler` resolution for matching typechecks. Keep your existing
 Vite or other bundler setup if it already supports those imports.
 
 Merge these settings into your application rather than replacing unrelated
@@ -82,6 +81,5 @@ and [tsx typechecking guide](https://tsx.is/typescript).
 ## Next step
 
 Continue with the [quickstart](/docs/framework/getting-started/quickstart). It
-starts with an existing Salesforce access token. For a server-to-server application
-that should obtain its own token, start with [`@kysoql/auth` JWT bearer](/docs/auth/flows/jwt-bearer),
-which uses a private key instead of an interactive login.
+starts with `@kysoql/auth` JWT bearer authentication, generates the schema into
+`src/kysoql/` by default, then configures native REST execution.

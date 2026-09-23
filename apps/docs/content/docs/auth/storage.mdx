@@ -1,7 +1,6 @@
 ---
 title: "Refresh-token storage"
 description: "Persist Salesforce refresh-token rotation in memory, localStorage, Redis, or a custom store."
-icon: "Database"
 ---
 
 A Salesforce refresh token is a long-lived credential. `@kysoql/auth` exposes a
@@ -161,10 +160,7 @@ import {
   SalesforceAuth,
 } from "@kysoql/auth";
 
-export function createAuth(
-  initialRefreshToken: string,
-  privateKey: CryptoKey,
-) {
+export function createAuth(initialRefreshToken: string) {
   const auth = new SalesforceAuth({
     loginUrl: "https://example.my.salesforce.com",
     clientId: "oauth-client-id",
@@ -173,7 +169,8 @@ export function createAuth(
   return auth.storedRefreshToken({
     initialRefreshToken,
     refreshTokenStore: createMemoryRefreshTokenStore(),
-    clientAssertion: () => auth.createClientAssertion({ privateKey }),
+    clientAssertion: () =>
+      auth.createClientAssertion({ privateKey: "./salesforce-auth-key.pem" }),
   });
 }
 ```

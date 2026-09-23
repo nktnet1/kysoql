@@ -1,6 +1,5 @@
 /** Compile/typecheck fixture matching the quickstart's authentication helper. */
 import { SalesforceAuth } from "@kysoql/auth";
-import { privateKey } from "./salesforce-auth-key";
 
 const auth = new SalesforceAuth({
   loginUrl: "https://login.salesforce.com",
@@ -10,5 +9,5 @@ const auth = new SalesforceAuth({
 export const getSalesforceSession = () =>
   auth.jwtBearer({
     username: "integration@example.com",
-    privateKey,
+    privateKey: "./salesforce-auth-key.pem",
   });

@@ -16,7 +16,7 @@ Create an executor from a compatible JSforce connection and pass it to Kysoql:
 ```ts
 import { Kysoql } from "@kysoql/core";
 import { createJsforceExecutor } from "@kysoql/jsforce";
-import type { SalesforceSchema } from "./salesforce.generated";
+import type { SalesforceSchema } from "./kysoql/salesforce.generated";
 
 const executor = createJsforceExecutor(connection);
 const db = new Kysoql<SalesforceSchema>({ executor });

@@ -1,7 +1,6 @@
 ---
 title: "private_key_jwt client authentication"
 description: "Authenticate supported Salesforce OAuth token requests with an RS256 private-key client assertion."
-icon: "KeyRound"
 ---
 
 `private_key_jwt` is a client-authentication method, not a standalone OAuth grant.
@@ -17,16 +16,14 @@ Salesforce documents `private_key_jwt` for the web-server token exchange.
 ```ts
 import { SalesforceAuth } from "@kysoql/auth";
 
-export async function exchangeWithPrivateKey(
-  code: string,
-  verifier: string,
-  privateKey: CryptoKey,
-) {
+export async function exchangeWithPrivateKey(code: string, verifier: string) {
   const auth = new SalesforceAuth({
     loginUrl: "https://example.my.salesforce.com",
     clientId: "external-client-app-id",
   });
-  const clientAssertion = await auth.createClientAssertion({ privateKey });
+  const clientAssertion = await auth.createClientAssertion({
+    privateKey: "./salesforce-auth-key.pem",
+  });
 
   return auth.exchangeAuthorizationCode({
     clientAssertion,
@@ -38,8 +35,10 @@ export async function exchangeWithPrivateKey(
 ```
 
 `auth.createClientAssertion()` sets both `iss` and `sub` to the OAuth client ID,
-uses the Salesforce token endpoint as the audience, and signs with RS256. Kysoql
-adds the standard JWT bearer client-assertion type to the token request.
+uses the Salesforce token endpoint as the audience, and signs with RS256. The
+key input accepts the same `CryptoKey`, PEM string, file path, or file URL as
+`jwtBearer()`. Kysoql adds the standard JWT bearer client-assertion type to the
+token request.
 
 The assertion is intentionally short-lived. When using
 `auth.storedRefreshToken()`, pass `clientAssertion` as a callback so a new

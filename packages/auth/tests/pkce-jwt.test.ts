@@ -1,4 +1,9 @@
 import assert from "node:assert/strict";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { pathToFileURL } from "node:url";
+
 import { describe, it } from "vitest";
 
 import {
@@ -12,6 +17,23 @@ const decodeBase64Url = (value: string): string => {
   const normalized = value.replaceAll("-", "+").replaceAll("_", "/");
   const padding = "=".repeat((4 - (normalized.length % 4)) % 4);
   return Buffer.from(`${normalized}${padding}`, "base64").toString("utf8");
+};
+
+const createPrivateKeyPem = async (): Promise<string> => {
+  const keyPair = await crypto.subtle.generateKey(
+    {
+      name: "RSASSA-PKCS1-v1_5",
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      hash: "SHA-256",
+    },
+    true,
+    ["sign", "verify"],
+  );
+  const pkcs8 = await crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+  const encoded = Buffer.from(pkcs8).toString("base64");
+  const lines = encoded.match(/.{1,64}/g) ?? [];
+  return `-----BEGIN PRIVATE KEY-----\n${lines.join("\n")}\n-----END PRIVATE KEY-----`;
 };
 
 describe("PKCE and JWT helpers", () => {
@@ -70,6 +92,69 @@ describe("PKCE and JWT helpers", () => {
         new TextEncoder().encode(`${headerPart}.${payloadPart}`),
       ),
       true,
+    );
+  });
+
+  it("accepts and trims a PEM private-key value", async () => {
+    const jwt = await createJwtBearerAssertion({
+      clientId: "consumer",
+      username: "integration@example.com",
+      loginUrl: "https://login.salesforce.com",
+      privateKey: `\n  ${await createPrivateKeyPem()}  \n`,
+      now: 1_800_000_000,
+    });
+
+    assert.equal(jwt.split(".").length, 3);
+  });
+
+  it("loads a PEM private key from a file path", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "kysoql-auth-key-"));
+    const filename = join(directory, "salesforce-auth-key.pem");
+    try {
+      await writeFile(filename, `${await createPrivateKeyPem()}\n`, "utf8");
+      const jwt = await createJwtBearerAssertion({
+        clientId: "consumer",
+        username: "integration@example.com",
+        loginUrl: "https://login.salesforce.com",
+        privateKey: filename,
+        now: 1_800_000_000,
+      });
+
+      assert.equal(jwt.split(".").length, 3);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("loads a PEM private key from a file URL", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "kysoql-auth-key-"));
+    const filename = join(directory, "salesforce-auth-key.pem");
+    try {
+      await writeFile(filename, await createPrivateKeyPem(), "utf8");
+      const jwt = await createJwtBearerAssertion({
+        clientId: "consumer",
+        username: "integration@example.com",
+        loginUrl: "https://login.salesforce.com",
+        privateKey: pathToFileURL(filename),
+        now: 1_800_000_000,
+      });
+
+      assert.equal(jwt.split(".").length, 3);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects a blank private-key value before reading a file", async () => {
+    await assert.rejects(
+      createJwtBearerAssertion({
+        clientId: "consumer",
+        username: "integration@example.com",
+        loginUrl: "https://login.salesforce.com",
+        privateKey: "   ",
+        now: 1_800_000_000,
+      }),
+      /privateKey must not be empty/,
     );
   });
 

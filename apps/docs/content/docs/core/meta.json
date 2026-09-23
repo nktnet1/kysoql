@@ -3,5 +3,5 @@
   "description": "Type-safe SOQL query building and compilation with @kysoql/core.",
   "root": true,
   "icon": "Braces",
-  "pages": ["index", "apex", "advanced", "reference"]
+  "pages": ["index", "advanced", "reference", "apex"]
 }

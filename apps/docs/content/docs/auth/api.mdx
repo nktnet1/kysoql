@@ -1,7 +1,6 @@
 ---
 title: "Auth API reference"
 description: "Reference SalesforceAuth, lower-level OAuth helpers, token stores, and refresh-provider APIs."
-icon: "FileCode"
 ---
 
 <SalesforceReference title="OAuth Authorization Flows" href="https://help.salesforce.com/s/articleView?id=remoteaccess_oauth_flows.htm&language=en_US&type=5" />
@@ -90,8 +89,11 @@ successful response.
 | `createJwtBearerAssertion(options)` | Create and RS256-sign a Salesforce JWT bearer assertion with Web Crypto. |
 | `createOAuthClientAssertion(options)` | Create an RS256 `private_key_jwt` client assertion for a Salesforce token endpoint. |
 
-Both assertion helpers accept a private `CryptoKey`; private-key file loading is
-deliberately left to the runtime or key-management system.
+Both assertion helpers accept `PrivateKeyInput`: an RS256 `CryptoKey`, a raw PEM
+string, a PEM file path, or a file URL. Raw PEM string values are trimmed before
+parsing. Relative file paths resolve from `process.cwd()`; use a file URL when the
+key should resolve relative to a module. Pass a `CryptoKey` when a key manager or
+custom runtime already owns key loading.
 
 ## Headless identity primitives
 

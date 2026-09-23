@@ -14,6 +14,7 @@ import {
   createOAuthClientAssertion,
   type JwtBearerAssertionOptions,
   type OAuthClientAssertionOptions,
+  type PrivateKeyInput,
 } from "#/jwt";
 import {
   createStoredRefreshTokenAuth,
@@ -108,7 +109,7 @@ type BoundFirstPartyAuthorizationChallengeOptions = Omit<
 
 export interface SalesforceJwtBearerOptions extends OAuthRequestOptions {
   readonly username: string;
-  readonly privateKey: CryptoKey;
+  readonly privateKey: PrivateKeyInput;
   readonly expiresInSeconds?: number;
   readonly now?: number;
 }

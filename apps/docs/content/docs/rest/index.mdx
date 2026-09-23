@@ -1,7 +1,6 @@
 ---
-title: "@kysoql/rest"
+title: "Introduction"
 description: "Execute Kysoql queries through Salesforce REST without JSforce."
-icon: "Cloud"
 ---
 
 `@kysoql/rest` is the native Salesforce transport for Kysoql. It implements the
@@ -13,7 +12,7 @@ QueryAll, scalar counts, and paginated queries without installing JSforce.
 ```ts
 import { Kysoql } from "@kysoql/core";
 import { createRestExecutor } from "@kysoql/rest";
-import type { SalesforceSchema } from "./salesforce.generated";
+import type { SalesforceSchema } from "./kysoql/salesforce.generated";
 
 export function createDatabase(instanceUrl: string, accessToken: string) {
   return new Kysoql<SalesforceSchema>({

@@ -1,7 +1,6 @@
 ---
 title: "Native REST execution"
 description: "Run SOQL with native fetch, paginate safely, stream root results, and control requests."
-icon: "Play"
 ---
 
 <SalesforceReference title="REST API Query resource" href="https://developer.salesforce.com/docs/platform/api-rest/guide/resources-query.html" />
@@ -17,7 +16,7 @@ icon: "Play"
 ```ts
 import { Kysoql } from "@kysoql/core";
 import { createRestExecutor } from "@kysoql/rest";
-import type { SalesforceSchema } from "./salesforce.generated";
+import type { SalesforceSchema } from "./kysoql/salesforce.generated";
 
 export function createDatabase(instanceUrl: string, accessToken: string) {
   const executor = createRestExecutor(

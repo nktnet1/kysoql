@@ -1,7 +1,6 @@
 ---
-title: "@kysoql/codegen"
+title: "Introduction"
 description: "Generate schema-aware Kysoql types from Salesforce Describe metadata."
-icon: "FileCode"
 ---
 
 `@kysoql/codegen` turns Salesforce Describe metadata into the schema types used by
@@ -18,13 +17,14 @@ import { defineConfig } from "@kysoql/codegen";
 
 export default defineConfig({
   objects: ["Account", "Contact", "User"],
-  output: "src/salesforce.generated.ts",
   schemaName: "SalesforceSchema",
 });
 ```
 
-You can keep every described field or define exact per-object include/exclude
-rules when an application intentionally exposes a smaller query surface.
+With a `src` directory, that writes `src/kysoql/salesforce.generated.ts` by
+default. Set `output` when the application needs a different location. You can
+keep every described field or define exact per-object include/exclude rules when
+an application intentionally exposes a smaller query surface.
 
 ## In this package
 

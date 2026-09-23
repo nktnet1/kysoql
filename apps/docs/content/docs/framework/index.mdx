@@ -1,7 +1,6 @@
 ---
 title: "Framework"
 description: "Build type-safe Salesforce SOQL with Kysoql, from generated schemas through execution."
-icon: "House"
 ---
 
 <SalesforceReference title="Salesforce Object Query Language (SOQL) reference" href="https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql.html" />
@@ -23,7 +22,7 @@ compile a query, and execute it through native REST, without JSforce.
 
 ```ts
 import { Kysoql } from "@kysoql/core";
-import type { SalesforceSchema } from "./salesforce.generated";
+import type { SalesforceSchema } from "./kysoql/salesforce.generated";
 
 const db = new Kysoql<SalesforceSchema>();
 
@@ -74,9 +73,9 @@ versions.
 | Query parents, children, and related records | [Relationships and joins](/docs/framework/guides/relationships) |
 | Build grouped reports | [Aggregates](/docs/framework/guides/aggregates) and [date functions](/docs/framework/guides/date-functions) |
 | Run queries or include deleted records | [Execution](/docs/rest/execution) |
-| Produce SOQL with Apex binds | [Apex overview](/docs/core/apex/overview) |
 | Check an available method or a restriction | [API reference](/docs/core/reference/api) and [limitations](/docs/core/reference/limitations) |
 | Diagnose an error | [Troubleshooting](/docs/core/reference/troubleshooting) |
+| Produce SOQL with Apex binds | [Apex overview](/docs/core/apex/overview) |
 
 ## What validation does and does not guarantee
 

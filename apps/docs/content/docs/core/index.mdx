@@ -1,12 +1,11 @@
 ---
-title: "@kysoql/core"
+title: "Introduction"
 description: "Build and compile type-safe Salesforce SOQL with schema-aware TypeScript APIs."
-icon: "Braces"
 ---
 
 `@kysoql/core` is the query-builder package. It owns the typed SOQL builders,
-expression helpers, compiler, schema contracts, Apex compilation modes, and the
-executor interface used by transport adapters.
+expression helpers, compiler, schema contracts, and the executor interface used by
+transport adapters. It also provides compile-only Apex modes for server-side use.
 
 It has no Salesforce HTTP dependency. You can compile SOQL without a connection,
 or provide an executor such as [`@kysoql/rest`](/docs/rest) or the optional
@@ -16,7 +15,7 @@ or provide an executor such as [`@kysoql/rest`](/docs/rest) or the optional
 
 ```ts
 import { Kysoql } from "@kysoql/core";
-import type { SalesforceSchema } from "./salesforce.generated";
+import type { SalesforceSchema } from "./kysoql/salesforce.generated";
 
 const db = new Kysoql<SalesforceSchema>();
 
@@ -37,9 +36,9 @@ types for specialised integrations.
 ## What belongs to core
 
 - Query creation, selections, filters, relationships, aggregates, and functions.
-- Compile-only SOQL and Apex-oriented compilation modes.
 - Schema capability types and inferred result shapes.
 - The `QueryExecutor` contract used by native REST, JSforce, and custom adapters.
+- Compile-only Apex-oriented modes for code that runs inside Salesforce.
 
 Continue with the [mental model](/docs/framework/guides/mental-model), or use the
 [quickstart](/docs/framework/getting-started/quickstart) for an end-to-end flow.

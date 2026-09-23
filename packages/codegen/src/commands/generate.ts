@@ -21,7 +21,7 @@ CLI flags override configuration. Authentication comes from config auth or --aut
   static examples = [
     `<%= config.bin %> <%= command.id %>`,
     `<%= config.bin %> <%= command.id %> --config config/kysoql.sandbox.ts`,
-    `<%= config.bin %> <%= command.id %> --no-config --auth config/salesforce.auth.ts --object Account --output src/salesforce.generated.ts`,
+    `<%= config.bin %> <%= command.id %> --no-config --auth config/salesforce.auth.ts --object Account --output src/kysoql/salesforce.generated.ts`,
   ];
 
   static flags = {
@@ -53,7 +53,7 @@ CLI flags override configuration. Authentication comes from config auth or --aut
     }),
     output: Flags.string({
       description:
-        "Generated TypeScript file (default: salesforce.generated.ts unless configured).",
+        "Generated TypeScript file (default: src/kysoql/salesforce.generated.ts when ./src exists, otherwise kysoql/salesforce.generated.ts).",
       helpValue: "<path>",
     }),
     "schema-name": Flags.string({

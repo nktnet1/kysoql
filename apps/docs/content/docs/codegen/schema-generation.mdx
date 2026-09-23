@@ -1,7 +1,6 @@
 ---
 title: "Schema generation"
 description: "Generate and maintain org-specific types with the CLI or library API."
-icon: "Database"
 ---
 
 `@kysoql/codegen` turns Salesforce Describe metadata into a schema for
@@ -22,7 +21,6 @@ pnpm exec kysoql generate --no-config \
   --object Contact \
   --object Opportunity \
   --object User \
-  --output src/salesforce.generated.ts \
   --schema-name SalesforceSchema
 ```
 
@@ -33,7 +31,7 @@ pnpm exec kysoql generate --no-config \
 | `--config <path>` | Discover in the working directory | Select a JS/TS config explicitly; a missing file fails. |
 | `--no-config` | `false` | Skip config discovery and evaluation; conflicts with `--config`. |
 | `--object <api-name>` | Configured list or all queryable objects | Repeat once per object. Replaces, rather than appends to, the configured list. |
-| `--output <path>` | Configured output or `salesforce.generated.ts` | Writes UTF-8 and creates parent directories. CLI paths use the working directory. |
+| `--output <path>` | Configured output, otherwise `src/kysoql/salesforce.generated.ts` when `./src` exists or `kysoql/salesforce.generated.ts` | Overrides the generated file. CLI paths use the working directory; parent directories are created. |
 | `--schema-name <name>` | Configured name or `SalesforceSchema` | Name of the generated interface; must pass identifier validation. |
 | `--help` | N/A | Displays generated oclif help. |
 
@@ -123,7 +121,7 @@ export async function generateForOrg(instanceUrl: string, accessToken: string) {
     client: createRestDescribeClient({ instanceUrl, accessToken, apiVersion: "65.0" }),
     objects: ["Account", "Contact"],
     fields: { Account: { include: ["Id", "Name"] } },
-    output: "src/salesforce.generated.ts",
+    output: "src/kysoql/salesforce.generated.ts",
   });
 }
 ```
@@ -147,7 +145,7 @@ export async function regenerate(client: SalesforceDescribeClient): Promise<void
   await generateSchema({
     client,
     objects: ["Account", "Contact"],
-    output: "src/salesforce.generated.ts",
+    output: "src/kysoql/salesforce.generated.ts",
     schemaName: "SalesforceSchema",
   });
 }

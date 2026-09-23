@@ -51,10 +51,12 @@ for (const page of pages) {
       assert.equal(typeof parsed, "string");
       assert.ok(parsed.trim().length > 0);
       if (key === "title") {
-        if (titles.has(parsed)) {
-          complain(page.relative, `duplicate title: ${parsed}`);
+        // Navigation titles only need to be unique among sibling pages.
+        const titleKey = `${path.posix.dirname(page.relative)}\0${parsed}`;
+        if (titles.has(titleKey)) {
+          complain(page.relative, `duplicate title in section: ${parsed}`);
         }
-        titles.add(parsed);
+        titles.add(titleKey);
       }
     } catch {
       complain(

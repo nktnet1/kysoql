@@ -1,7 +1,6 @@
 ---
-title: "@kysoql/auth"
+title: "Introduction"
 description: "Authenticate Salesforce REST clients with supported OAuth flows and refresh-token storage."
-icon: "KeyRound"
 ---
 
 `@kysoql/auth` obtains Salesforce bearer tokens for applications that execute
@@ -30,10 +29,10 @@ const auth = new SalesforceAuth({
   clientId: "external-client-app-id",
 });
 
-export async function createSalesforceExecutor(privateKey: CryptoKey) {
+export async function createSalesforceExecutor() {
   const session = await auth.jwtBearer({
     username: "integration@example.com",
-    privateKey,
+    privateKey: "./salesforce-auth-key.pem",
   });
 
   return createRestExecutor({
@@ -43,9 +42,9 @@ export async function createSalesforceExecutor(privateKey: CryptoKey) {
 }
 ```
 
-Keep the signing key server-side. `jwtBearer()` accepts an RS256 `CryptoKey`;
-loading a PEM, KMS key, HSM key, or other key-management primitive is
-intentionally owned by the application/runtime.
+Keep the signing key server-side. `jwtBearer()` accepts an existing RS256
+`CryptoKey`, a PEM file path/file URL, or a raw PEM string. Raw PEM strings are
+trimmed before parsing, so secret-manager values can be passed directly.
 
 See [JWT bearer](/docs/auth/flows/jwt-bearer) for Salesforce setup, assertion
 details, and renewal behaviour.

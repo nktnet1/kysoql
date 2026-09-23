@@ -4,15 +4,18 @@ import { nonEmptySecret, parseOAuthBaseUrl, parseOrigin } from "#/validation";
 const textBase64Url = (value: string): string =>
   encodeBase64Url(new TextEncoder().encode(value));
 
+export type PrivateKeyInput = CryptoKey | string | URL;
+
 export interface JwtBearerAssertionOptions {
   readonly clientId: string;
   readonly username: string;
   /** Salesforce login/My Domain origin used as the JWT audience. */
   readonly loginUrl: string;
   /**
-   * RS256 signing key. Generate/import it with Web Crypto; keep it server-side.
+   * RS256 signing key. Pass a CryptoKey, PEM value, or PEM file path/file URL.
+   * String values are trimmed; strings without a PEM header are treated as paths.
    */
-  readonly privateKey: CryptoKey;
+  readonly privateKey: PrivateKeyInput;
   /** Default: 180 seconds. Maximum: 300 seconds. */
   readonly expiresInSeconds?: number;
   /**
@@ -30,9 +33,10 @@ export interface OAuthClientAssertionOptions {
    */
   readonly loginUrl: string;
   /**
-   * RS256 signing key. Generate/import it with Web Crypto; keep it server-side.
+   * RS256 signing key. Pass a CryptoKey, PEM value, or PEM file path/file URL.
+   * String values are trimmed; strings without a PEM header are treated as paths.
    */
-  readonly privateKey: CryptoKey;
+  readonly privateKey: PrivateKeyInput;
   /** Default: 180 seconds. Maximum: 300 seconds. */
   readonly expiresInSeconds?: number;
   /**
@@ -73,6 +77,56 @@ const validatePrivateKey = (privateKey: CryptoKey): void => {
   }
 };
 
+const isPemValue = (value: string): boolean =>
+  value.startsWith("-----BEGIN ") && value.includes("PRIVATE KEY-----");
+
+const importPemPrivateKey = async (pem: string): Promise<CryptoKey> => {
+  const { createPrivateKey } = await import("node:crypto");
+  const key = createPrivateKey(pem);
+  if (key.asymmetricKeyType !== "rsa") {
+    throw new TypeError("privateKey PEM must contain an RSA private key.");
+  }
+  const pkcs8 = key.export({ format: "der", type: "pkcs8" });
+  return globalThis.crypto.subtle.importKey(
+    "pkcs8",
+    new Uint8Array(pkcs8),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+};
+
+const resolvePrivateKey = async (input: PrivateKeyInput): Promise<CryptoKey> => {
+  if (typeof input !== "string" && !(input instanceof URL)) {
+    validatePrivateKey(input);
+    return input;
+  }
+
+  let pem: string;
+  if (input instanceof URL) {
+    const { readFile } = await import("node:fs/promises");
+    pem = (await readFile(input, "utf8")).trim();
+  } else {
+    const value = input.trim();
+    if (!value) {
+      throw new TypeError("privateKey must not be empty.");
+    }
+    if (isPemValue(value)) {
+      pem = value;
+    } else {
+      const { readFile } = await import("node:fs/promises");
+      pem = (await readFile(value, "utf8")).trim();
+    }
+  }
+
+  if (!pem) {
+    throw new TypeError("privateKey PEM must not be empty.");
+  }
+  const privateKey = await importPemPrivateKey(pem);
+  validatePrivateKey(privateKey);
+  return privateKey;
+};
+
 const signAssertion = async (
   payload: Readonly<Record<string, string | number>>,
   privateKey: CryptoKey,
@@ -100,7 +154,7 @@ export const createJwtBearerAssertion = async (
       aud: parseOrigin(options.loginUrl, "loginUrl"),
       exp: now + expiresInSeconds,
     },
-    options.privateKey,
+    await resolvePrivateKey(options.privateKey),
   );
 };
 
@@ -121,6 +175,6 @@ export const createOAuthClientAssertion = async (
       aud: `${loginUrl}/services/oauth2/token`,
       exp: now + expiresInSeconds,
     },
-    options.privateKey,
+    await resolvePrivateKey(options.privateKey),
   );
 };

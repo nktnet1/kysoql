@@ -16,8 +16,6 @@ Create `kysoql.config.ts` beside your application's `package.json`:
 ```ts
 import { SalesforceAuth } from "@kysoql/auth";
 import { defineConfig } from "@kysoql/codegen";
-import { privateKey } from "./salesforce-auth-key.js";
-
 const auth = new SalesforceAuth({
   loginUrl: "https://login.salesforce.com",
   clientId: "external-client-app-id",
@@ -27,10 +25,9 @@ export default defineConfig({
   auth: () =>
     auth.jwtBearer({
       username: "integration@example.com",
-      privateKey,
+      privateKey: "./salesforce-auth-key.pem",
     }),
   objects: ["Account", "Contact"],
-  output: "src/salesforce.generated.ts",
   schemaName: "SalesforceSchema",
 });
 ```
@@ -48,7 +45,7 @@ pnpm exec kysoql generate --no-config \
   --auth config/salesforce.auth.ts \
   --object Account \
   --object Contact \
-  --output src/salesforce.generated.ts \
+  --output src/kysoql/salesforce.generated.ts \
   --schema-name SalesforceSchema
 ```
 
@@ -72,12 +69,15 @@ uses `--api-version`, then config `apiVersion`, then the pinned `65.0` default. 
 runtime and generation versions aligned and check org support. The CLI now uses
 native REST Describe; JSforce is neither used nor installed by codegen. Repeated
 `--object` flags replace the configured list. Without a list (or with `objects:
-[]`), generation includes every queryable object returned by Salesforce. Defaults
-remain `salesforce.generated.ts` and the `SalesforceSchema` interface name.
+[]`), generation includes every queryable object returned by Salesforce. When
+`output` is omitted, codegen writes `src/kysoql/salesforce.generated.ts` if the
+working directory has `src/`, otherwise `kysoql/salesforce.generated.ts`.
+The default interface name remains `SalesforceSchema`.
 
-A configured `output`, including the default when a config is loaded, is relative
-to that file's directory. `--config` and an explicit `--output` are relative to
-the working directory. Absolute paths remain absolute. `--no-config` skips
+The built-in default output is based on the working directory. A configured
+relative `output` is resolved from the config file's directory; an explicit
+`--output` is relative to the working directory. Absolute paths remain absolute.
+`--no-config` skips
 loading entirely and cannot be combined with `--config`.
 
 Configuration and `--auth` modules execute code: only load trusted files. The CLI
@@ -123,7 +123,7 @@ export default defineConfig({
     Account: { include: ["Id", "Name", "OwnerId"] },
     Contact: { exclude: ["Description"] },
   },
-  output: "src/salesforce.generated.ts",
+  output: "src/kysoql/salesforce.generated.ts",
 });
 ```
 
@@ -166,7 +166,7 @@ export async function generateForOrg(instanceUrl: string, accessToken: string) {
   await generateSchema({
     client: createRestDescribeClient({ instanceUrl, accessToken, apiVersion: "65.0" }),
     objects: ["Account", "Contact"],
-    output: "src/salesforce.generated.ts",
+    output: "src/kysoql/salesforce.generated.ts",
   });
 }
 ```

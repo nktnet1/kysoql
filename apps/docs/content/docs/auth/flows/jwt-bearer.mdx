@@ -1,7 +1,6 @@
 ---
 title: "JWT bearer"
 description: "Use Salesforce OAuth 2.0 JWT bearer authentication for private-key server-to-server integrations."
-icon: "KeyRound"
 ---
 
 JWT bearer is the default Kysoql recommendation for a server-to-server
@@ -21,22 +20,22 @@ const auth = new SalesforceAuth({
   clientId: "external-client-app-id",
 });
 
-export function authenticateSalesforce(privateKey: CryptoKey) {
+export function authenticateSalesforce() {
   return auth.jwtBearer({
     username: "integration@example.com",
-    privateKey,
+    privateKey: "./salesforce-auth-key.pem",
   });
 }
 ```
 
-`jwtBearer()` creates the Salesforce JWT claims, signs them with Web Crypto, and
-exchanges the assertion in one call. The private key must be an
-RSASSA-PKCS1-v1_5 `CryptoKey`, which maps to RS256 in the JWT header.
+`jwtBearer()` creates the Salesforce JWT claims, signs them with RS256, and
+exchanges the assertion in one call. `privateKey` accepts an RSASSA-PKCS1-v1_5
+`CryptoKey`, a PEM file path/file URL, or a raw PEM string. Raw string values are
+trimmed before parsing.
 
 The helper defaults the assertion lifetime to 180 seconds and rejects lifetimes
-above 300 seconds. The application is responsible for importing or obtaining the
-private key from its file system, secret manager, KMS, HSM, or equivalent key
-provider.
+above 300 seconds. Passing a `CryptoKey` remains useful for KMS/HSM or custom key
+loading; ordinary Node applications can pass the PEM file directly.
 
 ## Salesforce setup
 

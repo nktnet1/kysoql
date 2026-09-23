@@ -1,7 +1,6 @@
 ---
 title: "Configuration"
 description: "Keep schema-generation settings in kysoql.config.ts and override them safely."
-icon: "Settings"
 ---
 
 Use a configuration file to make schema generation repeatable across developers
@@ -18,17 +17,18 @@ your application's `package.json`:
 ```ts title="kysoql.config.ts"
 import { SalesforceAuth } from "@kysoql/auth";
 import { defineConfig } from "@kysoql/codegen";
-import { privateKey } from "./salesforce-auth-key";
-
 const salesforce = new SalesforceAuth({
   loginUrl: "https://login.salesforce.com",
   clientId: "external-client-app-id",
 });
 
 export default defineConfig({
-  auth: () => salesforce.jwtBearer({ username: "integration@example.com", privateKey }),
+  auth: () =>
+    salesforce.jwtBearer({
+      username: "integration@example.com",
+      privateKey: "./salesforce-auth-key.pem",
+    }),
   objects: ["Account", "Contact", "Opportunity", "User"],
-  output: "src/salesforce.generated.ts",
   schemaName: "SalesforceSchema",
 });
 ```
@@ -42,7 +42,7 @@ import type { KysoqlConfig } from "@kysoql/codegen";
 
 export default {
   objects: ["Account", "Contact"],
-  output: "src/salesforce.generated.ts",
+  output: "src/kysoql/salesforce.generated.ts",
 } satisfies KysoqlConfig;
 ```
 
@@ -60,7 +60,7 @@ pnpm exec kysoql generate
 | `apiVersion` | `string` | `65.0` | REST version for the CLI, without `v`. Overridden by `--api-version`. |
 | `objects` | `readonly string[]` | All queryable objects | Salesforce API names. `[]` also means all queryable objects. Include relationship targets explicitly. |
 | `fields` | `ObjectFieldFilters` | All described fields | Optional per-object exact include/exclude rules. See [field filtering](/docs/codegen/field-filtering). |
-| `output` | `string` | `salesforce.generated.ts` | Generated file, relative to the config directory. Parent directories are created. |
+| `output` | `string` | `src/kysoql/salesforce.generated.ts` when `./src` exists; otherwise `kysoql/salesforce.generated.ts` | Override the generated file. Configured relative paths are resolved from the config directory; parent directories are created. |
 | `schemaName` | `string` | `SalesforceSchema` | Generated interface name; must pass identifier validation. |
 
 Export a plain object. Configuration factories, promises, and arrays of configs
@@ -83,7 +83,7 @@ export default defineConfig({
     Account: { include: ["Id", "Name", "Industry", "OwnerId"] },
     Contact: { exclude: ["Description"] },
   },
-  output: "src/salesforce.generated.ts",
+  output: "src/kysoql/salesforce.generated.ts",
 });
 ```
 
@@ -137,12 +137,13 @@ pnpm exec kysoql generate --api-version 65.0
 A supplied `--object` list replaces the configured list; it does not
 append to it. Settings not overridden on the command line remain configured.
 
-`--config` is resolved relative to the current working directory. A configured
-`output`, including the default output when omitted from a loaded config, is
-resolved relative to the config file's directory. A CLI `--output` override is
-always relative to the current working directory. Absolute paths stay absolute.
-For example, a config at `config/kysoql.sandbox.ts` with
-`output: "../src/sandbox.generated.ts"` writes under `src/` beside `config/`.
+`--config` is resolved relative to the current working directory. When `output` is
+omitted, codegen writes `src/kysoql/salesforce.generated.ts` if the working
+directory contains `src/`, otherwise `kysoql/salesforce.generated.ts`. A
+configured relative `output` is resolved from the config file's directory, while
+a CLI `--output` override is resolved from the current working directory. Absolute
+paths stay absolute. For example, a config at `config/kysoql.sandbox.ts` with
+`output: "../src/sandbox.generated.ts"` writes under the project `src/` directory.
 
 `--no-config` disables discovery and evaluation entirely. It cannot be combined
 with `--config`. Use it with no `--object` flags to explicitly generate all
@@ -172,9 +173,9 @@ Generated type files never contain credentials.
 
 ## Troubleshooting
 
-**The wrong output file is being updated:** check which directory contains the
-config. Configured output paths use that directory; CLI output overrides use the
-working directory.
+**The wrong output file is being updated:** omitted output uses the working
+directory's `src/kysoql/` or `kysoql/` default. Configured relative output paths
+use the config directory; CLI output overrides use the working directory.
 
 **A configured setting appears ignored:** check for flags in package scripts.
 Explicit flags win. Also confirm the command is run from the config's directory

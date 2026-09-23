@@ -1,7 +1,6 @@
 ---
 title: "Custom executors and testing"
 description: "Implement the execution contract, preserve capabilities, and test without Salesforce."
-icon: "Cable"
 ---
 
 ## Executor contract
@@ -91,7 +90,7 @@ credentials or network calls:
 import assert from "node:assert/strict";
 import { Kysoql } from "@kysoql/core";
 import { createRestExecutor } from "@kysoql/rest";
-import type { SalesforceSchema } from "./salesforce.generated";
+import type { SalesforceSchema } from "./kysoql/salesforce.generated";
 
 const fetch: typeof globalThis.fetch = async (input, options) => {
   const url = new URL(String(input));

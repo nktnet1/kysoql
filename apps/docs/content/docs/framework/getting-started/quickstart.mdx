@@ -1,7 +1,6 @@
 ---
 title: "Quickstart"
 description: "Generate a schema, compile SOQL, and execute your first typed query."
-icon: "Rocket"
 ---
 
 This walkthrough uses a TypeScript application with `tsx`, configured as described in
@@ -12,37 +11,11 @@ and `Contact`.
 ## 1. Define authentication
 
 Resolve Salesforce sessions explicitly with `@kysoql/auth`; codegen does not read
-access-token or instance-URL environment variables. For example, a server-to-server
-integration can use JWT bearer authentication. Import the PEM key into the
-`CryptoKey` shape expected by the auth package:
-
-```ts title="salesforce-auth-key.ts"
-import { readFile } from "node:fs/promises";
-
-const pem = await readFile(
-  new URL("./salesforce-auth-key.pem", import.meta.url),
-  "utf8",
-);
-const base64 = pem
-  .replace("-----BEGIN PRIVATE KEY-----", "")
-  .replace("-----END PRIVATE KEY-----", "")
-  .replace(/\s/g, "");
-const pkcs8 = Uint8Array.from(Buffer.from(base64, "base64")).buffer;
-
-export const privateKey = await globalThis.crypto.subtle.importKey(
-  "pkcs8",
-  pkcs8,
-  { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-  false,
-  ["sign"],
-);
-```
-
-Then use that key from the session provider:
+access-token or instance-URL environment variables. For JWT bearer authentication,
+pass the PEM file directly:
 
 ```ts title="salesforce-auth.ts"
 import { SalesforceAuth } from "@kysoql/auth";
-import { privateKey } from "./salesforce-auth-key";
 
 const auth = new SalesforceAuth({
   loginUrl: "https://login.salesforce.com",
@@ -52,12 +25,16 @@ const auth = new SalesforceAuth({
 export const getSalesforceSession = () =>
   auth.jwtBearer({
     username: "integration@example.com",
-    privateKey,
+    privateKey: "./salesforce-auth-key.pem",
   });
 ```
 
-Keep private keys and other long-lived credentials in your normal secret/key
-management boundary rather than source control. See [authentication](/docs/auth)
+`privateKey` also accepts a raw PEM string, a file URL, or an existing `CryptoKey`.
+Raw string values are trimmed before parsing, so a secret-manager value can be
+passed directly without manually decoding PKCS#8. Relative file paths resolve from
+`process.cwd()`; use `new URL("./salesforce-auth-key.pem", import.meta.url)` for
+module-relative loading. Keep private keys and other long-lived credentials outside
+source control. See [authentication](/docs/auth)
 and [security](/docs/core/reference/security).
 
 ## 2. Configure and generate your schema
@@ -71,7 +48,6 @@ import { getSalesforceSession } from "./salesforce-auth";
 export default defineConfig({
   auth: getSalesforceSession,
   objects: ["Account", "Contact"],
-  output: "src/salesforce.generated.ts",
   schemaName: "SalesforceSchema",
 });
 ```
@@ -88,8 +64,10 @@ provider only after configuration validation succeeds. See
 and path rules. The CLI also works [without a config](/docs/codegen/schema-generation#cli-reference)
 when `--auth <module>` is supplied.
 
-The output describes the fields and relationships visible to the connected user.
-It is a TypeScript type definition, not a cache of records. Regenerate it when
+With the default layout, the generated file is `src/kysoql/salesforce.generated.ts`
+because this application has a `src` directory. The output describes the fields
+and relationships visible to the connected user. It is a TypeScript type
+definition, not a cache of records. Regenerate it when
 metadata changes. Add any other objects used in your queries to `objects`;
 codegen does not automatically include relationship targets.
 
@@ -99,7 +77,7 @@ Create `src/compile.ts`:
 
 ```ts title="src/compile.ts"
 import { Kysoql } from "@kysoql/core";
-import type { SalesforceSchema } from "./salesforce.generated";
+import type { SalesforceSchema } from "./kysoql/salesforce.generated";
 
 const db = new Kysoql<SalesforceSchema>();
 const compiled = db
@@ -138,7 +116,7 @@ Create `src/db.ts`:
 import { Kysoql } from "@kysoql/core";
 import { createRestExecutor } from "@kysoql/rest";
 import { getSalesforceSession } from "./salesforce-auth";
-import type { SalesforceSchema } from "./salesforce.generated";
+import type { SalesforceSchema } from "./kysoql/salesforce.generated";
 
 const session = await getSalesforceSession();
 

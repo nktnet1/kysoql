@@ -29,10 +29,10 @@ const auth = new SalesforceAuth({
   clientId: "external-client-app-id",
 });
 
-export async function createExecutor(privateKey: CryptoKey) {
+export async function createExecutor() {
   const session = await auth.jwtBearer({
     username: "integration@example.com",
-    privateKey,
+    privateKey: "./salesforce-auth-key.pem",
   });
 
   return createRestExecutor({
@@ -42,8 +42,11 @@ export async function createExecutor(privateKey: CryptoKey) {
 }
 ```
 
-JWT bearer does not issue a refresh token. Call `auth.jwtBearer()` again when a
-new access token is required; the class mints a fresh short-lived assertion.
+`privateKey` can also be a raw PEM string, file URL, or existing `CryptoKey`. PEM
+string values are trimmed automatically. Relative file paths resolve from
+`process.cwd()`; use a file URL for module-relative loading. JWT bearer does not
+issue a refresh token; call `auth.jwtBearer()` again when a new access token is
+required.
 
 ## Refresh tokens
 

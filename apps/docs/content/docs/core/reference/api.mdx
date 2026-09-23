@@ -1,7 +1,6 @@
 ---
 title: "Public API reference"
 description: "Find entry points, builder methods, expression helpers, and extension contracts."
-icon: "FileCode"
 ---
 
 This is a task-oriented reference for the public package exports. Generic types
@@ -107,22 +106,6 @@ There is no ordering, pagination, nested semi-join, or independent execution.
 `else(fields)` completes a supported fallback. See
 [polymorphism](/docs/framework/guides/polymorphism) for restrictions and returned unions.
 
-## Apex builders
-
-All Apex variants expose `compile`, `toOperationNode`, `where`, `limit`,
-`clearWhere`, `clearLimit`, `$call`, `$if`, `allRows`, `withUserMode`, and
-`withSystemMode`. They never expose `execute`/`executeAll`.
-
-| Builder | Additional surface |
-| --- | --- |
-| `ApexSelectQueryBuilder` | `forUpdate`, `selectSubquery`, `offset`, `clearOffset`, `clearOrderBy`. |
-| `ApexAggregateSelectQueryBuilder` | `offset`, `clearOffset`, `clearOrderBy`, guarded `clearGroupBy`. |
-| `ApexCountQueryBuilder` | No offset, locking, sorting, or further selection. |
-| Dynamic variants | Bound `setOptions(apexBind<ApexDatabaseQueryOptions>(...))`; unavailable in static context. |
-
-Complete ordinary selections, sorting, grouping, and HAVING before the context
-switch. See [Apex](/docs/core/apex/overview) and [bindings](/docs/core/apex/bindings).
-
 ## Expression helpers
 
 There is no standalone global `fn` export. It is supplied by the appropriate
@@ -163,3 +146,19 @@ Transport and schema-generation APIs are documented with their packages:
 - [`@kysoql/rest` API](/docs/rest/api)
 - [`@kysoql/codegen` API](/docs/codegen/api)
 - [`@kysoql/jsforce` API](/docs/jsforce/api)
+
+## Apex builders
+
+All Apex variants expose `compile`, `toOperationNode`, `where`, `limit`,
+`clearWhere`, `clearLimit`, `$call`, `$if`, `allRows`, `withUserMode`, and
+`withSystemMode`. They never expose `execute`/`executeAll`.
+
+| Builder | Additional surface |
+| --- | --- |
+| `ApexSelectQueryBuilder` | `forUpdate`, `selectSubquery`, `offset`, `clearOffset`, `clearOrderBy`. |
+| `ApexAggregateSelectQueryBuilder` | `offset`, `clearOffset`, `clearOrderBy`, guarded `clearGroupBy`. |
+| `ApexCountQueryBuilder` | No offset, locking, sorting, or further selection. |
+| Dynamic variants | Bound `setOptions(apexBind<ApexDatabaseQueryOptions>(...))`; unavailable in static context. |
+
+Complete ordinary selections, sorting, grouping, and HAVING before the context
+switch. See [Apex](/docs/core/apex/overview) and [bindings](/docs/core/apex/bindings).

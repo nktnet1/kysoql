@@ -1,7 +1,6 @@
 ---
-title: "@kysoql/jsforce"
+title: "Introduction"
 description: "Use the optional JSforce adapter when an application already owns a JSforce connection."
-icon: "Plug"
 ---
 
 ## Use an existing JSforce connection
@@ -17,7 +16,7 @@ npm install @kysoql/core @kysoql/jsforce jsforce
 import { Kysoql } from "@kysoql/core";
 import { createJsforceExecutor } from "@kysoql/jsforce";
 import { Connection } from "jsforce";
-import type { SalesforceSchema } from "./salesforce.generated";
+import type { SalesforceSchema } from "./kysoql/salesforce.generated";
 
 export function createDatabase(instanceUrl: string, accessToken: string) {
   const connection = new Connection({ instanceUrl, accessToken, version: "65.0" });

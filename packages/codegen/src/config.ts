@@ -29,7 +29,7 @@ export interface KysoqlConfig {
   readonly objects?: readonly string[];
   /** Per-object field rules. Omitted objects retain all described fields. */
   readonly fields?: ObjectFieldFilters;
-  /** Output file, relative to this configuration file. */
+  /** Override the generated file; relative paths resolve from this config file. */
   readonly output?: string;
   /** Name of the generated TypeScript schema interface. */
   readonly schemaName?: string;

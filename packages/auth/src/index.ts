@@ -18,6 +18,7 @@ export {
   createOAuthClientAssertion,
   type JwtBearerAssertionOptions,
   type OAuthClientAssertionOptions,
+  type PrivateKeyInput,
 } from "#/jwt";
 export {
   type AccessTokenProvider,

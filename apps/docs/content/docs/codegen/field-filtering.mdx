@@ -1,7 +1,6 @@
 ---
 title: "Field filtering"
 description: "Generate only the fields your application uses, with strict validation and safe relationship metadata."
-icon: "Funnel"
 ---
 
 Use per-object field rules to keep generated schemas focused on the fields your
@@ -26,7 +25,7 @@ export default defineConfig({
       exclude: ["Description"],
     },
   },
-  output: "src/salesforce.generated.ts",
+  output: "src/kysoql/salesforce.generated.ts",
   schemaName: "SalesforceSchema",
 });
 ```
@@ -176,7 +175,7 @@ export async function generate(client: SalesforceDescribeClient): Promise<void> 
     client,
     objects,
     fields,
-    output: "src/salesforce.generated.ts",
+    output: "src/kysoql/salesforce.generated.ts",
   });
 }
 
