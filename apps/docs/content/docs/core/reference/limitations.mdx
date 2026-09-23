@@ -94,10 +94,11 @@ adapter-specific external-object limits are deliberately not hard-coded as
 universal errors.
 
 Both bundled executors validate root response structure but trust field payloads
-as the inferred type. `.execute()` drains root results into memory, not nested
-child results, and neither adapter bypasses Salesforce's aggregate pagination
-restrictions. Native REST offers bounded page/record iteration, explicit child
-continuation requests, and request cancellation. See [execution](/docs/rest/execution).
+as the inferred type. `.execute()` drains root results into memory. Native REST
+also recursively completes selected parent-to-child continuation pages, while the
+JSforce adapter only drains root pagination. Neither adapter bypasses Salesforce's
+aggregate pagination restrictions. Native REST offers bounded page/record
+iteration and request cancellation. See [execution](/docs/rest/execution).
 A `CompiledQuery` is not a server-validated query plan.
 
 ## Version and feature availability

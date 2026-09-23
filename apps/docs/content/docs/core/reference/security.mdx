@@ -8,11 +8,12 @@ description: "Treat typed queries as one layer of a secure Salesforce integratio
 Use your approved Salesforce OAuth flow, store tokens in a secret manager or
 protected process environment, and manage token refresh/revocation in the
 connection layer. Do not include access tokens in browser bundles, code examples,
-committed `.env` files, generated schemas, or documentation-site environment
-variables. Vite variables prefixed `VITE_` are public build-time configuration.
+committed `.env` files, generated schemas, or public client-side configuration.
 
-The generator needs an existing token; it is not a credential vault or an OAuth
-client. Use an integration identity with only the access required for the task.
+Codegen accepts an `auth` provider that returns a Salesforce session, but it is
+not a credential vault. Keep the provider and its secrets in an appropriate
+server-side or build-time secret boundary, and use an integration identity with
+only the access required for the task.
 See [native authentication](/docs/rest/authentication) and
 Salesforce's [OAuth documentation](https://developer.salesforce.com/docs/platform/mobile-sdk/guide/intro-oauth.html)
 for supported connection flows.

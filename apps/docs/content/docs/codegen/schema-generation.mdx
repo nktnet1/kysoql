@@ -161,7 +161,7 @@ export async function preview(client: SalesforceDescribeClient): Promise<string>
 | --- | --- |
 | `createRestDescribeClient(clientOrOptions)` | Native validated Describe transport; accepts `RestClient` or `RestClientOptions`. |
 | `defineConfig(config)` | Typed identity helper for a plain `KysoqlConfig` object. |
-| `KysoqlConfig` | Optional `apiVersion`, `objects`, `fields`, `output`, and `schemaName` for the CLI config file. |
+| `KysoqlConfig` | Optional `auth`, `apiVersion`, `objects`, `fields`, `output`, and `schemaName` for the CLI config file. |
 | `ObjectFieldFilter` / `ObjectFieldFilters` | Mutually exclusive include/exclude rule, and the readonly object-name-to-rule map. |
 | `generateSchema(options)` | Loads metadata and writes the file. Resolves to `void`; does not discover config files. |
 | `loadSchema(client, requestedObjects?, fields?)` | Loads and validates descriptions, applies field rules, and returns a readonly list. |

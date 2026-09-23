@@ -11,6 +11,45 @@ Describe, loading, filtering, and rendering APIs.
 Native REST is used for CLI metadata requests, so code generation does not require
 JSforce.
 
+## Install
+
+For the normal CLI/schema-generation workflow, install codegen as a development
+dependency:
+
+<Tabs items={["npm", "yarn", "pnpm", "bun"]} defaultIndex={2}>
+  <Tab value="npm">
+
+```bash
+npm install --save-dev @kysoql/codegen
+```
+
+  </Tab>
+  <Tab value="yarn">
+
+```bash
+yarn add --dev @kysoql/codegen
+```
+
+  </Tab>
+  <Tab value="pnpm">
+
+```bash
+pnpm add -D @kysoql/codegen
+```
+
+  </Tab>
+  <Tab value="bun">
+
+```bash
+bun add --dev @kysoql/codegen
+```
+
+  </Tab>
+</Tabs>
+
+If application runtime code imports the programmatic codegen APIs, install
+`@kysoql/codegen` as a regular dependency instead.
+
 ## Configure generation
 
 ```ts title="kysoql.config.ts"
@@ -21,6 +60,10 @@ export default defineConfig({
   schemaName: "SalesforceSchema",
 });
 ```
+
+This config only selects schema-generation settings. `kysoql generate` also
+requires a Salesforce session provider through config `auth` or the `--auth`
+flag; see [configuration](/docs/codegen/configuration).
 
 With a `src` directory, that writes `src/kysoql/salesforce.generated.ts` by
 default. Set `output` when the application needs a different location. You can

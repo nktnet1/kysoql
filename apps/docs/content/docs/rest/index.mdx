@@ -8,6 +8,42 @@ icon: "Cloud"
 core executor contract with `fetch`, so applications can run ordinary Query,
 QueryAll, scalar counts, and paginated queries without installing JSforce.
 
+## Install
+
+Install the REST adapter together with core when the application builds and
+executes Kysoql queries directly:
+
+<Tabs items={["npm", "yarn", "pnpm", "bun"]} defaultIndex={2}>
+  <Tab value="npm">
+
+```bash
+npm install @kysoql/core @kysoql/rest
+```
+
+  </Tab>
+  <Tab value="yarn">
+
+```bash
+yarn add @kysoql/core @kysoql/rest
+```
+
+  </Tab>
+  <Tab value="pnpm">
+
+```bash
+pnpm add @kysoql/core @kysoql/rest
+```
+
+  </Tab>
+  <Tab value="bun">
+
+```bash
+bun add @kysoql/core @kysoql/rest
+```
+
+  </Tab>
+</Tabs>
+
 ## Connect it to core
 
 ```ts

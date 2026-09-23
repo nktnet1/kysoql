@@ -151,7 +151,7 @@ regenerating. Unfiltered output is unchanged.
 
 Filtering reduces generated metadata, not Describe requests or runtime access.
 It is not a security boundary. The
-[field filtering guide](../../apps/docs/content/docs/getting-started/field-filtering.mdx)
+[field filtering guide](../../apps/docs/content/docs/codegen/field-filtering.mdx)
 covers relationship dependencies, validation, and migration.
 
 ## Library API

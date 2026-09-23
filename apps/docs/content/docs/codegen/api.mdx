@@ -26,11 +26,13 @@ examples, Describe behaviour, relationship metadata, and generated output.
 | Export | Purpose |
 | --- | --- |
 | `defineConfig(config)` | Typed identity helper for `kysoql.config.ts`. |
-| `KysoqlConfig` | Configuration shape for API version, objects, fields, output, and schema name. |
+| `KysoqlConfig` | Configuration shape for the optional auth provider, API version, objects, fields, output, and schema name. |
 | `ObjectFieldFilter` | One per-object `include` or `exclude` rule. |
 | `ObjectFieldFilters` | Map of object API names to field-filter rules. |
 
 The configuration file affects schema generation only. It does not create a
-runtime query client or contain Salesforce credentials. See
+runtime query client. Its optional `auth` function returns a Salesforce session,
+so the config and anything it imports are executable credential-bearing code and
+should be protected accordingly. See
 [configuration](/docs/codegen/configuration) and
 [field filtering](/docs/codegen/field-filtering).

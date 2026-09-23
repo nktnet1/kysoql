@@ -19,10 +19,8 @@ an access token or production record payload.
 
 | Symptom | Likely cause and action |
 | --- | --- |
-| Package not found in the registry | The supplied packages are `0.0.0` and may not be published. Use the local workspace or your configured private registry. |
-| Unsupported engine/version warning | Activate the repository's Node 26 range and pnpm 12.4.1. Do not silently change the lockfile to suit a different environment. |
-| Cannot resolve `dist/index.mjs` or CLI binary | Build the workspace packages before consuming their default exports. |
-| `kysoql: command not found` | Install codegen in the invoking application and run `pnpm exec kysoql`; in the workspace use the built CLI path. |
+| Unsupported engine/version warning | Kysoql packages require Node.js `>=26.0.0 <27`; use a supported Node 26 release. |
+| `kysoql: command not found` | Install `@kysoql/codegen` in the invoking application and run the locally installed `kysoql` binary through your package manager. |
 | Missing codegen authentication | Configure `auth` in `kysoql.config.*` or pass a trusted `--auth <module>` provider. |
 | Unknown or non-queryable object | Use an object API name visible/queryable to that token, not a label. Check the org and permissions. |
 | Missing relationship fields after generation | Include all traversed parent/child/TYPEOF targets in the object list and regenerate. |
@@ -73,7 +71,7 @@ an access token or production record payload.
 | Incomplete response without `nextRecordsUrl` | Fix the transport/test double; the adapter refuses to silently truncate a query result. |
 | Incomplete SOQL COUNT response | Scalar count must be complete and include a valid non-negative totalSize. |
 | Child contacts are not an array | Read `account.Contacts.records` and inspect the envelope's `done` flag. |
-| Child records appear incomplete | Root pagination does not drain nested child locators. Query the child object directly or handle its transport pagination. |
+| Child records appear incomplete | Native REST recursively drains selected child locators. The JSforce adapter drains root pages only; with that adapter, query the child object directly or provide a transport that handles child continuation. |
 | High memory use | `execute()` accumulates root pages. Apply explicit limits/budgets or use native REST async iteration; child envelopes still occupy memory. |
 | `executeAll()` includes unexpected deleted rows | QueryAll is a data-visibility mode, not just pagination. Use ordinary `execute()` when appropriate. |
 | Salesforce rejects otherwise typed SOQL | Check live metadata, permissions, API version, feature enrollment, object restrictions, and execution context. |
