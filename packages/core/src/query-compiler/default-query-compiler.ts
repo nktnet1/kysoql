@@ -124,9 +124,11 @@ export class DefaultQueryCompiler implements QueryCompiler {
       context.apex === true && context.dynamicApex === true,
     );
 
-    let soql = `SELECT ${query.selections
-      .map((selection) => this.#compileSelection(selection, context))
-      .join(", ")} FROM ${query.from.name}`;
+    let soql = `SELECT ${this.#compileSelections(
+      query.selections,
+      context,
+      query.groupBy !== undefined,
+    )} FROM ${query.from.name}`;
 
     if (query.usingScope) {
       soql += ` USING SCOPE ${this.#compileUsingScope(query.usingScope)}`;
@@ -196,9 +198,49 @@ export class DefaultQueryCompiler implements QueryCompiler {
     return soql;
   }
 
+  #compileSelections(
+    selections: readonly SelectionNode[],
+    context: QueryCompileContext,
+    referenceAliases: boolean,
+  ): string {
+    const references = new Set<string>();
+    const compiled: string[] = [];
+
+    for (const selection of selections) {
+      const reference = this.#plainSelectionReference(selection);
+      if (!referenceAliases && reference) {
+        if (references.has(reference.name)) {
+          continue;
+        }
+        references.add(reference.name);
+      }
+
+      compiled.push(
+        this.#compileSelection(selection, context, referenceAliases),
+      );
+    }
+
+    return compiled.join(", ");
+  }
+
+  #plainSelectionReference(selection: SelectionNode): ReferenceNode | undefined {
+    const selected = selection.selection;
+    if (selected.kind === "ReferenceNode") {
+      return selected;
+    }
+    if (
+      selected.kind === "AliasNode" &&
+      selected.node.kind === "ReferenceNode"
+    ) {
+      return selected.node as ReferenceNode;
+    }
+    return undefined;
+  }
+
   #compileSelection(
     selection: SelectionNode,
     context: QueryCompileContext,
+    referenceAliases: boolean,
   ): string {
     switch (selection.selection.kind) {
       case "AggregateFunctionNode":
@@ -206,7 +248,10 @@ export class DefaultQueryCompiler implements QueryCompiler {
           selection.selection as AggregateFunctionNode,
         );
       case "AliasNode":
-        return this.#compileAlias(selection.selection as AliasNode);
+        return this.#compileSelectionAlias(
+          selection.selection as AliasNode,
+          referenceAliases,
+        );
       case "DateFunctionNode":
         return this.#compileDateFunction(
           selection.selection as DateFunctionNode,
@@ -262,9 +307,11 @@ export class DefaultQueryCompiler implements QueryCompiler {
       where: query.where,
     });
 
-    let soql = `SELECT ${query.selections
-      .map((selection) => this.#compileSelection(selection, context))
-      .join(", ")} FROM ${this.#compileReference(query.relationship)}`;
+    let soql = `SELECT ${this.#compileSelections(
+      query.selections,
+      context,
+      false,
+    )} FROM ${this.#compileReference(query.relationship)}`;
 
     if (query.where) {
       soql += ` WHERE ${this.#compileWhere(query.where)}`;
@@ -570,6 +617,14 @@ export class DefaultQueryCompiler implements QueryCompiler {
 
   #compileToLabelFunction(node: ToLabelFunctionNode): string {
     return `toLabel(${this.#compileReference(node.reference)})`;
+  }
+
+  #compileSelectionAlias(node: AliasNode, referenceAliases: boolean): string {
+    if (node.node.kind === "ReferenceNode" && !referenceAliases) {
+      return this.#compileReference(node.node as ReferenceNode);
+    }
+
+    return this.#compileAlias(node);
   }
 
   #compileAlias(node: AliasNode): string {

@@ -49,6 +49,7 @@ import {
 } from "#/parser/date-function-parser";
 import {
   type AvailableSelectExpression,
+  type CheckedSelectExpressionList,
   type FieldsSelection,
   type FieldsSelectionCheck,
   parseFieldsSelection,
@@ -85,7 +86,7 @@ import {
   parseSelectFunctionSelectArg,
   type SelectFunctionSelection,
   type SelectFunctionSelectionArg,
-  validateUniqueSelectFunctionAliases,
+  validateUniqueSelectionAliases,
 } from "#/parser/select-function-parser";
 import {
   parseSelectArg,
@@ -135,6 +136,7 @@ import {
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { QueryExecutor } from "#/query-executor";
+import { applyQueryResultAliases } from "#/query-result-mapper";
 import type {
   SalesforceObjectDataCategory,
   SalesforceObjectDataCategoryGroup,
@@ -385,13 +387,15 @@ export interface SelectQueryBuilder<
     selection: UnselectedOnly<O, AggregateSelectionFactory<DB, TB, Aggregate>>,
   ): AggregateSelectQueryBuilder<DB, TB, AggregateSelection<Aggregate>>;
 
-  select<SE extends string>(
-    selections: ReadonlyArray<
-      SE &
-        SelectExpression<DB, TB, SE> &
-        AvailableSelectExpression<DB, TB, O, SE>
-    >,
-  ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>, Mode>;
+  select<const Selections extends readonly string[]>(
+    selections: Selections &
+      CheckedSelectExpressionList<DB, TB, O, Selections>,
+  ): SelectQueryBuilder<
+    DB,
+    TB,
+    O & Selection<DB, TB, Selections[number]>,
+    Mode
+  >;
 
   select<SE extends string>(
     selection: SE &
@@ -543,7 +547,12 @@ class SelectQueryBuilderImpl<
       );
     }
 
-    return this.#props.queryExecutor.executeQuery(this.compile());
+    const compiled = this.compile();
+    const records = await this.#props.queryExecutor.executeQuery(compiled);
+    return applyQueryResultAliases<O>(
+      compiled.query,
+      records as unknown as readonly Record<string, unknown>[],
+    );
   }
 
   async executeAll(): Promise<readonly O[]> {
@@ -559,7 +568,12 @@ class SelectQueryBuilderImpl<
       );
     }
 
-    return this.#props.queryExecutor.executeAllQuery(this.compile());
+    const compiled = this.compile();
+    const records = await this.#props.queryExecutor.executeAllQuery(compiled);
+    return applyQueryResultAliases<O>(
+      compiled.query,
+      records as unknown as readonly Record<string, unknown>[],
+    );
   }
 
   apex(): ApexSelectQueryBuilder<DB, TB, O, Mode, "static"> {
@@ -859,13 +873,15 @@ class SelectQueryBuilderImpl<
   select<Aggregate extends AggregateSelectionArg>(
     selection: UnselectedOnly<O, AggregateSelectionFactory<DB, TB, Aggregate>>,
   ): AggregateSelectQueryBuilder<DB, TB, AggregateSelection<Aggregate>>;
-  select<SE extends string>(
-    selections: ReadonlyArray<
-      SE &
-        SelectExpression<DB, TB, SE> &
-        AvailableSelectExpression<DB, TB, O, SE>
-    >,
-  ): SelectQueryBuilder<DB, TB, O & Selection<DB, TB, SE>, Mode>;
+  select<const Selections extends readonly string[]>(
+    selections: Selections &
+      CheckedSelectExpressionList<DB, TB, O, Selections>,
+  ): SelectQueryBuilder<
+    DB,
+    TB,
+    O & Selection<DB, TB, Selections[number]>,
+    Mode
+  >;
   select<SE extends string>(
     selection: SE &
       SelectExpression<DB, TB, SE> &
@@ -881,9 +897,14 @@ class SelectQueryBuilderImpl<
     | CountQueryBuilder<DB, TB>
     | SelectQueryBuilder<DB, TB, unknown> {
     if (typeof selection !== "function") {
+      const selections = parseSelectArg(selection);
+      validateUniqueSelectionAliases(
+        this.#props.queryNode.selections ?? [],
+        selections,
+      );
       const queryNode = SelectQueryNode.cloneWithSelections(
         this.#props.queryNode,
-        parseSelectArg(selection),
+        selections,
       );
       validateTypeOfSelections(queryNode);
 
@@ -902,7 +923,7 @@ class SelectQueryBuilderImpl<
         expression as SelectFunctionSelectionArg,
       );
 
-      validateUniqueSelectFunctionAliases(
+      validateUniqueSelectionAliases(
         this.#props.queryNode.selections ?? [],
         selections,
       );
@@ -1157,7 +1178,9 @@ function assertNoTypeOfSelections(queryNode: SelectQueryNode): void {
 function assertNoSelectFunctionSelections(queryNode: SelectQueryNode): void {
   if (
     queryNode.selections?.some(
-      (selection) => selection.selection.kind === "AliasNode",
+      (selection) =>
+        selection.selection.kind === "AliasNode" &&
+        selection.selection.node.kind !== "ReferenceNode",
     )
   ) {
     throw new TypeError(

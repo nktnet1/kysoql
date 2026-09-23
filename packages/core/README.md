@@ -30,6 +30,24 @@ const query = db
 const compiled = query.compile();
 ```
 
+Direct field selections also accept Kysely-style `"field as alias"` syntax:
+
+```ts
+const aliased = db
+  .selectFrom("Account")
+  .select(["Id as id", "Owner.Name as ownerName"]);
+
+aliased.compile().soql;
+// SELECT Id, Owner.Name FROM Account
+
+const rows = await aliased.execute();
+// rows[0] is typed as { readonly id: string; readonly ownerName: string | null }
+```
+
+Salesforce only supports native field aliases for grouped queries. Ordinary
+record queries request the source fields, then Kysoql projects the requested
+aliases onto returned JavaScript records.
+
 Query builders expose Kysely-style `$call(...)` and `$if(...)` composition.
 `$call` passes the current specialised builder to a callback and returns the
 callback result. `$if` calls its callback only when the condition is true;

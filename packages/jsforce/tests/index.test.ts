@@ -1,4 +1,4 @@
-import type { CompiledQuery } from "@kysoql/core";
+import type { CompiledQuery, ReferenceNode } from "@kysoql/core";
 import type { Connection } from "jsforce";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 
@@ -10,6 +10,11 @@ import {
   type JsforceQueryResult,
 } from "#/index";
 
+const referenceNode = (name: string): ReferenceNode => ({
+  kind: "ReferenceNode",
+  name,
+});
+
 interface AccountRow {
   readonly Id: string;
   readonly Name: string | null;
@@ -19,6 +24,32 @@ const compiledQuery = {
   query: {} as CompiledQuery<AccountRow>["query"],
   soql: "SELECT Id, Name FROM Account",
 } satisfies CompiledQuery<AccountRow>;
+
+const compiledAliasQuery = {
+  query: {
+    kind: "SelectQueryNode",
+    from: { kind: "SObjectNode", name: "Account" },
+    selections: [
+      {
+        kind: "SelectionNode",
+        selection: {
+          kind: "AliasNode",
+          alias: "id",
+          node: referenceNode("Id"),
+        },
+      },
+      {
+        kind: "SelectionNode",
+        selection: {
+          kind: "AliasNode",
+          alias: "name",
+          node: referenceNode("Name"),
+        },
+      },
+    ],
+  },
+  soql: "SELECT Id, Name FROM Account",
+} satisfies CompiledQuery<{ readonly id: string; readonly name: string | null }>;
 
 const compiledCountQuery = {
   query: {} as CompiledQuery<number>["query"],
@@ -61,6 +92,28 @@ describe("createJsforceExecutor", () => {
     expect(query).toHaveBeenCalledOnce();
     expect(query).toHaveBeenCalledWith("SELECT Id, Name FROM Account");
     expect(queryMore).not.toHaveBeenCalled();
+  });
+
+  it("maps Kysely-style field aliases from JSforce records", async () => {
+    const query = vi.fn(
+      async (_soql: string): Promise<JsforceQueryResult> => ({
+        done: true,
+        records: [{ Id: "001000000000001", Name: "Acme" }],
+      }),
+    );
+    const queryMore = vi.fn(
+      async (_locator: string): Promise<JsforceQueryResult> => ({
+        done: true,
+        records: [],
+      }),
+    );
+
+    const executor = createJsforceExecutor({ query, queryMore });
+
+    await expect(executor.executeQuery(compiledAliasQuery)).resolves.toEqual([
+      { id: "001000000000001", name: "Acme" },
+    ]);
+    expect(query).toHaveBeenCalledWith("SELECT Id, Name FROM Account");
   });
 
   it("executes Salesforce QueryAll through JSforce scanAll and preserves pagination", async () => {

@@ -121,9 +121,10 @@ selection/filter/grouping callback, with a surface suited to that context.
 | Boolean filter composition | Callable `eb`, plus `eb.and`, `eb.or`, `eb.not`. |
 | Experimental | `eb.beta.formula`, WHERE only. |
 
-Only selected row-producing expressions use `.as(alias)`; ordering and HAVING
-callbacks use unaliased expressions. Read the corresponding guides for inputs,
-result nullability, context, and grouping-identity requirements.
+Selected functions and aggregates use `.as(alias)`. Plain selected fields use
+Kysely-style `"Field as alias"` strings; ordering and HAVING callbacks still use
+unaliased expressions. Read the corresponding guides for inputs, result
+nullability, context, and grouping-identity requirements.
 
 ## Top-level value helpers
 
@@ -136,10 +137,13 @@ construct [validated literals](/docs/framework/guides/literals).
 
 Core exports [schema helpers](/docs/core/reference/schema-types), builder and
 expression types, `CompiledQuery`, `QueryCompiler`, `QueryCompileContext`, and
-`QueryExecutor`. It also exposes operation-node **types** for inspection and
-integration; those type exports are not a supported collection of runtime
-node-factory imports. Prefer the builder to hand-authoring ASTs or depending on
-private `#/...` package paths.
+`QueryExecutor`. `applyQueryResultAliases(query, records)` is the low-level
+result projection helper used by transport adapters for Kysely-style field
+aliases; normal builder execution applies the same projection automatically. It
+also exposes operation-node **types** for inspection and integration; those type
+exports are not a supported collection of runtime node-factory imports. Prefer
+the builder to hand-authoring ASTs or depending on private `#/...` package
+paths.
 
 Transport and schema-generation APIs are documented with their packages:
 

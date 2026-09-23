@@ -459,6 +459,8 @@ describe("polymorphic TYPEOF selection", () => {
       );
       // @ts-expect-error The TYPEOF relationship cannot also be selected through the ordinary field list.
       typeOfQuery.select("What.Name");
+      // @ts-expect-error Aliasing does not bypass the TYPEOF relationship overlap rule.
+      typeOfQuery.select("What.Name as whatName");
 
       const functionQuery = base.select(({ fn }) =>
         fn.toLabel("Status__c").as("status"),
@@ -526,6 +528,11 @@ describe("polymorphic TYPEOF selection", () => {
     );
 
     expect(() => bypassSelectMode(typeOfQuery).select("What.Name")).toThrow(
+      "SOQL TYPEOF relationship What cannot also be referenced in the SELECT field list.",
+    );
+    expect(() =>
+      bypassSelectMode(typeOfQuery).select("What.Name as whatName" as never),
+    ).toThrow(
       "SOQL TYPEOF relationship What cannot also be referenced in the SELECT field list.",
     );
 

@@ -1,4 +1,8 @@
-import type { CompiledQuery, QueryExecutor } from "@kysoql/core";
+import {
+  applyQueryResultAliases,
+  type CompiledQuery,
+  type QueryExecutor,
+} from "@kysoql/core";
 import * as v from "valibot";
 
 const jsforceQueryResultSchema = v.object({
@@ -117,7 +121,7 @@ class JsforceQueryExecutor implements JsforceExecutor {
       records.push(...result.records);
     }
 
-    return records as unknown as readonly O[];
+    return applyQueryResultAliases<O>(compiledQuery.query, records);
   }
 
   async executeCountQuery(

@@ -203,6 +203,30 @@ describe("aggregate queries", () => {
     );
   });
 
+  it("aliases grouped fields with Kysely-style select syntax", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .groupBy(["Name", "Owner.Name"])
+      .select(["Name as name", "Owner.Name as ownerName"]);
+
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly name: string | null;
+      readonly ownerName: string | null;
+    }>();
+    expect(query.compile().soql).toBe(
+      "SELECT Name name, Owner.Name ownerName FROM Account GROUP BY Name, Owner.Name",
+    );
+
+    expect(() =>
+      new Kysoql<FixtureSchema>()
+        .selectFrom("Account")
+        .groupBy(["Name", "Owner.Name"])
+        .select(["Name as Owner", "Owner.Name"] as never),
+    ).toThrow(
+      "SOQL aggregate selection alias Owner conflicts with a selected output property.",
+    );
+  });
+
   it("sets, replaces, and clears OFFSET on grouped queries immutably", () => {
     const baseQuery = new Kysoql<FixtureSchema>()
       .selectFrom("Account")

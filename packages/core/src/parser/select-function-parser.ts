@@ -91,30 +91,57 @@ function parseAliasedSelectFunctionNode(expression: unknown): AliasNode {
   return node as AliasNode;
 }
 
-export function validateUniqueSelectFunctionAliases(
+function unaliasedSelectionOutputProperty(
+  selection: SelectionNode,
+): string | undefined {
+  const node = selection.selection;
+
+  if (node.kind === "ReferenceNode") {
+    return node.name.split(".")[0];
+  }
+  if (node.kind === "RelationshipSubqueryNode") {
+    return node.relationship.name;
+  }
+  if (node.kind === "TypeOfNode") {
+    return node.reference.name.split(".")[0];
+  }
+
+  return undefined;
+}
+
+export function validateUniqueSelectionAliases(
   existingSelections: readonly SelectionNode[],
   selections: readonly SelectionNode[],
 ): void {
   const aliases = new Set<string>();
+  const properties = new Set<string>();
 
-  for (const selection of existingSelections) {
-    if (selection.selection.kind === "AliasNode") {
-      aliases.add(selection.selection.alias);
-    }
-  }
+  for (const selection of [...existingSelections, ...selections]) {
+    const node = selection.selection;
 
-  for (const selection of selections) {
-    if (selection.selection.kind !== "AliasNode") {
+    if (node.kind === "AliasNode") {
+      if (aliases.has(node.alias)) {
+        throw new TypeError(`Duplicate SOQL selection alias: ${node.alias}.`);
+      }
+      if (properties.has(node.alias)) {
+        throw new TypeError(
+          `SOQL selection alias ${node.alias} conflicts with a selected output property.`,
+        );
+      }
+
+      aliases.add(node.alias);
       continue;
     }
 
-    if (aliases.has(selection.selection.alias)) {
-      throw new TypeError(
-        `Duplicate SOQL selection alias: ${selection.selection.alias}.`,
-      );
+    const property = unaliasedSelectionOutputProperty(selection);
+    if (property !== undefined) {
+      if (aliases.has(property)) {
+        throw new TypeError(
+          `SOQL selection alias ${property} conflicts with a selected output property.`,
+        );
+      }
+      properties.add(property);
     }
-
-    aliases.add(selection.selection.alias);
   }
 }
 

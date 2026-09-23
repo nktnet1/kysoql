@@ -56,6 +56,7 @@ import {
   type DateFunctionNode,
   type DateGroupableFieldReference,
   DefaultQueryCompiler,
+  applyQueryResultAliases,
   type DistanceComparisonOperator,
   type DistanceDestinationNode,
   type DistanceFunctionBuilder,
@@ -601,6 +602,7 @@ describe("@kysoql/core public API", () => {
     expect(Kysoql).toBeTypeOf("function");
     expect(QueryCreator).toBeTypeOf("function");
     expect(DefaultQueryCompiler).toBeTypeOf("function");
+    expect(applyQueryResultAliases).toBeTypeOf("function");
     expect(apexBind).toBeTypeOf("function");
     expect(apexQueryField).toBeTypeOf("function");
     expect(soqlCurrency).toBeTypeOf("function");

@@ -2,6 +2,6 @@
   "title": "Core",
   "description": "Type-safe SOQL query building and compilation with @kysoql/core.",
   "root": true,
-  "icon": "Braces",
+  "icon": "Cpu",
   "pages": ["index", "advanced", "reference", "apex"]
 }

@@ -265,6 +265,82 @@ describe("SelectQueryBuilder", () => {
     }>();
   });
 
+  it("supports Kysely-style aliases for selected fields", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const query = db.selectFrom("Account").select([
+      "Id as id",
+      "Name as name",
+      "Owner.Quota__c as ownerQuota",
+    ]);
+
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly id: string;
+      readonly name: string | null;
+      readonly ownerQuota: number | null;
+    }>();
+    expect(query.toOperationNode().selections).toEqual([
+      {
+        kind: "SelectionNode",
+        selection: {
+          kind: "AliasNode",
+          alias: "id",
+          node: { kind: "ReferenceNode", name: "Id" },
+        },
+      },
+      {
+        kind: "SelectionNode",
+        selection: {
+          kind: "AliasNode",
+          alias: "name",
+          node: { kind: "ReferenceNode", name: "Name" },
+        },
+      },
+      {
+        kind: "SelectionNode",
+        selection: {
+          kind: "AliasNode",
+          alias: "ownerQuota",
+          node: { kind: "ReferenceNode", name: "Owner.Quota__c" },
+        },
+      },
+    ]);
+    expect(query.compile().soql).toBe(
+      "SELECT Id, Name, Owner.Quota__c FROM Account",
+    );
+
+    void (() => {
+      // @ts-expect-error The reference before `as` must be a valid field reference.
+      db.selectFrom("Account").select("MissingField as missing");
+
+      const selected = db.selectFrom("Account").select("Id as value");
+      // @ts-expect-error A selected alias cannot overwrite an existing output property.
+      selected.select("Name as value");
+    });
+
+    expect(() =>
+      db.selectFrom("Account").select("Id as from" as never),
+    ).toThrow("SOQL selection aliases cannot be reserved keywords.");
+    expect(() =>
+      db
+        .selectFrom("Account")
+        .select(["Id as duplicate", "Name as duplicate"] as never),
+    ).toThrow("Duplicate SOQL selection alias: duplicate.");
+    expect(() =>
+      db
+        .selectFrom("Account")
+        .select(["Id as Name", "Name"] as never),
+    ).toThrow(
+      "SOQL selection alias Name conflicts with a selected output property.",
+    );
+    expect(() =>
+      db
+        .selectFrom("Account")
+        .select(["Id as Owner", "Owner.Quota__c"] as never),
+    ).toThrow(
+      "SOQL selection alias Owner conflicts with a selected output property.",
+    );
+  });
+
   it("selects typed standard and custom field groups immutably", () => {
     const baseQuery = new Kysoql<FixtureSchema>().selectFrom("Account");
     const standardQuery = baseQuery.selectFields("standard");

@@ -33,6 +33,35 @@ method and no arbitrary string-expression selection.
 Prefer explicit fields for predictable payload size, data minimisation, and
 resilience to newly added org fields.
 
+## Field aliases
+
+Use Kysely-style `"field as alias"` syntax when you want the result property to
+use a different name:
+
+```ts
+import { db } from "./db";
+
+const query = db
+  .selectFrom("Account")
+  .select(["Id as id", "Name as name", "Owner.Name as ownerName"]);
+
+console.log(query.compile().soql);
+// SELECT Id, Name, Owner.Name FROM Account
+
+const accounts = await query.execute();
+for (const account of accounts) {
+  console.log(account.id, account.name, account.ownerName);
+}
+```
+
+The reference before `as` is still schema checked. Salesforce does not support
+field aliases on ordinary record queries, so Kysoql requests the source fields
+and reshapes the returned JavaScript records. Aliased relationship paths become
+flat result properties, while unaliased relationship paths keep the nested
+relationship shape. Grouped queries use Salesforce's native field aliases.
+Alias names use Salesforce's identifier rules and cannot be reserved SOQL
+keywords.
+
 ## FIELDS selectors
 
 These methods require a **complete field schema**. An object generated with a
@@ -86,6 +115,7 @@ explicit field must come first if you still need that selector.
 | Selection | Inferred shape |
 | --- | --- |
 | Direct field | Value from Describe, with `null` when nullable. |
+| Field alias | A flat property named by the `as` suffix. |
 | Date, datetime, or time field | String, not JavaScript `Date`. |
 | Location field | `{ latitude: number; longitude: number }`, with applicable nullability. |
 | Parent path | Nested related object, with applicable relationship nullability. |

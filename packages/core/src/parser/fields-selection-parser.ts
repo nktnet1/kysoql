@@ -19,6 +19,7 @@ import type {
   FieldName,
   FieldsOf,
 } from "#/parser/reference-parser";
+import type { SelectExpression } from "#/parser/select-parser";
 import type { TraversesTypeOfRelationship } from "#/parser/type-of-parser";
 import type {
   SalesforceFieldCustom,
@@ -81,12 +82,30 @@ export type AvailableSelectExpression<
   TB extends keyof DB,
   O,
   Selection extends string,
-> =
-  Extract<Selection, FieldName<DB, TB> & keyof O> extends never
+> = Selection extends `${infer Reference} as ${infer Alias}`
+  ? Alias extends keyof O
+    ? never
+    : TraversesTypeOfRelationship<O, Reference> extends true
+      ? never
+      : unknown
+  : Extract<Selection, FieldName<DB, TB> & keyof O> extends never
     ? TraversesTypeOfRelationship<O, Selection> extends true
       ? never
       : unknown
     : never;
+
+export type CheckedSelectExpressionList<
+  DB,
+  TB extends keyof DB,
+  O,
+  Selections extends readonly string[],
+> = {
+  [Index in keyof Selections]: Selections[Index] extends string
+    ? Selections[Index] &
+        SelectExpression<DB, TB, Selections[Index]> &
+        AvailableSelectExpression<DB, TB, O, Selections[Index]>
+    : Selections[Index];
+};
 
 export function parseFieldsSelection(selector: FieldsSelector): SelectionNode {
   return SelectionNode.create(FieldsFunctionNode.create(selector));
@@ -123,11 +142,18 @@ export function validateFieldsSelections(
     new Set(selectors).size !== selectors.length ||
     (selectors.includes("all") &&
       (selectors.length > 1 ||
-        selections.some(
-          (selection) =>
-            selection.selection.kind === "ReferenceNode" &&
-            !selection.selection.name.includes("."),
-        )))
+        selections.some((selection) => {
+          const selected = selection.selection;
+          const reference =
+            selected.kind === "ReferenceNode"
+              ? selected
+              : selected.kind === "AliasNode" &&
+                  selected.node.kind === "ReferenceNode"
+                ? (selected.node as ReferenceNode)
+                : undefined;
+
+          return reference !== undefined && !reference.name.includes(".");
+        })))
   ) {
     throw new TypeError(DUPLICATE_FIELDS_ERROR);
   }

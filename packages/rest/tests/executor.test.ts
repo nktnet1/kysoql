@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import type { CompiledQuery } from "@kysoql/core";
+import type { CompiledQuery, ReferenceNode } from "@kysoql/core";
 import { describe, it } from "vitest";
 
 import {
@@ -11,6 +11,11 @@ import {
 import { compiled, locator, mockFetch, origin, page } from "./helpers.js";
 
 const options = { instanceUrl: origin, accessToken: "token" };
+
+const referenceNode = (name: string): ReferenceNode => ({
+  kind: "ReferenceNode",
+  name,
+});
 
 const queryLocator = (name: string): string =>
   `/services/data/v65.0/query/${name}`;
@@ -29,6 +34,57 @@ const limitedQuery = (
     },
   };
 };
+
+const aliasedRelationshipQuery = (): CompiledQuery<{
+  readonly id: string;
+  readonly ownerName: string | null;
+  readonly Contacts: {
+    readonly done: boolean;
+    readonly totalSize: number;
+    readonly records: readonly { readonly id: string }[];
+  };
+}> => ({
+  soql: "SELECT Id, Owner.Name, (SELECT Id FROM Contacts) FROM Account",
+  query: {
+    kind: "SelectQueryNode",
+    from: { kind: "SObjectNode", name: "Account" },
+    selections: [
+      {
+        kind: "SelectionNode",
+        selection: {
+          kind: "AliasNode",
+          alias: "id",
+          node: referenceNode("Id"),
+        },
+      },
+      {
+        kind: "SelectionNode",
+        selection: {
+          kind: "AliasNode",
+          alias: "ownerName",
+          node: referenceNode("Owner.Name"),
+        },
+      },
+      {
+        kind: "SelectionNode",
+        selection: {
+          kind: "RelationshipSubqueryNode",
+          relationship: { kind: "ReferenceNode", name: "Contacts" },
+          selections: [
+            {
+              kind: "SelectionNode",
+              selection: {
+                kind: "AliasNode",
+                alias: "id",
+                node: referenceNode("Id"),
+              },
+            },
+          ],
+        },
+      },
+    ],
+  },
+});
 
 const deeplyNestedQuery = (): CompiledQuery<Record<string, unknown>> =>
   ({
@@ -131,6 +187,42 @@ describe("native query executor", () => {
     assert.equal(http.calls[0]?.url.pathname, "/services/data/v65.0/query");
     assert.equal(http.calls[1]?.url.pathname, locator);
     assert.equal(http.calls[1]?.url.search, "");
+  });
+
+  it("maps Kysely-style field aliases for root and relationship records", async () => {
+    const http = mockFetch(
+      Response.json(
+        page([
+          {
+            Id: "001",
+            Owner: { Name: "Ada" },
+            Contacts: {
+              done: true,
+              totalSize: 1,
+              records: [{ Id: "003" }],
+            },
+          },
+        ]),
+      ),
+    );
+    const executor = createRestExecutor({ ...options, fetch: http.fetch });
+
+    const [record] = await executor.executeQuery(aliasedRelationshipQuery());
+    assert.equal(record?.id, "001");
+    assert.equal(record?.ownerName, "Ada");
+    assert.equal(record?.Contacts.records[0]?.id, "003");
+    assert.equal(record === undefined ? true : "Id" in record, false);
+    assert.equal(record === undefined ? true : "Owner" in record, false);
+    assert.equal(
+      record?.Contacts.records[0] === undefined
+        ? true
+        : "Id" in record.Contacts.records[0],
+      false,
+    );
+    assert.equal(
+      http.calls[0]?.url.searchParams.get("q"),
+      "SELECT Id, Owner.Name, (SELECT Id FROM Contacts) FROM Account",
+    );
   });
 
   it("stops following root continuations once the compiled LIMIT is satisfied", async () => {

@@ -117,6 +117,7 @@ const metadataFiles = allFiles.filter(
   (file) => path.basename(file) === "meta.json",
 );
 const rootTabs = ["framework", "core", "rest", "auth", "codegen", "jsforce"];
+const packageRoots = ["core", "rest", "auth", "codegen", "jsforce"];
 try {
   const rootMeta = JSON.parse(
     await readFile(path.join(contentRoot, "meta.json"), "utf8"),
@@ -134,9 +135,24 @@ try {
       true,
       `${root}/meta.json must set root: true so the root toggle stays available`,
     );
+    if (root === "core") {
+      assert.equal(rootMetaData.icon, "Cpu", "core must use the Cpu icon");
+    }
   }
 } catch (error) {
   complain("meta.json", error instanceof Error ? error.message : String(error));
+}
+for (const page of pages) {
+  const [root, ...rest] = page.relative.split("/");
+  if (!packageRoots.includes(root) || rest.length !== 1) {
+    continue;
+  }
+
+  const frontmatter = /^---\n([\s\S]*?)\n---\n/.exec(page.text)?.[1] ?? "";
+  const icon = /^icon: "([^"]+)"$/m.exec(frontmatter)?.[1];
+  if (!icon) {
+    complain(page.relative, "package-level pages must declare an icon");
+  }
 }
 const referenced = new Set<string>();
 for (const file of metadataFiles) {

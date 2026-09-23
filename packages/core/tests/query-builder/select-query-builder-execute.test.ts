@@ -91,6 +91,28 @@ describe("SelectQueryBuilder.execute", () => {
     }>();
   });
 
+  it("maps Kysely-style field aliases after a custom executor returns Salesforce fields", async () => {
+    const executor = new RecordingExecutor();
+    const query = new Kysoql<FixtureSchema>({ executor })
+      .selectFrom("Account")
+      .select(["Id as id", "Id as accountId", "Name as name"]);
+
+    await expect(query.execute()).resolves.toEqual([
+      {
+        accountId: "001000000000001",
+        id: "001000000000001",
+        name: "Acme",
+      },
+    ]);
+    expect(query.compile().soql).toBe("SELECT Id, Name FROM Account");
+
+    expectTypeOf<Simplify<ExecutedRow<typeof query>>>().toEqualTypeOf<{
+      readonly accountId: string;
+      readonly id: string;
+      readonly name: string | null;
+    }>();
+  });
+
   it("keeps compile-only builders usable while rejecting execution without an executor", async () => {
     const query = new Kysoql<FixtureSchema>()
       .selectFrom("Account")

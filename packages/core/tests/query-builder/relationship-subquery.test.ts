@@ -282,6 +282,26 @@ type OutputOf<Query> =
     : never;
 
 describe("parent-to-child relationship subqueries", () => {
+  it("supports Kysely-style field aliases inside child subqueries", () => {
+    const query = new Kysoql<RelationshipSubquerySchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .selectSubquery("Contacts", (contacts) =>
+        contacts.select(["Id as id", "CreatedBy.Alias as createdByAlias"]),
+      );
+
+    expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
+      readonly Id: string;
+      readonly Contacts: SalesforceQueryResult<{
+        readonly id: string;
+        readonly createdByAlias: string | null;
+      }>;
+    }>();
+    expect(query.compile().soql).toBe(
+      "SELECT Id, (SELECT Id, CreatedBy.Alias FROM Contacts) FROM Account",
+    );
+  });
+
   it("builds an immutable typed child relationship subquery", () => {
     const query = new Kysoql<RelationshipSubquerySchema>()
       .selectFrom("Account")

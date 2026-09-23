@@ -48,6 +48,7 @@ export interface SalesforceSchema {
   Account: SalesforceObject<{
     Id: Field<string, "id">;
     Name: Field<string, "string">;
+    OwnerId: Field<string, "reference", false, "User", "Owner">;
     BillingCity: Field<string, "string", true>;
     AnnualRevenue: Field<number, "currency", true>;
     Phone: Field<string, "phone", true>;
@@ -64,7 +65,9 @@ export interface SalesforceSchema {
       aggregatable: false;
       custom: true;
     }>;
-  }, Empty, {
+  }, {
+    Owner: SalesforceParentRelationship<"User", "OwnerId", false>;
+  }, {
     Contacts: SalesforceChildRelationship<"Contact", "AccountId">;
     Opportunities: SalesforceChildRelationship<"Opportunity", "AccountId">;
   }, "mine" | "everything", Empty, true>;
@@ -100,6 +103,7 @@ export interface SalesforceSchema {
   }, { Account: SalesforceParentRelationship<"Account", "AccountId", true> }>;
   User: SalesforceObject<{
     Id: Field<string, "id">;
+    Name: Field<string, "string">;
     Alias: Field<string, "string">;
   }>;
   Event: SalesforceObject<{

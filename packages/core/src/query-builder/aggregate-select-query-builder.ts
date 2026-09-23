@@ -80,6 +80,7 @@ import {
   parseSelectArg,
   type SelectExpression,
   type Selection,
+  type SelectionReference,
 } from "#/parser/select-parser";
 import {
   type Data360AggregateSetOptionsFor,
@@ -220,7 +221,21 @@ type GroupedSelectExpression<
   TB extends keyof DB,
   GroupedBy extends string,
   SE extends string,
-> = SE extends GroupedBy ? SelectExpression<DB, TB, SE> : never;
+> = SelectionReference<SE> extends GroupedBy
+  ? SelectExpression<DB, TB, SE>
+  : never;
+
+type GroupedSelectExpressionList<
+  DB,
+  TB extends keyof DB,
+  GroupedBy extends string,
+  Selections extends readonly string[],
+> = {
+  [Index in keyof Selections]: Selections[Index] extends string
+    ? Selections[Index] &
+        GroupedSelectExpression<DB, TB, GroupedBy, Selections[Index]>
+    : Selections[Index];
+};
 
 type GroupedSortableFieldName<
   DB,
@@ -754,14 +769,13 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
-  select<SE extends string>(
-    selections: ReadonlyArray<
-      SE & GroupedSelectExpression<DB, TB, GroupedBy, SE>
-    >,
+  select<const Selections extends readonly string[]>(
+    selections: Selections &
+      GroupedSelectExpressionList<DB, TB, GroupedBy, Selections>,
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
-    O & GroupedSelection<DB, TB, SE, GroupMode>,
+    O & GroupedSelection<DB, TB, Selections[number], GroupMode>,
     GroupedBy,
     GroupMode,
     AdvancedFieldCount
@@ -1754,14 +1768,13 @@ class AggregateSelectQueryBuilderImpl<
     GroupMode,
     AdvancedFieldCount
   >;
-  select<SE extends string>(
-    selections: ReadonlyArray<
-      SE & GroupedSelectExpression<DB, TB, GroupedBy, SE>
-    >,
+  select<const Selections extends readonly string[]>(
+    selections: Selections &
+      GroupedSelectExpressionList<DB, TB, GroupedBy, Selections>,
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
-    O & GroupedSelection<DB, TB, SE, GroupMode>,
+    O & GroupedSelection<DB, TB, Selections[number], GroupMode>,
     GroupedBy,
     GroupMode,
     AdvancedFieldCount
@@ -1797,6 +1810,8 @@ class AggregateSelectQueryBuilderImpl<
   > {
     if (typeof selection !== "function") {
       validateGroupedSelections(this.#props.queryNode, selection);
+      const selections = parseSelectArg(selection);
+      validateUniqueAliases(this.#props.queryNode, selections);
 
       return new AggregateSelectQueryBuilderImpl<
         DB,
@@ -1809,7 +1824,7 @@ class AggregateSelectQueryBuilderImpl<
         ...this.#props,
         queryNode: SelectQueryNode.cloneWithSelections(
           this.#props.queryNode,
-          parseSelectArg(selection),
+          selections,
         ),
       });
     }
@@ -1962,25 +1977,39 @@ function validateUniqueAliases(
   selections: readonly SelectionNode[],
 ): void {
   const aliases = new Set<string>();
+  const properties = new Set<string>();
 
-  for (const selection of queryNode.selections ?? []) {
-    if (selection.selection.kind === "AliasNode") {
-      aliases.add(selection.selection.alias);
-    }
-  }
+  for (const selection of [...(queryNode.selections ?? []), ...selections]) {
+    const node = selection.selection;
 
-  for (const selection of selections) {
-    if (selection.selection.kind !== "AliasNode") {
+    if (node.kind === "AliasNode") {
+      if (aliases.has(node.alias)) {
+        throw new TypeError(
+          `Duplicate SOQL aggregate selection alias: ${node.alias}.`,
+        );
+      }
+      if (properties.has(node.alias)) {
+        throw new TypeError(
+          `SOQL aggregate selection alias ${node.alias} conflicts with a selected output property.`,
+        );
+      }
+
+      aliases.add(node.alias);
       continue;
     }
 
-    if (aliases.has(selection.selection.alias)) {
-      throw new TypeError(
-        `Duplicate SOQL aggregate selection alias: ${selection.selection.alias}.`,
-      );
+    if (node.kind === "ReferenceNode") {
+      const property = node.name.split(".", 1)[0];
+      if (property === undefined) {
+        continue;
+      }
+      if (aliases.has(property)) {
+        throw new TypeError(
+          `SOQL aggregate selection alias ${property} conflicts with a selected output property.`,
+        );
+      }
+      properties.add(property);
     }
-
-    aliases.add(selection.selection.alias);
   }
 }
 
@@ -2025,7 +2054,10 @@ function validateGroupedSelections(
   const fields = Array.isArray(selection) ? selection : [selection];
 
   for (const field of fields) {
-    assertGroupedField(queryNode, field, "SELECT");
+    const reference = field.includes(" as ")
+      ? field.slice(0, field.indexOf(" as "))
+      : field;
+    assertGroupedField(queryNode, reference, "SELECT");
   }
 }
 

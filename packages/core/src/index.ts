@@ -215,6 +215,7 @@ export type {
 } from "#/query-compiler/query-compiler";
 export { QueryCreator, type QueryCreatorConfig } from "#/query-creator";
 export type { QueryExecutor } from "#/query-executor";
+export { applyQueryResultAliases } from "#/query-result-mapper";
 export type {
   SalesforceChildRelationship,
   SalesforceField,

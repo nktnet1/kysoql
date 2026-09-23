@@ -55,9 +55,9 @@ include `null`; optional selections added by `$if` include `undefined` when
 not selected. Parent paths infer nested objects, and nullable lookups can make
 the parent object `null`.
 
-Aliases on functions are result property names, not raw SOQL fragments. An
-aggregate uses `.as("totalAmount")`; ordinary selected fields are not renamed
-using SQL-style `"Name as name"` strings.
+Selected fields can use Kysely-style aliases such as `"Name as name"`, which
+infer a flat `name` property. Selected functions and aggregates continue to use
+`.as("totalAmount")`.
 
 The bundled executors validate the query response envelope, not every selected
 field's runtime type. Types are not a runtime data-validation or authorisation

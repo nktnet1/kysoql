@@ -18,7 +18,7 @@ are adapter APIs, not new core builder methods. Interactive OAuth orchestration,
 JWT signing, secret storage, and distributed refresh coordination remain outside
 this package's scope.
 
-Normal fields cannot be renamed using SQL-style strings. There are no
+Selected fields can use Kysely-style `"Field as alias"` strings. There are no
 `executeTakeFirst`, `clearHaving`, or universal mutable query methods. The
 [API reference](/docs/core/reference/api) documents the actual supported surfaces.
 

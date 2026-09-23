@@ -1,3 +1,4 @@
+import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { SelectQueryNode } from "#/operation-node/select-query-node";
 import type { SelectionNode } from "#/operation-node/selection-node";
 import type {
@@ -168,9 +169,10 @@ const TYPEOF_FUNCTION_COMPATIBILITY_ERROR =
 const selectionContainsFunction = (selection: SelectionNode): boolean => {
   switch (selection.selection.kind) {
     case "AggregateFunctionNode":
-    case "AliasNode":
     case "DateFunctionNode":
       return true;
+    case "AliasNode":
+      return selection.selection.node.kind !== "ReferenceNode";
     case "RelationshipSubqueryNode":
       return (selection.selection.selections ?? []).some(
         selectionContainsFunction,
@@ -210,11 +212,18 @@ export function validateTypeOfSelections(queryNode: SelectQueryNode): void {
 
     const prefix = `${typeOf.reference.name}.`;
     if (
-      selections.some(
-        (selection) =>
-          selection.selection.kind === "ReferenceNode" &&
-          selection.selection.name.startsWith(prefix),
-      )
+      selections.some((selection) => {
+        const selected = selection.selection;
+        const reference =
+          selected.kind === "ReferenceNode"
+            ? selected
+            : selected.kind === "AliasNode" &&
+                selected.node.kind === "ReferenceNode"
+              ? (selected.node as ReferenceNode)
+              : undefined;
+
+        return reference?.name.startsWith(prefix) === true;
+      })
     ) {
       throw new TypeError(
         `SOQL TYPEOF relationship ${typeOf.reference.name} cannot also be referenced in the SELECT field list.`,

@@ -1,8 +1,9 @@
-import type {
-  CompiledQuery,
-  QueryExecutor,
-  RelationshipSubqueryNode,
-  SelectQueryNode,
+import {
+  applyQueryResultAliases,
+  type CompiledQuery,
+  type QueryExecutor,
+  type RelationshipSubqueryNode,
+  type SelectQueryNode,
 } from "@kysoql/core";
 
 import {
@@ -295,7 +296,7 @@ class NativeRestExecutor implements RestExecutor {
       yield {
         done,
         totalSize: page.totalSize,
-        records: hydrated as unknown as readonly O[],
+        records: applyQueryResultAliases<O>(query.query, hydrated),
       };
       if (done) {
         return;

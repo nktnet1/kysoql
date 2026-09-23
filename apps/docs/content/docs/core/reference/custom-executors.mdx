@@ -26,7 +26,10 @@ from QueryAll to ordinary execution or reinterpret row arrays as counts.
 A transport implementation is responsible for authentication, sending SOQL,
 validating untrusted responses, pagination policy, errors, and returning the
 contract's result shape. The generic `O` is erased at runtime. Merely asserting
-an arbitrary JSON response as `O[]` does not validate it.
+an arbitrary JSON response as `O[]` does not validate it. Root builder
+`.execute()` calls apply Kysoql's field-alias projection after the executor
+returns; direct adapter-style executor APIs can use `applyQueryResultAliases`
+when they expose compiled-query execution themselves.
 
 ## Wrap an existing executor without inventing capabilities
 

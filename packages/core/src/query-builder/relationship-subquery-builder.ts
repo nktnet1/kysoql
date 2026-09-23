@@ -38,6 +38,7 @@ import {
 } from "#/parser/binary-operation-parser";
 import {
   type AvailableSelectExpression,
+  type CheckedSelectExpressionList,
   type FieldsSelection,
   type FieldsSelectionCheck,
   parseFieldsSelection,
@@ -59,7 +60,7 @@ import {
   parseSelectFunctionSelectArg,
   type SelectFunctionSelection,
   type SelectFunctionSelectionArg,
-  validateUniqueSelectFunctionAliases,
+  validateUniqueSelectionAliases,
 } from "#/parser/select-function-parser";
 import {
   parseSelectArg,
@@ -293,16 +294,13 @@ export interface RelationshipSubqueryBuilder<
     rhs: RHS,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
 
-  select<SE extends string>(
-    selections: ReadonlyArray<
-      SE &
-        SelectExpression<DB, TB, SE> &
-        AvailableSelectExpression<DB, TB, O, SE>
-    >,
+  select<const Selections extends readonly string[]>(
+    selections: Selections &
+      CheckedSelectExpressionList<DB, TB, O, Selections>,
   ): RelationshipSubqueryBuilder<
     DB,
     TB,
-    O & Selection<DB, TB, SE>,
+    O & Selection<DB, TB, Selections[number]>,
     Depth,
     FunctionMode,
     ApexMode
@@ -668,16 +666,13 @@ class RelationshipSubqueryBuilderImpl<
     "present",
     ApexMode
   >;
-  select<SE extends string>(
-    selections: ReadonlyArray<
-      SE &
-        SelectExpression<DB, TB, SE> &
-        AvailableSelectExpression<DB, TB, O, SE>
-    >,
+  select<const Selections extends readonly string[]>(
+    selections: Selections &
+      CheckedSelectExpressionList<DB, TB, O, Selections>,
   ): RelationshipSubqueryBuilder<
     DB,
     TB,
-    O & Selection<DB, TB, SE>,
+    O & Selection<DB, TB, Selections[number]>,
     Depth,
     FunctionMode,
     ApexMode
@@ -714,7 +709,7 @@ class RelationshipSubqueryBuilderImpl<
           )
         : parseSelectArg(selection);
 
-    validateUniqueSelectFunctionAliases(
+    validateUniqueSelectionAliases(
       this.#props.queryNode.selections ?? [],
       selections,
     );

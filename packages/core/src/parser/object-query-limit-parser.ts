@@ -282,11 +282,20 @@ const validateUserRecordAccessSelections = (
   whereShape: UserRecordAccessWhereShape,
 ): readonly string[] => {
   const selectedFields = query.selections?.map((selection) => {
-    if (selection.selection.kind !== "ReferenceNode") {
+    const selected = selection.selection;
+    const reference =
+      selected.kind === "ReferenceNode"
+        ? selected
+        : selected.kind === "AliasNode" &&
+            selected.node.kind === "ReferenceNode"
+          ? (selected.node as ReferenceNode)
+          : undefined;
+
+    if (!reference) {
       throw new TypeError(USER_RECORD_ACCESS_SELECTION_ERROR);
     }
 
-    return selection.selection.name.toLowerCase();
+    return reference.name.toLowerCase();
   });
 
   if (
