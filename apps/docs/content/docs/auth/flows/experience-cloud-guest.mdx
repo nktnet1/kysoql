@@ -8,24 +8,22 @@ Experience Cloud guest authorization is a variation of Authorization Code and
 Credentials. Salesforce uses UVID context during the authorization request and
 again during the authorization-code exchange.
 
-Salesforce references:
+<SalesforceReference title="Headless Guest Flow for Private Clients" href="https://help.salesforce.com/s/articleView?id=sf.remoteaccess_headless_guest_private_client.htm&language=en_US&type=5" />
 
-- [Headless Guest Flow for Private Clients](https://help.salesforce.com/s/articleView?id=sf.remoteaccess_headless_guest_private_client.htm&language=en_US&type=5)
-- [Headless Guest Flow for Public Clients](https://help.salesforce.com/s/articleView?id=sf.remoteaccess_headless_guest_public_clients.htm&language=en_US&type=5)
+<SalesforceReference title="Headless Guest Flow for Public Clients" href="https://help.salesforce.com/s/articleView?id=sf.remoteaccess_headless_guest_public_clients.htm&language=en_US&type=5" />
 
 ## Build the guest authorization request
 
 ```ts
-import {
-  createHeadlessGuestAuthorizationRequest,
-  generatePkcePair,
-} from "@kysoql/auth";
+import { SalesforceAuth } from "@kysoql/auth";
 
 export async function buildGuestAuthorization(uvid: string) {
-  const pkce = await generatePkcePair();
-  const request = createHeadlessGuestAuthorizationRequest({
-    siteUrl: "https://customers.example.my.site.com/customers",
+  const auth = new SalesforceAuth({
+    loginUrl: "https://customers.example.my.site.com/customers",
     clientId: "external-client-app-id",
+  });
+  const pkce = await auth.generatePkcePair();
+  const request = auth.guestAuthorization({
     redirectUri: "https://app.example.com/oauth/callback",
     uvidHint: uvid,
     scope: ["openid", "api"],
@@ -46,12 +44,15 @@ The default places the prefixed value in `Uvid-Hint`. Set
 ## Exchange the guest code
 
 ```ts
-import { exchangeAuthorizationCode } from "@kysoql/auth";
+import { SalesforceAuth } from "@kysoql/auth";
 
 export function exchangeGuestCode(code: string, verifier: string, uvid: string) {
-  return exchangeAuthorizationCode({
+  const auth = new SalesforceAuth({
     loginUrl: "https://customers.example.my.site.com/customers",
     clientId: "external-client-app-id",
+  });
+
+  return auth.exchangeAuthorizationCode({
     code,
     redirectUri: "https://app.example.com/oauth/callback",
     codeVerifier: verifier,
@@ -65,4 +66,4 @@ The token exchange uses the raw UVID or UVID-bearing token, without the
 `UVID`/`JWT` authorization-request prefix.
 
 For named-user and discovered-user login, see
-[Experience Cloud Code and Credentials](/docs/auth/experience-cloud-code-credentials).
+[Experience Cloud Code and Credentials](/docs/auth/flows/experience-cloud-code-credentials).

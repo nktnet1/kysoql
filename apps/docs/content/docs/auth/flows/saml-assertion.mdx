@@ -8,21 +8,22 @@ Salesforce also exposes a SAML assertion flow for API access that is distinct
 from the OAuth 2.0 SAML bearer grant. It can be used by orgs that already
 federate to Salesforce with SAML 2.0.
 
-Salesforce reference: [SAML Assertion Flow for Accessing the API](https://help.salesforce.com/s/articleView?id=sf.remoteaccess_oauth_web_sso_flow.htm&language=en_US&type=5).
+<SalesforceReference title="SAML Assertion Flow for Accessing the API" href="https://help.salesforce.com/s/articleView?id=sf.remoteaccess_oauth_web_sso_flow.htm&language=en_US&type=5" />
 
 ## Exchange the assertion
 
 ```ts
-import { authenticateSamlAssertion } from "@kysoql/auth";
+import { SalesforceAuth } from "@kysoql/auth";
 
 export function authenticateWithSamlAssertion(
   loginUrl: string,
   samlAssertion: string,
 ) {
-  return authenticateSamlAssertion({
+  const auth = new SalesforceAuth({
     loginUrl,
-    assertion: samlAssertion,
+    clientId: "external-client-app-id",
   });
+  return auth.samlAssertion({ assertion: samlAssertion });
 }
 ```
 

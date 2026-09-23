@@ -9,17 +9,20 @@ interactive browser login, such as constrained-input devices and some CLI tools.
 The user authorizes the application in a separate browser while the client polls
 for completion.
 
-Salesforce reference: [OAuth 2.0 Device Flow for IoT Integration](https://help.salesforce.com/s/articleView?id=xcloud.remoteaccess_oauth_device_flow_ca.htm&language=en_US&type=5).
+<SalesforceReference title="OAuth 2.0 Device Flow for IoT Integration" href="https://help.salesforce.com/s/articleView?id=xcloud.remoteaccess_oauth_device_flow_ca.htm&language=en_US&type=5" />
 
 ## Request a device code
 
 ```ts
-import { requestDeviceAuthorization } from "@kysoql/auth";
+import { SalesforceAuth } from "@kysoql/auth";
 
 export function beginDeviceAuthorization() {
-  return requestDeviceAuthorization({
+  const auth = new SalesforceAuth({
     loginUrl: "https://login.salesforce.com",
     clientId: "external-client-app-id",
+  });
+
+  return auth.requestDeviceAuthorization({
     scope: ["api"],
     redirectUri: "http://127.0.0.1:1717/callback",
   });
@@ -33,18 +36,16 @@ and user code to the user.
 ## Poll once
 
 ```ts
-import {
-  pollDeviceAuthorization,
-  SalesforceOAuthError,
-} from "@kysoql/auth";
+import { SalesforceAuth, SalesforceOAuthError } from "@kysoql/auth";
+
+const auth = new SalesforceAuth({
+  loginUrl: "https://login.salesforce.com",
+  clientId: "external-client-app-id",
+});
 
 export async function pollOnce(deviceCode: string) {
   try {
-    return await pollDeviceAuthorization({
-      loginUrl: "https://login.salesforce.com",
-      clientId: "external-client-app-id",
-      deviceCode,
-    });
+    return await auth.pollDeviceAuthorization({ deviceCode });
   } catch (error: unknown) {
     if (
       error instanceof SalesforceOAuthError &&
@@ -57,8 +58,8 @@ export async function pollOnce(deviceCode: string) {
 }
 ```
 
-`pollDeviceAuthorization()` performs one poll only. The application owns the
+`auth.pollDeviceAuthorization()` performs one poll only. The application owns the
 schedule and must respect Salesforce's returned interval and `slow_down`
 responses.
 
-Salesforce setup reference: [Configure an OAuth 2.0 Device Flow for External Client Apps](https://help.salesforce.com/s/articleView?id=sf.meta_configure_device_flow_external_client_apps.htm&language=en_US&type=5).
+<SalesforceReference title="Configure an OAuth 2.0 Device Flow for External Client Apps" href="https://help.salesforce.com/s/articleView?id=sf.meta_configure_device_flow_external_client_apps.htm&language=en_US&type=5" />

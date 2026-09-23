@@ -8,21 +8,24 @@ Use the refresh-token flow after a Salesforce authorization flow has issued a
 refresh token. When refresh-token rotation is enabled, Salesforce can return a
 replacement token and invalidate the previous one.
 
-Salesforce reference: [OAuth 2.0 Refresh Token Flow for Renewed Sessions](https://help.salesforce.com/s/articleView?id=sf.remoteaccess_oauth_refresh_token_flow.htm&language=en_US&type=5).
+<SalesforceReference title="OAuth 2.0 Refresh Token Flow for Renewed Sessions" href="https://help.salesforce.com/s/articleView?id=sf.remoteaccess_oauth_refresh_token_flow.htm&language=en_US&type=5" />
 
 ## Refresh once
 
 ```ts
 import {
   createMemoryRefreshTokenStore,
-  refreshAccessToken,
+  SalesforceAuth,
 } from "@kysoql/auth";
 
 export async function refresh(refreshToken: string) {
-  const store = createMemoryRefreshTokenStore(refreshToken);
-  return refreshAccessToken({
+  const auth = new SalesforceAuth({
     loginUrl: "https://example.my.salesforce.com",
     clientId: "external-client-app-id",
+  });
+  const store = createMemoryRefreshTokenStore(refreshToken);
+
+  return auth.refreshToken({
     refreshToken,
     refreshTokenStore: store,
   });
@@ -36,10 +39,10 @@ lost.
 
 ## Reusable REST provider
 
-For long-running REST clients, use `createStoredRefreshTokenAuth()` with a
+For long-running REST clients, use `auth.storedRefreshToken()` with a
 [localStorage, Redis, memory, or custom store](/docs/auth/storage). Its
 `accessTokenProvider` plugs directly into `@kysoql/rest` and single-flights
 refresh work within one JavaScript process.
 
 Confidential clients can authenticate refresh requests with a client secret or a
-fresh [`private_key_jwt` client assertion](/docs/auth/private-key-jwt).
+fresh [`private_key_jwt` client assertion](/docs/auth/flows/private-key-jwt).

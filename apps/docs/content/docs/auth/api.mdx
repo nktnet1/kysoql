@@ -1,22 +1,69 @@
 ---
 title: "Auth API reference"
-description: "Reference @kysoql/auth flows, PKCE, JWT, token stores, and refresh-provider APIs."
+description: "Reference SalesforceAuth, lower-level OAuth helpers, token stores, and refresh-provider APIs."
 icon: "FileCode"
 ---
 
-Salesforce reference: [OAuth Authorization Flows](https://help.salesforce.com/s/articleView?id=remoteaccess_oauth_flows.htm&language=en_US&type=5).
+<SalesforceReference title="OAuth Authorization Flows" href="https://help.salesforce.com/s/articleView?id=remoteaccess_oauth_flows.htm&language=en_US&type=5" />
 
-Flow-specific usage is documented in [authentication flow guide](/docs/auth/flows); this page describes the public package surface.
+Flow-specific usage is documented in [authentication flows](/docs/auth/flows).
+For application code, prefer the `SalesforceAuth` class; the standalone helpers
+remain exported for lower-level composition and backwards compatibility.
 
-## OAuth and assertion exchanges
+## SalesforceAuth
+
+Create one client with the Salesforce login, My Domain, or Experience Cloud site
+URL plus the OAuth client ID:
+
+```ts
+import { SalesforceAuth } from "@kysoql/auth";
+
+const auth = new SalesforceAuth({
+  loginUrl: "https://login.salesforce.com",
+  clientId: "external-client-app-id",
+});
+```
+
+The constructor also accepts the shared request options `fetch`, `signal`, and
+`timeoutMs`. Per-operation request options override those defaults.
+
+| Method | Purpose |
+| --- | --- |
+| `jwtBearer(options)` | Create and exchange an RS256 JWT bearer assertion in one call. |
+| `clientCredentials(options)` | Perform a client-credentials token exchange. |
+| `authorizationUrl(options)` | Build a web-server authorization-code URL, including PKCE parameters. |
+| `exchangeAuthorizationCode(options)` | Exchange a standard authorization code. |
+| `refreshToken(options)` | Refresh a standard OAuth session and persist rotation when configured. |
+| `createClientAssertion(options)` | Create a short-lived `private_key_jwt` client assertion. |
+| `samlBearer(options)` | Exchange an OAuth SAML bearer assertion. |
+| `samlAssertion(options)` | Exchange Salesforce's SAML API assertion. |
+| `tokenExchange(options)` | Exchange a supported subject token. |
+| `requestDeviceAuthorization(options)` | Start device authorization. |
+| `pollDeviceAuthorization(options)` | Perform one device-token poll. |
+| `exchangeHybridAuthorizationCode(options)` | Exchange a hybrid web-server authorization code. |
+| `refreshHybridToken(options)` | Refresh a hybrid application session. |
+| `generatePkcePair()` | Generate an RFC 7636 verifier and S256 challenge. |
+| `codeCredentialsAuthorization(options)` | Build an Experience Cloud Code and Credentials request. |
+| `guestAuthorization(options)` | Build the Experience Cloud guest authorization request. |
+| `firstPartyAuthorizationChallenge(options)` | Call the first-party `authorization_challenge` endpoint. |
+| `storedRefreshToken(options)` | Create a refresh-token-backed session manager bound to this client. |
+
+All token exchanges return `SalesforceOAuthSession`, whose REST-relevant fields
+are `accessToken`, `instanceUrl`, and optional `refreshToken`. `scope`, `idToken`,
+and `issuedAt` are retained when Salesforce returns them.
+
+## Lower-level OAuth functions
+
+The functional API exposes the same primitives with all configuration passed to
+each call:
 
 | Export | Purpose |
 | --- | --- |
-| `createAuthorizationUrl(options)` | Build a web-server authorization-code URL, including PKCE parameters. |
+| `createAuthorizationUrl(options)` | Build a web-server authorization-code URL. |
 | `exchangeAuthorizationCode(options)` | Exchange an authorization code for a Salesforce bearer session. |
 | `refreshAccessToken(options)` | Exchange a refresh token and persist rotation when a store is supplied. |
 | `authenticateClientCredentials(options)` | Perform a client-credentials token exchange against a My Domain. |
-| `authenticateJwtBearer(options)` | Exchange a signed JWT bearer assertion. |
+| `authenticateJwtBearer(options)` | Exchange an already-signed JWT bearer assertion. |
 | `authenticateSamlBearer(options)` | Exchange an OAuth SAML bearer assertion. |
 | `authenticateSamlAssertion(options)` | Use Salesforce's SAML assertion API flow. |
 | `exchangeToken(options)` | Run OAuth 2.0 token exchange with a supported subject-token type. |
@@ -24,10 +71,6 @@ Flow-specific usage is documented in [authentication flow guide](/docs/auth/flow
 | `pollDeviceAuthorization(options)` | Perform one device token poll. |
 | `exchangeHybridAuthorizationCode(options)` | Exchange a hybrid web-server authorization code. |
 | `refreshHybridAccessToken(options)` | Refresh a hybrid application session. |
-
-All token exchanges return `SalesforceOAuthSession`, whose REST-relevant fields are
-`accessToken`, `instanceUrl`, and optional `refreshToken`. `scope`, `idToken`, and
-`issuedAt` are retained when Salesforce returns them.
 
 `AuthorizationCodeOptions.authRequestType` and `uvidHint` carry the token-endpoint
 headers required by headless guest code exchanges. `loginUrl` accepts a Salesforce
@@ -38,7 +81,7 @@ there.
 an optional OAuth `code`. `SalesforceOAuthResponseError` represents a malformed
 successful response.
 
-## PKCE and JWT
+## PKCE and JWT primitives
 
 | Export | Purpose |
 | --- | --- |
@@ -50,7 +93,7 @@ successful response.
 Both assertion helpers accept a private `CryptoKey`; private-key file loading is
 deliberately left to the runtime or key-management system.
 
-## Headless identity
+## Headless identity primitives
 
 | Export | Purpose |
 | --- | --- |
@@ -83,7 +126,8 @@ header for registration policies that require an authenticated integration user.
 
 ## Managed refresh
 
-`createStoredRefreshTokenAuth(options)` returns:
+`auth.storedRefreshToken(options)` and the lower-level
+`createStoredRefreshTokenAuth(options)` both return:
 
 | Member | Purpose |
 | --- | --- |
@@ -92,8 +136,7 @@ header for registration policies that require an authenticated integration user.
 | `accessTokenProvider` | Provider compatible with the `@kysoql/rest` client/executor. |
 | `clear()` | Drop the in-memory session and delete the stored refresh token. |
 
-`StoredRefreshTokenAuthOptions.clientAssertion` is a callback, not a static token,
-so short-lived JWT client assertions can be regenerated for every refresh.
-`clientSecretTransport` selects POST-body or HTTP Basic client-secret transport,
-and `refreshMode: "hybrid"` switches the manager to Salesforce's hybrid refresh
-grant.
+`clientAssertion` is a callback, not a static token, so short-lived JWT client
+assertions can be regenerated for every refresh. `clientSecretTransport` selects
+POST-body or HTTP Basic client-secret transport, and `refreshMode: "hybrid"`
+switches the manager to Salesforce's hybrid refresh grant.

@@ -8,19 +8,23 @@ The first-party registration flow lets a private Experience Cloud application
 collect registration data, initialize Salesforce registration headlessly, verify
 the user with an OTP, and receive an authorization code.
 
-Salesforce reference: [Headless Registration Flow for Private Clients](https://help.salesforce.com/s/articleView?id=sf.remoteaccess_auth_challenge_registration.htm&language=en_US&type=5).
+<SalesforceReference title="Headless Registration Flow for Private Clients" href="https://help.salesforce.com/s/articleView?id=sf.remoteaccess_auth_challenge_registration.htm&language=en_US&type=5" />
 
 ## Initialize registration
 
 ```ts
-import { requestFirstPartyAuthorizationChallenge } from "@kysoql/auth";
+import { SalesforceAuth } from "@kysoql/auth";
 
 export function beginRegistration(
   clientAssertion: string,
   codeChallenge: string,
 ) {
-  return requestFirstPartyAuthorizationChallenge({
-    siteUrl: "https://customers.example.my.site.com/customers",
+  const auth = new SalesforceAuth({
+    loginUrl: "https://customers.example.my.site.com/customers",
+    clientId: "external-client-app-id",
+  });
+
+  return auth.firstPartyAuthorizationChallenge({
     bodyFormat: "json",
     parameters: {
       userdata: {
@@ -48,11 +52,15 @@ Salesforce can return an `auth_session` while it waits for OTP verification.
 ## Submit the OTP
 
 ```ts
-import { requestFirstPartyAuthorizationChallenge } from "@kysoql/auth";
+import { SalesforceAuth } from "@kysoql/auth";
 
 export function submitRegistrationOtp(authSession: string, otp: string) {
-  return requestFirstPartyAuthorizationChallenge({
-    siteUrl: "https://customers.example.my.site.com/customers",
+  const auth = new SalesforceAuth({
+    loginUrl: "https://customers.example.my.site.com/customers",
+    clientId: "external-client-app-id",
+  });
+
+  return auth.firstPartyAuthorizationChallenge({
     parameters: {
       auth_session: authSession,
       login_otp: otp,
@@ -62,4 +70,4 @@ export function submitRegistrationOtp(authSession: string, otp: string) {
 ```
 
 After Salesforce returns `kind: "authorized"`, exchange the authorization code
-through [`exchangeAuthorizationCode()`](/docs/auth/web-server-pkce).
+through [`auth.exchangeAuthorizationCode()`](/docs/auth/flows/web-server-pkce).

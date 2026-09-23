@@ -8,33 +8,27 @@ icon: "KeyRound"
 Use it when a supported Salesforce token flow authenticates the confidential
 client with a signed JWT instead of a client secret.
 
-Salesforce documents `private_key_jwt` for the web-server token exchange in
-[OAuth 2.0 Web Server Flow for Web App Integration](https://help.salesforce.com/s/articleView?id=xcloud.remoteaccess_oauth_web_server_flow_ca.htm&language=en_US&type=5).
+Salesforce documents `private_key_jwt` for the web-server token exchange.
+
+<SalesforceReference title="OAuth 2.0 Web Server Flow for Web App Integration" href="https://help.salesforce.com/s/articleView?id=xcloud.remoteaccess_oauth_web_server_flow_ca.htm&language=en_US&type=5" />
 
 ## Create a client assertion
 
 ```ts
-import {
-  createOAuthClientAssertion,
-  exchangeAuthorizationCode,
-} from "@kysoql/auth";
+import { SalesforceAuth } from "@kysoql/auth";
 
 export async function exchangeWithPrivateKey(
   code: string,
   verifier: string,
   privateKey: CryptoKey,
 ) {
-  const loginUrl = "https://example.my.salesforce.com";
-  const clientId = "external-client-app-id";
-  const clientAssertion = await createOAuthClientAssertion({
-    loginUrl,
-    clientId,
-    privateKey,
+  const auth = new SalesforceAuth({
+    loginUrl: "https://example.my.salesforce.com",
+    clientId: "external-client-app-id",
   });
+  const clientAssertion = await auth.createClientAssertion({ privateKey });
 
-  return exchangeAuthorizationCode({
-    loginUrl,
-    clientId,
+  return auth.exchangeAuthorizationCode({
     clientAssertion,
     code,
     redirectUri: "https://app.example.com/oauth/callback",
@@ -43,13 +37,13 @@ export async function exchangeWithPrivateKey(
 }
 ```
 
-`createOAuthClientAssertion()` sets both `iss` and `sub` to the OAuth client ID,
+`auth.createClientAssertion()` sets both `iss` and `sub` to the OAuth client ID,
 uses the Salesforce token endpoint as the audience, and signs with RS256. Kysoql
 adds the standard JWT bearer client-assertion type to the token request.
 
 The assertion is intentionally short-lived. When using
-`createStoredRefreshTokenAuth()`, pass `clientAssertion` as a callback so a new
+`auth.storedRefreshToken()`, pass `clientAssertion` as a callback so a new
 assertion can be minted for every refresh.
 
-Do not confuse this method with the [JWT bearer flow](/docs/auth/jwt-bearer),
+Do not confuse this method with the [JWT bearer flow](/docs/auth/flows/jwt-bearer),
 where the JWT represents the user authorization grant itself.

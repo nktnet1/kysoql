@@ -1,0 +1,58 @@
+---
+title: "JWT bearer"
+description: "Use Salesforce OAuth 2.0 JWT bearer authentication for private-key server-to-server integrations."
+icon: "KeyRound"
+---
+
+JWT bearer is the default Kysoql recommendation for a server-to-server
+integration that can protect a private key. Salesforce validates an RS256-signed
+JWT against the certificate registered for the external client app and returns an
+access token for the pre-authorized user.
+
+<SalesforceReference title="OAuth 2.0 JWT Bearer Flow for Server-to-Server Integration" href="https://help.salesforce.com/s/articleView?id=xcloud.remoteaccess_oauth_jwt_flow_ca.htm&language=en_US&type=5" />
+
+## Authenticate
+
+```ts
+import { SalesforceAuth } from "@kysoql/auth";
+
+const auth = new SalesforceAuth({
+  loginUrl: "https://login.salesforce.com",
+  clientId: "external-client-app-id",
+});
+
+export function authenticateSalesforce(privateKey: CryptoKey) {
+  return auth.jwtBearer({
+    username: "integration@example.com",
+    privateKey,
+  });
+}
+```
+
+`jwtBearer()` creates the Salesforce JWT claims, signs them with Web Crypto, and
+exchanges the assertion in one call. The private key must be an
+RSASSA-PKCS1-v1_5 `CryptoKey`, which maps to RS256 in the JWT header.
+
+The helper defaults the assertion lifetime to 180 seconds and rejects lifetimes
+above 300 seconds. The application is responsible for importing or obtaining the
+private key from its file system, secret manager, KMS, HSM, or equivalent key
+provider.
+
+## Salesforce setup
+
+Configure the external client app for JWT bearer, register the matching X.509
+certificate, and authorize the integration user according to Salesforce policy.
+Salesforce does not issue a refresh token for this flow.
+
+<SalesforceReference title="Configure a JWT Bearer Flow" href="https://help.salesforce.com/s/articleView?id=configure_oauth_jwt_flow_external_client_apps.htm&language=en_US&type=5" />
+
+## Renew an expired session
+
+Call `auth.jwtBearer()` again with a newly generated short-lived assertion. The
+class generates that assertion internally on every call. Because no refresh
+token is involved, there is nothing to persist in
+[refresh-token storage](/docs/auth/storage).
+
+For `private_key_jwt` client authentication used inside another OAuth flow, see
+[private-key client authentication](/docs/auth/flows/private-key-jwt). It is
+distinct from the JWT bearer grant documented on this page.

@@ -1,0 +1,28 @@
+{
+  "title": "Authentication flows",
+  "icon": "Workflow",
+  "pages": [
+    "index",
+    "---[Server]Server-to-server---",
+    "jwt-bearer",
+    "client-credentials",
+    "private-key-jwt",
+    "---[KeyRound]Authorization and renewal---",
+    "web-server-pkce",
+    "refresh-token",
+    "token-exchange",
+    "device",
+    "hybrid-web-server",
+    "hybrid-refresh-token",
+    "---[Cloud]Experience Cloud---",
+    "experience-cloud-code-credentials",
+    "experience-cloud-guest",
+    "first-party-applications",
+    "first-party-username-password",
+    "first-party-passwordless",
+    "first-party-registration",
+    "---[BadgeCheck]Assertions---",
+    "saml-bearer",
+    "saml-assertion"
+  ]
+}

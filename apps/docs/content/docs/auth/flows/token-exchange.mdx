@@ -9,17 +9,20 @@ an external identity provider or token issuer. Salesforce can exchange a
 supported subject token for a Salesforce access token according to the configured
 external client app and token exchange policy.
 
-Salesforce reference: [OAuth 2.0 Token Exchange Flow](https://help.salesforce.com/s/articleView?id=sf.remoteaccess_token_exchange_overview.htm&language=en_US&type=5).
+<SalesforceReference title="OAuth 2.0 Token Exchange Flow" href="https://help.salesforce.com/s/articleView?id=sf.remoteaccess_token_exchange_overview.htm&language=en_US&type=5" />
 
 ## Exchange a subject token
 
 ```ts
-import { exchangeToken } from "@kysoql/auth";
+import { SalesforceAuth } from "@kysoql/auth";
 
 export function exchangeExternalJwt(subjectToken: string) {
-  return exchangeToken({
+  const auth = new SalesforceAuth({
     loginUrl: "https://example.my.salesforce.com",
     clientId: "external-client-app-id",
+  });
+
+  return auth.tokenExchange({
     subjectToken,
     subjectTokenType: "urn:ietf:params:oauth:token-type:jwt",
     scope: ["api"],
@@ -34,4 +37,4 @@ JWTs.
 Set `tokenHandler` when the Salesforce application is configured with a token
 exchange handler. If the client policy requires confidential-client
 authentication, also provide a client secret or a
-[`private_key_jwt` client assertion](/docs/auth/private-key-jwt).
+[`private_key_jwt` client assertion](/docs/auth/flows/private-key-jwt).

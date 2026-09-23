@@ -56,6 +56,12 @@ export {
 } from "#/oauth";
 export { createPkceChallenge, generatePkcePair, type PkcePair } from "#/pkce";
 export {
+  SalesforceAuth,
+  type SalesforceAuthOptions,
+  type SalesforceClientAssertionOptions,
+  type SalesforceJwtBearerOptions,
+} from "#/salesforce-auth";
+export {
   createLocalStorageRefreshTokenStore,
   createMemoryRefreshTokenStore,
   createRedisRefreshTokenStore,

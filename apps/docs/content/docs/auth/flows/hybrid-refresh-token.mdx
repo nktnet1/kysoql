@@ -8,21 +8,24 @@ Use the hybrid refresh-token flow for refresh tokens associated with supported
 Salesforce hybrid sessions. It renews the access token and lets Salesforce return
 the web-session information required by hybrid applications.
 
-Salesforce reference: [OAuth 2.0 Hybrid App Refresh Token Flow](https://help.salesforce.com/s/articleView?id=xcloud.remoteaccess_oauth_hybrid_app_refresh_token_flow.htm&language=en_US&type=5).
+<SalesforceReference title="OAuth 2.0 Hybrid App Refresh Token Flow" href="https://help.salesforce.com/s/articleView?id=xcloud.remoteaccess_oauth_hybrid_app_refresh_token_flow.htm&language=en_US&type=5" />
 
 ## Refresh a hybrid session
 
 ```ts
 import {
   createMemoryRefreshTokenStore,
-  refreshHybridAccessToken,
+  SalesforceAuth,
 } from "@kysoql/auth";
 
 export function refreshHybrid(refreshToken: string) {
-  const store = createMemoryRefreshTokenStore(refreshToken);
-  return refreshHybridAccessToken({
+  const auth = new SalesforceAuth({
     loginUrl: "https://example.my.salesforce.com",
     clientId: "external-client-app-id",
+  });
+  const store = createMemoryRefreshTokenStore(refreshToken);
+
+  return auth.refreshHybridToken({
     refreshToken,
     refreshTokenStore: store,
   });
@@ -30,6 +33,6 @@ export function refreshHybrid(refreshToken: string) {
 ```
 
 Use a durable [refresh-token store](/docs/auth/storage) when the hybrid refresh
-token must survive process restarts. For `createStoredRefreshTokenAuth()`, set
+token must survive process restarts. For `auth.storedRefreshToken()`, set
 `refreshMode: "hybrid"` so its provider uses `hybrid_refresh` instead of the
 standard refresh grant.

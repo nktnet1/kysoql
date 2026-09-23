@@ -3,27 +3,5 @@
   "description": "Salesforce OAuth flows and refresh-token storage with @kysoql/auth.",
   "root": true,
   "icon": "KeyRound",
-  "pages": [
-    "index",
-    "jwt-bearer",
-    "flows",
-    "web-server-pkce",
-    "refresh-token",
-    "client-credentials",
-    "private-key-jwt",
-    "saml-bearer",
-    "saml-assertion",
-    "token-exchange",
-    "device",
-    "hybrid-web-server",
-    "hybrid-refresh-token",
-    "experience-cloud-code-credentials",
-    "experience-cloud-guest",
-    "first-party-applications",
-    "first-party-username-password",
-    "first-party-passwordless",
-    "first-party-registration",
-    "storage",
-    "api"
-  ]
+  "pages": ["index", "flows", "storage", "api"]
 }

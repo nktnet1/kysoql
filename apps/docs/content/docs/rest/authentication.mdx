@@ -10,7 +10,7 @@ execution lets applications choose the Salesforce flow and token store that matc
 their architecture without coupling the SOQL executor to browser or server login
 state.
 
-Salesforce REST reference: [Authorization Through External Client Apps or Connected Apps and OAuth 2.0](https://developer.salesforce.com/docs/platform/api-rest/guide/intro-oauth-and-connected-apps.html).
+<SalesforceReference title="Authorization Through External Client Apps or Connected Apps and OAuth 2.0" href="https://developer.salesforce.com/docs/platform/api-rest/guide/intro-oauth-and-connected-apps.html" />
 
 See [`@kysoql/auth`](/docs/auth) for current web-server/PKCE, refresh, client
 credentials, JWT, SAML, token exchange, device, hybrid, Code and Credentials, and
@@ -34,22 +34,24 @@ host. A static token is never refreshed automatically.
 ```ts
 import {
   createMemoryRefreshTokenStore,
-  createStoredRefreshTokenAuth,
+  SalesforceAuth,
 } from "@kysoql/auth";
 import { createRestExecutor } from "@kysoql/rest";
 
 export async function createRefreshingExecutor(refreshToken: string) {
-  const auth = createStoredRefreshTokenAuth({
+  const auth = new SalesforceAuth({
     loginUrl: "https://example.my.salesforce.com",
     clientId: "oauth-client-id",
+  });
+  const sessionAuth = auth.storedRefreshToken({
     initialRefreshToken: refreshToken,
     refreshTokenStore: createMemoryRefreshTokenStore(),
   });
-  const session = await auth.getSession();
+  const session = await sessionAuth.getSession();
 
   return createRestExecutor({
     instanceUrl: session.instanceUrl,
-    accessToken: auth.accessTokenProvider,
+    accessToken: sessionAuth.accessTokenProvider,
   });
 }
 ```
@@ -67,9 +69,9 @@ locking when refresh-token rotation is enabled.
 ## Compatibility helpers in @kysoql/rest
 
 `@kysoql/rest` retains its existing `authenticateClientCredentials()` and
-`refreshAccessToken()` exports for compatibility. New authentication code should
-prefer the same-named functions in `@kysoql/auth`, which add the complete flow and
-storage surface. REST execution itself does not require either helper if your
+`refreshAccessToken()` exports for compatibility. New authentication code should prefer `SalesforceAuth` from `@kysoql/auth`,
+which binds common client configuration and exposes the complete flow and storage
+surface. The standalone functions remain available for lower-level composition. REST execution itself does not require either helper if your
 application already has a valid bearer token.
 
 ## Security boundaries

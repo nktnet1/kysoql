@@ -8,7 +8,7 @@ A Salesforce refresh token is a long-lived credential. `@kysoql/auth` exposes a
 small `RefreshTokenStore` interface so token rotation can be committed before a
 new access token is used.
 
-Salesforce reference: [OAuth 2.0 Refresh Token Flow for Renewed Sessions](https://help.salesforce.com/s/articleView?id=sf.remoteaccess_oauth_refresh_token_flow.htm&language=en_US&type=5).
+<SalesforceReference title="OAuth 2.0 Refresh Token Flow for Renewed Sessions" href="https://help.salesforce.com/s/articleView?id=sf.remoteaccess_oauth_refresh_token_flow.htm&language=en_US&type=5" />
 
 The package never writes access tokens to these stores. In browser applications,
 `localStorage` is readable by JavaScript running on the page, so use it only when
@@ -102,13 +102,13 @@ distributed synchronization primitive.
 
 ## Reusable refresh provider
 
-`createStoredRefreshTokenAuth()` combines a store with the refresh exchange and
-provides an `accessTokenProvider` compatible with `@kysoql/rest`.
+`SalesforceAuth.storedRefreshToken()` combines a store with the refresh exchange
+and provides an `accessTokenProvider` compatible with `@kysoql/rest`.
 
 ```ts
 import {
   createRedisRefreshTokenStore,
-  createStoredRefreshTokenAuth,
+  SalesforceAuth,
   type RedisLike,
 } from "@kysoql/auth";
 import { createRestExecutor } from "@kysoql/rest";
@@ -117,21 +117,23 @@ export async function createExecutor(
   client: RedisLike,
   initialRefreshToken: string,
 ) {
+  const auth = new SalesforceAuth({
+    loginUrl: "https://example.my.salesforce.com",
+    clientId: "oauth-client-id",
+  });
   const store = createRedisRefreshTokenStore({
     client,
     key: "integration-user",
   });
-  const auth = createStoredRefreshTokenAuth({
-    loginUrl: "https://example.my.salesforce.com",
-    clientId: "oauth-client-id",
+  const sessionAuth = auth.storedRefreshToken({
     initialRefreshToken,
     refreshTokenStore: store,
   });
-  const session = await auth.getSession();
+  const session = await sessionAuth.getSession();
 
   return createRestExecutor({
     instanceUrl: session.instanceUrl,
-    accessToken: auth.accessTokenProvider,
+    accessToken: sessionAuth.accessTokenProvider,
   });
 }
 ```
@@ -155,26 +157,23 @@ refresh:
 
 ```ts
 import {
-  createOAuthClientAssertion,
   createMemoryRefreshTokenStore,
-  createStoredRefreshTokenAuth,
+  SalesforceAuth,
 } from "@kysoql/auth";
 
 export function createAuth(
   initialRefreshToken: string,
   privateKey: CryptoKey,
 ) {
-  return createStoredRefreshTokenAuth({
+  const auth = new SalesforceAuth({
     loginUrl: "https://example.my.salesforce.com",
     clientId: "oauth-client-id",
+  });
+
+  return auth.storedRefreshToken({
     initialRefreshToken,
     refreshTokenStore: createMemoryRefreshTokenStore(),
-    clientAssertion: () =>
-      createOAuthClientAssertion({
-        loginUrl: "https://example.my.salesforce.com",
-        clientId: "oauth-client-id",
-        privateKey,
-      }),
+    clientAssertion: () => auth.createClientAssertion({ privateKey }),
   });
 }
 ```

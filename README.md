@@ -1230,8 +1230,9 @@ A failed budget throws instead of silently truncating records.
 
 The native API version is pinned to `65.0` unless explicitly configured. Token
 providers can renew credentials once after `INVALID_SESSION_ID`. Use
-`@kysoql/auth` for JWT bearer/private-key server-to-server authentication by default,
-plus current Salesforce web-server/PKCE, refresh, client credentials, SAML, token
+`@kysoql/auth` exposes `SalesforceAuth` as the primary client API, with JWT
+bearer/private-key server-to-server authentication as the default, plus current
+Salesforce web-server/PKCE, refresh, client credentials, SAML, token
 exchange, device, hybrid, and Experience Cloud headless flows. Refresh tokens can
 use memory, browser `localStorage`, Redis, or custom persistence.
 `@kysoql/rest` retains its original client-credentials and refresh helpers for

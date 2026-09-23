@@ -9,6 +9,7 @@ version is cut.
 ### Added
 
 - `@kysoql/auth`: current Salesforce REST authentication flows, including web-server/PKCE, refresh, client credentials, JWT bearer, SAML bearer/assertion, token exchange, device, hybrid web-server/refresh, Experience Cloud headless request support, and pluggable refresh-token storage for memory, browser `localStorage`, Redis, or custom stores.
+- `@kysoql/auth`: `SalesforceAuth` class as the primary application-facing API, binding shared Salesforce client configuration while retaining the standalone functional helpers; authentication-flow docs are grouped under a nested section with Salesforce reference cards.
 - `@kysoql/rest`: JSforce-free native Query/QueryAll execution, scalar counts,
   validated root pagination, page/record async iterators, explicit continuation,
   resource budgets, cancellation/timeouts, structured errors, and OAuth
