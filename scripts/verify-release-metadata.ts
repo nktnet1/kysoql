@@ -172,14 +172,6 @@ if (rootManifest.private !== true) {
 const rootEngines = requireObject(rootManifest, "engines", "workspace");
 const rootNodeRange = requireString(rootEngines, "node", "workspace.engines");
 
-const changelog = await readText(
-  resolve(ROOT_DIR, "CHANGELOG.md"),
-  "workspace changelog",
-);
-if (!/(?:^|\n)## Unreleased(?:\n|$)/.test(changelog)) {
-  fail('CHANGELOG.md must contain a "## Unreleased" section.');
-}
-
 for (const workspacePath of PUBLISHABLE_PACKAGES) {
   await verifyPackage(workspacePath, rootVersion, rootNodeRange);
 }

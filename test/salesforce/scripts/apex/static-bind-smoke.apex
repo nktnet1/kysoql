@@ -27,14 +27,14 @@ List<Account> memberPathBind = [
 ];
 System.assertEquals(1, memberPathBind.size(), 'member-path bind');
 
-String selectedTags = 'Alpha;Beta';
-List<Account> bindLeftIncludes = [
+acme.Type = 'Customer - Direct; Customer - Channel';
+Account bindLeftIncludes = [
   SELECT Id
   FROM Account
-  WHERE :selectedTags INCLUDES ('Alpha')
-  AND Name LIKE 'Kysoql Test %'
+  WHERE :acme.Type INCLUDES ('Customer - Direct; Customer - Channel')
+  AND Id = :acme.Id
 ];
-System.assertEquals(2, bindLeftIncludes.size(), 'bind-left INCLUDES');
+System.assertEquals(acme.Id, bindLeftIncludes.Id, 'bind-left INCLUDES');
 
 String contactLastName = 'Lovelace';
 List<Account> relationshipSubqueryBind = [

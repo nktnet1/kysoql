@@ -4,6 +4,7 @@ import type {
   KysoqlConfig,
   ObjectFieldFilter,
   ObjectFieldFilters,
+  SalesforceAuthProvider,
   SalesforceChildRelationshipDescription,
   SalesforceDataCategoryGroupDescription,
   SalesforceDataCategoryGroupResponse,
@@ -32,6 +33,7 @@ it("exports the complete codegen public API from the package entrypoint", () => 
     defineConfig({ objects: ["Account"] }),
   ).toEqualTypeOf<KysoqlConfig>();
   expectTypeOf<KysoqlConfig>().toEqualTypeOf<{
+    readonly auth?: SalesforceAuthProvider;
     readonly apiVersion?: string;
     readonly objects?: readonly string[];
     readonly fields?: ObjectFieldFilters;

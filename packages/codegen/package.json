@@ -54,6 +54,7 @@
     "topicSeparator": " "
   },
   "dependencies": {
+    "@kysoql/auth": "workspace:*",
     "@kysoql/rest": "workspace:*",
     "@oclif/core": "5.0.0",
     "jiti": "2.7.0",

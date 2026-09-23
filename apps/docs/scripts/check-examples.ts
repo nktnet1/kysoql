@@ -26,7 +26,12 @@ if (missing.length) {
 const output = path.join(docsRoot, ".generated/examples");
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
-for (const name of ["db.ts", "salesforce.generated.ts"]) {
+for (const name of [
+  "db.ts",
+  "salesforce-auth-key.ts",
+  "salesforce-auth.ts",
+  "salesforce.generated.ts",
+]) {
   await copyFile(
     path.join(docsRoot, "examples", name),
     path.join(output, name),

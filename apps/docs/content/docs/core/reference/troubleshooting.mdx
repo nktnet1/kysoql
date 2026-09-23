@@ -24,7 +24,7 @@ an access token or production record payload.
 | Unsupported engine/version warning | Activate the repository's Node 26 range and pnpm 12.4.1. Do not silently change the lockfile to suit a different environment. |
 | Cannot resolve `dist/index.mjs` or CLI binary | Build the workspace packages before consuming their default exports. |
 | `kysoql: command not found` | Install codegen in the invoking application and run `pnpm exec kysoql`; in the workspace use the built CLI path. |
-| Missing environment variable | Supply both SF_INSTANCE_URL and SF_ACCESS_TOKEN in the process running codegen. A `.env` file is not loaded automatically. |
+| Missing codegen authentication | Configure `auth` in `kysoql.config.*` or pass a trusted `--auth <module>` provider. |
 | Unknown or non-queryable object | Use an object API name visible/queryable to that token, not a label. Check the org and permissions. |
 | Missing relationship fields after generation | Include all traversed parent/child/TYPEOF targets in the object list and regenerate. |
 | Invalid Describe response | Check your transport/API version and response validation; do not bypass the parser with a cast. |

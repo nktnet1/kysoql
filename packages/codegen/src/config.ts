@@ -1,3 +1,10 @@
+import type { SalesforceOAuthSession } from "@kysoql/auth";
+
+/** Resolve a fresh Salesforce OAuth session for CLI schema generation. */
+export type SalesforceAuthProvider = () =>
+  | SalesforceOAuthSession
+  | Promise<SalesforceOAuthSession>;
+
 /** Exact field API names; include and exclude are mutually exclusive. */
 export type ObjectFieldFilter =
   | {
@@ -12,8 +19,10 @@ export type ObjectFieldFilter =
 /** Rules do not add objects to the generation set. */
 export type ObjectFieldFilters = Readonly<Record<string, ObjectFieldFilter>>;
 
-/** Schema-generation settings; authentication stays in SF_* variables. */
+/** Schema-generation settings. Authentication is resolved explicitly. */
 export interface KysoqlConfig {
+  /** Obtain the Salesforce session used by the CLI. */
+  readonly auth?: SalesforceAuthProvider;
   /** Salesforce REST API version, without v. Applies to CLI generation only. */
   readonly apiVersion?: string;
   /** API names. Omit or use [] to include all queryable objects. */

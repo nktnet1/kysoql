@@ -19,6 +19,7 @@ export {
   type KysoqlConfig,
   type ObjectFieldFilter,
   type ObjectFieldFilters,
+  type SalesforceAuthProvider,
 } from "#/config";
 export { renderSchema } from "#/render";
 export { createRestDescribeClient } from "#/rest-client";

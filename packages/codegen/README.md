@@ -14,16 +14,28 @@ pnpm add -D @kysoql/codegen
 Create `kysoql.config.ts` beside your application's `package.json`:
 
 ```ts
+import { SalesforceAuth } from "@kysoql/auth";
 import { defineConfig } from "@kysoql/codegen";
+import { privateKey } from "./salesforce-auth-key.js";
+
+const auth = new SalesforceAuth({
+  loginUrl: "https://login.salesforce.com",
+  clientId: "external-client-app-id",
+});
 
 export default defineConfig({
+  auth: () =>
+    auth.jwtBearer({
+      username: "integration@example.com",
+      privateKey,
+    }),
   objects: ["Account", "Contact"],
   output: "src/salesforce.generated.ts",
   schemaName: "SalesforceSchema",
 });
 ```
 
-Set `SF_INSTANCE_URL` and `SF_ACCESS_TOKEN` in the process environment, then run:
+Then run:
 
 ```bash
 pnpm exec kysoql generate
@@ -33,6 +45,7 @@ The CLI also works without a config:
 
 ```bash
 pnpm exec kysoql generate --no-config \
+  --auth config/salesforce.auth.ts \
   --object Account \
   --object Contact \
   --output src/salesforce.generated.ts \
@@ -41,8 +54,7 @@ pnpm exec kysoql generate --no-config \
 
 ## Configuration
 
-`defineConfig` is a typed identity helper. `KysoqlConfig` has five optional
-properties: `apiVersion`, `objects`, `fields`, `output`, and `schemaName`. Export a plain object; functions,
+`defineConfig` is a typed identity helper. `KysoqlConfig` accepts an optional `auth` provider plus `apiVersion`, `objects`, `fields`, `output`, and `schemaName`. Export a plain object; functions,
 promises, and config arrays are not supported. Unknown keys, invalid types, blank
 strings, and invalid schema names fail before connecting to Salesforce.
 
@@ -56,8 +68,7 @@ pnpm exec kysoql generate --config config/kysoql.sandbox.ts
 ```
 
 Explicit flags override config values, then built-in defaults apply. API version
-uses `--api-version`, then config `apiVersion`, then `SF_API_VERSION`, then the
-pinned `65.0` default. Versions are strings without `v`, such as `"65.0"`. Keep
+uses `--api-version`, then config `apiVersion`, then the pinned `65.0` default. Versions are strings without `v`, such as `"65.0"`. Keep
 runtime and generation versions aligned and check org support. The CLI now uses
 native REST Describe; JSforce is neither used nor installed by codegen. Repeated
 `--object` flags replace the configured list. Without a list (or with `objects:
@@ -69,10 +80,11 @@ to that file's directory. `--config` and an explicit `--output` are relative to
 the working directory. Absolute paths remain absolute. `--no-config` skips
 loading entirely and cannot be combined with `--config`.
 
-Configuration modules execute code: only load trusted files. Authentication stays
-in `SF_INSTANCE_URL` and `SF_ACCESS_TOKEN`; `.env` files are not loaded
-automatically. A config does not select an org or configure application runtime
-clients. Use environment-specific credentials and output files for multiple orgs.
+Configuration and `--auth` modules execute code: only load trusted files. The CLI
+does not read Salesforce access-token, instance-URL, or API-version environment
+variables. Resolve a session explicitly with `@kysoql/auth`, your secret manager,
+or another trusted provider. A config does not configure application runtime
+clients. Use environment-specific auth providers and output files for multiple orgs.
 Run `pnpm exec kysoql generate --help` for the complete command reference.
 
 Generated schema files are build artifacts: they include a `Do not edit manually`

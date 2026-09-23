@@ -286,6 +286,9 @@ importers:
 
   packages/codegen:
     dependencies:
+      '@kysoql/auth':
+        specifier: workspace:*
+        version: link:../auth
       '@kysoql/rest':
         specifier: workspace:*
         version: link:../rest

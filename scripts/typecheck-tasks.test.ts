@@ -194,6 +194,7 @@ for (const name of [
 
 for (const [consumer, dependency] of [
   ["@kysoql/rest", "@kysoql/core"],
+  ["@kysoql/codegen", "@kysoql/auth"],
   ["@kysoql/codegen", "@kysoql/rest"],
 ] as const) {
   it(`${consumer} declares ${dependency} for Turbo build ordering`, () => {
@@ -212,6 +213,7 @@ it("Salesforce generated-query E2E uses the generated schema type", async () => 
     'import type { SalesforceSchema } from "../salesforce/salesforce.generated.ts";',
   );
   expect(source).toContain("new Kysoql<SalesforceSchema>()");
+  expect(source).not.toContain("describe.skip");
 });
 
 it("schema-generation helper builds codegen dependencies through Turbo", async () => {
@@ -229,10 +231,6 @@ it("schema-generation helper builds codegen dependencies through Turbo", async (
 
 it("repository Salesforce command scripts use oclif and validated environments", async () => {
   const commands = new Map([
-    [
-      "scripts/generate-salesforce-schema.ts",
-      "readSchemaGenerationEnvironment",
-    ],
     ["scripts/setup-salesforce-test-org.ts", "readSalesforceSetupEnvironment"],
     [
       "scripts/run-salesforce-apex-bind-smoke.ts",
@@ -255,6 +253,19 @@ it("repository Salesforce command scripts use oclif and validated environments",
     expect(source).not.toContain("function parseArgs(");
     expect(source).not.toContain("function usage(");
   }
+
+  const generate = await readFile(
+    new URL("scripts/generate-salesforce-schema.ts", root),
+    "utf8",
+  );
+  expect(generate).toContain('from "@oclif/core"');
+  expect(generate).toContain("salesforce-cli-auth.ts");
+
+  const authProvider = await readFile(
+    new URL("scripts/lib/salesforce-cli-auth.ts", root),
+    "utf8",
+  );
+  expect(authProvider).toContain("readSchemaGenerationEnvironment");
 });
 
 for (const [label, sourceConfig, testConfig] of [

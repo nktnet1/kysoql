@@ -183,37 +183,6 @@ export const parseSchemaName = (input: unknown): string => {
   return result.output;
 };
 
-const generateEnvironmentSchema = v.object({
-  SF_ACCESS_TOKEN: v.pipe(
-    v.string("SF_ACCESS_TOKEN is required."),
-    v.trim(),
-    v.nonEmpty("SF_ACCESS_TOKEN is required."),
-  ),
-  SF_INSTANCE_URL: v.pipe(
-    v.string("SF_INSTANCE_URL is required."),
-    v.trim(),
-    v.nonEmpty("SF_INSTANCE_URL is required."),
-    v.url("SF_INSTANCE_URL must be a valid URL."),
-  ),
-  SF_API_VERSION: v.optional(
-    v.pipe(
-      v.string("SF_API_VERSION must be a string."),
-      v.trim(),
-      v.nonEmpty("SF_API_VERSION must not be empty."),
-    ),
-  ),
-});
-
-export const parseGenerateEnvironment = (input: unknown) => {
-  const result = v.safeParse(generateEnvironmentSchema, input);
-  if (!result.success) {
-    throw new Error(
-      result.issues[0]?.message ?? "Invalid codegen environment.",
-    );
-  }
-  return result.output;
-};
-
 export const parseSalesforceGlobalDescription = (
   input: unknown,
 ): SalesforceGlobalDescription => {

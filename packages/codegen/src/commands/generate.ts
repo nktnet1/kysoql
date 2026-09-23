@@ -1,6 +1,7 @@
 import { DEFAULT_API_VERSION } from "@kysoql/rest";
 import { Command, Flags } from "@oclif/core";
 
+import { loadAuthProvider } from "#/auth-loader";
 import {
   loadConfig,
   parseKysoqlConfig,
@@ -8,7 +9,6 @@ import {
 } from "#/config-loader";
 import { generateSchema } from "#/index";
 import { createRestDescribeClient } from "#/rest-client";
-import { parseGenerateEnvironment } from "#/validation";
 
 export default class Generate extends Command {
   static description =
@@ -16,20 +16,25 @@ export default class Generate extends Command {
 
 Loads kysoql.config.ts (or another supported JS/TS extension) from the current directory.
 Use config fields to include or exclude exact field API names per object.
-CLI flags override configuration. Authentication requires SF_INSTANCE_URL and SF_ACCESS_TOKEN.`;
+CLI flags override configuration. Authentication comes from config auth or --auth.`;
 
   static examples = [
     `<%= config.bin %> <%= command.id %>`,
     `<%= config.bin %> <%= command.id %> --config config/kysoql.sandbox.ts`,
-    `<%= config.bin %> <%= command.id %> --object Account --object Contact --output src/salesforce.generated.ts`,
+    `<%= config.bin %> <%= command.id %> --no-config --auth config/salesforce.auth.ts --object Account --output src/salesforce.generated.ts`,
   ];
 
   static flags = {
     help: Flags.help({ char: "h" }),
     "api-version": Flags.string({
       description:
-        "Salesforce REST version, without v (flag > config > SF_API_VERSION > 65.0).",
+        "Salesforce REST version, without v (flag > config > pinned default).",
       helpValue: "<version>",
+    }),
+    auth: Flags.string({
+      description:
+        "Authentication provider module; its default export returns an @kysoql/auth session.",
+      helpValue: "<path>",
     }),
     config: Flags.string({
       description: "Configuration file, relative to the current directory.",
@@ -62,19 +67,31 @@ CLI flags override configuration. Authentication requires SF_INSTANCE_URL and SF
 
   async run(): Promise<void> {
     const { flags } = await this.parse(Generate);
-    const environment = parseGenerateEnvironment(process.env);
     const loaded = await loadConfig({
       configFile: flags.config,
       disabled: flags["no-config"],
     });
-    const { apiVersion, ...options } = resolveGenerateOptions(flags, loaded);
+    const {
+      auth: configuredAuth,
+      apiVersion,
+      ...options
+    } = resolveGenerateOptions(flags, loaded);
     const version = parseKysoqlConfig({
-      apiVersion:
-        apiVersion ?? environment.SF_API_VERSION ?? DEFAULT_API_VERSION,
+      apiVersion: apiVersion ?? DEFAULT_API_VERSION,
     }).apiVersion;
+    const auth =
+      flags.auth === undefined
+        ? configuredAuth
+        : await loadAuthProvider(flags.auth);
+    if (auth === undefined) {
+      throw new Error(
+        "Salesforce authentication is required. Configure auth in kysoql.config.* or pass --auth <module>.",
+      );
+    }
+    const session = await auth();
     const client = createRestDescribeClient({
-      accessToken: environment.SF_ACCESS_TOKEN,
-      instanceUrl: environment.SF_INSTANCE_URL,
+      accessToken: session.accessToken,
+      instanceUrl: session.instanceUrl,
       ...(version === undefined ? {} : { apiVersion: version }),
     });
 

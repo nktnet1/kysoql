@@ -8,7 +8,7 @@ access-token provider renewal.
 ## Install and query
 
 ```bash
-pnpm add @kysoql/core @kysoql/rest
+pnpm add @kysoql/auth @kysoql/core @kysoql/rest
 pnpm add -D @kysoql/codegen
 ```
 
@@ -17,21 +17,39 @@ see [codegen](../codegen/README.md). Local imports below are extensionless and
 assume a TypeScript runner or bundler, as documented by the docs quickstart.
 
 ```ts
+import { readFile } from "node:fs/promises";
+import { SalesforceAuth } from "@kysoql/auth";
 import { Kysoql } from "@kysoql/core";
 import { createRestExecutor } from "@kysoql/rest";
 import type { SalesforceSchema } from "./salesforce.generated";
 
-function requiredEnv(name: string): string {
-  const value = process.env[name];
-  if (!value?.trim()) throw new Error(`Missing environment variable: ${name}`);
-  return value;
-}
+const auth = new SalesforceAuth({
+  loginUrl: "https://login.salesforce.com",
+  clientId: "external-client-app-id",
+});
+const pem = await readFile("./salesforce-auth-key.pem", "utf8");
+const base64 = pem
+  .replace("-----BEGIN PRIVATE KEY-----", "")
+  .replace("-----END PRIVATE KEY-----", "")
+  .replace(/\s/g, "");
+const pkcs8 = Uint8Array.from(Buffer.from(base64, "base64")).buffer;
+const privateKey = await globalThis.crypto.subtle.importKey(
+  "pkcs8",
+  pkcs8,
+  { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+  false,
+  ["sign"],
+);
+const session = await auth.jwtBearer({
+  username: "integration@example.com",
+  privateKey,
+});
 
 const executor = createRestExecutor(
   {
-    instanceUrl: requiredEnv("SF_INSTANCE_URL"),
-    accessToken: requiredEnv("SF_ACCESS_TOKEN"),
-    apiVersion: process.env.SF_API_VERSION ?? "65.0",
+    instanceUrl: session.instanceUrl,
+    accessToken: session.accessToken,
+    apiVersion: "65.0",
     timeoutMs: 30_000,
   },
   { batchSize: 1000, maxPages: 100, maxRecords: 100_000 },
@@ -40,6 +58,10 @@ const db = new Kysoql<SalesforceSchema>({ executor });
 const accounts = await db.selectFrom("Account").select(["Id", "Name"]).execute();
 const count = await db.selectFrom("Account").select(({ fn }) => fn.count()).execute();
 ```
+
+Keep the private key outside source control and load it from your application's
+normal secret-management boundary. For long-lived services, use an auth provider
+with refresh-token storage rather than treating the JWT session as permanent.
 
 Both `.execute()` and `.executeAll()` follow Salesforce query locators internally.
 Root pages are drained automatically, and selected parent-to-child subqueries are

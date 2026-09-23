@@ -90,13 +90,11 @@ turning valid negative `@ts-expect-error` assertions into editor-only errors.
 ## Schema generation CLI
 
 `@kysoql/codegen` uses oclif for command discovery, parsing, validation, and
-generated help. Set the Salesforce connection environment variables, then run
-the `generate` command:
+generated help. Configure an explicit authentication provider in
+`kysoql.config.ts` (typically using `@kysoql/auth`), then run the `generate`
+command:
 
 ```bash
-export SF_INSTANCE_URL="https://example.my.salesforce.com"
-export SF_ACCESS_TOKEN="..."
-
 kysoql generate \
   --object Account \
   --object Contact \
@@ -1247,7 +1245,9 @@ compatibility. Do not put secrets in config files. See the
 [authentication guide](apps/docs/content/docs/auth/index.mdx).
 
 Codegen's CLI uses native REST Describe and accepts `--api-version` or config
-`apiVersion`, then `SF_API_VERSION`, then the pinned default. Runtime REST options
+`apiVersion`, then the pinned default. Authentication comes from config `auth` or
+a trusted `--auth` provider module; codegen does not read Salesforce token/URL
+environment variables. Runtime REST options
 do not automatically load those CLI settings. A full monorepo installation still
 includes the optional JSforce workspace and Salesforce CLI development tooling;
 those are not dependencies of a native-only consumer application.

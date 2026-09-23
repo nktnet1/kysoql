@@ -1,34 +1,16 @@
+import { fileURLToPath } from "node:url";
+
 import { Command, Flags } from "@oclif/core";
 
-import {
-  parseJson,
-  requireCommand,
-  requireNode26,
-  run,
-} from "./lib/command.ts";
-import { readSchemaGenerationEnvironment } from "./lib/environment.ts";
+import { requireCommand, requireNode26, run } from "./lib/command.ts";
 import {
   repositoryCommandLoadOptions,
   repositoryRoot,
 } from "./lib/oclif.ts";
 
-interface OrgDisplayResponse {
-  readonly status: number;
-  readonly result?: {
-    readonly instanceUrl?: string;
-  };
-}
-
-interface AccessTokenResponse {
-  readonly status: number;
-  readonly result?: {
-    readonly accessToken?: string;
-  };
-}
-
 class GenerateSalesforceSchema extends Command {
   static description =
-    "Build @kysoql/codegen and generate the Salesforce schema using explicit credentials or an authenticated Salesforce CLI org.";
+    "Build @kysoql/codegen and generate the Salesforce schema using an authenticated Salesforce CLI org.";
 
   static flags = {
     help: Flags.help({ char: "h" }),
@@ -65,8 +47,6 @@ class GenerateSalesforceSchema extends Command {
 
   async run(): Promise<void> {
     const { flags } = await this.parse(GenerateSalesforceSchema);
-    const environment = readSchemaGenerationEnvironment();
-
     requireNode26();
     requireCommand("pnpm");
     run(
@@ -75,48 +55,12 @@ class GenerateSalesforceSchema extends Command {
       { cwd: repositoryRoot },
     );
 
-    let accessToken = environment.SF_ACCESS_TOKEN;
-    let instanceUrl = environment.SF_INSTANCE_URL;
-    if (accessToken === undefined || instanceUrl === undefined) {
-      const targetOrg =
-        environment.KYSOQL_TARGET_ORG ??
-        environment.KYSOQL_SCRATCH_ALIAS ??
-        "kysoql-test";
-      const org = parseJson<OrgDisplayResponse>(
-        run(
-          "pnpm",
-          ["sf", "org", "display", "--target-org", targetOrg, "--json"],
-          { cwd: repositoryRoot, capture: true },
-        ),
-        "Salesforce org display",
-      );
-      const token = parseJson<AccessTokenResponse>(
-        run(
-          "pnpm",
-          [
-            "sf",
-            "org",
-            "auth",
-            "show-access-token",
-            "--target-org",
-            targetOrg,
-            "--json",
-          ],
-          { cwd: repositoryRoot, capture: true },
-        ),
-        "Salesforce access token",
-      );
-      if (org.status !== 0 || org.result?.instanceUrl === undefined) {
-        throw new Error("Salesforce CLI did not return instanceUrl.");
-      }
-      if (token.status !== 0 || token.result?.accessToken === undefined) {
-        throw new Error("Salesforce CLI did not return accessToken.");
-      }
-      instanceUrl = org.result.instanceUrl;
-      accessToken = token.result.accessToken;
-    }
-
-    const forwardedArgs: string[] = ["generate"];
+    const authFile = new URL("./lib/salesforce-cli-auth.ts", import.meta.url);
+    const forwardedArgs: string[] = [
+      "generate",
+      "--auth",
+      fileURLToPath(authFile),
+    ];
     if (flags["api-version"] !== undefined) {
       forwardedArgs.push("--api-version", flags["api-version"]);
     }
@@ -138,11 +82,6 @@ class GenerateSalesforceSchema extends Command {
 
     run(process.execPath, ["packages/codegen/dist/cli.mjs", ...forwardedArgs], {
       cwd: repositoryRoot,
-      env: {
-        ...process.env,
-        SF_INSTANCE_URL: instanceUrl,
-        SF_ACCESS_TOKEN: accessToken,
-      },
     });
   }
 }

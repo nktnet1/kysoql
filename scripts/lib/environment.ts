@@ -35,29 +35,14 @@ const salesforceSetupEnvironmentSchema = v.object({
   ),
 });
 
-const schemaGenerationEnvironmentSchema = v.pipe(
-  v.object({
-    SF_ACCESS_TOKEN: v.optional(nonEmptyEnvironmentString("SF_ACCESS_TOKEN")),
-    SF_INSTANCE_URL: v.optional(
-      v.pipe(
-        nonEmptyEnvironmentString("SF_INSTANCE_URL"),
-        v.url("SF_INSTANCE_URL must be a valid URL."),
-      ),
-    ),
-    KYSOQL_TARGET_ORG: v.optional(
-      nonEmptyEnvironmentString("KYSOQL_TARGET_ORG"),
-    ),
-    KYSOQL_SCRATCH_ALIAS: v.optional(
-      nonEmptyEnvironmentString("KYSOQL_SCRATCH_ALIAS"),
-    ),
-  }),
-  v.check(
-    (environment) =>
-      (environment.SF_ACCESS_TOKEN === undefined) ===
-      (environment.SF_INSTANCE_URL === undefined),
-    "SF_ACCESS_TOKEN and SF_INSTANCE_URL must either both be set or both be unset.",
+const schemaGenerationEnvironmentSchema = v.object({
+  KYSOQL_TARGET_ORG: v.optional(
+    nonEmptyEnvironmentString("KYSOQL_TARGET_ORG"),
   ),
-);
+  KYSOQL_SCRATCH_ALIAS: v.optional(
+    nonEmptyEnvironmentString("KYSOQL_SCRATCH_ALIAS"),
+  ),
+});
 
 export const readSalesforceTargetEnvironment = (
   input: NodeJS.ProcessEnv = process.env,

@@ -4,7 +4,11 @@ import { dirname, extname, resolve } from "node:path";
 import { createJiti } from "jiti";
 import * as v from "valibot";
 
-import type { KysoqlConfig, ObjectFieldFilters } from "#/config";
+import type {
+  KysoqlConfig,
+  ObjectFieldFilters,
+  SalesforceAuthProvider,
+} from "#/config";
 import { parseFieldFilters } from "#/field-filters";
 import { parseSchemaName } from "#/validation";
 
@@ -13,7 +17,12 @@ const nonBlankString = v.pipe(
   v.string(),
   v.check((value) => value.trim().length > 0, "Expected a non-blank string."),
 );
+const authProviderSchema = v.custom<SalesforceAuthProvider>(
+  (value) => typeof value === "function",
+  "Expected auth to be a function.",
+);
 const configSchema = v.strictObject({
+  auth: v.optional(authProviderSchema),
   apiVersion: v.optional(
     v.pipe(
       v.string(),
@@ -49,6 +58,7 @@ export interface GenerateFlagOverrides {
 }
 
 export interface ResolvedGenerateOptions {
+  readonly auth?: SalesforceAuthProvider;
   readonly apiVersion?: string;
   readonly objects: readonly string[];
   readonly fields?: ObjectFieldFilters;
@@ -73,8 +83,10 @@ export const parseKysoqlConfig = (
       `Invalid Kysoql ${source}:\n${v.summarize(result.issues)}`,
     );
   }
-  const { apiVersion, objects, fields, output, schemaName } = result.output;
+  const { auth, apiVersion, objects, fields, output, schemaName } =
+    result.output;
   return {
+    ...(auth === undefined ? {} : { auth }),
     ...(apiVersion === undefined ? {} : { apiVersion }),
     ...(objects === undefined ? {} : { objects }),
     ...(fields === undefined
@@ -203,6 +215,7 @@ export const resolveGenerateOptions = (
       : dirname(loaded.filename);
 
   return {
+    ...(config.auth === undefined ? {} : { auth: config.auth }),
     ...(config.apiVersion === undefined
       ? {}
       : { apiVersion: config.apiVersion }),

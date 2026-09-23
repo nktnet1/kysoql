@@ -54,16 +54,23 @@ describe("defineConfig", () => {
     defineConfig({ out: "schema.ts" });
     // @ts-expect-error Object API names must be an array.
     defineConfig({ objects: "Account" });
-    // @ts-expect-error Credentials belong in the process environment.
+    // @ts-expect-error Authentication belongs in auth, not top-level token fields.
     defineConfig({ accessToken: "not-a-token" });
+    // @ts-expect-error auth must resolve a Salesforce OAuth session.
+    defineConfig({ auth: "not-a-provider" });
     // @ts-expect-error Export an object, not a configuration factory.
     defineConfig(() => ({}));
   });
 });
 
 describe("configuration validation", () => {
-  it("accepts an empty config and an explicit empty object list", () => {
+  it("accepts an empty config, auth provider, and an explicit empty object list", () => {
+    const auth = async () => ({
+      accessToken: "token",
+      instanceUrl: "https://example.my.salesforce.com",
+    });
     expect(parseKysoqlConfig({})).toEqual({});
+    expect(parseKysoqlConfig({ auth })).toEqual({ auth });
     expect(parseKysoqlConfig({ objects: [] })).toEqual({ objects: [] });
   });
 
@@ -76,6 +83,7 @@ describe("configuration validation", () => {
     "schema.ts",
     () => ({}),
     { out: "schema.ts" },
+    { auth: "not-a-provider" },
     { apiVersion: "v65.0" },
     { apiVersion: "65" },
     { apiVersion: 65 },

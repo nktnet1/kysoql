@@ -1,6 +1,11 @@
 import { Command, Flags } from "@oclif/core";
 
-import { requireCommand, requireNode26, run } from "./lib/command.ts";
+import {
+  requireCommand,
+  requireNode26,
+  run,
+  succeeds,
+} from "./lib/command.ts";
 import { readSalesforceTargetEnvironment } from "./lib/environment.ts";
 import {
   repositoryCommandLoadOptions,
@@ -28,6 +33,18 @@ class SalesforceGeneratedE2E extends Command {
 
     requireNode26();
     requireCommand("pnpm");
+    if (
+      !succeeds(
+        "pnpm",
+        ["sf", "org", "display", "--target-org", targetOrg, "--json"],
+        { cwd: repositoryRoot },
+      )
+    ) {
+      throw new Error(
+        `Salesforce org '${targetOrg}' is not authenticated or is unavailable. ` +
+          "Run pnpm salesforce:setup first, or pass --target-org for an already prepared test org.",
+      );
+    }
     run("pnpm", ["--filter", "@kysoql/core", "build"], {
       cwd: repositoryRoot,
     });

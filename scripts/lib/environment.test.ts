@@ -25,21 +25,13 @@ describe("script environment validation", () => {
     ).toThrow("KYSOQL_TARGET_ORG must not be empty.");
   });
 
-  it("requires Salesforce schema credentials as a pair", () => {
+  it("validates schema-generation org aliases without Salesforce token variables", () => {
+    expect(
+      readSchemaGenerationEnvironment({ KYSOQL_TARGET_ORG: "sandbox" }),
+    ).toEqual({ KYSOQL_TARGET_ORG: "sandbox" });
     expect(() =>
-      readSchemaGenerationEnvironment({ SF_ACCESS_TOKEN: "token" }),
-    ).toThrow(
-      "SF_ACCESS_TOKEN and SF_INSTANCE_URL must either both be set or both be unset.",
-    );
-  });
-
-  it("validates schema-generation URLs", () => {
-    expect(() =>
-      readSchemaGenerationEnvironment({
-        SF_ACCESS_TOKEN: "token",
-        SF_INSTANCE_URL: "not-a-url",
-      }),
-    ).toThrow("SF_INSTANCE_URL must be a valid URL.");
+      readSchemaGenerationEnvironment({ KYSOQL_TARGET_ORG: "  " }),
+    ).toThrow("KYSOQL_TARGET_ORG must not be empty.");
   });
 
   it("validates scratch duration bounds", () => {

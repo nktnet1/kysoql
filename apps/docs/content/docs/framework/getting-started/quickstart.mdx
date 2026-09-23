@@ -6,23 +6,59 @@ icon: "Rocket"
 
 This walkthrough uses a TypeScript application with `tsx`, configured as described in
 [installation](/docs/framework/getting-started/installation), a Salesforce org with API
-access, and an access token for a user allowed to describe and query `Account`
+access, and an OAuth integration user allowed to describe and query `Account`
 and `Contact`.
 
-## 1. Supply credentials
+## 1. Define authentication
 
-Use a token obtained through your application's approved Salesforce OAuth flow.
-Set credentials in the process environment, not in source control:
+Resolve Salesforce sessions explicitly with `@kysoql/auth`; codegen does not read
+access-token or instance-URL environment variables. For example, a server-to-server
+integration can use JWT bearer authentication. Import the PEM key into the
+`CryptoKey` shape expected by the auth package:
 
-```bash
-export SF_INSTANCE_URL="https://your-domain.my.salesforce.com"
-# Inject SF_ACCESS_TOKEN from your secret manager or local shell environment.
-# SF_ACCESS_TOKEN must be the access token for this instance and user.
+```ts title="salesforce-auth-key.ts"
+import { readFile } from "node:fs/promises";
+
+const pem = await readFile(
+  new URL("./salesforce-auth-key.pem", import.meta.url),
+  "utf8",
+);
+const base64 = pem
+  .replace("-----BEGIN PRIVATE KEY-----", "")
+  .replace("-----END PRIVATE KEY-----", "")
+  .replace(/\s/g, "");
+const pkcs8 = Uint8Array.from(Buffer.from(base64, "base64")).buffer;
+
+export const privateKey = await globalThis.crypto.subtle.importKey(
+  "pkcs8",
+  pkcs8,
+  { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+  false,
+  ["sign"],
+);
 ```
 
-The instance URL is the org URL returned by authentication, not a generic login
-URL. The CLI reads `SF_INSTANCE_URL` and `SF_ACCESS_TOKEN`; it does not load a
-`.env` file automatically. See [security](/docs/core/reference/security).
+Then use that key from the session provider:
+
+```ts title="salesforce-auth.ts"
+import { SalesforceAuth } from "@kysoql/auth";
+import { privateKey } from "./salesforce-auth-key";
+
+const auth = new SalesforceAuth({
+  loginUrl: "https://login.salesforce.com",
+  clientId: "external-client-app-id",
+});
+
+export const getSalesforceSession = () =>
+  auth.jwtBearer({
+    username: "integration@example.com",
+    privateKey,
+  });
+```
+
+Keep private keys and other long-lived credentials in your normal secret/key
+management boundary rather than source control. See [authentication](/docs/auth)
+and [security](/docs/core/reference/security).
 
 ## 2. Configure and generate your schema
 
@@ -30,8 +66,10 @@ Create `kysoql.config.ts` beside the application's `package.json`:
 
 ```ts title="kysoql.config.ts"
 import { defineConfig } from "@kysoql/codegen";
+import { getSalesforceSession } from "./salesforce-auth";
 
 export default defineConfig({
+  auth: getSalesforceSession,
   objects: ["Account", "Contact"],
   output: "src/salesforce.generated.ts",
   schemaName: "SalesforceSchema",
@@ -44,10 +82,11 @@ Run from that directory:
 pnpm run schema:generate
 ```
 
-The script runs `kysoql generate`, which discovers the config. Credentials still
-come from the environment, not this file. See
+The script runs `kysoql generate`, which discovers the config and invokes its auth
+provider only after configuration validation succeeds. See
 [configuration](/docs/codegen/configuration) for overrides, multiple orgs,
-and path rules. The CLI also works [without a config](/docs/codegen/schema-generation#cli-reference).
+and path rules. The CLI also works [without a config](/docs/codegen/schema-generation#cli-reference)
+when `--auth <module>` is supplied.
 
 The output describes the fields and relationships visible to the connected user.
 It is a TypeScript type definition, not a cache of records. Regenerate it when
@@ -98,33 +137,26 @@ Create `src/db.ts`:
 ```typescript title="src/db.ts"
 import { Kysoql } from "@kysoql/core";
 import { createRestExecutor } from "@kysoql/rest";
+import { getSalesforceSession } from "./salesforce-auth";
 import type { SalesforceSchema } from "./salesforce.generated";
 
-function requiredEnv(name: string): string {
-  const value = process.env[name];
-  if (!value?.trim()) {
-    throw new Error(`Missing environment variable: ${name}`);
-  }
-  return value;
-}
+const session = await getSalesforceSession();
 
 export const executor = createRestExecutor({
-  instanceUrl: requiredEnv("SF_INSTANCE_URL"),
-  accessToken: requiredEnv("SF_ACCESS_TOKEN"),
-  apiVersion: process.env.SF_API_VERSION ?? "65.0",
+  instanceUrl: session.instanceUrl,
+  accessToken: session.accessToken,
+  apiVersion: "65.0",
 });
 
 export const db = new Kysoql<SalesforceSchema>({ executor });
 ```
 
-This uses native `fetch` with an existing access token, without JSforce. For a
-long-running server-to-server service, start with the
-[`@kysoql/auth` JWT bearer flow](/docs/auth/flows/jwt-bearer) and the REST
-[authentication integration](/docs/rest/authentication). JWT bearer uses a
-server-side private key and does not require an interactive login or stored refresh
-token. Runtime environment loading above is explicit; the REST client does not read
-`SF_*` variables on its own. Align its API version with schema generation and verify
-target-org feature support.
+This reuses the `@kysoql/auth` provider from step 1 and passes the resulting session
+to the native REST executor, without JSforce. JWT bearer uses a server-side private
+key and does not require an interactive login or stored refresh token. For
+long-running services that need refresh-token rotation, see the REST
+[authentication integration](/docs/rest/authentication). Align the executor API
+version with schema generation and verify target-org feature support.
 
 Create `src/query.ts`:
 

@@ -16,9 +16,17 @@ Place `kysoql.config.ts` in the directory where you run the CLI, usually beside
 your application's `package.json`:
 
 ```ts title="kysoql.config.ts"
+import { SalesforceAuth } from "@kysoql/auth";
 import { defineConfig } from "@kysoql/codegen";
+import { privateKey } from "./salesforce-auth-key";
+
+const salesforce = new SalesforceAuth({
+  loginUrl: "https://login.salesforce.com",
+  clientId: "external-client-app-id",
+});
 
 export default defineConfig({
+  auth: () => salesforce.jwtBearer({ username: "integration@example.com", privateKey }),
   objects: ["Account", "Contact", "Opportunity", "User"],
   output: "src/salesforce.generated.ts",
   schemaName: "SalesforceSchema",
@@ -38,7 +46,7 @@ export default {
 } satisfies KysoqlConfig;
 ```
 
-Run with `SF_INSTANCE_URL` and `SF_ACCESS_TOKEN` already set:
+Run the generator; the `auth` provider resolves the Salesforce session when needed:
 
 ```bash
 pnpm exec kysoql generate
@@ -48,7 +56,8 @@ pnpm exec kysoql generate
 
 | Key | Type | Default | Behaviour |
 | --- | --- | --- | --- |
-| `apiVersion` | `string` | `SF_API_VERSION` or `65.0` | REST version for the CLI, without `v`. Overridden by `--api-version`. |
+| `auth` | `SalesforceAuthProvider` | `undefined` | Returns the Salesforce OAuth session used by CLI generation. May be overridden with `--auth`. |
+| `apiVersion` | `string` | `65.0` | REST version for the CLI, without `v`. Overridden by `--api-version`. |
 | `objects` | `readonly string[]` | All queryable objects | Salesforce API names. `[]` also means all queryable objects. Include relationship targets explicitly. |
 | `fields` | `ObjectFieldFilters` | All described fields | Optional per-object exact include/exclude rules. See [field filtering](/docs/codegen/field-filtering). |
 | `output` | `string` | `salesforce.generated.ts` | Generated file, relative to the config directory. Parent directories are created. |
@@ -92,7 +101,7 @@ The CLI looks in the **current working directory only** for
 to a parent workspace. This prevents a workspace package from accidentally
 using another application's org configuration.
 
-If no file is found, existing CLI-only usage continues to work. If more than one
+If no file is found, CLI-only settings still work when an authentication provider is supplied with `--auth`. If more than one
 supported file exists, generation fails with a message asking you to select one.
 For an explicit path, a missing or invalid file is an error, not a silent
 fallback to defaults.
@@ -113,12 +122,12 @@ credentials just because the job only runs codegen.
 ```bash
 pnpm exec kysoql generate --config config/kysoql.sandbox.ts
 pnpm exec kysoql generate --object Account --output tmp/account.ts
-pnpm exec kysoql generate --no-config --object Account --output tmp/account.ts
+pnpm exec kysoql generate --no-config --auth config/salesforce.auth.ts --object Account --output tmp/account.ts
 ```
 
 Precedence is **explicit CLI flags, then config settings, then built-in
-defaults**. API version has an extra fallback: **`--api-version`, then config
-`apiVersion`, then `SF_API_VERSION`, then the pinned `65.0` default**. Use a version
+defaults**. API version is **`--api-version`, then config `apiVersion`, then the
+pinned `65.0` default**. Use a version
 supported by your org; this is not automatic API-version negotiation. For example:
 
 ```bash
@@ -140,7 +149,7 @@ with `--config`. Use it with no `--object` flags to explicitly generate all
 queryable objects, ignoring any configured allowlist:
 
 ```bash
-pnpm exec kysoql generate --no-config --output src/all.generated.ts
+pnpm exec kysoql generate --no-config --auth config/salesforce.auth.ts --output src/all.generated.ts
 ```
 
 ## Multiple orgs and CI
@@ -156,17 +165,10 @@ Keep settings for different orgs in separate files and select one explicitly:
 }
 ```
 
-The file does **not** choose the authenticated org. Supply that org's instance
-URL and access token through the corresponding environment or CI secret store.
-Use different output files and schema names when retaining more than one org's
-types. Generate after metadata changes, review the diff, and run application
-typechecks before deploying.
-
-Do not store tokens in committed config files. The CLI does not automatically
-read `.env` files; arrange environment loading explicitly before generation.
-A config may execute your chosen environment loader as part of its module
-initialisation, but that loader is your responsibility. No credentials are
-copied to the generated type file.
+The `auth` provider chooses the authenticated org. Prefer `@kysoql/auth` with a
+secret manager, key store, or refresh-token store rather than embedding tokens in
+config. For multiple orgs, use separate providers/configs and output files.
+Generated type files never contain credentials.
 
 ## Troubleshooting
 

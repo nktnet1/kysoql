@@ -11,12 +11,13 @@ and regenerate after changes to fields, relationships, picklists, or permissions
 For repeatable settings, create a
 [`kysoql.config.ts`](/docs/codegen/configuration). The CLI automatically
 loads it from the working directory. Explicit CLI flags override config values;
-use `--no-config` for a completely CLI-driven run.
+use `--no-config` with `--auth <module>` for a config-free settings run.
 
 ## CLI reference
 
 ```bash
 pnpm exec kysoql generate --no-config \
+  --auth config/salesforce.auth.ts \
   --object Account \
   --object Contact \
   --object Opportunity \
@@ -27,7 +28,8 @@ pnpm exec kysoql generate --no-config \
 
 | Option | Default | Behaviour |
 | --- | --- | --- |
-| `--api-version <version>` | Config, `SF_API_VERSION`, or `65.0` | REST version without a `v` prefix; explicit flags take precedence. |
+| `--api-version <version>` | Config or `65.0` | REST version without a `v` prefix; explicit flags take precedence. |
+| `--auth <path>` | Config `auth` | Load a trusted module whose default export returns a Salesforce OAuth session. |
 | `--config <path>` | Discover in the working directory | Select a JS/TS config explicitly; a missing file fails. |
 | `--no-config` | `false` | Skip config discovery and evaluation; conflicts with `--config`. |
 | `--object <api-name>` | Configured list or all queryable objects | Repeat once per object. Replaces, rather than appends to, the configured list. |
@@ -35,20 +37,17 @@ pnpm exec kysoql generate --no-config \
 | `--schema-name <name>` | Configured name or `SalesforceSchema` | Name of the generated interface; must pass identifier validation. |
 | `--help` | N/A | Displays generated oclif help. |
 
-| Environment variable | Required | Meaning |
-| --- | --- | --- |
-| `SF_INSTANCE_URL` | Yes | Instance URL for the authenticated org. |
-| `SF_ACCESS_TOKEN` | Yes | Existing Salesforce access token. |
-| `SF_API_VERSION` | No | Version fallback when neither flag nor config specifies it. |
+Authentication is explicit: define `auth` in config or pass `--auth <module>`. The provider should obtain a session with `@kysoql/auth` or another trusted mechanism. Codegen does not read `SF_ACCESS_TOKEN`, `SF_INSTANCE_URL`, or `SF_API_VERSION`.
+
 
 ```bash
 pnpm exec kysoql --help
 pnpm exec kysoql generate --help
 ```
 
-The CLI uses the native REST Describe client, not JSforce. Supply an authenticated
-token through the environment; there are no username, password, client-secret, or
-login-URL flags. API version is pinned to `65.0` unless overridden. Match your
+The CLI uses the native REST Describe client, not JSforce. Authentication is
+resolved by the configured/provider module, keeping credential acquisition out of
+codegen itself. API version is pinned to `65.0` unless overridden. Match your
 runtime query client's version and verify feature support in your org.
 
 Without a configured `objects` list, omitting `--object` includes all queryable
