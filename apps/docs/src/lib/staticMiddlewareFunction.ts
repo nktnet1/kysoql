@@ -21,6 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+/** biome-ignore-all lint/style/noNonNullAssertion: tanstack start usage */
+/** biome-ignore-all lint/suspicious/noExplicitAny: tanstack start usage */
 
 /**
  * The code below was copied from:
@@ -36,13 +38,13 @@
  * - https://github.com/TanStack/router/issues/6152
  */
 
-/** biome-ignore-all lint/suspicious/noExplicitAny: Tanstack Start uses type any */
-
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
   createMiddleware,
+  defaultSerovalDeserializerPlugins,
   getDefaultSerovalPlugins,
+  getSerovalPlugins,
 } from "@tanstack/react-start";
 import { fromJSON, toJSONAsync } from "seroval";
 
@@ -92,7 +94,7 @@ const getStaticCacheUrl = async (opts: {
 
 const jsonToFilenameSafeString = (json: any) => {
   // Custom replacer to sort keys
-  const sortedKeysReplacer = (_key: string, value: any) =>
+  const sortedKeysReplacer = (key: string, value: any) =>
     value && typeof value === "object" && !Array.isArray(value)
       ? Object.keys(value)
           .sort()
@@ -111,9 +113,6 @@ const jsonToFilenameSafeString = (json: any) => {
     .replace(/\s+/g, "_"); // Optionally replace whitespace with underscores
 };
 
-const staticClientCache =
-  typeof document !== "undefined" ? new Map<string, any>() : null;
-
 async function addItemToCache({
   functionId,
   data,
@@ -123,27 +122,25 @@ async function addItemToCache({
   data: any;
   response: StaticCachedResult;
 }): Promise<void> {
-  {
-    const hash = jsonToFilenameSafeString(data);
-    const url = await getStaticCacheUrl({ functionId, hash });
-    const clientUrl = process.env.TSS_CLIENT_OUTPUT_DIR ?? "";
-    const filePath = path.join(clientUrl, url);
+  const hash = jsonToFilenameSafeString(data);
+  const url = await getStaticCacheUrl({ functionId, hash });
+  const clientUrl = process.env.TSS_CLIENT_OUTPUT_DIR!;
+  const filePath = path.join(clientUrl, url);
 
-    // Ensure the directory exists
-    await fs.mkdir(path.dirname(filePath), { recursive: true });
+  // Ensure the directory exists
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
 
-    // Store the result with fs
-    const stringifiedResult = JSON.stringify(
-      await toJSONAsync(
-        {
-          result: response.result,
-          context: response.context.sendContext,
-        },
-        { plugins: getDefaultSerovalPlugins() },
-      ),
-    );
-    await fs.writeFile(filePath, stringifiedResult, "utf-8");
-  }
+  // Store the result with fs
+  const stringifiedResult = JSON.stringify(
+    await toJSONAsync(
+      {
+        result: response.result,
+        context: response.context.sendContext,
+      },
+      { plugins: getDefaultSerovalPlugins() },
+    ),
+  );
+  await fs.writeFile(filePath, stringifiedResult, "utf-8");
 }
 
 const fetchItem = async ({
@@ -156,8 +153,6 @@ const fetchItem = async ({
   const hash = jsonToFilenameSafeString(data);
   const url = await getStaticCacheUrl({ functionId, hash });
 
-  let result: any = staticClientCache?.get(url);
-
   const basePath = process.env.TSS_ROUTER_BASEPATH ?? "/";
 
   const requestUrl = `/${[basePath, url]
@@ -165,19 +160,23 @@ const fetchItem = async ({
     .filter(Boolean)
     .join("/")}`;
 
-  result = await fetch(requestUrl, {
+  return fetch(requestUrl, {
     method: "GET",
   })
     .then((r) => r.json())
-    .then((d) => fromJSON(d, { plugins: getDefaultSerovalPlugins() }));
-
-  return result;
+    .then((d) =>
+      fromJSON<any>(d, {
+        // Cached responses may carry RawStream nodes.
+        plugins: getSerovalPlugins(defaultSerovalDeserializerPlugins),
+      }),
+    );
 };
 
 export const staticFunctionMiddleware = createMiddleware({ type: "function" })
   .client(async (ctx) => {
     if (
-      process.env.NODE_ENV === "production" && // do not run this during SSR on the server
+      process.env.NODE_ENV === "production" &&
+      // do not run this during SSR on the server
       typeof document !== "undefined"
     ) {
       const response = await fetchItem({

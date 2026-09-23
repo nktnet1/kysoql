@@ -20,10 +20,7 @@ describe("headless authorization", () => {
       username: "user@example.com",
       password: "secret",
     });
-    assert.equal(
-      request.url,
-      `${nestedSiteUrl}/services/oauth2/authorize`,
-    );
+    assert.equal(request.url, `${nestedSiteUrl}/services/oauth2/authorize`);
 
     const http = mockFetch(Response.json({ authorization_code: "code" }));
     await requestFirstPartyAuthorizationChallenge({
@@ -124,10 +121,7 @@ describe("headless authorization", () => {
       uvidHintToken: "guest-jwt",
       uvidPlacement: "body",
     });
-    assert.equal(
-      new Headers(bodyRequest.init.headers).has("Uvid-Hint"),
-      false,
-    );
+    assert.equal(new Headers(bodyRequest.init.headers).has("Uvid-Hint"), false);
     assert.equal(
       new URLSearchParams(String(bodyRequest.init.body)).get("uvid_hint"),
       "JWT guest-jwt",
@@ -179,40 +173,37 @@ describe("headless authorization", () => {
     );
   });
 
-  it(
-    "returns a resumable first-party challenge without leaking server text",
-    async () => {
-      const http = mockFetch(
-        Response.json(
-          {
-            error: "authorization_required",
-            error_code: "invalid_credentials",
-            auth_session: "session",
-          },
-          { status: 403 },
-        ),
-      );
-      assert.deepEqual(
-        await requestFirstPartyAuthorizationChallenge({
-          siteUrl,
-          parameters: { password: "secret", auth_session: "session" },
-          fetch: http.fetch,
-        }),
+  it("returns a resumable first-party challenge without leaking server text", async () => {
+    const http = mockFetch(
+      Response.json(
         {
-          kind: "challenge",
-          status: 403,
           error: "authorization_required",
-          errorCode: "invalid_credentials",
-          authSession: "session",
-          response: {
-            error: "authorization_required",
-            error_code: "invalid_credentials",
-            auth_session: "session",
-          },
+          error_code: "invalid_credentials",
+          auth_session: "session",
         },
-      );
-    },
-  );
+        { status: 403 },
+      ),
+    );
+    assert.deepEqual(
+      await requestFirstPartyAuthorizationChallenge({
+        siteUrl,
+        parameters: { password: "secret", auth_session: "session" },
+        fetch: http.fetch,
+      }),
+      {
+        kind: "challenge",
+        status: 403,
+        error: "authorization_required",
+        errorCode: "invalid_credentials",
+        authSession: "session",
+        response: {
+          error: "authorization_required",
+          error_code: "invalid_credentials",
+          auth_session: "session",
+        },
+      },
+    );
+  });
 
   it("rejects invalid headless request modes at runtime", async () => {
     assert.throws(

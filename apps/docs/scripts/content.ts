@@ -90,9 +90,7 @@ const languages = new Set([
 export function codeBlocks(text: string): CodeBlock[] {
   const lines = text.replace(/\r\n?/g, "\n").split("\n");
   const blocks: CodeBlock[] = [];
-  let open:
-    | Omit<CodeBlock, "code" | "endLine" | "closed">
-    | undefined;
+  let open: Omit<CodeBlock, "code" | "endLine" | "closed"> | undefined;
 
   const finish = (end: number, closed: boolean) => {
     if (!open) {

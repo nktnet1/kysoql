@@ -4,6 +4,7 @@ import path from "node:path";
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { Kysoql } from "../../packages/core/dist/index.mjs";
+import type { SalesforceSchema } from "../salesforce/salesforce.generated.ts";
 
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(testDir, "..", "..");
@@ -24,9 +25,52 @@ const { KYSOQL_TARGET_ORG: targetOrg } = v.parse(
   process.env,
 );
 
-type SalesforceRecord = Record<string, any>;
+const salesforceRecordSchema = v.looseObject({
+  Name: v.optional(v.string()),
+  External_Id__c: v.optional(v.string()),
+  Amount__c: v.optional(v.union([v.number(), v.string()])),
+  Active__c: v.optional(v.boolean()),
+  Category__c: v.optional(v.string()),
+  Occurred_On__c: v.optional(v.string()),
+  recordCount: v.optional(v.union([v.number(), v.string()])),
+  totalAmount: v.optional(v.union([v.number(), v.string()])),
+  Account__r: v.optional(
+    v.nullable(
+      v.looseObject({
+        Name: v.optional(v.string()),
+      }),
+    ),
+  ),
+  Kysoql_Records__r: v.optional(
+    v.nullable(
+      v.looseObject({
+        records: v.optional(
+          v.array(
+            v.looseObject({
+              External_Id__c: v.optional(v.string()),
+            }),
+          ),
+          [],
+        ),
+      }),
+    ),
+  ),
+});
+
+const salesforceQueryResponseSchema = v.looseObject({
+  status: v.number(),
+  message: v.optional(v.string()),
+  name: v.optional(v.string()),
+  result: v.optional(
+    v.looseObject({
+      records: v.array(salesforceRecordSchema),
+    }),
+  ),
+});
+
+type SalesforceRecord = v.InferOutput<typeof salesforceRecordSchema>;
 interface SalesforceQueryResult {
-  readonly records: SalesforceRecord[];
+  readonly records: readonly SalesforceRecord[];
 }
 
 const runSfQuery = (soql: string): SalesforceQueryResult => {
@@ -53,9 +97,9 @@ const runSfQuery = (soql: string): SalesforceQueryResult => {
     throw new Error(`unable to execute Salesforce CLI: ${command.error.message}`);
   }
 
-  let response: any;
+  let input: unknown;
   try {
-    response = JSON.parse(command.stdout);
+    input = JSON.parse(command.stdout) as unknown;
   } catch {
     const stderr = command.stderr.trim();
     throw new Error(
@@ -63,17 +107,31 @@ const runSfQuery = (soql: string): SalesforceQueryResult => {
     );
   }
 
-  if (command.status !== 0 || response.status !== 0) {
+  const parsed = v.safeParse(salesforceQueryResponseSchema, input);
+  if (!parsed.success) {
+    throw new Error(
+      `Salesforce CLI returned an invalid query response for ${soql}:\n${v.summarize(parsed.issues)}`,
+    );
+  }
+
+  if (command.status !== 0 || parsed.output.status !== 0) {
+    const stderr = command.stderr.trim();
     const detail =
-      response.message ?? response.name ?? command.stderr.trim() ?? "unknown error";
+      parsed.output.message ??
+      parsed.output.name ??
+      (stderr.length > 0 ? stderr : "unknown error");
     throw new Error(`Salesforce rejected generated SOQL:\n${soql}\n${detail}`);
   }
 
-  return response.result as SalesforceQueryResult;
+  if (parsed.output.result === undefined) {
+    throw new Error(`Salesforce query response did not include a result for ${soql}.`);
+  }
+
+  return parsed.output.result;
 };
 
 const compile = (builder: { compile(): { soql: string } }): string => builder.compile().soql;
-const db = new Kysoql<any>();
+const db = new Kysoql<SalesforceSchema>();
 
 describe(`generated-query Salesforce E2E (${targetOrg})`, () => {
   it("executes record filtering and ordering", () => {
@@ -217,8 +275,8 @@ describe(`generated-query Salesforce E2E (${targetOrg})`, () => {
       result.records.map((record) => ({
         name: record.Name,
         children:
-          record.Kysoql_Records__r?.records?.map(
-            (child: SalesforceRecord) => child.External_Id__c,
+          record.Kysoql_Records__r?.records.map(
+            (child) => child.External_Id__c,
           ) ?? [],
       })),
     ).toEqual([

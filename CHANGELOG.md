@@ -150,6 +150,16 @@ version is cut.
 
 ### Fixed
 
+- Run the root task-configuration regression under Vitest instead of `node:test`,
+  so the workspace Vitest suite registers the file as a real test suite rather
+  than reporting "No test suite found".
+- Keep the Salesforce generated-query E2E response handling free of explicit
+  `any` by validating Salesforce CLI JSON with Valibot before reading fixture
+  fields.
+- Keep the generated-query Salesforce E2E harness type-safe after its TypeScript
+  migration by binding `Kysoql` to the checked-in generated `SalesforceSchema`
+  and retaining aggregate capability metadata for the fixture fields used by
+  `COUNT()` / `SUM()`.
 - Keep the REST relationship-pagination documentation example type-safe by modelling the documented `Contact.Cases` child relationship in the synthetic docs schema.
 - Annotate the auth test `tokenResponse()` helper with an explicit `Response` return type so TypeScript does not infer a non-portable `undici-types` path during strict test typechecking.
 - Keep the named `SalesforceField` metadata migration compatible with TypeScript 7
@@ -207,6 +217,11 @@ version is cut.
 
 ### Changed
 
+- Standardise repository Salesforce command-line tooling on oclif and validate
+  command environments with Valibot, including paired schema credentials,
+  scratch-org defaults, URL validation, and bounded scratch duration.
+- Enforce `noExplicitAny` in Biome and add a TypeScript-AST regression over
+  package, script, docs-tooling, and Salesforce E2E sources.
 - Run repository-authored tooling, smoke helpers, docs checks, and Salesforce E2E entrypoints as TypeScript directly on Node 26; generated documentation typecheck fixtures now live under `.generated/examples/` instead of a misleading cache directory.
 - Split `@kysoql/auth` authentication methods into individual end-user documentation pages, make private-key JWT bearer the default server-to-server path, and link each flow to the relevant Salesforce reference documentation.
 - Generated Salesforce fields now use named metadata objects instead of opaque

@@ -1,51 +1,56 @@
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+
+import { Command, Flags } from "@oclif/core";
+
 import { requireCommand, run } from "./lib/command.ts";
+import { readSalesforceTargetEnvironment } from "./lib/environment.ts";
+import {
+  repositoryCommandLoadOptions,
+  repositoryRoot,
+} from "./lib/oclif.ts";
 
-const scriptDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(scriptDir, "..");
-const salesforceDir = path.join(repoRoot, "test", "salesforce");
+const salesforceDir = path.join(repositoryRoot, "test", "salesforce");
 
-function usage(): void {
-  console.log(`Usage: pnpm salesforce:apex-binds [options]\n\nRun the static-Apex bind-expression smoke fixture against an authenticated org.\n\nOptions:\n  --target-org <alias>  Salesforce org alias (default: kysoql-test)\n  -h, --help            Show this help\n\nEnvironment equivalent:\n  KYSOQL_TARGET_ORG`);
-}
+class SalesforceApexBindSmoke extends Command {
+  static description =
+    "Run the static-Apex bind-expression smoke fixture against an authenticated Salesforce org.";
 
-function parseArgs(args: readonly string[]): string {
-  let targetOrg = process.env.KYSOQL_TARGET_ORG ?? "kysoql-test";
-  for (let index = 0; index < args.length; index++) {
-    const argument = args[index];
-    if (argument === "--target-org") {
-      const value = args[index + 1];
-      if (!value) {
-        throw new Error("--target-org requires a value");
-      }
-      targetOrg = value;
-      index++;
-    } else if (argument === "-h" || argument === "--help") {
-      usage();
-      process.exit(0);
-    } else {
-      throw new Error(`unknown option: ${argument}`);
-    }
+  static flags = {
+    help: Flags.help({ char: "h" }),
+    "target-org": Flags.string({
+      description: "Salesforce org alias (default: KYSOQL_TARGET_ORG or kysoql-test).",
+      helpValue: "<alias>",
+    }),
+  };
+
+  static summary = "Run the Salesforce Apex bind smoke fixture.";
+
+  async run(): Promise<void> {
+    const { flags } = await this.parse(SalesforceApexBindSmoke);
+    const environment = readSalesforceTargetEnvironment();
+    const targetOrg = flags["target-org"] ?? environment.KYSOQL_TARGET_ORG;
+
+    requireCommand("pnpm");
+    run(
+      "pnpm",
+      [
+        "sf",
+        "apex",
+        "run",
+        "--target-org",
+        targetOrg,
+        "--file",
+        "scripts/apex/static-bind-smoke.apex",
+      ],
+      { cwd: salesforceDir },
+    );
   }
-  return targetOrg;
 }
 
 try {
-  requireCommand("pnpm");
-  const targetOrg = parseArgs(process.argv.slice(2));
-  run(
-    "pnpm",
-    [
-      "sf",
-      "apex",
-      "run",
-      "--target-org",
-      targetOrg,
-      "--file",
-      "scripts/apex/static-bind-smoke.apex",
-    ],
-    { cwd: salesforceDir },
+  await SalesforceApexBindSmoke.run(
+    process.argv.slice(2),
+    repositoryCommandLoadOptions,
   );
 } catch (error) {
   console.error(`error: ${error instanceof Error ? error.message : String(error)}`);

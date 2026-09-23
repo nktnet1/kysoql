@@ -988,6 +988,7 @@ export interface SalesforceSchema {
           readonly filterable: true;
           readonly sortable: true;
           readonly groupable: false;
+          readonly aggregatable: true;
         }
       >;
       readonly "Category__c": SalesforceField<
@@ -1041,6 +1042,7 @@ export interface SalesforceSchema {
           readonly filterable: true;
           readonly sortable: true;
           readonly groupable: true;
+          readonly aggregatable: true;
         }
       >;
       readonly "IsDeleted": SalesforceField<

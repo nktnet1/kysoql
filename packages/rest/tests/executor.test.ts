@@ -15,7 +15,9 @@ const options = { instanceUrl: origin, accessToken: "token" };
 const queryLocator = (name: string): string =>
   `/services/data/v65.0/query/${name}`;
 
-const limitedQuery = (limit: number): CompiledQuery<{ readonly Id: string }> => {
+const limitedQuery = (
+  limit: number,
+): CompiledQuery<{ readonly Id: string }> => {
   const query = compiled<{ readonly Id: string }>(
     `SELECT Id FROM Account LIMIT ${limit}`,
   );
@@ -30,8 +32,7 @@ const limitedQuery = (limit: number): CompiledQuery<{ readonly Id: string }> => 
 
 const deeplyNestedQuery = (): CompiledQuery<Record<string, unknown>> =>
   ({
-    soql:
-      "SELECT Id, (SELECT Id, (SELECT Id, (SELECT Id, (SELECT Id FROM WorkOrderLineItems LIMIT 2) FROM WorkOrders LIMIT 2) FROM Assets LIMIT 2) FROM Contacts LIMIT 2) FROM Account LIMIT 1",
+    soql: "SELECT Id, (SELECT Id, (SELECT Id, (SELECT Id, (SELECT Id FROM WorkOrderLineItems LIMIT 2) FROM WorkOrders LIMIT 2) FROM Assets LIMIT 2) FROM Contacts LIMIT 2) FROM Account LIMIT 1",
     query: {
       kind: "SelectQueryNode",
       from: { kind: "SObjectNode", name: "Account" },
@@ -162,9 +163,10 @@ describe("native query executor", () => {
       Response.json(page([{ Id: "1" }], second)),
       Response.json(page([{ Id: "2" }])),
     );
-    const pages = createRestExecutor({ ...options, fetch: http.fetch }).queryPages(
-      compiled(),
-    );
+    const pages = createRestExecutor({
+      ...options,
+      fetch: http.fetch,
+    }).queryPages(compiled());
 
     const first = await pages.next();
     assert.equal(first.done, false);
@@ -231,9 +233,7 @@ describe("native query executor", () => {
           },
         ]),
       ),
-      Response.json(
-        nested([{ Id: "L2" }, { Id: "L3" }], lineItemsExtra),
-      ),
+      Response.json(nested([{ Id: "L2" }, { Id: "L3" }], lineItemsExtra)),
       Response.json(
         nested(
           [
@@ -383,13 +383,7 @@ describe("native query executor", () => {
     });
     assert.deepEqual(
       http.calls.map((call) => call.url.pathname),
-      [
-        "/services/data/v65.0/query",
-        lineItems,
-        workOrders,
-        assets,
-        contacts,
-      ],
+      ["/services/data/v65.0/query", lineItems, workOrders, assets, contacts],
     );
   });
 
@@ -757,5 +751,4 @@ describe("bare-count routing", () => {
       assert.equal(http.calls.length, 0);
     });
   }
-
 });

@@ -8,10 +8,7 @@ import {
 } from "#/config-loader";
 import { generateSchema } from "#/index";
 import { createRestDescribeClient } from "#/rest-client";
-import { parseRequiredEnvironmentVariable } from "#/validation";
-
-const requiredEnvironmentVariable = (name: string): string =>
-  parseRequiredEnvironmentVariable(process.env[name], name);
+import { parseGenerateEnvironment } from "#/validation";
 
 export default class Generate extends Command {
   static description =
@@ -28,6 +25,7 @@ CLI flags override configuration. Authentication requires SF_INSTANCE_URL and SF
   ];
 
   static flags = {
+    help: Flags.help({ char: "h" }),
     "api-version": Flags.string({
       description:
         "Salesforce REST version, without v (flag > config > SF_API_VERSION > 65.0).",
@@ -64,6 +62,7 @@ CLI flags override configuration. Authentication requires SF_INSTANCE_URL and SF
 
   async run(): Promise<void> {
     const { flags } = await this.parse(Generate);
+    const environment = parseGenerateEnvironment(process.env);
     const loaded = await loadConfig({
       configFile: flags.config,
       disabled: flags["no-config"],
@@ -71,11 +70,11 @@ CLI flags override configuration. Authentication requires SF_INSTANCE_URL and SF
     const { apiVersion, ...options } = resolveGenerateOptions(flags, loaded);
     const version = parseKysoqlConfig({
       apiVersion:
-        apiVersion ?? process.env.SF_API_VERSION ?? DEFAULT_API_VERSION,
+        apiVersion ?? environment.SF_API_VERSION ?? DEFAULT_API_VERSION,
     }).apiVersion;
     const client = createRestDescribeClient({
-      accessToken: requiredEnvironmentVariable("SF_ACCESS_TOKEN"),
-      instanceUrl: requiredEnvironmentVariable("SF_INSTANCE_URL"),
+      accessToken: environment.SF_ACCESS_TOKEN,
+      instanceUrl: environment.SF_INSTANCE_URL,
       ...(version === undefined ? {} : { apiVersion: version }),
     });
 

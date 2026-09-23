@@ -1,21 +1,21 @@
 export { SalesforceOAuthError, SalesforceOAuthResponseError } from "#/errors";
-export type { OAuthRequestOptions } from "#/http";
 export {
   type CodeCredentialsAuthorizationOptions,
   type CodeCredentialsNamedUserOptions,
   type CodeCredentialsUserDiscoveryOptions,
   createCodeCredentialsAuthorizationRequest,
+  createHeadlessGuestAuthorizationRequest,
   type FirstPartyAuthorizationChallenge,
   type FirstPartyAuthorizationChallengeOptions,
   type FirstPartyAuthorizationValue,
   type HeadlessAuthorizationRequest,
-  createHeadlessGuestAuthorizationRequest,
   type HeadlessGuestAuthorizationOptions,
   requestFirstPartyAuthorizationChallenge,
 } from "#/headless";
+export type { OAuthRequestOptions } from "#/http";
 export {
-  createOAuthClientAssertion,
   createJwtBearerAssertion,
+  createOAuthClientAssertion,
   type JwtBearerAssertionOptions,
   type OAuthClientAssertionOptions,
 } from "#/jwt";
@@ -28,12 +28,12 @@ export {
   type StoredRefreshTokenAuthOptions,
 } from "#/manager";
 export {
+  type AuthorizationCodeOptions,
+  type AuthorizationUrlOptions,
   authenticateClientCredentials,
   authenticateJwtBearer,
   authenticateSamlAssertion,
   authenticateSamlBearer,
-  type AuthorizationCodeOptions,
-  type AuthorizationUrlOptions,
   type ClientCredentialsOptions,
   createAuthorizationUrl,
   type DeviceAuthorization,

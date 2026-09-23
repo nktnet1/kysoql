@@ -149,6 +149,17 @@ describe("kysoql oclif CLI", () => {
     },
   );
 
+  it("validates the Salesforce instance URL from the environment", async () => {
+    process.env.SF_ACCESS_TOKEN = "token";
+    process.env.SF_INSTANCE_URL = "not-a-url";
+
+    await expect(runGenerate([])).rejects.toThrow(
+      "SF_INSTANCE_URL must be a valid URL.",
+    );
+    expect(mocks.createRestClient).not.toHaveBeenCalled();
+    expect(process.exitCode).toBe(1);
+  });
+
   it("lets oclif reject unknown flags", async () => {
     await expect(runGenerate(["--unknown"])).rejects.toThrow(/--unknown/);
 

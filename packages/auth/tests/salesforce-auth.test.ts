@@ -72,7 +72,10 @@ describe("SalesforceAuth", () => {
 
   it("binds Experience Cloud site paths for headless requests", () => {
     const siteUrl = "https://customers.example.my.site.com/customers";
-    const auth = new SalesforceAuth({ loginUrl: siteUrl, clientId: "consumer" });
+    const auth = new SalesforceAuth({
+      loginUrl: siteUrl,
+      clientId: "consumer",
+    });
     const request = auth.codeCredentialsAuthorization({
       redirectUri: "https://app.example.com/callback",
       username: "user@example.com",

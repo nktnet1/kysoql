@@ -1,9 +1,5 @@
 import { encodeBase64Url } from "#/pkce";
-import {
-  nonEmptySecret,
-  parseOAuthBaseUrl,
-  parseOrigin,
-} from "#/validation";
+import { nonEmptySecret, parseOAuthBaseUrl, parseOrigin } from "#/validation";
 
 const textBase64Url = (value: string): string =>
   encodeBase64Url(new TextEncoder().encode(value));
@@ -55,7 +51,9 @@ const assertionTiming = (
     expiresInSeconds <= 0 ||
     expiresInSeconds > 300
   ) {
-    throw new TypeError("expiresInSeconds must be an integer between 1 and 300.");
+    throw new TypeError(
+      "expiresInSeconds must be an integer between 1 and 300.",
+    );
   }
   const now = options.now ?? Math.floor(Date.now() / 1000);
   if (!Number.isSafeInteger(now) || now <= 0) {

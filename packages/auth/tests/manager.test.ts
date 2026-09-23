@@ -57,46 +57,40 @@ describe("stored refresh-token auth", () => {
     assert.equal(http.calls.length, 1);
   });
 
-  it(
-    "persists an initial token after a successful non-rotating refresh",
-    async () => {
-      const store = createMemoryRefreshTokenStore();
-      const http = mockFetch(tokenResponse());
-      const auth = createStoredRefreshTokenAuth({
-        loginUrl: origin,
-        clientId: "consumer",
-        initialRefreshToken: "initial",
-        refreshTokenStore: store,
-        fetch: http.fetch,
-      });
-      await auth.getSession();
-      assert.equal(await store.getRefreshToken(), "initial");
-    },
-  );
+  it("persists an initial token after a successful non-rotating refresh", async () => {
+    const store = createMemoryRefreshTokenStore();
+    const http = mockFetch(tokenResponse());
+    const auth = createStoredRefreshTokenAuth({
+      loginUrl: origin,
+      clientId: "consumer",
+      initialRefreshToken: "initial",
+      refreshTokenStore: store,
+      fetch: http.fetch,
+    });
+    await auth.getSession();
+    assert.equal(await store.getRefreshToken(), "initial");
+  });
 
-  it(
-    "can use hybrid refresh and HTTP Basic client authentication",
-    async () => {
-      const http = mockFetch(tokenResponse());
-      const auth = createStoredRefreshTokenAuth({
-        loginUrl: origin,
-        clientId: "consumer",
-        clientSecret: "secret",
-        clientSecretTransport: "basic",
-        refreshMode: "hybrid",
-        refreshTokenStore: createMemoryRefreshTokenStore("refresh"),
-        fetch: http.fetch,
-      });
-      await auth.refresh();
-      const body = new URLSearchParams(String(http.calls[0]?.init.body));
-      assert.equal(body.get("grant_type"), "hybrid_refresh");
-      assert.equal(body.has("client_secret"), false);
-      assert.equal(
-        new Headers(http.calls[0]?.init.headers).get("Authorization"),
-        `Basic ${Buffer.from("consumer:secret").toString("base64")}`,
-      );
-    },
-  );
+  it("can use hybrid refresh and HTTP Basic client authentication", async () => {
+    const http = mockFetch(tokenResponse());
+    const auth = createStoredRefreshTokenAuth({
+      loginUrl: origin,
+      clientId: "consumer",
+      clientSecret: "secret",
+      clientSecretTransport: "basic",
+      refreshMode: "hybrid",
+      refreshTokenStore: createMemoryRefreshTokenStore("refresh"),
+      fetch: http.fetch,
+    });
+    await auth.refresh();
+    const body = new URLSearchParams(String(http.calls[0]?.init.body));
+    assert.equal(body.get("grant_type"), "hybrid_refresh");
+    assert.equal(body.has("client_secret"), false);
+    assert.equal(
+      new Headers(http.calls[0]?.init.headers).get("Authorization"),
+      `Basic ${Buffer.from("consumer:secret").toString("base64")}`,
+    );
+  });
 
   it("rejects an invalid refresh mode at runtime", () => {
     assert.throws(

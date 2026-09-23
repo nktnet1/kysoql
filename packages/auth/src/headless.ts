@@ -73,10 +73,7 @@ export const createCodeCredentialsAuthorizationRequest = (
 ): HeadlessAuthorizationRequest => {
   const siteUrl = parseOAuthBaseUrl(options.siteUrl, "siteUrl");
   const password = nonEmptySecret(options.password, "password");
-  if (
-    options.uvidHint !== undefined &&
-    options.uvidHintToken !== undefined
-  ) {
+  if (options.uvidHint !== undefined && options.uvidHintToken !== undefined) {
     throw new TypeError("Provide uvidHint or uvidHintToken, not both.");
   }
   const isUserDiscovery = options.username === undefined;
@@ -123,10 +120,7 @@ export const createCodeCredentialsAuthorizationRequest = (
           ...(options.customData === undefined
             ? {}
             : {
-                customdata: nonEmptyText(
-                  options.customData,
-                  "customData",
-                ),
+                customdata: nonEmptyText(options.customData, "customData"),
               }),
         }
       : placement === "body"
@@ -176,20 +170,19 @@ interface HeadlessGuestAuthorizationBase {
   readonly uvidPlacement?: "header" | "body";
 }
 
-export type HeadlessGuestAuthorizationOptions =
-  HeadlessGuestAuthorizationBase &
-    (
-      | {
-          /** Plain UVID generated and managed by the application. */
-          readonly uvidHint: string;
-          readonly uvidHintToken?: never;
-        }
-      | {
-          readonly uvidHint?: never;
-          /** JWT-based Salesforce access token that contains the UVID. */
-          readonly uvidHintToken: string;
-        }
-    );
+export type HeadlessGuestAuthorizationOptions = HeadlessGuestAuthorizationBase &
+  (
+    | {
+        /** Plain UVID generated and managed by the application. */
+        readonly uvidHint: string;
+        readonly uvidHintToken?: never;
+      }
+    | {
+        readonly uvidHint?: never;
+        /** JWT-based Salesforce access token that contains the UVID. */
+        readonly uvidHintToken: string;
+      }
+  );
 
 /**
  * Builds the authorization request for Salesforce Headless Identity's guest
@@ -319,7 +312,7 @@ export const requestFirstPartyAuthorizationChallenge = async (
     for (const [name, value] of Object.entries(options.parameters)) {
       if (typeof value !== "string") {
         throw new TypeError(
-          `${name} must be a string when bodyFormat is \"form\".`,
+          `${name} must be a string when bodyFormat is "form".`,
         );
       }
       parameters.set(

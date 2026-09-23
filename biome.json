@@ -36,6 +36,9 @@
       "preset": "recommended",
       "style": {
         "useBlockStatements": "error"
+      },
+      "suspicious": {
+        "noExplicitAny": "error"
       }
     }
   },

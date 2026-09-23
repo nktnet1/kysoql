@@ -21,12 +21,12 @@ import {
   type StoredRefreshTokenAuthOptions,
 } from "#/manager";
 import {
+  type AuthorizationCodeOptions,
+  type AuthorizationUrlOptions,
   authenticateClientCredentials,
   authenticateJwtBearer,
   authenticateSamlAssertion,
   authenticateSamlBearer,
-  type AuthorizationCodeOptions,
-  type AuthorizationUrlOptions,
   type ClientCredentialsOptions,
   createAuthorizationUrl,
   type DeviceAuthorization,
@@ -35,6 +35,7 @@ import {
   exchangeAuthorizationCode,
   exchangeHybridAuthorizationCode,
   exchangeToken,
+  pollDeviceAuthorization,
   type RefreshTokenOptions,
   refreshAccessToken,
   refreshHybridAccessToken,
@@ -43,7 +44,6 @@ import {
   type SamlAssertionOptions,
   type SamlBearerOptions,
   type TokenExchangeOptions,
-  pollDeviceAuthorization,
 } from "#/oauth";
 import { generatePkcePair, type PkcePair } from "#/pkce";
 import { nonEmptySecret, parseOAuthBaseUrl } from "#/validation";
@@ -263,9 +263,7 @@ export class SalesforceAuth {
   }
 
   /** Exchange a SAML 2.0 bearer assertion. */
-  samlBearer(
-    options: BoundSamlBearerOptions,
-  ): Promise<SalesforceOAuthSession> {
+  samlBearer(options: BoundSamlBearerOptions): Promise<SalesforceOAuthSession> {
     return authenticateSamlBearer({
       loginUrl: this.loginUrl,
       ...this.#requestDefaults,

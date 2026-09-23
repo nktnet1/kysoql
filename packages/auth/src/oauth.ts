@@ -308,10 +308,7 @@ const authorizationCodeParameters = (
       ...(options.codeVerifier === undefined
         ? {}
         : {
-            code_verifier: nonEmptySecret(
-              options.codeVerifier,
-              "codeVerifier",
-            ),
+            code_verifier: nonEmptySecret(options.codeVerifier, "codeVerifier"),
           }),
       ...auth.parameters,
     },
@@ -514,10 +511,7 @@ export const exchangeToken = async (
       ...(options.tokenHandler === undefined
         ? {}
         : {
-            token_handler: nonEmptyText(
-              options.tokenHandler,
-              "tokenHandler",
-            ),
+            token_handler: nonEmptyText(options.tokenHandler, "tokenHandler"),
           }),
       ...auth.parameters,
     },

@@ -12,11 +12,15 @@ import {
 
 const errors: string[] = [];
 const pages = await readPages();
-const routes = new Map<string, { relative: string; route: string; prose: string; headings: Set<string> }>();
+const routes = new Map<
+  string,
+  { relative: string; route: string; prose: string; headings: Set<string> }
+>();
 const titles = new Set<string>();
 let snippetCount = 0;
 let internalLinkCount = 0;
-const complain = (page: string, message: string) => errors.push(`${page}: ${message}`);
+const complain = (page: string, message: string) =>
+  errors.push(`${page}: ${message}`);
 
 function headingIds(text: string): Set<string> {
   const counts = new Map<string, number>();

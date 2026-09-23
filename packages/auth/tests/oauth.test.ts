@@ -67,57 +67,48 @@ describe("OAuth token grants", () => {
       redirectUri: "https://app.example.com/callback",
       fetch: http.fetch,
     });
+    assert.equal(http.calls[0]?.url.href, `${siteUrl}/services/oauth2/token`);
+  });
+
+  it("exchanges an authorization code with PKCE and a client assertion", async () => {
+    const http = mockFetch(tokenResponse({ refresh_token: "refresh" }));
+    const session = await exchangeAuthorizationCode({
+      ...base,
+      code: "code",
+      redirectUri: "https://app.example.com/callback",
+      codeVerifier: "verifier",
+      clientAssertion: "assertion",
+      fetch: http.fetch,
+    });
+    assert.equal(session.refreshToken, "refresh");
+    const body = form(http.calls[0]?.init);
+    assert.equal(body.get("grant_type"), "authorization_code");
+    assert.equal(body.get("code_verifier"), "verifier");
+    assert.equal(body.get("client_assertion"), "assertion");
     assert.equal(
-      http.calls[0]?.url.href,
-      `${siteUrl}/services/oauth2/token`,
+      body.get("client_assertion_type"),
+      "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
     );
   });
 
-  it(
-    "exchanges an authorization code with PKCE and a client assertion",
-    async () => {
-      const http = mockFetch(tokenResponse({ refresh_token: "refresh" }));
-      const session = await exchangeAuthorizationCode({
-        ...base,
-        code: "code",
-        redirectUri: "https://app.example.com/callback",
-        codeVerifier: "verifier",
-        clientAssertion: "assertion",
-        fetch: http.fetch,
-      });
-      assert.equal(session.refreshToken, "refresh");
-      const body = form(http.calls[0]?.init);
-      assert.equal(body.get("grant_type"), "authorization_code");
-      assert.equal(body.get("code_verifier"), "verifier");
-      assert.equal(body.get("client_assertion"), "assertion");
-      assert.equal(
-        body.get("client_assertion_type"),
-        "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
-      );
-    },
-  );
-
-  it(
-    "supports HTTP Basic client authentication without body credentials",
-    async () => {
-      const http = mockFetch(tokenResponse());
-      await exchangeAuthorizationCode({
-        ...base,
-        code: "code",
-        redirectUri: "https://app.example.com/callback",
-        clientSecret: "secret",
-        clientSecretTransport: "basic",
-        fetch: http.fetch,
-      });
-      const body = form(http.calls[0]?.init);
-      assert.equal(body.has("client_id"), false);
-      assert.equal(body.has("client_secret"), false);
-      assert.equal(
-        new Headers(http.calls[0]?.init.headers).get("Authorization"),
-        `Basic ${Buffer.from("consumer:secret").toString("base64")}`,
-      );
-    },
-  );
+  it("supports HTTP Basic client authentication without body credentials", async () => {
+    const http = mockFetch(tokenResponse());
+    await exchangeAuthorizationCode({
+      ...base,
+      code: "code",
+      redirectUri: "https://app.example.com/callback",
+      clientSecret: "secret",
+      clientSecretTransport: "basic",
+      fetch: http.fetch,
+    });
+    const body = form(http.calls[0]?.init);
+    assert.equal(body.has("client_id"), false);
+    assert.equal(body.has("client_secret"), false);
+    assert.equal(
+      new Headers(http.calls[0]?.init.headers).get("Authorization"),
+      `Basic ${Buffer.from("consumer:secret").toString("base64")}`,
+    );
+  });
 
   it("supports Headless Identity headers during code exchange", async () => {
     const http = mockFetch(tokenResponse());

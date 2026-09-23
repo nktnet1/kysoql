@@ -17,9 +17,7 @@ const decodeBase64Url = (value: string): string => {
 describe("PKCE and JWT helpers", () => {
   it("matches the RFC 7636 S256 example", async () => {
     assert.equal(
-      await createPkceChallenge(
-        "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
-      ),
+      await createPkceChallenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"),
       "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
     );
   });
@@ -65,7 +63,10 @@ describe("PKCE and JWT helpers", () => {
       await crypto.subtle.verify(
         "RSASSA-PKCS1-v1_5",
         keyPair.publicKey,
-        Buffer.from(signaturePart.replaceAll("-", "+").replaceAll("_", "/"), "base64"),
+        Buffer.from(
+          signaturePart.replaceAll("-", "+").replaceAll("_", "/"),
+          "base64",
+        ),
         new TextEncoder().encode(`${headerPart}.${payloadPart}`),
       ),
       true,
