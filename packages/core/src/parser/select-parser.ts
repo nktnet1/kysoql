@@ -40,10 +40,7 @@ export type SelectArg<DB, TB extends keyof DB, SE extends string> =
   | (SE & SelectExpression<DB, TB, SE>)
   | ReadonlyArray<SE & SelectExpression<DB, TB, SE>>;
 
-type UnaliasedSelectionExpression<SE> = Exclude<
-  SE,
-  `${string} as ${string}`
->;
+type UnaliasedSelectionExpression<SE> = Exclude<SE, `${string} as ${string}`>;
 
 type SelectedParentRelationshipName<
   DB,
@@ -151,15 +148,16 @@ type AliasedSelectionValue<
   TB extends keyof DB,
   Reference extends string,
   ForceNullable extends boolean,
-> = SalesforceFieldValue<
-  FieldReferenceDefinition<DB, TB, Reference>
-> extends infer Value
-  ? ForceNullable extends true
-    ? Value | null
-    : true extends FieldReferenceNullable<DB, TB, Reference>
+> =
+  SalesforceFieldValue<
+    FieldReferenceDefinition<DB, TB, Reference>
+  > extends infer Value
+    ? ForceNullable extends true
       ? Value | null
-      : Value
-  : never;
+      : true extends FieldReferenceNullable<DB, TB, Reference>
+        ? Value | null
+        : Value
+    : never;
 
 type AliasedSelection<
   DB,
@@ -191,13 +189,7 @@ export type Selection<
     >]: ForceNullable extends true
       ? SalesforceFieldValue<FieldDefinition<DB, TB, Field>> | null
       : SalesforceFieldValue<FieldDefinition<DB, TB, Field>>;
-  } &
-    ParentSelection<
-      DB,
-      TB,
-      UnaliasedSelectionExpression<SE>,
-      ForceNullable
-    > &
+  } & ParentSelection<DB, TB, UnaliasedSelectionExpression<SE>, ForceNullable> &
     AliasedSelection<DB, TB, SE, ForceNullable>
 >;
 
@@ -212,7 +204,10 @@ function parseSelectExpression(selection: string): SelectionNode {
   const alias = selection.slice(aliasSeparatorIndex + 4);
 
   return SelectionNode.create(
-    AliasNode.create(ReferenceNode.create(reference), parseSelectionAlias(alias)),
+    AliasNode.create(
+      ReferenceNode.create(reference),
+      parseSelectionAlias(alias),
+    ),
   );
 }
 

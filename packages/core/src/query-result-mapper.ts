@@ -126,9 +126,7 @@ function removeAliasedSource(
     }
   }
 
-  return retained.has(reference.name)
-    ? record
-    : removePath(record, segments);
+  return retained.has(reference.name) ? record : removePath(record, segments);
 }
 
 function mapRecord(
@@ -224,5 +222,9 @@ export function applyQueryResultAliases<O>(
   query: SelectQueryNode,
   records: readonly QueryResultRecord[],
 ): readonly O[] {
-  return mapRecords(query, records, query.groupBy !== undefined) as readonly O[];
+  return mapRecords(
+    query,
+    records,
+    query.groupBy !== undefined,
+  ) as readonly O[];
 }

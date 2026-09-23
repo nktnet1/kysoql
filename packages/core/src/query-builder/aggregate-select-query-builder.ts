@@ -221,9 +221,10 @@ type GroupedSelectExpression<
   TB extends keyof DB,
   GroupedBy extends string,
   SE extends string,
-> = SelectionReference<SE> extends GroupedBy
-  ? SelectExpression<DB, TB, SE>
-  : never;
+> =
+  SelectionReference<SE> extends GroupedBy
+    ? SelectExpression<DB, TB, SE>
+    : never;
 
 type GroupedSelectExpressionList<
   DB,

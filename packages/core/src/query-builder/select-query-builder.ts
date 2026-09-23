@@ -388,8 +388,7 @@ export interface SelectQueryBuilder<
   ): AggregateSelectQueryBuilder<DB, TB, AggregateSelection<Aggregate>>;
 
   select<const Selections extends readonly string[]>(
-    selections: Selections &
-      CheckedSelectExpressionList<DB, TB, O, Selections>,
+    selections: Selections & CheckedSelectExpressionList<DB, TB, O, Selections>,
   ): SelectQueryBuilder<
     DB,
     TB,
@@ -874,8 +873,7 @@ class SelectQueryBuilderImpl<
     selection: UnselectedOnly<O, AggregateSelectionFactory<DB, TB, Aggregate>>,
   ): AggregateSelectQueryBuilder<DB, TB, AggregateSelection<Aggregate>>;
   select<const Selections extends readonly string[]>(
-    selections: Selections &
-      CheckedSelectExpressionList<DB, TB, O, Selections>,
+    selections: Selections & CheckedSelectExpressionList<DB, TB, O, Selections>,
   ): SelectQueryBuilder<
     DB,
     TB,

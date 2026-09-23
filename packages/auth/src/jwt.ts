@@ -96,7 +96,9 @@ const importPemPrivateKey = async (pem: string): Promise<CryptoKey> => {
   );
 };
 
-const resolvePrivateKey = async (input: PrivateKeyInput): Promise<CryptoKey> => {
+const resolvePrivateKey = async (
+  input: PrivateKeyInput,
+): Promise<CryptoKey> => {
   if (typeof input !== "string" && !(input instanceof URL)) {
     validatePrivateKey(input);
     return input;

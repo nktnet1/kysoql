@@ -49,7 +49,10 @@ const compiledAliasQuery = {
     ],
   },
   soql: "SELECT Id, Name FROM Account",
-} satisfies CompiledQuery<{ readonly id: string; readonly name: string | null }>;
+} satisfies CompiledQuery<{
+  readonly id: string;
+  readonly name: string | null;
+}>;
 
 const compiledCountQuery = {
   query: {} as CompiledQuery<number>["query"],

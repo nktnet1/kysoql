@@ -295,8 +295,7 @@ export interface RelationshipSubqueryBuilder<
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
 
   select<const Selections extends readonly string[]>(
-    selections: Selections &
-      CheckedSelectExpressionList<DB, TB, O, Selections>,
+    selections: Selections & CheckedSelectExpressionList<DB, TB, O, Selections>,
   ): RelationshipSubqueryBuilder<
     DB,
     TB,
@@ -667,8 +666,7 @@ class RelationshipSubqueryBuilderImpl<
     ApexMode
   >;
   select<const Selections extends readonly string[]>(
-    selections: Selections &
-      CheckedSelectExpressionList<DB, TB, O, Selections>,
+    selections: Selections & CheckedSelectExpressionList<DB, TB, O, Selections>,
   ): RelationshipSubqueryBuilder<
     DB,
     TB,

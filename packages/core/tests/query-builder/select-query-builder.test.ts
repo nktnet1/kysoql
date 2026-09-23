@@ -267,11 +267,9 @@ describe("SelectQueryBuilder", () => {
 
   it("supports Kysely-style aliases for selected fields", () => {
     const db = new Kysoql<FixtureSchema>();
-    const query = db.selectFrom("Account").select([
-      "Id as id",
-      "Name as name",
-      "Owner.Quota__c as ownerQuota",
-    ]);
+    const query = db
+      .selectFrom("Account")
+      .select(["Id as id", "Name as name", "Owner.Quota__c as ownerQuota"]);
 
     expectTypeOf<Simplify<OutputOf<typeof query>>>().toEqualTypeOf<{
       readonly id: string;
@@ -326,9 +324,7 @@ describe("SelectQueryBuilder", () => {
         .select(["Id as duplicate", "Name as duplicate"] as never),
     ).toThrow("Duplicate SOQL selection alias: duplicate.");
     expect(() =>
-      db
-        .selectFrom("Account")
-        .select(["Id as Name", "Name"] as never),
+      db.selectFrom("Account").select(["Id as Name", "Name"] as never),
     ).toThrow(
       "SOQL selection alias Name conflicts with a selected output property.",
     );

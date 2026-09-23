@@ -223,7 +223,9 @@ export class DefaultQueryCompiler implements QueryCompiler {
     return compiled.join(", ");
   }
 
-  #plainSelectionReference(selection: SelectionNode): ReferenceNode | undefined {
+  #plainSelectionReference(
+    selection: SelectionNode,
+  ): ReferenceNode | undefined {
     const selected = selection.selection;
     if (selected.kind === "ReferenceNode") {
       return selected;
