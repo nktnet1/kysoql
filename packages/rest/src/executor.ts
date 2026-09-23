@@ -1,4 +1,9 @@
-import type { CompiledQuery, QueryExecutor } from "@kysoql/core";
+import type {
+  CompiledQuery,
+  QueryExecutor,
+  RelationshipSubqueryNode,
+  SelectQueryNode,
+} from "@kysoql/core";
 
 import {
   type RestClient,
@@ -8,6 +13,7 @@ import {
 import { SalesforceQueryLimitError, SalesforceResponseError } from "#/errors";
 import type { RestRequestOptions } from "#/http";
 import {
+  type ParsedQueryPage,
   parseBatchSize,
   parseCount,
   parseQueryLocator,
@@ -19,13 +25,12 @@ export interface RestQueryPage<O> {
   readonly done: boolean;
   readonly totalSize: number;
   readonly records: readonly O[];
-  readonly nextRecordsUrl?: string;
 }
 
 export interface RestPaginationOptions {
   /** Requested batch size (200-2000), not a guaranteed page size. */
   readonly batchSize?: number;
-  /** Root page budget, including the first page. Default: 10,000. */
+  /** Query-page budget across root and relationship continuations. Default: 10,000. */
   readonly maxPages?: number;
   /** Optional root-record budget. Exceeding it throws, never silently truncates. */
   readonly maxRecords?: number;
@@ -61,15 +66,52 @@ export interface RestExecutor extends QueryExecutor {
     query: CompiledQuery<O>,
     options?: RestQueryOptions,
   ): AsyncIterableIterator<O>;
-  /** Fetch one continuation page, including a child query envelope's locator. */
-  queryMore<O = Record<string, unknown>>(
-    locator: string,
-    options?: RestRequestOptions,
-  ): Promise<RestQueryPage<O>>;
+}
+
+interface QueryPlan {
+  readonly limit?: number;
+  readonly children: ReadonlyMap<string, QueryPlan>;
+}
+
+interface PaginationState {
+  readonly visited: Set<string>;
+  pages: number;
 }
 
 const queryPath = (query: CompiledQuery<unknown>, queryAll: boolean): string =>
   `/${queryAll ? "queryAll" : "query"}?${new URLSearchParams({ q: query.soql })}`;
+
+const literalLimit = (
+  query: SelectQueryNode | RelationshipSubqueryNode,
+): number | undefined => {
+  const limit = query.limit?.limit;
+  return typeof limit === "number" ? limit : undefined;
+};
+
+const queryPlan = (
+  query: SelectQueryNode | RelationshipSubqueryNode,
+): QueryPlan => {
+  const children = new Map<string, QueryPlan>();
+  for (const selection of query.selections ?? []) {
+    if (selection.selection.kind === "RelationshipSubqueryNode") {
+      children.set(
+        selection.selection.relationship.name,
+        queryPlan(selection.selection),
+      );
+    }
+  }
+  const limit = literalLimit(query);
+  return limit === undefined ? { children } : { children, limit };
+};
+
+const completedPage = (
+  totalSize: number,
+  records: readonly Record<string, unknown>[],
+): ParsedQueryPage => ({
+  done: true,
+  totalSize,
+  records,
+});
 
 class NativeRestExecutor implements RestExecutor {
   readonly #client: RestClient;
@@ -87,24 +129,124 @@ class NativeRestExecutor implements RestExecutor {
         : positiveInteger(options.maxRecords, "maxRecords");
   }
 
-  async #page<O>(
-    path: string,
-    options: RestRequestOptions,
-  ): Promise<RestQueryPage<O>> {
-    const page = parseQueryPage(
-      await this.#client.request(path, {
-        ...options,
-        ...(this.#batchSize === undefined
-          ? {}
-          : { batchSize: this.#batchSize }),
-      }),
-    );
-    if (!page.done && page.nextRecordsUrl !== undefined) {
+  #validatedPage(page: ParsedQueryPage): ParsedQueryPage {
+    if (page.nextRecordsUrl !== undefined) {
       parseQueryLocator(page.nextRecordsUrl, this.#client.apiVersion);
     }
-    // O is a compile-time projection, not a runtime schema. Preserve nested
-    // records/attributes verbatim; only the root query envelope is validated.
-    return page as unknown as RestQueryPage<O>;
+    return page;
+  }
+
+  async #page(
+    path: string,
+    options: RestRequestOptions,
+  ): Promise<ParsedQueryPage> {
+    return this.#validatedPage(
+      parseQueryPage(
+        await this.#client.request(path, {
+          ...options,
+          ...(this.#batchSize === undefined
+            ? {}
+            : { batchSize: this.#batchSize }),
+        }),
+      ),
+    );
+  }
+
+  async #nextPage(
+    path: string,
+    options: RestRequestOptions,
+    state: PaginationState,
+  ): Promise<ParsedQueryPage> {
+    options.signal?.throwIfAborted();
+    if (state.pages >= this.#maxPages) {
+      throw new SalesforceQueryLimitError("maxPages");
+    }
+    if (state.visited.has(path)) {
+      throw new SalesforceResponseError(
+        "Salesforce returned a repeated query locator.",
+      );
+    }
+    state.visited.add(path);
+    const page = await this.#page(path, options);
+    state.pages++;
+    if (
+      !page.done &&
+      page.nextRecordsUrl !== undefined &&
+      state.visited.has(page.nextRecordsUrl)
+    ) {
+      throw new SalesforceResponseError(
+        "Salesforce returned a repeated query locator.",
+      );
+    }
+    return page;
+  }
+
+  async #hydrateRecords(
+    records: readonly Record<string, unknown>[],
+    plan: QueryPlan,
+    options: RestRequestOptions,
+    state: PaginationState,
+  ): Promise<readonly Record<string, unknown>[]> {
+    if (plan.children.size === 0 || records.length === 0) {
+      return records;
+    }
+
+    const hydrated: Record<string, unknown>[] = [];
+    for (const record of records) {
+      options.signal?.throwIfAborted();
+      let output: Record<string, unknown> | undefined;
+      for (const [relationship, childPlan] of plan.children) {
+        const child = record[relationship];
+        if (child === undefined) {
+          throw new SalesforceResponseError(
+            `Missing selected relationship query result: ${relationship}.`,
+          );
+        }
+        const result = await this.#drainRelationship(
+          this.#validatedPage(parseQueryPage(child)),
+          childPlan,
+          options,
+          state,
+        );
+        output ??= { ...record };
+        output[relationship] = result;
+      }
+      hydrated.push(output ?? record);
+    }
+    return hydrated;
+  }
+
+  async #drainRelationship(
+    initial: ParsedQueryPage,
+    plan: QueryPlan,
+    options: RestRequestOptions,
+    state: PaginationState,
+  ): Promise<ParsedQueryPage> {
+    const records: Record<string, unknown>[] = [];
+    let remaining = plan.limit;
+    let page = initial;
+
+    while (true) {
+      options.signal?.throwIfAborted();
+      const selected =
+        remaining === undefined
+          ? page.records
+          : page.records.slice(0, remaining);
+      records.push(
+        ...(await this.#hydrateRecords(selected, plan, options, state)),
+      );
+      if (remaining !== undefined) {
+        remaining -= selected.length;
+      }
+
+      if (page.done || remaining === 0) {
+        return completedPage(initial.totalSize, records);
+      }
+      if (page.nextRecordsUrl === undefined) {
+        throw new SalesforceResponseError("Missing Salesforce query locator.");
+      }
+      page = await this.#nextPage(page.nextRecordsUrl, options, state);
+    }
   }
 
   async *queryPages<O>(
@@ -123,38 +265,39 @@ class NativeRestExecutor implements RestExecutor {
         "Use executeCountQuery or executeAllCountQuery for bare COUNT().",
       );
     }
+
+    const plan = queryPlan(query.query);
+    const state: PaginationState = { visited: new Set<string>(), pages: 0 };
     let path = queryPath(query, options.queryAll ?? false);
-    const visited = new Set<string>();
-    let pages = 0;
+    let remaining = plan.limit;
     let records = 0;
+
     while (true) {
-      options.signal?.throwIfAborted();
-      if (pages >= this.#maxPages) {
-        throw new SalesforceQueryLimitError("maxPages");
-      }
-      if (visited.has(path)) {
-        throw new SalesforceResponseError(
-          "Salesforce returned a repeated query locator.",
-        );
-      }
-      visited.add(path);
-      const page = await this.#page<O>(path, options);
-      pages++;
-      records += page.records.length;
-      if (records > this.#maxRecords) {
+      const page = await this.#nextPage(path, options, state);
+      const selected =
+        remaining === undefined
+          ? page.records
+          : page.records.slice(0, remaining);
+      if (records + selected.length > this.#maxRecords) {
         throw new SalesforceQueryLimitError("maxRecords");
       }
-      if (
-        page.nextRecordsUrl !== undefined &&
-        !page.done &&
-        visited.has(page.nextRecordsUrl)
-      ) {
-        throw new SalesforceResponseError(
-          "Salesforce returned a repeated query locator.",
-        );
+      const hydrated = await this.#hydrateRecords(
+        selected,
+        plan,
+        options,
+        state,
+      );
+      records += hydrated.length;
+      if (remaining !== undefined) {
+        remaining -= hydrated.length;
       }
-      yield page;
-      if (page.done) {
+      const done = page.done || remaining === 0;
+      yield {
+        done,
+        totalSize: page.totalSize,
+        records: hydrated as unknown as readonly O[],
+      };
+      if (done) {
         return;
       }
       if (page.nextRecordsUrl === undefined) {
@@ -216,16 +359,6 @@ class NativeRestExecutor implements RestExecutor {
   ): Promise<number> {
     return parseCount(
       await this.#client.request(queryPath(query, true), options),
-    );
-  }
-
-  async queryMore<O = Record<string, unknown>>(
-    locator: string,
-    options: RestRequestOptions = {},
-  ): Promise<RestQueryPage<O>> {
-    return this.#page(
-      parseQueryLocator(locator, this.#client.apiVersion),
-      options,
     );
   }
 }

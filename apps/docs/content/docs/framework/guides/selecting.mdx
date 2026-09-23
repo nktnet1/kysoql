@@ -90,7 +90,7 @@ explicit field must come first if you still need that selector.
 | Date, datetime, or time field | String, not JavaScript `Date`. |
 | Location field | `{ latitude: number; longitude: number }`, with applicable nullability. |
 | Parent path | Nested related object, with applicable relationship nullability. |
-| Child subquery | `{ totalSize, done, records, nextRecordsUrl? }`. |
+| Child subquery | `SalesforceQueryResult<Row>`; native REST automatically completes selected relationship pages. |
 | Function alias | A property named by `.as(...)`. |
 
 Salesforce may include transport properties such as `attributes`; ordinary

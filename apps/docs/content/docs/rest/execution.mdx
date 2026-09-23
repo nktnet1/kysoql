@@ -31,9 +31,11 @@ export function createDatabase(instanceUrl: string, accessToken: string) {
 
 Use the authenticated org's HTTPS origin, not a generic login URL. The example's
 page and record budgets are application choices. The default `maxPages` is
-10,000; there is no configured record cap unless you supply `maxRecords`.
-`batchSize` accepts integers from 200 to 2000, and is a requested batch size,
-not a guaranteed page size. It does not change your SOQL `LIMIT`.
+10,000 across root and relationship continuation requests; there is no configured
+root-record cap unless you supply `maxRecords`. `batchSize` accepts integers from
+200 to 2000, and is a requested batch size, not a guaranteed page size. Salesforce
+can return fewer rows for complex relationship queries because child rows also
+contribute to the batch size. It does not change any SOQL `LIMIT`.
 
 The client pins API version `65.0` by default; it does not negotiate or silently
 upgrade versions. Supply an explicit version supported by your org and query
@@ -62,10 +64,16 @@ const count = await db
 ```
 
 Record and grouped aggregate queries return readonly row arrays. Both ordinary
-execution and QueryAll follow all available **root** continuation pages, subject
-to your budgets. Bare `COUNT()` returns a number from a complete count response;
-`COUNT(field)` and aliased aggregates remain row-producing queries. No matches
-return `[]` or `0`, respectively. Errors are never converted to empty success.
+execution and QueryAll follow root continuation pages automatically. For selected
+parent-to-child subqueries, native REST also follows relationship continuations
+recursively, including subqueries nested several levels deep. Each compiled
+`LIMIT` is treated as that query level's record ceiling, so the executor stops once
+that level is complete instead of fetching an unnecessary continuation page. A
+query level without `LIMIT` drains until Salesforce reports `done: true`.
+
+Bare `COUNT()` returns a number from a complete count response; `COUNT(field)`
+and aliased aggregates remain row-producing queries. No matches return `[]` or
+`0`, respectively. Errors are never converted to empty success.
 
 A compile-only `Kysoql` instance still needs no credentials, but throws on
 execution without an executor. There is no `executeTakeFirst` method; use
@@ -114,15 +122,19 @@ export async function processAccounts(executor: RestExecutor, signal: AbortSigna
 ```
 
 `queryPages(query, options?)` yields envelopes containing `records`, `totalSize`,
-`done`, and optional `nextRecordsUrl`. `iterateQuery` yields individual records.
-Pass `{ queryAll: true }` to either method for QueryAll. Bare counts must use
-`executeCountQuery` or `executeAllCountQuery`, not the row iterators.
+and `done`; Salesforce continuation locators remain internal to the executor.
+`iterateQuery` yields individual root records. Pass `{ queryAll: true }` to either
+method for QueryAll. Bare counts must use `executeCountQuery` or
+`executeAllCountQuery`, not the row iterators.
 
-Iteration is lazy: the first request starts when iteration starts, and the next
-page is requested only when needed. Breaking out does not prefetch more pages.
-One page is buffered at a time; this is not byte-by-byte JSON streaming. A page
-can still be large, especially with child subqueries. Earlier yielded rows cannot
-be rolled back when a later page fails, so design resumable consumers accordingly.
+Iteration is lazy for root pages: the first request starts when iteration starts,
+and the next root page is requested only when needed. Before a root page is
+yielded, any selected child subqueries in its records are recursively completed,
+so yielding one root page can require additional relationship-continuation
+requests. Breaking out prevents later root pages from being requested. One root
+page and the child data needed to complete it are buffered at a time; this is not
+byte-by-byte JSON streaming. Earlier yielded rows cannot be rolled back when a
+later page fails, so design resumable consumers accordingly.
 
 ## Cancellation and deadlines
 
@@ -151,29 +163,56 @@ Core `.execute()` and `.executeAll()` signatures have not changed. Use a
 request-scoped client or call the executor with `.compile()` for per-call options.
 An injected `fetch` must honour `signal` and `redirect: "error"`.
 
-## Child relationships and continuation
+## Relationship subqueries are completed automatically
 
-Child results remain Salesforce envelopes; they are **not** recursively drained.
-Use `executor.queryMore<Row>(nextRecordsUrl, options?)` to fetch one child or root
-continuation page deliberately:
+<SalesforceReference title="Relationship query results" href="https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-relationships-query-results.html" />
+
+Do not fetch child `nextRecordsUrl` values yourself. The native REST executor uses
+the compiled relationship-subquery tree to find the exact child envelopes selected
+by the query, follows their continuation URLs, and recursively does the same for
+nested child subqueries.
 
 ```ts
-import type { SalesforceQueryResult } from "@kysoql/core";
-import type { RestExecutor } from "@kysoql/rest";
+import { db } from "./db";
 
-export async function readNextContacts(
-  executor: RestExecutor,
-  contacts: SalesforceQueryResult<{ Id: string; LastName: string }>,
-) {
-  if (contacts.done || !contacts.nextRecordsUrl) return undefined;
-  return executor.queryMore<{ Id: string; LastName: string }>(contacts.nextRecordsUrl);
+const accounts = await db
+  .selectFrom("Account")
+  .select("Id")
+  .selectSubquery("Contacts", (contacts) =>
+    contacts
+      .select(["Id", "LastName"])
+      .selectSubquery("Cases", (cases) =>
+        cases.select(["Id", "Subject"]).limit(50),
+      )
+      .limit(500),
+  )
+  .limit(25)
+  .execute();
+
+for (const account of accounts) {
+  // Fully materialised up to Contacts LIMIT 500.
+  for (const contact of account.Contacts.records) {
+    // Fully materialised up to Cases LIMIT 50 for this contact.
+    for (const supportCase of contact.Cases.records) {
+      console.log(supportCase.Id);
+    }
+  }
 }
 ```
 
-`queryMore` returns one validated page; a manual loop must enforce its own budget
-and detect repeated locators. Its generic type is your responsibility, not a
-runtime field validator. Nested envelopes and record `attributes` are preserved.
-See [relationships](/docs/framework/guides/relationships#read-child-results).
+The returned relationship value keeps the shared `SalesforceQueryResult<Row>`
+shape (`totalSize`, `done`, and `records`), but after native REST execution its
+selected relationship envelopes are returned as complete (`done: true`) without
+requiring application code to handle locators. The optional `nextRecordsUrl` in
+the shared core type exists for compatibility with raw Salesforce responses and
+other executors; it is not part of the normal native REST workflow.
+
+A child `LIMIT` controls how many rows the executor materialises at that query
+level. Without a child limit, all pages for that relationship are fetched. This
+applies recursively through Salesforce-supported nested parent-to-child queries,
+so put deliberate limits on relationships that can be large. Salesforce supports
+up to four parent-to-child levels below the root for REST relationship queries in
+API version 58.0 and later, subject to object-specific platform restrictions.
 
 ## Errors and safety controls
 
@@ -185,16 +224,19 @@ See [relationships](/docs/framework/guides/relationships#read-child-results).
 | `SalesforceOAuthError` | A token exchange failed; see authentication guidance. |
 | Native fetch/abort errors | Network, cancellation, redirect, or timeout failures; retain their cause at the application boundary. |
 
-Root page/record budgets apply to collection and iteration. They throw instead
-of returning a silently truncated result. A page that exceeds the record budget
-is rejected before it is yielded. Budgets do not cap nested records, count values,
-or standalone `queryMore` calls. No limit bypasses Salesforce's own restrictions,
+The page budget applies to every query page fetched for one execution, including
+root and nested relationship continuations. The record budget applies to root
+records only. Both throw instead of returning a silently truncated result, and a
+root page that exceeds the record budget is rejected before it is yielded. Child
+record counts are controlled by their compiled `LIMIT` values (or drained fully
+when no limit is present). No Kysoql limit bypasses Salesforce's own restrictions,
 including aggregate queries that cannot continue through a query locator.
 
-Requests use HTTPS and reject redirects. Continuation URLs must be root-relative,
-match the configured API version, and identify a query locator. Tokens are not
-sent to a server-provided foreign host. Kysoql's structured HTTP/OAuth error messages omit credentials,
-SOQL, and server descriptions; opt-in `errors` details may still be sensitive.
+Requests use HTTPS and reject redirects. Root and relationship continuation URLs
+are handled internally and must be root-relative, match the configured API version,
+and identify a query locator. Tokens are never sent to a server-provided foreign
+host. Kysoql's structured HTTP/OAuth error messages omit credentials, SOQL, and
+server descriptions; opt-in `errors` details may still be sensitive.
 
 The only automatic retry is one replay after `401 INVALID_SESSION_ID` when an
 access-token provider is configured. There is no automatic rate-limit, network,

@@ -1,8 +1,9 @@
 # @kysoql/rest
 
 Native Salesforce REST transport for Kysoql. Uses `fetch`; JSforce is not a
-runtime dependency. Supports ordinary queries, QueryAll, scalar counts, root
-pagination, async iteration, cancellation, and access-token provider renewal.
+runtime dependency. Supports ordinary queries, QueryAll, scalar counts, automatic
+root and nested relationship pagination, async iteration, cancellation, and
+access-token provider renewal.
 
 ## Install and query
 
@@ -40,17 +41,22 @@ const accounts = await db.selectFrom("Account").select(["Id", "Name"]).execute()
 const count = await db.selectFrom("Account").select(({ fn }) => fn.count()).execute();
 ```
 
-Both `.execute()` and `.executeAll()` drain root pages. The latter uses Salesforce
-QueryAll to include qualifying deleted/archived records; it is not a pagination
-switch. Counts return `number`; fielded counts and other aggregates return rows.
-No core query-building API changes are required.
+Both `.execute()` and `.executeAll()` follow Salesforce query locators internally.
+Root pages are drained automatically, and selected parent-to-child subqueries are
+completed recursively at every nested level described by the compiled query. Each
+root or child `LIMIT` acts as that level's record ceiling, so the executor does not
+fetch a continuation after the requested limit has already been satisfied. The
+latter method uses Salesforce QueryAll to include qualifying deleted/archived
+records; it is not a pagination switch. Counts return `number`; fielded counts and
+other aggregates return rows. No core query-building API changes are required.
 
 ## Resource controls
 
 The example's budgets are application choices. Defaults are a 30-second timeout
-per HTTP request (including token acquisition/body), `maxPages: 10_000`, and no
-configured root-record cap. `batchSize` is optional and accepts integers from
-200 to 2000. API version is deliberately pinned to `65.0`, not negotiated.
+per HTTP request (including token acquisition/body), `maxPages: 10_000` across
+root and relationship continuation requests, and no configured root-record cap.
+`batchSize` is optional and accepts integers from 200 to 2000. API version is
+deliberately pinned to `65.0`, not negotiated.
 
 ```ts
 const query = db.selectFrom("Account").select(["Id", "Name"]).compile();
@@ -61,12 +67,13 @@ for await (const account of executor.iterateQuery(query, { signal })) {
 }
 ```
 
-`queryPages(query, options?)` yields envelopes; `iterateQuery` yields records.
-Both accept `queryAll`, `signal`, and `timeoutMs`, and reject bare `COUNT()`.
+`queryPages(query, options?)` yields root envelopes without exposing Salesforce
+continuation locators; `iterateQuery` yields root records. Both accept `queryAll`,
+`signal`, and `timeoutMs`, and reject bare `COUNT()`. Before a root page is yielded,
+its selected nested subqueries are fully materialised up to their compiled limits.
 Collection and iteration throw `SalesforceQueryLimitError` on budget overflow
 instead of silently truncating. Iterators can have yielded earlier pages when
-later pages fail. One JSON page is buffered at a time; this is not a Bulk API
-or byte-streaming client.
+later pages fail. This is not a Bulk API or byte-streaming client.
 
 For per-call options with collection or counts, use the executor directly with
 `.compile()`, e.g. `executor.executeQuery(query, { signal })`. The core builder's
@@ -74,10 +81,11 @@ For per-call options with collection or counts, use the executor directly with
 on that client; per-call signals affect just that operation.
 
 Parent objects, nested child envelopes, and record `attributes` are preserved.
-Child subqueries are not recursively drained. `queryMore<Row>(locator, options?)`
-fetches one root/child continuation page; manual loops need their own budgets and
-cycle checks. Root record budgets do not count nested records or scalar counts.
-Root envelopes are validated, but generic row types are not runtime validation.
+Selected child envelopes are recursively drained by the executor; applications do
+not need to inspect or follow `nextRecordsUrl`. The page budget covers root and
+relationship continuation requests, while the record budget counts root records
+only. Generic row types remain compile-time projections rather than runtime field
+validation.
 
 ## Authentication and shared clients
 

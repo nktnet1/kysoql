@@ -641,7 +641,10 @@ const accountsWithContacts = await db
 
 Each selected child relationship retains Salesforce's nested query-result shape:
 the relationship value contains `totalSize`, `done`, `records`, and an optional
-`nextRecordsUrl`. Salesforce still documents relationship-subquery `OFFSET` as a
+`nextRecordsUrl`. When executed through `@kysoql/rest`, selected relationship
+continuations are followed automatically and recursively up to each child
+subquery's `LIMIT`; applications do not manually fetch the locator. Salesforce
+still documents relationship-subquery `OFFSET` as a
 pilot that is not intended for production. Kysoql therefore keeps it off the
 ordinary child-query surface and exposes it only through the explicit
 `pilot.offset(...)` namespace. The immediate parent query must use a literal
@@ -1221,15 +1224,18 @@ export function createDatabase(instanceUrl: string, accessToken: string) {
 }
 ```
 
-Build queries normally and call `.execute()` or `.executeAll()`. Both collect all
-root pages within the configured budgets; `.executeAll()` enables Salesforce
-QueryAll rather than merely enabling pagination. Bare `COUNT()` returns a number.
-For bounded-memory processing, call `executor.iterateQuery(query.compile())` or
-`queryPages(...)`. These also accept QueryAll mode, abort signals, and timeouts.
-A failed budget throws instead of silently truncating records.
+Build queries normally and call `.execute()` or `.executeAll()`. Both collect root
+pages within the configured budgets and recursively complete selected relationship
+subqueries. Root and child `LIMIT` clauses determine when each query level is
+complete, so application code never needs to follow `nextRecordsUrl`.
+`.executeAll()` enables Salesforce QueryAll rather than merely enabling pagination.
+Bare `COUNT()` returns a number. For bounded-memory root processing, call
+`executor.iterateQuery(query.compile())` or `queryPages(...)`. These also accept
+QueryAll mode, abort signals, and timeouts. A failed budget throws instead of
+silently truncating records.
 
 The native API version is pinned to `65.0` unless explicitly configured. Token
-providers can renew credentials once after `INVALID_SESSION_ID`. Use
+providers can renew credentials once after `INVALID_SESSION_ID`.
 `@kysoql/auth` exposes `SalesforceAuth` as the primary client API, with JWT
 bearer/private-key server-to-server authentication as the default, plus current
 Salesforce web-server/PKCE, refresh, client credentials, SAML, token

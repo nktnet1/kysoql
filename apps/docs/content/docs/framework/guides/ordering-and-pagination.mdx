@@ -58,9 +58,12 @@ object-specific or execution-context limits.
 ## OFFSET is not a bulk export mechanism
 
 Both bundled executors follow root continuation pages during normal `execute()`.
-Native REST additionally offers page and record iterators; see
+Native REST also follows selected relationship-subquery continuations recursively
+and stops each query level when its compiled `LIMIT` has been satisfied. It also
+offers root page and record iterators; see
 [execution](/docs/rest/execution#iterate-without-accumulating-every-root-record).
-For a query without a limit, this can accumulate a large result in memory.
+For a query or child subquery without a limit, this can accumulate a large result
+in memory.
 `executeAll()` is not needed to drain pages; it enables QueryAll, including
 eligible deleted records and archived activities.
 

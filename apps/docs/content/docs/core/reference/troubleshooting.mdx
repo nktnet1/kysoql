@@ -71,7 +71,7 @@ an access token or production record payload.
 | Native `SalesforceResponseError` | Rejects invalid JSON/envelopes, unsafe/repeated locators, or incomplete counts; inspect sanitized metadata rather than suppressing the error. |
 | `SalesforceQueryLimitError` | Root page/record budget exceeded; narrow the query or explicitly adjust the budget. |
 | `Invalid JSforce query result` | The adapter expected a valid envelope and record-object array. Inspect sanitized transport output. |
-| Incomplete response without `nextRecordsUrl` | Fix the transport/test double; the adapter refuses to silently truncate a root result. |
+| Incomplete response without `nextRecordsUrl` | Fix the transport/test double; the adapter refuses to silently truncate a query result. |
 | Incomplete SOQL COUNT response | Scalar count must be complete and include a valid non-negative totalSize. |
 | Child contacts are not an array | Read `account.Contacts.records` and inspect the envelope's `done` flag. |
 | Child records appear incomplete | Root pagination does not drain nested child locators. Query the child object directly or handle its transport pagination. |

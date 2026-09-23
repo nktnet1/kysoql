@@ -90,18 +90,23 @@ for (const account of accounts) {
   for (const contact of childResult.records) {
     console.log(contact.Id, contact.LastName);
   }
-  if (!childResult.done) {
-    // Use a separate child query or handle the child locator in your transport.
-    console.warn("Child relationship has additional pages");
-  }
+  // With @kysoql/rest this selected child result is already complete
+  // up to the subquery LIMIT. No locator handling is required here.
 }
 ```
 
 The inferred value is `SalesforceQueryResult<Row>` with `totalSize`, `done`,
-`records`, and optional `nextRecordsUrl`. **The REST and JSforce executors only drain root
-pages.** It does not recursively fetch incomplete child envelopes. For complete
-child exports, querying `Contact` directly with an `AccountId` filter is often
-simpler than recursively following child result locators.
+`records`, and optional `nextRecordsUrl`. With `@kysoql/rest`, selected child
+subqueries are completed automatically: the executor follows each child locator
+up to that subquery's `LIMIT`, recurses through further selected child subqueries,
+and returns the materialised relationship as `done: true`. Application code does
+not need to follow `nextRecordsUrl`.
+
+The optional locator remains part of the shared core type because raw Salesforce
+responses and other executors can expose it. The JSforce adapter currently drains
+root pages only. For very large child collections, a direct child-object query
+with a parent-ID filter can still be a better memory/processing strategy than an
+unbounded relationship subquery.
 
 ## Semi-joins and anti-joins
 

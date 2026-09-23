@@ -28,8 +28,9 @@ builder methods and validates them against generated Describe metadata.
 ## REST query execution
 
 Kysoql's native REST executor targets Salesforce's Query and QueryAll resources.
-The executor follows `nextRecordsUrl` for root-query pagination rather than
-pretending `OFFSET` is a cursor.
+The executor follows Salesforce query locators internally for both root results and
+selected parent-to-child subqueries, including nested subqueries, rather than
+pretending `OFFSET` is a cursor or making applications handle `nextRecordsUrl`.
 
 | Salesforce API concept | Kysoql guide | Official Salesforce documentation |
 | --- | --- | --- |

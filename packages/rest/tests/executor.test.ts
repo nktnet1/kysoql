@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
+import type { CompiledQuery } from "@kysoql/core";
 import { describe, it } from "vitest";
 
 import {
-  createRestClient,
   createRestExecutor,
   SalesforceQueryLimitError,
   SalesforceResponseError,
@@ -11,6 +11,104 @@ import {
 import { compiled, locator, mockFetch, origin, page } from "./helpers.js";
 
 const options = { instanceUrl: origin, accessToken: "token" };
+
+const queryLocator = (name: string): string =>
+  `/services/data/v65.0/query/${name}`;
+
+const limitedQuery = (limit: number): CompiledQuery<{ readonly Id: string }> => {
+  const query = compiled<{ readonly Id: string }>(
+    `SELECT Id FROM Account LIMIT ${limit}`,
+  );
+  return {
+    ...query,
+    query: {
+      ...query.query,
+      limit: { kind: "LimitNode", limit },
+    },
+  };
+};
+
+const deeplyNestedQuery = (): CompiledQuery<Record<string, unknown>> =>
+  ({
+    soql:
+      "SELECT Id, (SELECT Id, (SELECT Id, (SELECT Id, (SELECT Id FROM WorkOrderLineItems LIMIT 2) FROM WorkOrders LIMIT 2) FROM Assets LIMIT 2) FROM Contacts LIMIT 2) FROM Account LIMIT 1",
+    query: {
+      kind: "SelectQueryNode",
+      from: { kind: "SObjectNode", name: "Account" },
+      limit: { kind: "LimitNode", limit: 1 },
+      selections: [
+        {
+          kind: "SelectionNode",
+          selection: { kind: "ReferenceNode", name: "Id" },
+        },
+        {
+          kind: "SelectionNode",
+          selection: {
+            kind: "RelationshipSubqueryNode",
+            relationship: { kind: "ReferenceNode", name: "Contacts" },
+            limit: { kind: "LimitNode", limit: 2 },
+            selections: [
+              {
+                kind: "SelectionNode",
+                selection: { kind: "ReferenceNode", name: "Id" },
+              },
+              {
+                kind: "SelectionNode",
+                selection: {
+                  kind: "RelationshipSubqueryNode",
+                  relationship: { kind: "ReferenceNode", name: "Assets" },
+                  limit: { kind: "LimitNode", limit: 2 },
+                  selections: [
+                    {
+                      kind: "SelectionNode",
+                      selection: { kind: "ReferenceNode", name: "Id" },
+                    },
+                    {
+                      kind: "SelectionNode",
+                      selection: {
+                        kind: "RelationshipSubqueryNode",
+                        relationship: {
+                          kind: "ReferenceNode",
+                          name: "WorkOrders",
+                        },
+                        limit: { kind: "LimitNode", limit: 2 },
+                        selections: [
+                          {
+                            kind: "SelectionNode",
+                            selection: { kind: "ReferenceNode", name: "Id" },
+                          },
+                          {
+                            kind: "SelectionNode",
+                            selection: {
+                              kind: "RelationshipSubqueryNode",
+                              relationship: {
+                                kind: "ReferenceNode",
+                                name: "WorkOrderLineItems",
+                              },
+                              limit: { kind: "LimitNode", limit: 2 },
+                              selections: [
+                                {
+                                  kind: "SelectionNode",
+                                  selection: {
+                                    kind: "ReferenceNode",
+                                    name: "Id",
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  }) as CompiledQuery<Record<string, unknown>>;
 
 describe("native query executor", () => {
   it("drains ordinary query pages and does not append SOQL to continuation URLs", async () => {
@@ -32,6 +130,267 @@ describe("native query executor", () => {
     assert.equal(http.calls[0]?.url.pathname, "/services/data/v65.0/query");
     assert.equal(http.calls[1]?.url.pathname, locator);
     assert.equal(http.calls[1]?.url.search, "");
+  });
+
+  it("stops following root continuations once the compiled LIMIT is satisfied", async () => {
+    const second = queryLocator("root-second");
+    const unnecessary = queryLocator("root-unnecessary");
+    const http = mockFetch(
+      Response.json({
+        ...page([{ Id: "1" }, { Id: "2" }], second),
+        totalSize: 4,
+      }),
+      Response.json({
+        ...page([{ Id: "3" }, { Id: "4" }], unnecessary),
+        totalSize: 4,
+      }),
+    );
+    const executor = createRestExecutor({ ...options, fetch: http.fetch });
+
+    assert.deepEqual(await executor.executeQuery(limitedQuery(3)), [
+      { Id: "1" },
+      { Id: "2" },
+      { Id: "3" },
+    ]);
+    assert.equal(http.calls.length, 2);
+    assert.equal(http.calls[1]?.url.pathname, second);
+  });
+
+  it("keeps continuation locators internal when streaming root pages", async () => {
+    const second = queryLocator("stream-second");
+    const http = mockFetch(
+      Response.json(page([{ Id: "1" }], second)),
+      Response.json(page([{ Id: "2" }])),
+    );
+    const pages = createRestExecutor({ ...options, fetch: http.fetch }).queryPages(
+      compiled(),
+    );
+
+    const first = await pages.next();
+    assert.equal(first.done, false);
+    assert.equal(first.value?.done, false);
+    assert.equal(
+      first.value === undefined ? true : "nextRecordsUrl" in first.value,
+      false,
+    );
+    assert.equal((await pages.next()).value?.done, true);
+  });
+
+  it("recursively drains four levels of child continuations and honours every child LIMIT", async () => {
+    const contacts = queryLocator("contacts-2");
+    const contactsExtra = queryLocator("contacts-extra");
+    const assets = queryLocator("assets-2");
+    const assetsExtra = queryLocator("assets-extra");
+    const workOrders = queryLocator("work-orders-2");
+    const workOrdersExtra = queryLocator("work-orders-extra");
+    const lineItems = queryLocator("line-items-2");
+    const lineItemsExtra = queryLocator("line-items-extra");
+    const nested = (
+      records: readonly Record<string, unknown>[],
+      next?: string,
+    ) => ({
+      totalSize: 3,
+      done: next === undefined,
+      records,
+      ...(next === undefined ? {} : { nextRecordsUrl: next }),
+    });
+
+    const http = mockFetch(
+      Response.json(
+        page([
+          {
+            Id: "A1",
+            Contacts: nested(
+              [
+                {
+                  Id: "C1",
+                  Assets: nested(
+                    [
+                      {
+                        Id: "AS1",
+                        WorkOrders: nested(
+                          [
+                            {
+                              Id: "W1",
+                              WorkOrderLineItems: nested(
+                                [{ Id: "L1" }],
+                                lineItems,
+                              ),
+                            },
+                          ],
+                          workOrders,
+                        ),
+                      },
+                    ],
+                    assets,
+                  ),
+                },
+              ],
+              contacts,
+            ),
+          },
+        ]),
+      ),
+      Response.json(
+        nested([{ Id: "L2" }, { Id: "L3" }], lineItemsExtra),
+      ),
+      Response.json(
+        nested(
+          [
+            {
+              Id: "W2",
+              WorkOrderLineItems: nested([{ Id: "L4" }]),
+            },
+            {
+              Id: "W3",
+              WorkOrderLineItems: { malformed: true },
+            },
+          ],
+          workOrdersExtra,
+        ),
+      ),
+      Response.json(
+        nested(
+          [
+            {
+              Id: "AS2",
+              WorkOrders: nested([
+                {
+                  Id: "W4",
+                  WorkOrderLineItems: nested([{ Id: "L5" }]),
+                },
+              ]),
+            },
+            { Id: "AS3", WorkOrders: { malformed: true } },
+          ],
+          assetsExtra,
+        ),
+      ),
+      Response.json(
+        nested(
+          [
+            {
+              Id: "C2",
+              Assets: nested([
+                {
+                  Id: "AS4",
+                  WorkOrders: nested([
+                    {
+                      Id: "W5",
+                      WorkOrderLineItems: nested([{ Id: "L6" }]),
+                    },
+                  ]),
+                },
+              ]),
+            },
+            { Id: "C3", Assets: { malformed: true } },
+          ],
+          contactsExtra,
+        ),
+      ),
+    );
+
+    const [account] = await createRestExecutor({
+      ...options,
+      fetch: http.fetch,
+    }).executeQuery(deeplyNestedQuery());
+
+    assert.deepEqual(account, {
+      Id: "A1",
+      Contacts: {
+        totalSize: 3,
+        done: true,
+        records: [
+          {
+            Id: "C1",
+            Assets: {
+              totalSize: 3,
+              done: true,
+              records: [
+                {
+                  Id: "AS1",
+                  WorkOrders: {
+                    totalSize: 3,
+                    done: true,
+                    records: [
+                      {
+                        Id: "W1",
+                        WorkOrderLineItems: {
+                          totalSize: 3,
+                          done: true,
+                          records: [{ Id: "L1" }, { Id: "L2" }],
+                        },
+                      },
+                      {
+                        Id: "W2",
+                        WorkOrderLineItems: {
+                          totalSize: 3,
+                          done: true,
+                          records: [{ Id: "L4" }],
+                        },
+                      },
+                    ],
+                  },
+                },
+                {
+                  Id: "AS2",
+                  WorkOrders: {
+                    totalSize: 3,
+                    done: true,
+                    records: [
+                      {
+                        Id: "W4",
+                        WorkOrderLineItems: {
+                          totalSize: 3,
+                          done: true,
+                          records: [{ Id: "L5" }],
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          {
+            Id: "C2",
+            Assets: {
+              totalSize: 3,
+              done: true,
+              records: [
+                {
+                  Id: "AS4",
+                  WorkOrders: {
+                    totalSize: 3,
+                    done: true,
+                    records: [
+                      {
+                        Id: "W5",
+                        WorkOrderLineItems: {
+                          totalSize: 3,
+                          done: true,
+                          records: [{ Id: "L6" }],
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    });
+    assert.deepEqual(
+      http.calls.map((call) => call.url.pathname),
+      [
+        "/services/data/v65.0/query",
+        lineItems,
+        workOrders,
+        assets,
+        contacts,
+      ],
+    );
   });
 
   it("uses QueryAll for the first request and follows its /query/ locator unchanged", async () => {
@@ -321,7 +680,7 @@ describe("native query executor", () => {
     }).queryPages(compiled(), { signal: controller.signal });
     await iterator.next();
     controller.abort(reason);
-    await assert.rejects(iterator.next(), (cause) => cause === reason);
+    await assert.rejects(iterator.next(), (cause: unknown) => cause === reason);
     assert.equal(http.calls.length, 1);
   });
 
@@ -335,18 +694,6 @@ describe("native query executor", () => {
     await iterator.next();
     controller.abort();
     await assert.rejects(iterator.next(), { name: "AbortError" });
-  });
-
-  it("fetches child/root continuation pages through queryMore with no SOQL parameter", async () => {
-    const http = mockFetch(Response.json(page([{ Id: "child" }])));
-    const client = createRestClient({ ...options, fetch: http.fetch });
-    assert.deepEqual(
-      (await createRestExecutor(client).queryMore<{ Id: string }>(locator))
-        .records,
-      [{ Id: "child" }],
-    );
-    assert.equal(http.calls[0]?.url.pathname, locator);
-    assert.equal(http.calls[0]?.url.search, "");
   });
 
   it("does not let extra structural options change executeQuery to QueryAll", async () => {
@@ -375,7 +722,7 @@ describe("native query executor", () => {
   }
 });
 
-describe("bare-count routing and explicit continuation failures", () => {
+describe("bare-count routing", () => {
   const count = {
     ...compiled<number>("SELECT COUNT() FROM Account"),
     query: {
@@ -411,13 +758,4 @@ describe("bare-count routing and explicit continuation failures", () => {
     });
   }
 
-  it("rejects an unsafe explicit continuation asynchronously", async () => {
-    const http = mockFetch();
-    const executor = createRestExecutor({ ...options, fetch: http.fetch });
-    const result = executor.queryMore(
-      "https://untrusted.example/query/locator",
-    );
-    await assert.rejects(result, SalesforceResponseError);
-    assert.equal(http.calls.length, 0);
-  });
 });

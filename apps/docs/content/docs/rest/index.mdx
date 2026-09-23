@@ -22,10 +22,11 @@ export function createDatabase(instanceUrl: string, accessToken: string) {
 }
 ```
 
-The adapter handles root pagination, QueryAll continuation, structured Salesforce
-errors, cancellation, request deadlines, and bounded collection. It also exposes
-lower-level async page and record iterators when collecting every row in memory is
-not appropriate.
+The adapter follows root and selected relationship continuation pages automatically,
+including deeply nested parent-to-child subqueries, while respecting each compiled
+`LIMIT`. It also handles QueryAll continuation, structured Salesforce errors,
+cancellation, request deadlines, bounded collection, and async root-page/record
+iteration.
 
 ## In this package
 

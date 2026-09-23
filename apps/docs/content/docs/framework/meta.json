@@ -3,10 +3,5 @@
   "description": "General Kysoql usage across schema generation, query building, and execution.",
   "root": true,
   "icon": "House",
-  "pages": [
-    "index",
-    "getting-started",
-    "guides",
-    "external:[ExternalLink][Salesforce SOQL reference](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql.html)"
-  ]
+  "pages": ["index", "getting-started", "guides"]
 }
