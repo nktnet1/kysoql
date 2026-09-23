@@ -45,7 +45,7 @@ const sectionFilters: ReadonlyArray<{
 export default function DefaultSearchDialog(props: SharedProps) {
   const { locale } = useI18n();
   const [filterOpen, setFilterOpen] = useState(false);
-  const [tag, setTag] = useState<DocsSectionSlug | undefined>("framework");
+  const [tag, setTag] = useState<DocsSectionSlug | undefined>();
   const { search, setSearch, query } = useDocsSearch({
     client: staticClient({
       locale,
