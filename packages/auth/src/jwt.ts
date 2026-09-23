@@ -1,20 +1,34 @@
 import { encodeBase64Url } from "#/pkce";
-import { nonEmptySecret, parseOAuthBaseUrl, parseOrigin } from "#/validation";
+import {
+  isRecord,
+  nonEmptySecret,
+  parseOAuthBaseUrl,
+  parseOrigin,
+} from "#/validation";
 
 const textBase64Url = (value: string): string =>
   encodeBase64Url(new TextEncoder().encode(value));
 
-export type PrivateKeyInput = CryptoKey | string | URL;
+export type PrivateKeyInput =
+  | {
+      readonly type: "crypto-key";
+      readonly key: CryptoKey;
+    }
+  | {
+      readonly type: "pem";
+      readonly value: string;
+    }
+  | {
+      readonly type: "file";
+      readonly path: string | URL;
+    };
 
 export interface JwtBearerAssertionOptions {
   readonly clientId: string;
   readonly username: string;
   /** Salesforce login/My Domain origin used as the JWT audience. */
   readonly loginUrl: string;
-  /**
-   * RS256 signing key. Pass a CryptoKey, PEM value, or PEM file path/file URL.
-   * String values are trimmed; strings without a PEM header are treated as paths.
-   */
+  /** RS256 signing key with an explicit source type. */
   readonly privateKey: PrivateKeyInput;
   /** Default: 180 seconds. Maximum: 300 seconds. */
   readonly expiresInSeconds?: number;
@@ -32,10 +46,7 @@ export interface OAuthClientAssertionOptions {
    * receives the assertion.
    */
   readonly loginUrl: string;
-  /**
-   * RS256 signing key. Pass a CryptoKey, PEM value, or PEM file path/file URL.
-   * String values are trimmed; strings without a PEM header are treated as paths.
-   */
+  /** RS256 signing key with an explicit source type. */
   readonly privateKey: PrivateKeyInput;
   /** Default: 180 seconds. Maximum: 300 seconds. */
   readonly expiresInSeconds?: number;
@@ -69,16 +80,13 @@ const assertionTiming = (
 const validatePrivateKey = (privateKey: CryptoKey): void => {
   if (
     privateKey.type !== "private" ||
-    privateKey.algorithm.name !== "RSASSA-PKCS1-v1_5"
+    privateKey.algorithm?.name !== "RSASSA-PKCS1-v1_5"
   ) {
     throw new TypeError(
       "privateKey must be an RSASSA-PKCS1-v1_5 private CryptoKey.",
     );
   }
 };
-
-const isPemValue = (value: string): boolean =>
-  value.startsWith("-----BEGIN ") && value.includes("PRIVATE KEY-----");
 
 const importPemPrivateKey = async (pem: string): Promise<CryptoKey> => {
   const { createPrivateKey } = await import("node:crypto");
@@ -99,34 +107,69 @@ const importPemPrivateKey = async (pem: string): Promise<CryptoKey> => {
 const resolvePrivateKey = async (
   input: PrivateKeyInput,
 ): Promise<CryptoKey> => {
-  if (typeof input !== "string" && !(input instanceof URL)) {
-    validatePrivateKey(input);
-    return input;
+  const candidate: unknown = input;
+  if (!isRecord(candidate)) {
+    throw new TypeError(
+      'privateKey must be an object with type "file", "pem", or "crypto-key".',
+    );
   }
 
-  let pem: string;
-  if (input instanceof URL) {
-    const { readFile } = await import("node:fs/promises");
-    pem = (await readFile(input, "utf8")).trim();
-  } else {
-    const value = input.trim();
-    if (!value) {
-      throw new TypeError("privateKey must not be empty.");
+  switch (candidate.type) {
+    case "crypto-key": {
+      const key = candidate.key;
+      if (key === null || typeof key !== "object") {
+        throw new TypeError(
+          'privateKey with type "crypto-key" requires a CryptoKey in key.',
+        );
+      }
+      validatePrivateKey(key as CryptoKey);
+      return key as CryptoKey;
     }
-    if (isPemValue(value)) {
-      pem = value;
-    } else {
+    case "pem": {
+      if (typeof candidate.value !== "string") {
+        throw new TypeError(
+          'privateKey with type "pem" requires a PEM string in value.',
+        );
+      }
+      const pem = candidate.value.trim();
+      if (!pem) {
+        throw new TypeError("privateKey.value must not be empty.");
+      }
+      const key = await importPemPrivateKey(pem);
+      validatePrivateKey(key);
+      return key;
+    }
+    case "file": {
+      const path = candidate.path;
+      if (typeof path !== "string" && !(path instanceof URL)) {
+        throw new TypeError(
+          'privateKey with type "file" requires a string or file URL in path.',
+        );
+      }
+      const normalizedPath = typeof path === "string" ? path.trim() : path;
+      if (typeof normalizedPath === "string" && !normalizedPath) {
+        throw new TypeError("privateKey.path must not be empty.");
+      }
+      if (
+        normalizedPath instanceof URL &&
+        normalizedPath.protocol !== "file:"
+      ) {
+        throw new TypeError("privateKey.path URL must use the file: protocol.");
+      }
       const { readFile } = await import("node:fs/promises");
-      pem = (await readFile(value, "utf8")).trim();
+      const pem = (await readFile(normalizedPath, "utf8")).trim();
+      if (!pem) {
+        throw new TypeError("privateKey file must contain a PEM private key.");
+      }
+      const key = await importPemPrivateKey(pem);
+      validatePrivateKey(key);
+      return key;
     }
+    default:
+      throw new TypeError(
+        'privateKey.type must be "file", "pem", or "crypto-key".',
+      );
   }
-
-  if (!pem) {
-    throw new TypeError("privateKey PEM must not be empty.");
-  }
-  const privateKey = await importPemPrivateKey(pem);
-  validatePrivateKey(privateKey);
-  return privateKey;
 };
 
 const signAssertion = async (

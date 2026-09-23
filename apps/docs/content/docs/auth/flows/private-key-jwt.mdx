@@ -22,7 +22,7 @@ export async function exchangeWithPrivateKey(code: string, verifier: string) {
     clientId: "external-client-app-id",
   });
   const clientAssertion = await auth.createClientAssertion({
-    privateKey: "./salesforce-auth-key.pem",
+    privateKey: { type: "file", path: "./salesforce-auth-key.pem" },
   });
 
   return auth.exchangeAuthorizationCode({
@@ -36,9 +36,10 @@ export async function exchangeWithPrivateKey(code: string, verifier: string) {
 
 `auth.createClientAssertion()` sets both `iss` and `sub` to the OAuth client ID,
 uses the Salesforce token endpoint as the audience, and signs with RS256. The
-key input accepts the same `CryptoKey`, PEM string, file path, or file URL as
-`jwtBearer()`. Kysoql adds the standard JWT bearer client-assertion type to the
-token request.
+key input uses the same explicit source object as `jwtBearer()`:
+`{ type: "file", path }`, `{ type: "pem", value }`, or
+`{ type: "crypto-key", key }`. Kysoql adds the standard JWT bearer
+client-assertion type to the token request.
 
 The assertion is intentionally short-lived. When using
 `auth.storedRefreshToken()`, pass `clientAssertion` as a callback so a new

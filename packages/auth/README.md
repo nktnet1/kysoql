@@ -30,23 +30,36 @@ const auth = new SalesforceAuth({
 });
 
 export async function createExecutor() {
-  const session = await auth.jwtBearer({
+  let session = await auth.jwtBearer({
     username: "integration@example.com",
-    privateKey: "./salesforce-auth-key.pem",
+    privateKey: { type: "file", path: "./salesforce-auth-key.pem" },
   });
+  const instanceUrl = session.instanceUrl;
 
   return createRestExecutor({
-    instanceUrl: session.instanceUrl,
-    accessToken: session.accessToken,
+    instanceUrl,
+    accessToken: async ({ refresh }) => {
+      if (refresh) {
+        const next = await auth.jwtBearer({
+          username: "integration@example.com",
+          privateKey: { type: "file", path: "./salesforce-auth-key.pem" },
+        });
+        if (next.instanceUrl !== instanceUrl) {
+          throw new Error("Salesforce instance changed; recreate the REST client.");
+        }
+        session = next;
+      }
+      return session.accessToken;
+    },
   });
 }
 ```
 
-`privateKey` can also be a raw PEM string, file URL, or existing `CryptoKey`. PEM
-string values are trimmed automatically. Relative file paths resolve from
-`process.cwd()`; use a file URL for module-relative loading. JWT bearer does not
-issue a refresh token; call `auth.jwtBearer()` again when a new access token is
-required.
+`privateKey` is explicit: use `{ type: "file", path }`,
+`{ type: "pem", value }`, or `{ type: "crypto-key", key }`. JWT bearer does not
+issue a refresh token. The REST client caches the provider's access token in
+memory and calls it again only after `401 INVALID_SESSION_ID`, at which point the
+example performs another JWT exchange.
 
 ## Refresh tokens
 

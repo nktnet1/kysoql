@@ -1,85 +1,63 @@
 ---
 title: "Installation"
-description: "Install Kysoql and configure a TypeScript application."
+description: "Install the Kysoql packages for typed Salesforce SOQL and native REST execution."
 ---
 
 ## Requirements
 
-Kysoql is ESM-only. The current packages declare **Node.js `>=26.0.0 <27`**.
-Use TypeScript with strict null checking so generated Salesforce metadata and
-query result inference retain their intended guarantees.
+Kysoql is ESM-only. The current packages require **Node.js `>=26.0.0 <27`**.
 
-## Install packages
+## Install
 
-For native Salesforce REST execution:
+For the standard Kysoql setup with schema generation, JWT authentication, and
+native Salesforce REST execution, install these packages:
 
-```npm
+<Tabs items={["npm", "yarn", "pnpm", "bun"]} defaultIndex={2}>
+  <Tab value="npm">
+
+```bash
 npm install @kysoql/core @kysoql/rest @kysoql/auth
-npm install --save-dev @kysoql/codegen typescript @types/node tsx
+npm install --save-dev @kysoql/codegen
 ```
 
-For compile-only use, install `@kysoql/core`; add `@kysoql/codegen` when you
-want to generate schema types from Salesforce Describe metadata. Native
-execution, authentication, and code generation do not require JSforce.
+  </Tab>
+  <Tab value="yarn">
 
-Install `@kysoql/jsforce` and `jsforce` only when your application already uses
-JSforce and you want the [optional adapter](/docs/jsforce), or implement a
-[custom executor](/docs/core/reference/custom-executors). Keep the Kysoql
-packages in an application on aligned versions.
-
-## Configure a TypeScript application
-
-The examples use **extensionless local imports** such as `./db` and
-`./kysoql/salesforce.generated`. This walkthrough runs TypeScript with `tsx` and
-uses TypeScript's `Bundler` resolution for matching typechecks. Keep your existing
-Vite or other bundler setup if it already supports those imports.
-
-Merge these settings into your application rather than replacing unrelated
-configuration.
-
-```json title="package.json"
-{
-  "type": "module",
-  "scripts": {
-    "typecheck": "tsc --noEmit",
-    "schema:generate": "kysoql generate",
-    "start": "tsx src/query.ts"
-  }
-}
+```bash
+yarn add @kysoql/core @kysoql/rest @kysoql/auth
+yarn add --dev @kysoql/codegen
 ```
 
-```json title="tsconfig.json"
-{
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "skipLibCheck": true,
-    "types": ["node"],
-    "noEmit": true
-  },
-  "include": ["src/**/*.ts", "kysoql.config.ts"]
-}
+  </Tab>
+  <Tab value="pnpm">
+
+```bash
+pnpm add @kysoql/core @kysoql/rest @kysoql/auth
+pnpm add -D @kysoql/codegen
 ```
 
-Use `import type` for generated schemas. `tsx` runs the examples but does not
-check their types, so run your `typecheck` script separately and in CI. For
-deployment, use your application's existing build tool to produce runnable
-JavaScript, or make the TypeScript runner available in the deployment image.
+  </Tab>
+  <Tab value="bun">
 
-Do not switch to plain `tsc` emission followed by native Node.js execution
-without revisiting module resolution. TypeScript's `Bundler` setting accepts
-extensionless imports; it does not rewrite them for Node.js ESM. See the official
-[TypeScript module-resolution reference](https://www.typescriptlang.org/tsconfig/moduleResolution.html)
-and [tsx typechecking guide](https://tsx.is/typescript).
+```bash
+bun add @kysoql/core @kysoql/rest @kysoql/auth
+bun add --dev @kysoql/codegen
+```
+
+  </Tab>
+</Tabs>
+
+`@kysoql/core` provides the query builder, `@kysoql/rest` executes queries
+through Salesforce REST, `@kysoql/auth` obtains and renews Salesforce sessions,
+and `@kysoql/codegen` generates the schema used for query/result typing.
+
+If you only need to compile SOQL, install `@kysoql/core`. Add
+`@kysoql/codegen` when you want generated Salesforce schema types. Install
+`@kysoql/jsforce` and `jsforce` only when you specifically want the
+[JSforce adapter](/docs/jsforce).
 
 ## Next step
 
-Continue with the [quickstart](/docs/framework/getting-started/quickstart). It
-starts with `@kysoql/auth` JWT bearer authentication, generates the schema into
-`src/kysoql/` by default, then configures native REST execution.
+Continue with the [quickstart](/docs/framework/getting-started/quickstart) for a
+complete JWT-authenticated REST query, from schema generation through the returned
+Salesforce data.

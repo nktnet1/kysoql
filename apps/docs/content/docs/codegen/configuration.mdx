@@ -8,7 +8,7 @@ Use a configuration file to make schema generation repeatable across developers
 and CI. The file configures **`kysoql generate` only**. It does not create a
 runtime query builder, configure a REST or JSforce executor, or change application
 queries. Continue to construct your application client as shown in the
-[quickstart](/docs/framework/getting-started/quickstart#4-configure-execution).
+[quickstart](/docs/framework/getting-started/quickstart#4-create-a-rest-backed-query-builder).
 
 ## Create a config
 
@@ -27,7 +27,7 @@ export default defineConfig({
   auth: () =>
     salesforce.jwtBearer({
       username: "integration@example.com",
-      privateKey: "./salesforce-auth-key.pem",
+      privateKey: { type: "file", path: "./salesforce-auth-key.pem" },
     }),
   objects: ["Account", "Contact", "Opportunity", "User"],
   schemaName: "SalesforceSchema",

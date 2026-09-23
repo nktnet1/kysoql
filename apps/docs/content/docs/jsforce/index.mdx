@@ -9,9 +9,36 @@ icon: "Plug"
 Native REST is the default integration. Install this adapter only when your
 application already uses JSforce:
 
-```npm
+<Tabs items={["npm", "yarn", "pnpm", "bun"]} defaultIndex={2}>
+  <Tab value="npm">
+
+```bash
 npm install @kysoql/core @kysoql/jsforce jsforce
 ```
+
+  </Tab>
+  <Tab value="yarn">
+
+```bash
+yarn add @kysoql/core @kysoql/jsforce jsforce
+```
+
+  </Tab>
+  <Tab value="pnpm">
+
+```bash
+pnpm add @kysoql/core @kysoql/jsforce jsforce
+```
+
+  </Tab>
+  <Tab value="bun">
+
+```bash
+bun add @kysoql/core @kysoql/jsforce jsforce
+```
+
+  </Tab>
+</Tabs>
 
 ```ts
 import { Kysoql } from "@kysoql/core";

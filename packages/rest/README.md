@@ -12,9 +12,8 @@ pnpm add @kysoql/auth @kysoql/core @kysoql/rest
 pnpm add -D @kysoql/codegen
 ```
 
-Requires the workspace's Node 26 ESM environment. Generate your schema first;
-see [codegen](../codegen/README.md). Local imports below are extensionless and
-assume a TypeScript runner or bundler, as documented by the docs quickstart.
+Requires Node 26 and ESM. Generate your schema first; see
+[codegen](../codegen/README.md).
 
 ```ts
 import { SalesforceAuth } from "@kysoql/auth";
@@ -26,15 +25,28 @@ const auth = new SalesforceAuth({
   loginUrl: "https://login.salesforce.com",
   clientId: "external-client-app-id",
 });
-const session = await auth.jwtBearer({
+let session = await auth.jwtBearer({
   username: "integration@example.com",
-  privateKey: "./salesforce-auth-key.pem",
+  privateKey: { type: "file", path: "./salesforce-auth-key.pem" },
 });
+const instanceUrl = session.instanceUrl;
 
 const executor = createRestExecutor(
   {
-    instanceUrl: session.instanceUrl,
-    accessToken: session.accessToken,
+    instanceUrl,
+    accessToken: async ({ refresh }) => {
+      if (refresh) {
+        const next = await auth.jwtBearer({
+          username: "integration@example.com",
+          privateKey: { type: "file", path: "./salesforce-auth-key.pem" },
+        });
+        if (next.instanceUrl !== instanceUrl) {
+          throw new Error("Salesforce instance changed; recreate the REST client.");
+        }
+        session = next;
+      }
+      return session.accessToken;
+    },
     apiVersion: "65.0",
     timeoutMs: 30_000,
   },
@@ -45,11 +57,11 @@ const accounts = await db.selectFrom("Account").select(["Id", "Name"]).execute()
 const count = await db.selectFrom("Account").select(({ fn }) => fn.count()).execute();
 ```
 
-Keep the private key outside source control. `privateKey` also accepts a raw PEM
-string (trimmed automatically), file URL, or existing `CryptoKey`, so secret
-manager values do not need manual PKCS#8 decoding. For long-lived services, use
-an auth provider
-with refresh-token storage rather than treating the JWT session as permanent.
+Keep the private key outside source control. `privateKey` uses an explicit source
+object: `{ type: "file", path }`, `{ type: "pem", value }`, or
+`{ type: "crypto-key", key }`. The REST client caches provider access tokens in
+memory. JWT bearer has no refresh token; after `401 INVALID_SESSION_ID`, the
+provider performs another JWT exchange and the failed request is replayed once.
 
 Both `.execute()` and `.executeAll()` follow Salesforce query locators internally.
 Root pages are drained automatically, and selected parent-to-child subqueries are

@@ -23,19 +23,25 @@ const auth = new SalesforceAuth({
 export function authenticateSalesforce() {
   return auth.jwtBearer({
     username: "integration@example.com",
-    privateKey: "./salesforce-auth-key.pem",
+    privateKey: { type: "file", path: "./salesforce-auth-key.pem" },
   });
 }
 ```
 
 `jwtBearer()` creates the Salesforce JWT claims, signs them with RS256, and
-exchanges the assertion in one call. `privateKey` accepts an RSASSA-PKCS1-v1_5
-`CryptoKey`, a PEM file path/file URL, or a raw PEM string. Raw string values are
-trimmed before parsing.
+exchanges the assertion in one call. `privateKey` is a discriminated object, so
+the key source is never inferred from a string:
+
+| Type | Shape | Use when |
+| --- | --- | --- |
+| File | `{ type: "file", path: string \| URL }` | Kysoql should read a PEM file. |
+| PEM | `{ type: "pem", value: string }` | A secret manager or configuration layer already provides PEM text. |
+| CryptoKey | `{ type: "crypto-key", key: CryptoKey }` | Your runtime or key-management layer already owns the imported signing key. |
+
+PEM values and string file paths are trimmed and validated before use.
 
 The helper defaults the assertion lifetime to 180 seconds and rejects lifetimes
-above 300 seconds. Passing a `CryptoKey` remains useful for KMS/HSM or custom key
-loading; ordinary Node applications can pass the PEM file directly.
+above 300 seconds.
 
 ## Salesforce setup
 
@@ -45,11 +51,40 @@ Salesforce does not issue a refresh token for this flow.
 
 <SalesforceReference title="Configure a JWT Bearer Flow" href="https://help.salesforce.com/s/articleView?id=configure_oauth_jwt_flow_external_client_apps.htm&language=en_US&type=5" />
 
-## Renew an expired session
+## Cache and renew the access token
 
-Call `auth.jwtBearer()` again with a newly generated short-lived assertion. The
-class generates that assertion internally on every call. Because no refresh
-token is involved, there is nothing to persist in
+Salesforce does not issue a refresh token for JWT bearer. A REST client should
+still reuse the access token it already has instead of exchanging a new JWT for
+every query. `@kysoql/rest` does this when `accessToken` is a provider: it caches
+the provider result in memory and asks for a replacement only after Salesforce
+returns `401 INVALID_SESSION_ID`.
+
+```ts
+import { createRestExecutor } from "@kysoql/rest";
+import { getSalesforceSession } from "./salesforce-auth";
+
+let session = await getSalesforceSession();
+const instanceUrl = session.instanceUrl;
+
+const executor = createRestExecutor({
+  instanceUrl,
+  accessToken: async ({ refresh }) => {
+    if (refresh) {
+      const next = await getSalesforceSession();
+      if (next.instanceUrl !== instanceUrl) {
+        throw new Error("Salesforce instance changed; recreate the REST client.");
+      }
+      session = next;
+    }
+    return session.accessToken;
+  },
+});
+```
+
+Persisting that access token is usually unnecessary: the private key is the
+long-lived credential, while the access token is replaceable session state. Keep
+it in memory unless your application has a specific cross-process session-sharing
+requirement. There is no JWT refresh token to write to
 [refresh-token storage](/docs/auth/storage).
 
 For `private_key_jwt` client authentication used inside another OAuth flow, see

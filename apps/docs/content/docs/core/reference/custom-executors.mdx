@@ -133,12 +133,3 @@ Replacing it is an advanced extension point, not a raw-SOQL shortcut. A custom
 compiler must preserve escaping and context/structural validation; otherwise it
 can remove guarantees described elsewhere in these docs. Operation-node exports
 from core are primarily types for inspection, not public runtime constructors.
-
-## Repository checks
-
-From the repository root, `pnpm validate` runs source/test typechecks, unit
-tests, builds, and publish/release checks. `pnpm test` runs local unit tests;
-Salesforce integration scripts are separate and need explicitly configured test
-org credentials. Do not run scratch-org provisioning against production.
-
-The documentation app has its own maintainer instructions in `apps/docs/README.md`.

@@ -90,11 +90,19 @@ successful response.
 | `createJwtBearerAssertion(options)` | Create and RS256-sign a Salesforce JWT bearer assertion with Web Crypto. |
 | `createOAuthClientAssertion(options)` | Create an RS256 `private_key_jwt` client assertion for a Salesforce token endpoint. |
 
-Both assertion helpers accept `PrivateKeyInput`: an RS256 `CryptoKey`, a raw PEM
-string, a PEM file path, or a file URL. Raw PEM string values are trimmed before
-parsing. Relative file paths resolve from `process.cwd()`; use a file URL when the
-key should resolve relative to a module. Pass a `CryptoKey` when a key manager or
-custom runtime already owns key loading.
+Both assertion helpers accept the discriminated `PrivateKeyInput` union:
+
+```ts
+type PrivateKeyInput =
+  | { readonly type: "file"; readonly path: string | URL }
+  | { readonly type: "pem"; readonly value: string }
+  | { readonly type: "crypto-key"; readonly key: CryptoKey };
+```
+
+Use the variant that matches where the key already lives. Relative file paths
+resolve from `process.cwd()`; a file URL can make module-relative file loading
+explicit. Kysoql never treats arbitrary string content as both a possible PEM
+value and a possible path.
 
 ## Headless identity primitives
 

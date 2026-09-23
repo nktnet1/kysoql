@@ -46,7 +46,7 @@ describe("SalesforceAuth", () => {
 
     const session = await auth.jwtBearer({
       username: "integration@example.com",
-      privateKey: await createPrivateKey(),
+      privateKey: { type: "crypto-key", key: await createPrivateKey() },
       now: 1_800_000_000,
     });
 

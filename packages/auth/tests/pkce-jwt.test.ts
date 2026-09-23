@@ -11,6 +11,7 @@ import {
   createOAuthClientAssertion,
   createPkceChallenge,
   generatePkcePair,
+  type PrivateKeyInput,
 } from "#/index";
 
 const decodeBase64Url = (value: string): string => {
@@ -65,7 +66,7 @@ describe("PKCE and JWT helpers", () => {
       clientId: "consumer",
       username: "integration@example.com",
       loginUrl: "https://login.salesforce.com",
-      privateKey: keyPair.privateKey,
+      privateKey: { type: "crypto-key", key: keyPair.privateKey },
       expiresInSeconds: 180,
       now: 1_800_000_000,
     });
@@ -100,7 +101,10 @@ describe("PKCE and JWT helpers", () => {
       clientId: "consumer",
       username: "integration@example.com",
       loginUrl: "https://login.salesforce.com",
-      privateKey: `\n  ${await createPrivateKeyPem()}  \n`,
+      privateKey: {
+        type: "pem",
+        value: `\n  ${await createPrivateKeyPem()}  \n`,
+      },
       now: 1_800_000_000,
     });
 
@@ -116,7 +120,7 @@ describe("PKCE and JWT helpers", () => {
         clientId: "consumer",
         username: "integration@example.com",
         loginUrl: "https://login.salesforce.com",
-        privateKey: filename,
+        privateKey: { type: "file", path: filename },
         now: 1_800_000_000,
       });
 
@@ -135,7 +139,7 @@ describe("PKCE and JWT helpers", () => {
         clientId: "consumer",
         username: "integration@example.com",
         loginUrl: "https://login.salesforce.com",
-        privateKey: pathToFileURL(filename),
+        privateKey: { type: "file", path: pathToFileURL(filename) },
         now: 1_800_000_000,
       });
 
@@ -151,10 +155,39 @@ describe("PKCE and JWT helpers", () => {
         clientId: "consumer",
         username: "integration@example.com",
         loginUrl: "https://login.salesforce.com",
-        privateKey: "   ",
+        privateKey: { type: "file", path: "   " },
         now: 1_800_000_000,
       }),
-      /privateKey must not be empty/,
+      /privateKey\.path must not be empty/,
+    );
+  });
+
+  it("rejects non-file URLs for file private-key input", async () => {
+    await assert.rejects(
+      createJwtBearerAssertion({
+        clientId: "consumer",
+        username: "integration@example.com",
+        loginUrl: "https://login.salesforce.com",
+        privateKey: {
+          type: "file",
+          path: new URL("https://example.com/key.pem"),
+        },
+        now: 1_800_000_000,
+      }),
+      /privateKey\.path URL must use the file: protocol/,
+    );
+  });
+
+  it("rejects the old ambiguous string private-key input at runtime", async () => {
+    await assert.rejects(
+      createJwtBearerAssertion({
+        clientId: "consumer",
+        username: "integration@example.com",
+        loginUrl: "https://login.salesforce.com",
+        privateKey: "./salesforce-auth-key.pem" as unknown as PrivateKeyInput,
+        now: 1_800_000_000,
+      }),
+      /privateKey must be an object with type/,
     );
   });
 
@@ -172,7 +205,7 @@ describe("PKCE and JWT helpers", () => {
     const jwt = await createOAuthClientAssertion({
       clientId: "consumer",
       loginUrl: "https://example.my.salesforce.com",
-      privateKey: keyPair.privateKey,
+      privateKey: { type: "crypto-key", key: keyPair.privateKey },
       now: 1_800_000_000,
     });
     const [, payloadPart] = jwt.split(".");
@@ -199,7 +232,7 @@ describe("PKCE and JWT helpers", () => {
     const jwt = await createOAuthClientAssertion({
       clientId: "consumer",
       loginUrl: "https://customers.example.my.site.com/portal/",
-      privateKey: keyPair.privateKey,
+      privateKey: { type: "crypto-key", key: keyPair.privateKey },
       now: 1_800_000_000,
     });
     const [, payloadPart] = jwt.split(".");

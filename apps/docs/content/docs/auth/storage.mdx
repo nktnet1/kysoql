@@ -10,7 +10,9 @@ new access token is used.
 
 <SalesforceReference title="OAuth 2.0 Refresh Token Flow for Renewed Sessions" href="https://help.salesforce.com/s/articleView?id=sf.remoteaccess_oauth_refresh_token_flow.htm&language=en_US&type=5" />
 
-The package never writes access tokens to these stores. In browser applications,
+The package never writes access tokens to these refresh-token stores.
+`@kysoql/rest` caches access tokens from a provider in process memory instead,
+including tokens obtained through JWT bearer. In browser applications,
 `localStorage` is readable by JavaScript running on the page, so use it only when
 your threat model accepts that exposure. A server-side session or protected
 backend store is preferable when the application architecture permits it.
@@ -171,7 +173,9 @@ export function createAuth(initialRefreshToken: string) {
     initialRefreshToken,
     refreshTokenStore: createMemoryRefreshTokenStore(),
     clientAssertion: () =>
-      auth.createClientAssertion({ privateKey: "./salesforce-auth-key.pem" }),
+      auth.createClientAssertion({
+        privateKey: { type: "file", path: "./salesforce-auth-key.pem" },
+      }),
   });
 }
 ```

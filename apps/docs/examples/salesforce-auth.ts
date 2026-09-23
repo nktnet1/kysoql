@@ -9,5 +9,5 @@ const auth = new SalesforceAuth({
 export const getSalesforceSession = () =>
   auth.jwtBearer({
     username: "integration@example.com",
-    privateKey: "./salesforce-auth-key.pem",
+    privateKey: { type: "file", path: "./salesforce-auth-key.pem" },
   });

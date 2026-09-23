@@ -25,7 +25,7 @@ export default defineConfig({
   auth: () =>
     auth.jwtBearer({
       username: "integration@example.com",
-      privateKey: "./salesforce-auth-key.pem",
+      privateKey: { type: "file", path: "./salesforce-auth-key.pem" },
     }),
   objects: ["Account", "Contact"],
   schemaName: "SalesforceSchema",
