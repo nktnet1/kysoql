@@ -24,7 +24,12 @@ const { KYSOQL_TARGET_ORG: targetOrg } = v.parse(
   process.env,
 );
 
-const runSfQuery = (soql) => {
+type SalesforceRecord = Record<string, any>;
+interface SalesforceQueryResult {
+  readonly records: SalesforceRecord[];
+}
+
+const runSfQuery = (soql: string): SalesforceQueryResult => {
   const command = spawnSync(
     "pnpm",
     [
@@ -48,7 +53,7 @@ const runSfQuery = (soql) => {
     throw new Error(`unable to execute Salesforce CLI: ${command.error.message}`);
   }
 
-  let response;
+  let response: any;
   try {
     response = JSON.parse(command.stdout);
   } catch {
@@ -64,11 +69,11 @@ const runSfQuery = (soql) => {
     throw new Error(`Salesforce rejected generated SOQL:\n${soql}\n${detail}`);
   }
 
-  return response.result;
+  return response.result as SalesforceQueryResult;
 };
 
-const compile = (builder) => builder.compile().soql;
-const db = new Kysoql();
+const compile = (builder: { compile(): { soql: string } }): string => builder.compile().soql;
+const db = new Kysoql<any>();
 
 describe(`generated-query Salesforce E2E (${targetOrg})`, () => {
   it("executes record filtering and ordering", () => {
@@ -213,7 +218,7 @@ describe(`generated-query Salesforce E2E (${targetOrg})`, () => {
         name: record.Name,
         children:
           record.Kysoql_Records__r?.records?.map(
-            (child) => child.External_Id__c,
+            (child: SalesforceRecord) => child.External_Id__c,
           ) ?? [],
       })),
     ).toEqual([

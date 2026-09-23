@@ -139,7 +139,7 @@ titles, the copy-Markdown control, and direct/deep links.
 
 `check:examples` extracts every `ts`, `typescript`, and `tsx` fence (including
 fences with metadata) to a separate module in the ignored
-`.cache/docs-examples/` directory. It copies `examples/db.ts` and
+`.generated/examples/` directory. It copies `examples/db.ts` and
 `examples/salesforce.generated.ts`, then runs the installed `tsc` with strict
 null checking, exact optional properties, and unchecked-index protection.
 
@@ -167,7 +167,7 @@ aliases.
 
 The root `pnpm test:tasks` command checks these task-configuration invariants
 without installed dependencies (it can also be run as
-`node --test scripts/typecheck-tasks.test.mjs`). The root source-typecheck
+`node --test scripts/typecheck-tasks.test.ts`). The root source-typecheck
 command runs it before invoking Turbo. These are configuration regressions,
 not substitutes for a full typecheck with the pinned toolchain.
 

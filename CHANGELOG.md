@@ -150,6 +150,7 @@ version is cut.
 
 ### Fixed
 
+- Keep the REST relationship-pagination documentation example type-safe by modelling the documented `Contact.Cases` child relationship in the synthetic docs schema.
 - Annotate the auth test `tokenResponse()` helper with an explicit `Response` return type so TypeScript does not infer a non-portable `undici-types` path during strict test typechecking.
 - Keep the named `SalesforceField` metadata migration compatible with TypeScript 7
   test helpers that constrain heterogeneous field maps, and update the remaining
@@ -206,6 +207,7 @@ version is cut.
 
 ### Changed
 
+- Run repository-authored tooling, smoke helpers, docs checks, and Salesforce E2E entrypoints as TypeScript directly on Node 26; generated documentation typecheck fixtures now live under `.generated/examples/` instead of a misleading cache directory.
 - Split `@kysoql/auth` authentication methods into individual end-user documentation pages, make private-key JWT bearer the default server-to-server path, and link each flow to the relevant Salesforce reference documentation.
 - Generated Salesforce fields now use named metadata objects instead of opaque
   positional capability arguments. Default `never`/`false` metadata is omitted

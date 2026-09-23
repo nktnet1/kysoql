@@ -228,7 +228,7 @@ Vitest suite that compiles and executes deterministic cases for:
 Every test asserts the exact SOQL produced by kysoql before sending it through the
 workspace-local `pnpm sf data query --json` command, then asserts deterministic
 returned values or relationship shapes from the seeded fixture. The dedicated
-`vitest.salesforce.config.ts` includes only `test/salesforce-e2e/**/*.test.mjs`, so
+`vitest.salesforce.config.ts` includes only `test/salesforce-e2e/**/*.test.ts`, so
 these credential-dependent tests are not collected by normal `pnpm test` or
 `pnpm validate`. `KYSOQL_TARGET_ORG` is also listed in Turborepo
 `globalPassThroughEnv`: it is available to explicit live-org commands without

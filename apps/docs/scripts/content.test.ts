@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { codeBlockIssues, codeBlocks, stripCodeBlocks } from "./content.mjs";
+import { codeBlockIssues, codeBlocks, stripCodeBlocks } from "./content.ts";
 
-const block = (info, code = "const answer: number = 42;") =>
+const block = (info: string, code = "const answer: number = 42;") =>
   `\`\`\`${info}\n${code}\n\`\`\`\n`;
 
 describe("documentation code fences", () => {

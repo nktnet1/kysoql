@@ -5,7 +5,28 @@ import { fileURLToPath } from "node:url";
 export const docsRoot = fileURLToPath(new URL("../", import.meta.url));
 export const contentRoot = path.join(docsRoot, "content/docs");
 
-export async function walk(directory) {
+export interface DocPage {
+  readonly filename: string;
+  readonly relative: string;
+  readonly route: string;
+  readonly text: string;
+}
+
+export interface CodeBlock {
+  readonly fence: string;
+  readonly indent: number;
+  readonly info: string;
+  readonly label: string;
+  readonly language: string;
+  readonly metadata: string;
+  readonly fenceLine: number;
+  readonly line: number;
+  readonly code: string;
+  readonly endLine: number;
+  readonly closed: boolean;
+}
+
+export async function walk(directory: string): Promise<string[]> {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = await Promise.all(
     entries.map(async (entry) => {
@@ -16,7 +37,7 @@ export async function walk(directory) {
   return files.flat().sort();
 }
 
-export async function readPages() {
+export async function readPages(): Promise<DocPage[]> {
   const filenames = (await walk(contentRoot)).filter((file) =>
     file.endsWith(".mdx"),
   );
@@ -37,7 +58,7 @@ export async function readPages() {
   );
 }
 
-const languageAliases = new Map([
+const languageAliases = new Map<string, string>([
   ["typescript", "ts"],
   ["javascript", "js"],
   ["sh", "bash"],
@@ -66,14 +87,20 @@ const languages = new Set([
  * Both consumers use this parser so a valid TypeScript alias cannot silently
  * bypass example typechecking. Line numbers are one-based, including fences.
  */
-export function codeBlocks(text) {
+export function codeBlocks(text: string): CodeBlock[] {
   const lines = text.replace(/\r\n?/g, "\n").split("\n");
-  const blocks = [];
-  let open;
-  const finish = (end, closed) => {
+  const blocks: CodeBlock[] = [];
+  let open:
+    | Omit<CodeBlock, "code" | "endLine" | "closed">
+    | undefined;
+
+  const finish = (end: number, closed: boolean) => {
+    if (!open) {
+      return;
+    }
     const code = lines.slice(open.fenceLine, end).map((line) => {
-      const spaces = /^ */.exec(line)[0].length;
-      return line.slice(Math.min(spaces, open.indent));
+      const spaces = /^ */.exec(line)?.[0].length ?? 0;
+      return line.slice(Math.min(spaces, open?.indent ?? 0));
     });
     blocks.push({
       ...open,
@@ -85,11 +112,17 @@ export function codeBlocks(text) {
   };
 
   for (let index = 0; index < lines.length; index++) {
-    const match = /^( {0,3})(`{3,}|~{3,})(.*)$/.exec(lines[index]);
+    const line = lines[index];
+    if (line === undefined) {
+      continue;
+    }
+    const match = /^( {0,3})(`{3,}|~{3,})(.*)$/.exec(line);
     if (!match) {
       continue;
     }
-    const [, indent, fence, rest] = match;
+    const indent = match[1] ?? "";
+    const fence = match[2] ?? "";
+    const rest = match[3] ?? "";
     if (open) {
       if (
         fence[0] === open.fence[0] &&
@@ -124,7 +157,10 @@ export function codeBlocks(text) {
 }
 
 /** Mask code (including malformed fences) before checking prose and links. */
-export function stripCodeBlocks(text, blocks = codeBlocks(text)) {
+export function stripCodeBlocks(
+  text: string,
+  blocks = codeBlocks(text),
+): string {
   const lines = text.replace(/\r\n?/g, "\n").split("\n");
   for (const block of blocks) {
     lines.fill("", block.fenceLine - 1, block.endLine);
@@ -132,8 +168,8 @@ export function stripCodeBlocks(text, blocks = codeBlocks(text)) {
   return lines.join("\n");
 }
 
-export function codeBlockIssues(block) {
-  const issues = [];
+export function codeBlockIssues(block: CodeBlock): string[] {
+  const issues: string[] = [];
   const at = `line ${block.fenceLine}`;
   if (!block.closed) {
     issues.push(`${at}: unclosed code fence`);

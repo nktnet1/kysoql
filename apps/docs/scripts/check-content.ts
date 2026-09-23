@@ -8,18 +8,18 @@ import {
   readPages,
   stripCodeBlocks,
   walk,
-} from "./content.mjs";
+} from "./content.ts";
 
-const errors = [];
+const errors: string[] = [];
 const pages = await readPages();
-const routes = new Map();
-const titles = new Set();
+const routes = new Map<string, { relative: string; route: string; prose: string; headings: Set<string> }>();
+const titles = new Set<string>();
 let snippetCount = 0;
 let internalLinkCount = 0;
-const complain = (page, message) => errors.push(`${page}: ${message}`);
+const complain = (page: string, message: string) => errors.push(`${page}: ${message}`);
 
-function headingIds(text) {
-  const counts = new Map();
+function headingIds(text: string): Set<string> {
+  const counts = new Map<string, number>();
   return new Set(
     [...text.matchAll(/^#{2,6}\s+(.+)$/gm)].map((match) => {
       const base = match[1]
@@ -132,7 +132,7 @@ try {
 } catch (error) {
   complain("meta.json", error instanceof Error ? error.message : String(error));
 }
-const referenced = new Set();
+const referenced = new Set<string>();
 for (const file of metadataFiles) {
   const label = path.relative(contentRoot, file);
   try {
@@ -141,7 +141,7 @@ for (const file of metadataFiles) {
       Array.isArray(meta.pages),
       "pages must be an explicit ordered array",
     );
-    const seen = new Set();
+    const seen = new Set<string>();
     for (const item of meta.pages) {
       assert.equal(typeof item, "string");
       assert.ok(!seen.has(item), `duplicate navigation entry: ${item}`);

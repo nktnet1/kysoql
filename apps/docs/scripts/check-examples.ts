@@ -1,12 +1,12 @@
 import { spawnSync } from "node:child_process";
 import { access, copyFile, mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { codeBlocks, docsRoot, readPages } from "./content.mjs";
+import { codeBlocks, docsRoot, readPages } from "./content.ts";
 
 const workspace = path.resolve(docsRoot, "../..");
 // Check the public declaration surface consumers receive. Each source package
 // owns its own #/* aliases; one docs tsconfig cannot merge those local mappings.
-const missing = [];
+const missing: string[] = [];
 for (const name of ["core", "rest", "auth", "jsforce", "codegen"]) {
   try {
     await access(path.join(workspace, "packages", name, "dist/index.d.mts"));
@@ -23,7 +23,7 @@ if (missing.length) {
   process.exit(1);
 }
 
-const output = path.join(docsRoot, ".cache/docs-examples");
+const output = path.join(docsRoot, ".generated/examples");
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 for (const name of ["db.ts", "salesforce.generated.ts"]) {
@@ -33,7 +33,7 @@ for (const name of ["db.ts", "salesforce.generated.ts"]) {
   );
 }
 
-const manifest = [];
+const manifest: Array<{ filename: string; source: string; line: number }> = [];
 for (const page of await readPages()) {
   let number = 0;
   for (const block of codeBlocks(page.text)) {
@@ -81,7 +81,7 @@ console.log(
   `Checking ${manifest.length} independent TypeScript examples against the workspace packages' public declarations.`,
 );
 console.log(
-  "Example/source line mapping: apps/docs/.cache/docs-examples/manifest.json",
+  "Example/source line mapping: apps/docs/.generated/examples/manifest.json",
 );
 const result = spawnSync(
   "tsc",

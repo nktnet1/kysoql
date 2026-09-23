@@ -76,6 +76,15 @@ export interface SalesforceSchema {
   }, {
     Account: SalesforceParentRelationship<"Account", "AccountId", true>;
     CreatedBy: SalesforceParentRelationship<"User", "CreatedById", false>;
+  }, {
+    Cases: SalesforceChildRelationship<"Case", "ContactId">;
+  }>;
+  Case: SalesforceObject<{
+    Id: Field<string, "id">;
+    Subject: Field<string, "string", true>;
+    ContactId: Field<string, "reference", true, "Contact", "Contact">;
+  }, {
+    Contact: SalesforceParentRelationship<"Contact", "ContactId", true>;
   }>;
   Opportunity: SalesforceObject<{
     Id: Field<string, "id">;
