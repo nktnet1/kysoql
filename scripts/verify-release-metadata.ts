@@ -3,6 +3,7 @@ import { basename, resolve } from "node:path";
 
 const ROOT_DIR = resolve(import.meta.dirname, "..");
 const PUBLISHABLE_PACKAGES: readonly string[] = [
+  "packages/auth",
   "packages/core",
   "packages/codegen",
   "packages/jsforce",

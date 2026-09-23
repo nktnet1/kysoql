@@ -1,0 +1,81 @@
+---
+title: "@kysoql/auth"
+description: "Authenticate Salesforce REST clients with supported OAuth flows and refresh-token storage."
+icon: "KeyRound"
+---
+
+`@kysoql/auth` obtains Salesforce bearer tokens for applications that execute
+SOQL through [`@kysoql/rest`](/docs/rest). Authentication is separate from query
+construction and transport, so applications can choose the Salesforce flow that
+matches their deployment model.
+
+For a server-to-server integration that can protect a private key, the default
+Kysoql path is Salesforce's **OAuth 2.0 JWT bearer flow**. It avoids interactive
+login and does not require storing a client secret or refresh token.
+
+Salesforce reference: [OAuth 2.0 JWT Bearer Flow for Server-to-Server Integration](https://help.salesforce.com/s/articleView?id=xcloud.remoteaccess_oauth_jwt_flow_ca.htm&language=en_US&type=5).
+
+## Server-to-server with a private key
+
+```ts
+import {
+  authenticateJwtBearer,
+  createJwtBearerAssertion,
+} from "@kysoql/auth";
+import { createRestExecutor } from "@kysoql/rest";
+
+export async function createSalesforceExecutor(privateKey: CryptoKey) {
+  const loginUrl = "https://login.salesforce.com";
+  const assertion = await createJwtBearerAssertion({
+    clientId: "external-client-app-id",
+    username: "integration@example.com",
+    loginUrl,
+    privateKey,
+  });
+  const session = await authenticateJwtBearer({ loginUrl, assertion });
+
+  return createRestExecutor({
+    instanceUrl: session.instanceUrl,
+    accessToken: session.accessToken,
+  });
+}
+```
+
+Keep the signing key server-side. `createJwtBearerAssertion()` accepts an RS256
+`CryptoKey`; loading a PEM, KMS key, HSM key, or other key-management primitive
+is intentionally owned by the application/runtime.
+
+See [JWT bearer](/docs/auth/jwt-bearer) for Salesforce setup, assertion details,
+and renewal behavior.
+
+## Other supported flows
+
+Use [authentication flows](/docs/auth/flows) to choose another supported method.
+Each flow has its own guide:
+
+- [web-server authorization code with PKCE](/docs/auth/web-server-pkce)
+- [refresh token](/docs/auth/refresh-token)
+- [client credentials](/docs/auth/client-credentials)
+- [private_key_jwt client authentication](/docs/auth/private-key-jwt)
+- [SAML bearer assertion](/docs/auth/saml-bearer)
+- [Salesforce SAML assertion](/docs/auth/saml-assertion)
+- [OAuth token exchange](/docs/auth/token-exchange)
+- [device flow](/docs/auth/device)
+- [hybrid web-server](/docs/auth/hybrid-web-server)
+- [hybrid refresh token](/docs/auth/hybrid-refresh-token)
+- [Experience Cloud Authorization Code and Credentials](/docs/auth/experience-cloud-code-credentials)
+- [Experience Cloud guest authorization](/docs/auth/experience-cloud-guest)
+- [OAuth 2.0 for First-Party Applications](/docs/auth/first-party-applications), with separate guides for [username-password](/docs/auth/first-party-username-password), [passwordless login](/docs/auth/first-party-passwordless), and [registration](/docs/auth/first-party-registration)
+
+Salesforce's retiring username-password, user-agent, and hybrid user-agent flows
+are intentionally not implemented. Asset tokens identify connected devices and
+are not general bearer sessions for SOQL REST access.
+
+Salesforce reference: [OAuth Authorization Flows](https://help.salesforce.com/s/articleView?id=remoteaccess_oauth_flows.htm&language=en_US&type=5).
+
+## Refresh-token persistence
+
+Flows that issue refresh tokens can use the built-in memory, browser
+`localStorage`, Redis, or custom stores. See
+[refresh-token storage](/docs/auth/storage). Rotation is persisted before a newly
+refreshed session is published to the caller.

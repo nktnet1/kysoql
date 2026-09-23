@@ -31,11 +31,12 @@ for the workspace's pinned toolchain when investigating type errors.
 | --- | --- |
 | `framework/` | Framework-level usage: setup, query building, and common Salesforce concepts. |
 | `core/` | `@kysoql/core`: Apex compilation, schema/result types, advanced features, and core references. |
-| `rest/` | `@kysoql/rest`: native execution, pagination, authentication, and REST API reference. |
+| `rest/` | `@kysoql/rest`: native execution, pagination, token-provider integration, and REST API reference. |
+| `auth/` | `@kysoql/auth`: private-key JWT bearer first, flow-specific OAuth guides, and refresh-token storage. |
 | `codegen/` | `@kysoql/codegen`: configuration, schema generation, field filtering, and codegen API reference. |
 | `jsforce/` | `@kysoql/jsforce`: the optional JSforce adapter and its API reference. |
 
-`framework/`, `core/`, `rest/`, `codegen/`, and `jsforce/` are peer Fumadocs
+`framework/`, `core/`, `rest/`, `auth/`, `codegen/`, and `jsforce/` are peer Fumadocs
 root folders (`"root": true`). The layout root toggle therefore stays available
 while browsing Framework or any individual package; no package root is nested
 inside another. `/docs` redirects to the Framework root by default. Each root has
@@ -108,7 +109,7 @@ commands below bypass Turbo; for standalone example checks, build the libraries
 first so the docs exercise their public declaration files:
 
 ```bash
-pnpm exec turbo run build --filter=@kysoql/core --filter=@kysoql/rest --filter=@kysoql/jsforce --filter=@kysoql/codegen
+pnpm exec turbo run build --filter=@kysoql/core --filter=@kysoql/rest --filter=@kysoql/auth --filter=@kysoql/jsforce --filter=@kysoql/codegen
 pnpm --filter docs check:content
 pnpm --filter docs check:examples
 pnpm --filter docs types:check
@@ -147,7 +148,7 @@ JSforce through its adapter workspace. Each source package has its own `#/*`
 path mapping, so those sources must not be flattened into one docs compiler
 project. No custom development export condition is used for consumer examples.
 
-The docs declare workspace development dependencies on all four packages, so
+The docs declare workspace development dependencies on all five packages, so
 the root Turbo source-typecheck task builds them before checking examples. For a
 standalone check, use the build command above. Missing declarations produce an
 actionable error rather than falling back to incomplete source resolution.
@@ -193,7 +194,7 @@ secrets, or credentials.
 
 The source loader supplies all pages to the static search endpoint at
 `/api/search`. The root documentation is the `framework` section, with package
-pages indexed as `core`, `rest`, `codegen`, and `jsforce`. The search dialog uses
+pages indexed as `core`, `rest`, `auth`, `codegen`, and `jsforce`. The search dialog uses
 the same section list in its Fumadocs-style filter popover, including a dedicated
 Framework filter. Unfiltered search still searches every section.
 

@@ -1,0 +1,65 @@
+---
+title: "First-party registration"
+description: "Use Salesforce OAuth 2.0 for First-Party Applications headless registration and OTP verification."
+icon: "KeyRound"
+---
+
+The first-party registration flow lets a private Experience Cloud application
+collect registration data, initialize Salesforce registration headlessly, verify
+the user with an OTP, and receive an authorization code.
+
+Salesforce reference: [Headless Registration Flow for Private Clients](https://help.salesforce.com/s/articleView?id=sf.remoteaccess_auth_challenge_registration.htm&language=en_US&type=5).
+
+## Initialize registration
+
+```ts
+import { requestFirstPartyAuthorizationChallenge } from "@kysoql/auth";
+
+export function beginRegistration(
+  clientAssertion: string,
+  codeChallenge: string,
+) {
+  return requestFirstPartyAuthorizationChallenge({
+    siteUrl: "https://customers.example.my.site.com/customers",
+    bodyFormat: "json",
+    parameters: {
+      userdata: {
+        username: "user@example.com",
+        lastName: "Example",
+        email: "user@example.com",
+      },
+      password: "user-chosen-password",
+      login_type: "email",
+      client_assertion: clientAssertion,
+      code_challenge: codeChallenge,
+    },
+  });
+}
+```
+
+Use `accessToken` when the Experience Cloud registration policy requires an
+authenticated integration user. Kysoql adds it as an `Authorization: Bearer`
+header. Use `uvidHintToken` when registration carries guest-session context.
+
+Salesforce strongly recommends PKCE for this flow. Keep the matching
+`code_verifier` and use it when exchanging the returned authorization code.
+Salesforce can return an `auth_session` while it waits for OTP verification.
+
+## Submit the OTP
+
+```ts
+import { requestFirstPartyAuthorizationChallenge } from "@kysoql/auth";
+
+export function submitRegistrationOtp(authSession: string, otp: string) {
+  return requestFirstPartyAuthorizationChallenge({
+    siteUrl: "https://customers.example.my.site.com/customers",
+    parameters: {
+      auth_session: authSession,
+      login_otp: otp,
+    },
+  });
+}
+```
+
+After Salesforce returns `kind: "authorized"`, exchange the authorization code
+through [`exchangeAuthorizationCode()`](/docs/auth/web-server-pkce).

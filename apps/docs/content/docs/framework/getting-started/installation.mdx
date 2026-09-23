@@ -15,13 +15,13 @@ query result inference retain their intended guarantees.
 For native Salesforce REST execution:
 
 ```npm
-npm install @kysoql/core @kysoql/rest
+npm install @kysoql/core @kysoql/rest @kysoql/auth
 npm install --save-dev @kysoql/codegen typescript @types/node tsx
 ```
 
 For compile-only use, install `@kysoql/core`; add `@kysoql/codegen` when you
 want to generate schema types from Salesforce Describe metadata. Native
-execution and code generation do not require JSforce.
+execution, authentication, and code generation do not require JSforce.
 
 Install `@kysoql/jsforce` and `jsforce` only when your application already uses
 JSforce and you want the [optional adapter](/docs/jsforce), or implement a
@@ -82,6 +82,6 @@ and [tsx typechecking guide](https://tsx.is/typescript).
 ## Next step
 
 Continue with the [quickstart](/docs/framework/getting-started/quickstart). It
-starts with an existing Salesforce access token. Native
-[authentication helpers](/docs/rest/authentication) also support
-client-credentials and refresh-token exchanges.
+starts with an existing Salesforce access token. For a server-to-server application
+that should obtain its own token, start with [`@kysoql/auth` JWT bearer](/docs/auth/jwt-bearer),
+which uses a private key instead of an interactive login.

@@ -7,6 +7,7 @@ import { collectPublicExports } from "./public-export-shape.ts";
 
 const ROOT_DIR = resolve(import.meta.dirname, "..");
 const PUBLISHABLE_PACKAGES: readonly string[] = [
+  "packages/auth",
   "packages/core",
   "packages/codegen",
   "packages/jsforce",

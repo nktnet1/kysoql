@@ -1,0 +1,180 @@
+---
+title: "Refresh-token storage"
+description: "Persist Salesforce refresh-token rotation in memory, localStorage, Redis, or a custom store."
+icon: "Database"
+---
+
+A Salesforce refresh token is a long-lived credential. `@kysoql/auth` exposes a
+small `RefreshTokenStore` interface so token rotation can be committed before a
+new access token is used.
+
+Salesforce reference: [OAuth 2.0 Refresh Token Flow for Renewed Sessions](https://help.salesforce.com/s/articleView?id=sf.remoteaccess_oauth_refresh_token_flow.htm&language=en_US&type=5).
+
+The package never writes access tokens to these stores. In browser applications,
+`localStorage` is readable by JavaScript running on the page, so use it only when
+your threat model accepts that exposure. A server-side session or protected
+backend store is preferable when the application architecture permits it.
+
+## Store contract
+
+```ts
+import type { RefreshTokenStore } from "@kysoql/auth";
+
+export function encryptedStore(): RefreshTokenStore {
+  let encrypted: string | undefined;
+  return {
+    getRefreshToken: async () => encrypted,
+    setRefreshToken: async (token) => {
+      encrypted = token;
+    },
+    deleteRefreshToken: async () => {
+      encrypted = undefined;
+    },
+  };
+}
+```
+
+A production custom store should encrypt at rest as appropriate for its platform.
+If `setRefreshToken()` fails during rotation, let the error propagate; treating a
+new access token as successful while losing its replacement refresh token can
+strand the session.
+
+## Memory
+
+Memory storage is useful for tests, command-line processes, or applications that
+do not need refresh state to survive a restart.
+
+```ts
+import { createMemoryRefreshTokenStore } from "@kysoql/auth";
+
+export function createStore(initialToken: string) {
+  return createMemoryRefreshTokenStore(initialToken);
+}
+```
+
+## Browser localStorage
+
+```ts
+import { createLocalStorageRefreshTokenStore } from "@kysoql/auth";
+
+export function createBrowserStore() {
+  return createLocalStorageRefreshTokenStore({
+    key: "salesforce:refresh-token",
+  });
+}
+```
+
+The default uses `globalThis.localStorage`. For SSR, tests, non-browser runtimes,
+or another Web Storage-compatible implementation, pass `storage` explicitly.
+The constructor throws when no storage object is available rather than silently
+falling back to memory.
+
+Do not use a single key for multiple Salesforce users or orgs. Namespace the key
+by an application-owned opaque session identifier, not by putting a username or
+raw org credential into browser storage.
+
+## Redis
+
+The Redis adapter intentionally uses only `get`, `set`, and `del`, so it works
+with Redis clients that expose those common methods without adding a Redis runtime
+dependency to Kysoql.
+
+```ts
+import { createRedisRefreshTokenStore, type RedisLike } from "@kysoql/auth";
+
+export function createRedisStore(client: RedisLike, sessionId: string) {
+  return createRedisRefreshTokenStore({
+    client,
+    key: sessionId,
+    prefix: "my-app:salesforce:refresh:",
+  });
+}
+```
+
+The adapter does not set a TTL because Salesforce refresh-token validity and
+rotation policy belong to the configured OAuth application. Apply encryption,
+Redis ACLs, expiry, and backup policy at the application/infrastructure layer.
+
+If multiple processes can refresh the same rotating token concurrently, use a
+distributed lock or compare-and-set strategy around the auth manager. Reading the
+latest token from Redis before every refresh reduces stale-token use but is not a
+distributed synchronization primitive.
+
+## Reusable refresh provider
+
+`createStoredRefreshTokenAuth()` combines a store with the refresh exchange and
+provides an `accessTokenProvider` compatible with `@kysoql/rest`.
+
+```ts
+import {
+  createRedisRefreshTokenStore,
+  createStoredRefreshTokenAuth,
+  type RedisLike,
+} from "@kysoql/auth";
+import { createRestExecutor } from "@kysoql/rest";
+
+export async function createExecutor(
+  client: RedisLike,
+  initialRefreshToken: string,
+) {
+  const store = createRedisRefreshTokenStore({
+    client,
+    key: "integration-user",
+  });
+  const auth = createStoredRefreshTokenAuth({
+    loginUrl: "https://example.my.salesforce.com",
+    clientId: "oauth-client-id",
+    initialRefreshToken,
+    refreshTokenStore: store,
+  });
+  const session = await auth.getSession();
+
+  return createRestExecutor({
+    instanceUrl: session.instanceUrl,
+    accessToken: auth.accessTokenProvider,
+  });
+}
+```
+
+If the Redis key is already populated, `initialRefreshToken` is only a fallback;
+the stored token wins. This makes it safe to bootstrap a new store while still
+honouring a token rotated by an earlier process.
+
+The manager single-flights refresh calls within one JavaScript process. It reads
+the store before each refresh, persists a rotated token before publishing the new
+session, and retains the previous refresh token when Salesforce does not rotate it.
+It does not predict token expiry or perform background refreshes.
+
+Set `clientSecretTransport: "basic"` when the OAuth client is configured to send
+its client secret with HTTP Basic authentication. For Salesforce hybrid-app
+refresh semantics, set `refreshMode: "hybrid"`; standard refresh is the default.
+
+For OAuth clients configured to authenticate refresh requests with a short-lived
+JWT client assertion, provide a function so a fresh assertion is minted for each
+refresh:
+
+```ts
+import {
+  createOAuthClientAssertion,
+  createMemoryRefreshTokenStore,
+  createStoredRefreshTokenAuth,
+} from "@kysoql/auth";
+
+export function createAuth(
+  initialRefreshToken: string,
+  privateKey: CryptoKey,
+) {
+  return createStoredRefreshTokenAuth({
+    loginUrl: "https://example.my.salesforce.com",
+    clientId: "oauth-client-id",
+    initialRefreshToken,
+    refreshTokenStore: createMemoryRefreshTokenStore(),
+    clientAssertion: () =>
+      createOAuthClientAssertion({
+        loginUrl: "https://example.my.salesforce.com",
+        clientId: "oauth-client-id",
+        privateKey,
+      }),
+  });
+}
+```

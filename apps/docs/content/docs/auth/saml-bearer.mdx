@@ -1,0 +1,37 @@
+---
+title: "SAML bearer assertion"
+description: "Exchange a signed SAML 2.0 bearer assertion for a Salesforce OAuth access token."
+icon: "KeyRound"
+---
+
+Use the OAuth 2.0 SAML bearer assertion flow when a trusted identity provider can
+issue the signed SAML assertion Salesforce expects for a previously authorized
+application.
+
+Salesforce reference: [OAuth 2.0 SAML Bearer Assertion Flow for Previously Authorized Apps](https://help.salesforce.com/s/articleView?id=sf.remoteaccess_oauth_SAML_bearer_flow.htm&language=en_US&type=5).
+
+## Exchange the assertion
+
+```ts
+import { authenticateSamlBearer } from "@kysoql/auth";
+
+export function authenticateWithSamlBearer(
+  loginUrl: string,
+  samlAssertion: string,
+) {
+  return authenticateSamlBearer({
+    loginUrl,
+    assertion: samlAssertion,
+  });
+}
+```
+
+Kysoql does not create, sign, or validate SAML XML. Obtain the assertion from the
+application's configured identity provider and pass the encoded assertion to the
+exchange helper.
+
+Salesforce does not issue a refresh token for this flow. Obtain a new SAML
+assertion and exchange it again when a new access token is required.
+
+For Salesforce's separate SAML API federation flow, see
+[SAML assertion](/docs/auth/saml-assertion).

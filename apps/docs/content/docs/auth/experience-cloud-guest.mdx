@@ -1,0 +1,68 @@
+---
+title: "Experience Cloud guest authorization"
+description: "Build the guest variation of Salesforce Headless Identity Authorization Code and Credentials with UVID context."
+icon: "KeyRound"
+---
+
+Experience Cloud guest authorization is a variation of Authorization Code and
+Credentials. Salesforce uses UVID context during the authorization request and
+again during the authorization-code exchange.
+
+Salesforce references:
+
+- [Headless Guest Flow for Private Clients](https://help.salesforce.com/s/articleView?id=sf.remoteaccess_headless_guest_private_client.htm&language=en_US&type=5)
+- [Headless Guest Flow for Public Clients](https://help.salesforce.com/s/articleView?id=sf.remoteaccess_headless_guest_public_clients.htm&language=en_US&type=5)
+
+## Build the guest authorization request
+
+```ts
+import {
+  createHeadlessGuestAuthorizationRequest,
+  generatePkcePair,
+} from "@kysoql/auth";
+
+export async function buildGuestAuthorization(uvid: string) {
+  const pkce = await generatePkcePair();
+  const request = createHeadlessGuestAuthorizationRequest({
+    siteUrl: "https://customers.example.my.site.com/customers",
+    clientId: "external-client-app-id",
+    redirectUri: "https://app.example.com/oauth/callback",
+    uvidHint: uvid,
+    scope: ["openid", "api"],
+    codeChallenge: pkce.challenge,
+  });
+
+  return { request, verifier: pkce.verifier };
+}
+```
+
+The builder adds Salesforce's required `UVID` or `JWT` prefix during the
+authorization request. Use `uvidHint` for an application-managed visitor ID or
+`uvidHintToken` for a JWT-based Salesforce access token containing the UVID.
+
+The default places the prefixed value in `Uvid-Hint`. Set
+`uvidPlacement: "body"` when the flow requires the `uvid_hint` body parameter.
+
+## Exchange the guest code
+
+```ts
+import { exchangeAuthorizationCode } from "@kysoql/auth";
+
+export function exchangeGuestCode(code: string, verifier: string, uvid: string) {
+  return exchangeAuthorizationCode({
+    loginUrl: "https://customers.example.my.site.com/customers",
+    clientId: "external-client-app-id",
+    code,
+    redirectUri: "https://app.example.com/oauth/callback",
+    codeVerifier: verifier,
+    authRequestType: "guest",
+    uvidHint: uvid,
+  });
+}
+```
+
+The token exchange uses the raw UVID or UVID-bearing token, without the
+`UVID`/`JWT` authorization-request prefix.
+
+For named-user and discovered-user login, see
+[Experience Cloud Code and Credentials](/docs/auth/experience-cloud-code-credentials).

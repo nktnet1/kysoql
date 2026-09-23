@@ -1,0 +1,37 @@
+---
+title: "OAuth token exchange"
+description: "Exchange supported external identity tokens for Salesforce OAuth access tokens."
+icon: "KeyRound"
+---
+
+Use OAuth 2.0 token exchange when Salesforce participates in an architecture with
+an external identity provider or token issuer. Salesforce can exchange a
+supported subject token for a Salesforce access token according to the configured
+external client app and token exchange policy.
+
+Salesforce reference: [OAuth 2.0 Token Exchange Flow](https://help.salesforce.com/s/articleView?id=sf.remoteaccess_token_exchange_overview.htm&language=en_US&type=5).
+
+## Exchange a subject token
+
+```ts
+import { exchangeToken } from "@kysoql/auth";
+
+export function exchangeExternalJwt(subjectToken: string) {
+  return exchangeToken({
+    loginUrl: "https://example.my.salesforce.com",
+    clientId: "external-client-app-id",
+    subjectToken,
+    subjectTokenType: "urn:ietf:params:oauth:token-type:jwt",
+    scope: ["api"],
+  });
+}
+```
+
+Kysoql accepts the Salesforce-supported subject-token types exposed by the
+package: OAuth access tokens, refresh tokens, ID tokens, SAML 2.0 assertions, and
+JWTs.
+
+Set `tokenHandler` when the Salesforce application is configured with a token
+exchange handler. If the client policy requires confidential-client
+authentication, also provide a client secret or a
+[`private_key_jwt` client assertion](/docs/auth/private-key-jwt).

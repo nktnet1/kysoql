@@ -1,6 +1,6 @@
 ---
 title: "REST API reference"
-description: "Reference the native Salesforce REST client, executor, pagination, OAuth, and error APIs."
+description: "Reference the native Salesforce REST client, executor, pagination, compatibility OAuth, and error APIs."
 icon: "FileCode"
 ---
 
@@ -40,8 +40,10 @@ QueryAll behaviour, continuation validation, and failure handling.
 | `RefreshTokenOptions` | Refresh-token request settings. |
 | `SalesforceOAuthSession` | Validated token-exchange result. |
 
-Read [authentication and token refresh](/docs/rest/authentication) for lifecycle,
-rotation, concurrency, and secret-handling guidance.
+These two OAuth exports are retained for compatibility. Use [`@kysoql/auth`](/docs/auth)
+for the complete current authentication, PKCE, JWT, headless, and token-storage
+surface. Read [authentication and token refresh](/docs/rest/authentication) for
+REST provider lifecycle and retry behaviour.
 
 ## Public types and errors
 

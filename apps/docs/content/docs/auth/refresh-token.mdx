@@ -1,0 +1,45 @@
+---
+title: "Refresh token"
+description: "Renew Salesforce OAuth sessions and safely persist refresh-token rotation."
+icon: "KeyRound"
+---
+
+Use the refresh-token flow after a Salesforce authorization flow has issued a
+refresh token. When refresh-token rotation is enabled, Salesforce can return a
+replacement token and invalidate the previous one.
+
+Salesforce reference: [OAuth 2.0 Refresh Token Flow for Renewed Sessions](https://help.salesforce.com/s/articleView?id=sf.remoteaccess_oauth_refresh_token_flow.htm&language=en_US&type=5).
+
+## Refresh once
+
+```ts
+import {
+  createMemoryRefreshTokenStore,
+  refreshAccessToken,
+} from "@kysoql/auth";
+
+export async function refresh(refreshToken: string) {
+  const store = createMemoryRefreshTokenStore(refreshToken);
+  return refreshAccessToken({
+    loginUrl: "https://example.my.salesforce.com",
+    clientId: "external-client-app-id",
+    refreshToken,
+    refreshTokenStore: store,
+  });
+}
+```
+
+When a `refreshTokenStore` is supplied, Kysoql persists a newly rotated refresh
+token before returning the new session. If persistence fails, the refresh call
+fails instead of publishing an access token whose replacement refresh token was
+lost.
+
+## Reusable REST provider
+
+For long-running REST clients, use `createStoredRefreshTokenAuth()` with a
+[localStorage, Redis, memory, or custom store](/docs/auth/storage). Its
+`accessTokenProvider` plugs directly into `@kysoql/rest` and single-flights
+refresh work within one JavaScript process.
+
+Confidential clients can authenticate refresh requests with a client secret or a
+fresh [`private_key_jwt` client assertion](/docs/auth/private-key-jwt).

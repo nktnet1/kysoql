@@ -2,7 +2,7 @@
 
 Native Salesforce REST transport for Kysoql. Uses `fetch`; JSforce is not a
 runtime dependency. Supports ordinary queries, QueryAll, scalar counts, root
-pagination, async iteration, cancellation, and OAuth token exchanges.
+pagination, async iteration, cancellation, and access-token provider renewal.
 
 ## Install and query
 
@@ -94,13 +94,11 @@ one replay. Static tokens, generic 401s, rate limits, network errors, and 5xx
 responses are not automatically retried. Providers must return tokens for the
 same configured org; recreate the client if authentication changes the instance.
 
-Native helpers `authenticateClientCredentials({ loginUrl, clientId, clientSecret })`
-and `refreshAccessToken({ loginUrl, clientId, refreshToken, clientSecret? })` return
-`{ accessToken, instanceUrl, refreshToken? }`. Both accept request timeouts, signals,
-and injected fetch. They perform one form-encoded token exchange, not interactive
-login or token storage. Configure the Salesforce OAuth app, protect secrets, and
-persist rotated refresh tokens in your application. Coordinate token rotation
-across processes outside Kysoql.
+The original `authenticateClientCredentials()` and `refreshAccessToken()` helpers
+remain exported for compatibility. New authentication code should use
+`@kysoql/auth`, which adds the complete current Salesforce flow surface, PKCE/JWT
+helpers, refresh-token rotation persistence, and memory, browser `localStorage`,
+Redis, or custom token stores.
 
 ## Errors and transport boundaries
 
@@ -115,10 +113,10 @@ Native network/abort failures propagate. HTTPS is required, redirects are reject
 and query locators must be relative paths in the configured API version. An
 injected `fetch` must honour `signal` and `redirect: "error"`. There is no automatic
 DML, SOSL, Apex execution, Bulk API, rate limiter, or general retry policy. OAuth
-application setup, interactive/JWT flows, and credential storage remain outside
-this package's scope. Runtime options do not read CLI configuration or environment
+application setup and credential storage remain outside this package's scope; use
+`@kysoql/auth` for authentication orchestration and refresh-token persistence. Runtime options do not read CLI configuration or environment
 variables automatically.
 
-Full guides: [execution](../../apps/docs/content/docs/guides/execution.mdx),
-[authentication](../../apps/docs/content/docs/guides/authentication.mdx), and
-[security](../../apps/docs/content/docs/reference/security.mdx).
+Full guides: [execution](../../apps/docs/content/docs/rest/execution.mdx),
+[authentication](../../apps/docs/content/docs/rest/authentication.mdx), and
+[security](../../apps/docs/content/docs/core/reference/security.mdx).

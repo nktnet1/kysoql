@@ -233,6 +233,9 @@ importers:
         specifier: 1.6.7
         version: 1.6.7
     devDependencies:
+      '@kysoql/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@kysoql/codegen':
         specifier: workspace:*
         version: link:../../packages/codegen
@@ -275,6 +278,8 @@ importers:
       vite:
         specifier: ^8.3.0
         version: 8.3.0(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
+
+  packages/auth: {}
 
   packages/codegen:
     dependencies:

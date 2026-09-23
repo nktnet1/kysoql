@@ -14,6 +14,7 @@ const [turbo, docs] = await Promise.all([
 for (const name of [
   "@kysoql/core",
   "@kysoql/rest",
+  "@kysoql/auth",
   "@kysoql/jsforce",
   "@kysoql/codegen",
 ]) {
@@ -44,11 +45,11 @@ test("cached builds restore the declarations consumed by typechecks", () => {
 });
 
 const manifests = new Map();
-for (const name of ["core", "rest", "codegen", "jsforce"]) {
+for (const name of ["core", "rest", "auth", "codegen", "jsforce"]) {
   manifests.set(`@kysoql/${name}`, await readJson(`packages/${name}/package.json`));
 }
 
-for (const name of ["@kysoql/core", "@kysoql/rest", "@kysoql/codegen"]) {
+for (const name of ["@kysoql/core", "@kysoql/rest", "@kysoql/auth", "@kysoql/codegen"]) {
   test(`${name}'s runtime workspace dependency graph is JSforce-free`, () => {
     const visited = new Set();
     const visit = (name) => {
@@ -92,6 +93,24 @@ test("REST source explicitly loads Node runtime types", async () => {
 
 test("REST tests retain the source config's Node runtime types", async () => {
   const config = await readJson("packages/rest/tests/tsconfig.json");
+  assert.equal(config.extends, "../tsconfig.json");
+  assert.ok(
+    config.compilerOptions.types === undefined ||
+      config.compilerOptions.types.includes("node"),
+    'A test-specific types list replaces inherited types and must retain "node".',
+  );
+});
+
+test("Auth source explicitly loads Node runtime types", async () => {
+  const config = await readJson("packages/auth/tsconfig.json");
+  assert.ok(
+    config.compilerOptions.types?.includes("node"),
+    "Auth requires Node types for fetch, URL, Response, Web Crypto, and AbortSignal.",
+  );
+});
+
+test("Auth tests retain the source config's Node runtime types", async () => {
+  const config = await readJson("packages/auth/tests/tsconfig.json");
   assert.equal(config.extends, "../tsconfig.json");
   assert.ok(
     config.compilerOptions.types === undefined ||

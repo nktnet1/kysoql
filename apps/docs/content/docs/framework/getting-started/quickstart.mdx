@@ -118,10 +118,13 @@ export const db = new Kysoql<SalesforceSchema>({ executor });
 ```
 
 This uses native `fetch` with an existing access token, without JSforce. For a
-long-running service, use an access-token provider and the native
-[OAuth helpers](/docs/rest/authentication). Runtime environment loading above is
-explicit; the REST client does not read `SF_*` variables on its own. Align its API
-version with schema generation and verify target-org feature support.
+long-running server-to-server service, start with the
+[`@kysoql/auth` JWT bearer flow](/docs/auth/jwt-bearer) and the REST
+[authentication integration](/docs/rest/authentication). JWT bearer uses a
+server-side private key and does not require an interactive login or stored refresh
+token. Runtime environment loading above is explicit; the REST client does not read
+`SF_*` variables on its own. Align its API version with schema generation and verify
+target-org feature support.
 
 Create `src/query.ts`:
 

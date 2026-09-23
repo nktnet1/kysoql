@@ -1,0 +1,35 @@
+---
+title: "Hybrid web-server"
+description: "Exchange a Salesforce hybrid web-server authorization code for API and web-session state."
+icon: "KeyRound"
+---
+
+Use the hybrid web-server flow when a hybrid application needs Salesforce API
+access together with direct Salesforce web-session management. For a service that
+only executes REST/SOQL, the ordinary web-server flow is usually simpler.
+
+Salesforce reference: [OAuth 2.0 Hybrid Web Server Flow](https://help.salesforce.com/s/articleView?id=xcloud.remoteaccess_oauth_hybrid_web_server_flow.htm&language=en_US&type=5).
+
+## Exchange the authorization code
+
+```ts
+import { exchangeHybridAuthorizationCode } from "@kysoql/auth";
+
+export function exchangeHybridCode(code: string) {
+  return exchangeHybridAuthorizationCode({
+    loginUrl: "https://example.my.salesforce.com",
+    clientId: "external-client-app-id",
+    code,
+    redirectUri: "https://app.example.com/oauth/callback",
+  });
+}
+```
+
+The helper sends Salesforce's `hybrid_auth_code` grant. It supports the same
+confidential-client authentication inputs as the normal authorization-code
+exchange.
+
+When the resulting hybrid session expires, use the separate
+[hybrid refresh-token flow](/docs/auth/hybrid-refresh-token).
+
+Kysoql intentionally does not expose the retiring hybrid user-agent flow.

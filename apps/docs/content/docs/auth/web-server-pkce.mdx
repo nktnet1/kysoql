@@ -1,0 +1,58 @@
+---
+title: "Web-server authorization code with PKCE"
+description: "Authorize Salesforce users with the OAuth 2.0 web-server flow and PKCE."
+icon: "KeyRound"
+---
+
+Use the web-server authorization-code flow for applications that redirect a user
+to Salesforce to authorize access. Kysoql supports PKCE and Salesforce's
+confidential-client authentication options for the code exchange.
+
+Salesforce reference: [OAuth 2.0 Web Server Flow for Web App Integration](https://help.salesforce.com/s/articleView?id=xcloud.remoteaccess_oauth_web_server_flow_ca.htm&language=en_US&type=5).
+
+## Start authorization
+
+```ts
+import { createAuthorizationUrl, generatePkcePair } from "@kysoql/auth";
+
+export async function beginAuthorization() {
+  const pkce = await generatePkcePair();
+  const url = createAuthorizationUrl({
+    loginUrl: "https://login.salesforce.com",
+    clientId: "external-client-app-id",
+    redirectUri: "https://app.example.com/oauth/callback",
+    scope: ["api", "refresh_token"],
+    state: crypto.randomUUID(),
+    codeChallenge: pkce.challenge,
+  });
+
+  return { url, verifier: pkce.verifier };
+}
+```
+
+Store the verifier with the browser/session state and validate your own `state`
+value when Salesforce redirects back to the application.
+
+## Exchange the code
+
+```ts
+import { exchangeAuthorizationCode } from "@kysoql/auth";
+
+export function exchangeCode(code: string, verifier: string) {
+  return exchangeAuthorizationCode({
+    loginUrl: "https://login.salesforce.com",
+    clientId: "external-client-app-id",
+    code,
+    redirectUri: "https://app.example.com/oauth/callback",
+    codeVerifier: verifier,
+  });
+}
+```
+
+A confidential client can also provide `clientSecret`, choose
+`clientSecretTransport: "basic"`, or supply a `clientAssertion` generated with
+[`createOAuthClientAssertion()`](/docs/auth/private-key-jwt).
+
+If Salesforce returns a refresh token, persist rotation with the
+[refresh-token flow](/docs/auth/refresh-token) and
+[refresh-token storage](/docs/auth/storage).

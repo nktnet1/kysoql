@@ -1,17 +1,20 @@
 ---
 title: "Authentication and token refresh"
-description: "Use existing tokens or native OAuth helpers without adding JSforce."
+description: "Connect @kysoql/auth sessions and token providers to the native REST executor."
 icon: "KeyRound"
 ---
 
-Kysoql's REST package accepts existing access tokens and provides native OAuth
-client-credentials and refresh-token exchanges. Your application still configures
-the Salesforce OAuth application, chooses the integration identity, obtains any
-initial interactive authorisation, and stores secrets securely. Authentication
-does not grant access beyond that identity's permissions.
+`@kysoql/rest` consumes Salesforce bearer access tokens; `@kysoql/auth` is the
+full authentication package. Keeping identity acquisition separate from query
+execution lets applications choose the Salesforce flow and token store that match
+their architecture without coupling the SOQL executor to browser or server login
+state.
 
-Keep client secrets and refresh tokens on the server. The documentation site must
-never receive production credentials. See [security](/docs/core/reference/security).
+Salesforce REST reference: [Authorization Through External Client Apps or Connected Apps and OAuth 2.0](https://developer.salesforce.com/docs/platform/api-rest/guide/intro-oauth-and-connected-apps.html).
+
+See [`@kysoql/auth`](/docs/auth) for current web-server/PKCE, refresh, client
+credentials, JWT, SAML, token exchange, device, hybrid, Code and Credentials, and
+first-party headless flows.
 
 ## Existing access token
 
@@ -23,164 +26,56 @@ export function executorForSession(instanceUrl: string, accessToken: string) {
 }
 ```
 
-Use the org `instance_url` returned by authentication, not `login.salesforce.com`.
-A static token is never refreshed automatically. An expired session produces a
-`SalesforceRestError`. The CLI's `SF_INSTANCE_URL` and `SF_ACCESS_TOKEN` flow uses
-this static-token mode; a failing codegen run does not silently log in another user.
+Use the `instance_url` returned by Salesforce authentication, not a generic login
+host. A static token is never refreshed automatically.
 
-## Client-credentials flow for a service
-
-Configure a Salesforce OAuth application that permits client credentials and
-its integration identity first. The helper exchanges credentials at the supplied
-My Domain origin's `/services/oauth2/token` endpoint, using a form body:
+## Refresh-token-backed provider
 
 ```ts
-import { Kysoql } from "@kysoql/core";
 import {
-  authenticateClientCredentials,
-  createRestExecutor,
-  type ClientCredentialsOptions,
-} from "@kysoql/rest";
-import type { SalesforceSchema } from "./salesforce.generated";
+  createMemoryRefreshTokenStore,
+  createStoredRefreshTokenAuth,
+} from "@kysoql/auth";
+import { createRestExecutor } from "@kysoql/rest";
 
-export async function createServiceDatabase(credentials: ClientCredentialsOptions) {
-  let session = await authenticateClientCredentials(credentials);
-  const instanceUrl = session.instanceUrl;
-  const executor = createRestExecutor({
-    instanceUrl,
-    accessToken: async ({ refresh }) => {
-      if (refresh) {
-        const next = await authenticateClientCredentials(credentials);
-        if (next.instanceUrl !== instanceUrl) {
-          throw new Error("Salesforce instance changed; recreate the REST client.");
-        }
-        session = next;
-      }
-      return session.accessToken;
-    },
+export async function createRefreshingExecutor(refreshToken: string) {
+  const auth = createStoredRefreshTokenAuth({
+    loginUrl: "https://example.my.salesforce.com",
+    clientId: "oauth-client-id",
+    initialRefreshToken: refreshToken,
+    refreshTokenStore: createMemoryRefreshTokenStore(),
   });
-  return new Kysoql<SalesforceSchema>({ executor });
-}
-```
+  const session = await auth.getSession();
 
-Pass `loginUrl`, `clientId`, and `clientSecret` from your secret store. `loginUrl`
-is the configured HTTPS My Domain origin, without a path. The helper returns
-`{ accessToken, instanceUrl, refreshToken? }`; it does not create the Salesforce
-OAuth application or persist secrets. Client-credentials renewal exchanges the
-client credentials again; it does not assume a refresh token was issued.
-
-## Refresh an existing refresh token
-
-```ts
-import {
-  createRestExecutor,
-  refreshAccessToken,
-  type RefreshTokenOptions,
-} from "@kysoql/rest";
-
-export async function createRefreshingExecutor(
-  credentials: RefreshTokenOptions,
-  persistRefreshToken: (token: string) => Promise<void>,
-) {
-  let refreshToken = credentials.refreshToken;
-  const exchange = async () => {
-    const session = await refreshAccessToken({ ...credentials, refreshToken });
-    if (session.refreshToken !== undefined) {
-      // Store rotation before making the refreshed session available.
-      await persistRefreshToken(session.refreshToken);
-      refreshToken = session.refreshToken;
-    }
-    return session;
-  };
-  let session = await exchange();
-  const instanceUrl = session.instanceUrl;
   return createRestExecutor({
-    instanceUrl,
-    accessToken: async ({ refresh }) => {
-      if (refresh) {
-        const next = await exchange();
-        if (next.instanceUrl !== instanceUrl) {
-          throw new Error("Salesforce instance changed; recreate the REST client.");
-        }
-        session = next;
-      }
-      return session.accessToken;
-    },
+    instanceUrl: session.instanceUrl,
+    accessToken: auth.accessTokenProvider,
   });
 }
 ```
 
-Supply `loginUrl`, `clientId`, and `refreshToken`, plus `clientSecret` when the
-Salesforce OAuth application's policy requires it. Do not embed these values in
-`kysoql.config.ts`. Retain the existing refresh token when the response does not
-issue a new one. If multiple processes share a rotating token, coordinate their
-refresh and storage outside Kysoql; per-client single-flight is not a distributed
-lock. Handle persistence failures as authentication failures, not query success.
+The REST client lazily acquires a provider token and caches it. Only a `401`
+Salesforce response containing `INVALID_SESSION_ID` requests another token with
+`refresh: true`; the failed HTTP operation is replayed at most once. Concurrent
+requests on one REST client share its in-flight acquisition or refresh.
 
-The helpers support `signal`, `timeoutMs`, and an injectable `fetch`, just like
-the REST client. They perform one token exchange, validate its response, and do
-not automatically retry the OAuth POST. Salesforce rejection throws
-`SalesforceOAuthError` with `status` and optional `code`, not a credential-bearing
-server description. OAuth/network failures propagate to the caller.
+The auth manager separately single-flights the refresh exchange, reads the latest
+stored refresh token, and persists rotation before returning a refreshed session.
+For shared Redis state across multiple processes, add application-level distributed
+locking when refresh-token rotation is enabled.
 
-## Access-token provider lifecycle
+## Compatibility helpers in @kysoql/rest
 
-A provider has this signature:
+`@kysoql/rest` retains its existing `authenticateClientCredentials()` and
+`refreshAccessToken()` exports for compatibility. New authentication code should
+prefer the same-named functions in `@kysoql/auth`, which add the complete flow and
+storage surface. REST execution itself does not require either helper if your
+application already has a valid bearer token.
 
-```ts
-import type { AccessTokenProvider } from "@kysoql/rest";
+## Security boundaries
 
-export function tokenProvider(
-  obtain: (refresh: boolean) => Promise<string>,
-): AccessTokenProvider {
-  return ({ refresh }) => obtain(refresh);
-}
-```
-
-It is called lazily with `refresh: false`; the returned token is cached. Only a
-`401` response containing `INVALID_SESSION_ID` invokes it again with
-`refresh: true`. Concurrent requests on one client share the in-flight acquisition
-or refresh. A request rejected with an older token can reuse a token refreshed by
-another request. Each HTTP operation is replayed at most once.
-
-Other authentication errors, rate limits, and failed refresh attempts propagate.
-There is no refresh timer, expiration prediction, or background work. The provider
-returns a token for the **same configured org**; a changed instance requires a new
-client. Default headers and redirect rejection help avoid credential forwarding,
-but trusted OAuth endpoints and correct account selection remain your responsibility.
-
-## Generate a schema after native authentication
-
-```ts
-import { authenticateClientCredentials, type ClientCredentialsOptions } from "@kysoql/rest";
-import { createRestDescribeClient, generateSchema } from "@kysoql/codegen";
-
-export async function generateForService(credentials: ClientCredentialsOptions) {
-  const session = await authenticateClientCredentials(credentials);
-  await generateSchema({
-    client: createRestDescribeClient({
-      instanceUrl: session.instanceUrl,
-      accessToken: session.accessToken,
-      apiVersion: "65.0",
-    }),
-    objects: ["Account", "Contact"],
-    output: "src/salesforce.generated.ts",
-  });
-}
-```
-
-This one-shot example does not renew the token during generation. For long runs,
-share a native client configured with a renewable provider. Programmatic generation
-does not read CLI config files automatically. The CLI accepts an already-obtained
-token through environment variables; it does not accept client secrets on flags.
-
-## Scope and platform requirements
-
-Interactive browser callbacks, authorisation-code/PKCE orchestration, JWT signing,
-username/password login, token revocation workflows, and credential vaults are not
-provided. Use an approved identity integration for those flows, then supply its
-token or provider. JSforce remains optional rather than required for authentication.
-
-Check Salesforce's current application policy and flow requirements:
-[client-credentials example](https://developer.salesforce.com/docs/platform/connect-rest-api/guide/quickstart_connecting.html)
-and [OAuth quickstart](https://developer.salesforce.com/docs/platform/api-rest/guide/quickstart-oauth.html).
+Generated Salesforce types do not grant object, field, or record access.
+Authentication inherits the permissions of the Salesforce identity associated
+with the token. Keep client secrets, private keys, refresh tokens, and production
+access tokens out of source code and logs. See [security](/docs/core/reference/security)
+and [refresh-token storage](/docs/auth/storage).

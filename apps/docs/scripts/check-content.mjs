@@ -110,7 +110,7 @@ const allFiles = await walk(contentRoot);
 const metadataFiles = allFiles.filter(
   (file) => path.basename(file) === "meta.json",
 );
-const rootTabs = ["framework", "core", "rest", "codegen", "jsforce"];
+const rootTabs = ["framework", "core", "rest", "auth", "codegen", "jsforce"];
 try {
   const rootMeta = JSON.parse(
     await readFile(path.join(contentRoot, "meta.json"), "utf8"),

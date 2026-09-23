@@ -1,0 +1,49 @@
+{
+  "name": "@kysoql/auth",
+  "version": "0.0.0",
+  "description": "Salesforce OAuth authentication and refresh-token storage for kysoql",
+  "keywords": [
+    "salesforce",
+    "soql",
+    "typescript",
+    "oauth",
+    "authentication"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=26.0.0 <27"
+  },
+  "type": "module",
+  "imports": {
+    "#/*": {
+      "development": "./src/*.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "default": "./dist/index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "check": "biome check",
+    "test": "vitest run --dir tests --passWithNoTests",
+    "typecheck": "pnpm typecheck:source && pnpm typecheck:test",
+    "typecheck:source": "tsc -p tsconfig.json --noEmit",
+    "typecheck:test": "tsc -p tests/tsconfig.json",
+    "clean": "rm -rf dist coverage"
+  },
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": "./dist/index.mjs",
+      "./package.json": "./package.json"
+    }
+  }
+}

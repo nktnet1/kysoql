@@ -7,7 +7,8 @@ A type-safe, Kysely-inspired SOQL query builder for TypeScript.
 - [`@kysoql/core`](packages/core/README.md) — typed SOQL AST, query builder,
   compiler, executor contract, and result inference.
 - [`@kysoql/rest`](packages/rest/README.md) - native REST query execution,
-  pagination, async iteration, cancellation, and OAuth token helpers.
+  pagination, async iteration, cancellation, and token-provider renewal.
+- [`@kysoql/auth`](packages/auth/README.md) - Salesforce authentication with JWT bearer/private-key server-to-server as the default, plus supported OAuth flows and refresh-token storage.
 - [`@kysoql/jsforce`](packages/jsforce/README.md) - optional execution adapter
   for applications with an existing JSforce connection.
 - [`@kysoql/codegen`](packages/codegen/README.md) — CLI for generating strongly
@@ -1201,9 +1202,10 @@ const apexCount = db
 ## Native REST execution
 
 Execution stays transport-neutral in core. Install `@kysoql/core` and
-`@kysoql/rest` for the default native workflow, plus `@kysoql/codegen` as a
-schema-generation development dependency. None of these packages depends on
-JSforce. Runtime local imports below assume a TypeScript runner or bundler.
+`@kysoql/rest` for the default native workflow, add `@kysoql/auth` when the
+application should obtain or refresh Salesforce tokens itself, and use
+`@kysoql/codegen` as a schema-generation development dependency. None of these
+packages depends on JSforce. Runtime local imports below assume a TypeScript runner or bundler.
 
 ```ts
 import { Kysoql } from "@kysoql/core";
@@ -1227,11 +1229,15 @@ For bounded-memory processing, call `executor.iterateQuery(query.compile())` or
 A failed budget throws instead of silently truncating records.
 
 The native API version is pinned to `65.0` unless explicitly configured. Token
-providers can renew credentials once after `INVALID_SESSION_ID`; native
-`authenticateClientCredentials` and `refreshAccessToken` helpers are available.
-Do not put secrets in config files. See the [REST package](packages/rest/README.md)
-and the [authentication guide](apps/docs/content/docs/guides/authentication.mdx)
-for supported flows, resource controls, and security boundaries.
+providers can renew credentials once after `INVALID_SESSION_ID`. Use
+`@kysoql/auth` for JWT bearer/private-key server-to-server authentication by default,
+plus current Salesforce web-server/PKCE, refresh, client credentials, SAML, token
+exchange, device, hybrid, and Experience Cloud headless flows. Refresh tokens can
+use memory, browser `localStorage`, Redis, or custom persistence.
+`@kysoql/rest` retains its original client-credentials and refresh helpers for
+compatibility. Do not put secrets in config files. See the
+[REST package](packages/rest/README.md) and
+[authentication guide](apps/docs/content/docs/auth/index.mdx).
 
 Codegen's CLI uses native REST Describe and accepts `--api-version` or config
 `apiVersion`, then `SF_API_VERSION`, then the pinned default. Runtime REST options

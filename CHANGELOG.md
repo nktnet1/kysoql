@@ -8,6 +8,7 @@ version is cut.
 
 ### Added
 
+- `@kysoql/auth`: current Salesforce REST authentication flows, including web-server/PKCE, refresh, client credentials, JWT bearer, SAML bearer/assertion, token exchange, device, hybrid web-server/refresh, Experience Cloud headless request support, and pluggable refresh-token storage for memory, browser `localStorage`, Redis, or custom stores.
 - `@kysoql/rest`: JSforce-free native Query/QueryAll execution, scalar counts,
   validated root pagination, page/record async iterators, explicit continuation,
   resource budgets, cancellation/timeouts, structured errors, and OAuth
@@ -147,6 +148,7 @@ version is cut.
 
 ### Fixed
 
+- Annotate the auth test `tokenResponse()` helper with an explicit `Response` return type so TypeScript does not infer a non-portable `undici-types` path during strict test typechecking.
 - Keep the named `SalesforceField` metadata migration compatible with TypeScript 7
   test helpers that constrain heterogeneous field maps, and update the remaining
   codegen regression that still expected the legacy positional rendering.
@@ -202,6 +204,7 @@ version is cut.
 
 ### Changed
 
+- Split `@kysoql/auth` authentication methods into individual end-user documentation pages, make private-key JWT bearer the default server-to-server path, and link each flow to the relevant Salesforce reference documentation.
 - Generated Salesforce fields now use named metadata objects instead of opaque
   positional capability arguments. Default `never`/`false` metadata is omitted
   from generated output, while legacy positional `SalesforceField<...>` usage

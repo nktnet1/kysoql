@@ -1,0 +1,64 @@
+---
+title: "Device flow"
+description: "Use Salesforce OAuth 2.0 device authorization for CLI and constrained-input clients."
+icon: "KeyRound"
+---
+
+The device flow is intended for clients that cannot conveniently host an
+interactive browser login, such as constrained-input devices and some CLI tools.
+The user authorizes the application in a separate browser while the client polls
+for completion.
+
+Salesforce reference: [OAuth 2.0 Device Flow for IoT Integration](https://help.salesforce.com/s/articleView?id=xcloud.remoteaccess_oauth_device_flow_ca.htm&language=en_US&type=5).
+
+## Request a device code
+
+```ts
+import { requestDeviceAuthorization } from "@kysoql/auth";
+
+export function beginDeviceAuthorization() {
+  return requestDeviceAuthorization({
+    loginUrl: "https://login.salesforce.com",
+    clientId: "external-client-app-id",
+    scope: ["api"],
+    redirectUri: "http://127.0.0.1:1717/callback",
+  });
+}
+```
+
+The response contains the device code, user code, verification URI, polling
+interval, and any expiry returned by Salesforce. Display the verification URI
+and user code to the user.
+
+## Poll once
+
+```ts
+import {
+  pollDeviceAuthorization,
+  SalesforceOAuthError,
+} from "@kysoql/auth";
+
+export async function pollOnce(deviceCode: string) {
+  try {
+    return await pollDeviceAuthorization({
+      loginUrl: "https://login.salesforce.com",
+      clientId: "external-client-app-id",
+      deviceCode,
+    });
+  } catch (error: unknown) {
+    if (
+      error instanceof SalesforceOAuthError &&
+      (error.code === "authorization_pending" || error.code === "slow_down")
+    ) {
+      return undefined;
+    }
+    throw error;
+  }
+}
+```
+
+`pollDeviceAuthorization()` performs one poll only. The application owns the
+schedule and must respect Salesforce's returned interval and `slow_down`
+responses.
+
+Salesforce setup reference: [Configure an OAuth 2.0 Device Flow for External Client Apps](https://help.salesforce.com/s/articleView?id=sf.meta_configure_device_flow_external_client_apps.htm&language=en_US&type=5).

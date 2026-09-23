@@ -1,0 +1,35 @@
+---
+title: "Salesforce SAML assertion"
+description: "Federate to the Salesforce API using the SAML assertion flow without an OAuth client grant."
+icon: "KeyRound"
+---
+
+Salesforce also exposes a SAML assertion flow for API access that is distinct
+from the OAuth 2.0 SAML bearer grant. It can be used by orgs that already
+federate to Salesforce with SAML 2.0.
+
+Salesforce reference: [SAML Assertion Flow for Accessing the API](https://help.salesforce.com/s/articleView?id=sf.remoteaccess_oauth_web_sso_flow.htm&language=en_US&type=5).
+
+## Exchange the assertion
+
+```ts
+import { authenticateSamlAssertion } from "@kysoql/auth";
+
+export function authenticateWithSamlAssertion(
+  loginUrl: string,
+  samlAssertion: string,
+) {
+  return authenticateSamlAssertion({
+    loginUrl,
+    assertion: samlAssertion,
+  });
+}
+```
+
+Kysoql sends Salesforce's `grant_type=assertion` and the SAML 2.0 browser SSO
+assertion type. The application remains responsible for producing the valid SAML
+response.
+
+This flow does not issue a refresh token. Experience Cloud sites do not support
+this Salesforce SAML assertion API flow; use an Experience Cloud-specific flow
+instead when authenticating customers or partners through a site.

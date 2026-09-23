@@ -1,0 +1,47 @@
+---
+title: "Authentication flow guide"
+description: "Choose the Salesforce authentication flow that fits a REST and SOQL integration."
+icon: "Route"
+---
+
+`@kysoql/auth` covers the supported Salesforce OAuth and assertion flows that can
+produce bearer sessions for REST API use. Start with JWT bearer for a typical
+certificate-backed server-to-server integration, then choose another flow only
+when the application architecture requires it.
+
+Salesforce reference: [OAuth Authorization Flows](https://help.salesforce.com/s/articleView?id=remoteaccess_oauth_flows.htm&language=en_US&type=5).
+
+| Flow | Typical use | Kysoql guide |
+| --- | --- | --- |
+| JWT bearer | Server-to-server with an integration user and private key | [JWT bearer](/docs/auth/jwt-bearer) |
+| Web-server + PKCE | User-facing web application | [Web-server + PKCE](/docs/auth/web-server-pkce) |
+| Refresh token | Renew an authorized user session | [Refresh token](/docs/auth/refresh-token) |
+| Client credentials | Server-to-server with client ID/secret and configured integration user | [Client credentials](/docs/auth/client-credentials) |
+| `private_key_jwt` | Authenticate a confidential OAuth client at supported token endpoints | [Private-key client authentication](/docs/auth/private-key-jwt) |
+| SAML bearer | Exchange a signed SAML 2.0 bearer assertion | [SAML bearer](/docs/auth/saml-bearer) |
+| SAML assertion | Federate to the Salesforce API using the SAML assertion API flow | [SAML assertion](/docs/auth/saml-assertion) |
+| Token exchange | Exchange a token from an identity provider for a Salesforce token | [Token exchange](/docs/auth/token-exchange) |
+| Device | CLI or constrained-input device authorization | [Device flow](/docs/auth/device) |
+| Hybrid web-server | Hybrid apps that need Salesforce web-session bridging | [Hybrid web-server](/docs/auth/hybrid-web-server) |
+| Hybrid refresh | Renew a hybrid app session and web-session SIDs | [Hybrid refresh](/docs/auth/hybrid-refresh-token) |
+| Authorization Code and Credentials | Headless Experience Cloud named-user or discovered-user login | [Code and Credentials](/docs/auth/experience-cloud-code-credentials) |
+| Headless guest | Experience Cloud guest authorization with UVID context | [Headless guest](/docs/auth/experience-cloud-guest) |
+| First-party username-password | First-party headless login for private Experience Cloud clients | [Username-password](/docs/auth/first-party-username-password) |
+| First-party passwordless | Email/SMS OTP login for private Experience Cloud clients | [Passwordless](/docs/auth/first-party-passwordless) |
+| First-party registration | Headless registration and OTP verification | [Registration](/docs/auth/first-party-registration) |
+
+## Common behavior
+
+Token-endpoint helpers validate HTTPS Salesforce URLs, send form-encoded POST
+requests where Salesforce requires them, reject redirects, enforce bounded
+request timeouts, and validate bearer-token responses.
+
+OAuth HTTP failures throw `SalesforceOAuthError`, exposing the HTTP status and
+OAuth error code. Malformed successful responses throw
+`SalesforceOAuthResponseError`.
+
+For REST API usage, pass the returned `instanceUrl` and `accessToken` to
+`@kysoql/rest`. Salesforce REST API accepts OAuth bearer tokens in the
+`Authorization` header.
+
+Salesforce REST reference: [Authorization Through External Client Apps or Connected Apps and OAuth 2.0](https://developer.salesforce.com/docs/platform/api-rest/guide/intro-oauth-and-connected-apps.html).
