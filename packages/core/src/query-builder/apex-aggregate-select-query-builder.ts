@@ -30,6 +30,7 @@ import type {
 } from "#/query-builder/apex-query-context";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
+import { isSoqlRawBuilder, type SoqlRawBuilder } from "#/soql";
 import { freeze } from "#/util/object-utils";
 
 interface ApexAggregateSelectQueryBuilderProps {
@@ -68,6 +69,10 @@ export interface ApexAggregateSelectQueryBuilder<
 
   offset(
     offset: number | ApexBindExpression<number>,
+  ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
+
+  where(
+    expression: SoqlRawBuilder,
   ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
   where(
@@ -200,6 +205,9 @@ class ApexAggregateSelectQueryBuilderImpl<
   }
 
   where(
+    expression: SoqlRawBuilder,
+  ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
+  where(
     expression: ApexWhereExpressionFactory<DB, TB>,
   ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
   where(
@@ -216,12 +224,14 @@ class ApexAggregateSelectQueryBuilderImpl<
     lhsOrExpression:
       | string
       | ApexBindExpression<string>
+      | SoqlRawBuilder
       | ApexWhereExpressionFactory<DB, TB>,
     op?: ComparisonOperator,
     rhs?: unknown,
   ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context> {
-    const operation =
-      typeof lhsOrExpression === "function"
+    const operation = isSoqlRawBuilder(lhsOrExpression)
+      ? lhsOrExpression.toOperationNode()
+      : typeof lhsOrExpression === "function"
         ? lhsOrExpression(
             createApexExpressionBuilder<DB, TB>({
               outerObject: this.#props.queryNode.from.name,

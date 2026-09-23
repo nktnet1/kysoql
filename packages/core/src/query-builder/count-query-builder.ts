@@ -49,6 +49,7 @@ import type {
   SalesforceObjectMruEnabled,
   SalesforceObjectSupportedScope,
 } from "#/schema";
+import { isSoqlRawBuilder, type SoqlRawBuilder } from "#/soql";
 import { freeze } from "#/util/object-utils";
 
 export interface CountQueryBuilder<DB, TB extends keyof DB> {
@@ -114,6 +115,8 @@ export interface CountQueryBuilder<DB, TB extends keyof DB> {
     selector: DataCategorySelector,
     categories: DataCategoryInput<SalesforceObjectDataCategory<DB[TB], Group>>,
   ): CountQueryBuilder<DB, TB>;
+
+  where(expression: SoqlRawBuilder): CountQueryBuilder<DB, TB>;
 
   where(expression: WhereExpressionFactory<DB, TB>): CountQueryBuilder<DB, TB>;
 
@@ -332,6 +335,7 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
     });
   }
 
+  where(expression: SoqlRawBuilder): CountQueryBuilder<DB, TB>;
   where(expression: WhereExpressionFactory<DB, TB>): CountQueryBuilder<DB, TB>;
   where<
     RE extends string,
@@ -343,12 +347,13 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
     rhs: RHS,
   ): CountQueryBuilder<DB, TB>;
   where(
-    lhsOrExpression: string | WhereExpressionFactory<DB, TB>,
+    lhsOrExpression: string | SoqlRawBuilder | WhereExpressionFactory<DB, TB>,
     op?: ComparisonOperator,
     rhs?: unknown,
   ): CountQueryBuilder<DB, TB> {
-    const operation =
-      typeof lhsOrExpression === "function"
+    const operation = isSoqlRawBuilder(lhsOrExpression)
+      ? lhsOrExpression.toOperationNode()
+      : typeof lhsOrExpression === "function"
         ? lhsOrExpression(
             createExpressionBuilder<DB, TB>({
               outerObject: this.#props.queryNode.from.name,

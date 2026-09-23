@@ -1,4 +1,5 @@
 import type { ReferenceNode } from "#/operation-node/reference-node";
+import { parseSoqlIdentifier } from "#/soql-identifier";
 import { freeze } from "#/util/object-utils";
 
 export interface TypeOfWhenNode {
@@ -30,7 +31,7 @@ const createWhen = (
 
   return freeze({
     kind: "TypeOfWhenNode",
-    object,
+    object: parseSoqlIdentifier(object),
     selections: freeze([...selections]),
   });
 };

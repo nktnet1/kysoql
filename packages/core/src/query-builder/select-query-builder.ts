@@ -16,9 +16,10 @@ import {
 import type { FieldsSelector } from "#/operation-node/fields-function-node";
 import { ForViewReferenceNode } from "#/operation-node/for-view-reference-node";
 import type { ComparisonOperator } from "#/operation-node/operator-node";
-import type {
-  OrderByDirection,
-  OrderByNulls,
+import {
+  type OrderByDirection,
+  OrderByItemNode,
+  type OrderByNulls,
 } from "#/operation-node/order-by-item-node";
 import { QueryNode } from "#/operation-node/query-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
@@ -144,6 +145,7 @@ import type {
   SalesforceObjectSupportedScope,
   SalesforceQueryResult,
 } from "#/schema";
+import { isSoqlRawBuilder, type SoqlRawBuilder } from "#/soql";
 import { freeze } from "#/util/object-utils";
 import type { ConditionalOutput, Simplify } from "#/util/type-utils";
 
@@ -342,6 +344,11 @@ export interface SelectQueryBuilder<
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
   orderBy(
+    expression: SoqlRawBuilder,
+    direction?: OrderByDirection,
+    nulls?: OrderByNulls,
+  ): SelectQueryBuilder<DB, TB, O, Mode>;
+  orderBy(
     expression: DistanceOrderByFactory<DB, TB>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
@@ -353,6 +360,7 @@ export interface SelectQueryBuilder<
     nulls?: OrderByNullsForReference<DB, TB, OE>,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  where(expression: SoqlRawBuilder): SelectQueryBuilder<DB, TB, O, Mode>;
   where(
     expression: WhereExpressionFactory<DB, TB>,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
@@ -367,6 +375,9 @@ export interface SelectQueryBuilder<
     rhs: RHS,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  select<RawOutput>(
+    selection: SoqlRawBuilder<RawOutput>,
+  ): SelectQueryBuilder<DB, TB, O & RawOutput, Mode>;
   select(
     selection: UnselectedOnly<O, CountSelectionFactory<DB, TB>>,
   ): CountQueryBuilder<DB, TB>;
@@ -781,6 +792,11 @@ class SelectQueryBuilderImpl<
   }
 
   orderBy(
+    expression: SoqlRawBuilder,
+    direction?: OrderByDirection,
+    nulls?: OrderByNulls,
+  ): SelectQueryBuilder<DB, TB, O, Mode>;
+  orderBy(
     expression: DistanceOrderByFactory<DB, TB>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
@@ -791,12 +807,17 @@ class SelectQueryBuilderImpl<
     nulls?: OrderByNullsForReference<DB, TB, OE>,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
   orderBy(
-    fieldOrExpression: string | DistanceOrderByFactory<DB, TB>,
+    fieldOrExpression: string | SoqlRawBuilder | DistanceOrderByFactory<DB, TB>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
   ): SelectQueryBuilder<DB, TB, O, Mode> {
-    const item =
-      typeof fieldOrExpression === "function"
+    const item = isSoqlRawBuilder(fieldOrExpression)
+      ? OrderByItemNode.create(
+          fieldOrExpression.toOperationNode(),
+          direction,
+          nulls,
+        )
+      : typeof fieldOrExpression === "function"
         ? parseDistanceOrderBy(
             fieldOrExpression(createGeolocationExpressionBuilder<DB, TB>()),
             direction,
@@ -812,6 +833,7 @@ class SelectQueryBuilderImpl<
     });
   }
 
+  where(expression: SoqlRawBuilder): SelectQueryBuilder<DB, TB, O, Mode>;
   where(
     expression: WhereExpressionFactory<DB, TB>,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
@@ -825,12 +847,13 @@ class SelectQueryBuilderImpl<
     rhs: RHS,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
   where(
-    lhsOrExpression: string | WhereExpressionFactory<DB, TB>,
+    lhsOrExpression: string | SoqlRawBuilder | WhereExpressionFactory<DB, TB>,
     op?: ComparisonOperator,
     rhs?: unknown,
   ): SelectQueryBuilder<DB, TB, O, Mode> {
-    const operation =
-      typeof lhsOrExpression === "function"
+    const operation = isSoqlRawBuilder(lhsOrExpression)
+      ? lhsOrExpression.toOperationNode()
+      : typeof lhsOrExpression === "function"
         ? lhsOrExpression(
             createExpressionBuilder<DB, TB>({
               outerObject: this.#props.queryNode.from.name,
@@ -855,6 +878,9 @@ class SelectQueryBuilderImpl<
     });
   }
 
+  select<RawOutput>(
+    selection: SoqlRawBuilder<RawOutput>,
+  ): SelectQueryBuilder<DB, TB, O & RawOutput, Mode>;
   select(
     selection: UnselectedOnly<O, CountSelectionFactory<DB, TB>>,
   ): CountQueryBuilder<DB, TB>;
@@ -889,11 +915,26 @@ class SelectQueryBuilderImpl<
     selection:
       | string
       | readonly string[]
+      | SoqlRawBuilder<unknown>
       | ((eb: SelectExpressionBuilder<DB, TB>) => unknown),
   ):
     | AggregateSelectQueryBuilder<DB, TB, unknown>
     | CountQueryBuilder<DB, TB>
     | SelectQueryBuilder<DB, TB, unknown> {
+    if (isSoqlRawBuilder(selection)) {
+      const selections = [SelectionNode.create(selection.toOperationNode())];
+      const queryNode = SelectQueryNode.cloneWithSelections(
+        this.#props.queryNode,
+        selections,
+      );
+      validateTypeOfSelections(queryNode);
+
+      return new SelectQueryBuilderImpl<DB, TB, unknown, Mode>({
+        ...this.#props,
+        queryNode,
+      });
+    }
+
     if (typeof selection !== "function") {
       const selections = parseSelectArg(selection);
       validateUniqueSelectionAliases(

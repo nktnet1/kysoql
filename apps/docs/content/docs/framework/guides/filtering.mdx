@@ -111,15 +111,60 @@ escape hatch for hand-built semicolon expressions. Apex has a separate
 
 ## LIKE patterns and input safety
 
-The compiler escapes string literals, including quotes and backslashes. It does
-not interpret your intent for wildcard characters: `%` and `_` remain LIKE
-pattern characters. A pattern built from user input can therefore match more
-than a literal substring. Define and test your application's wildcard policy;
-do not describe compiler escaping as a literal-search or authorisation feature.
+Plain strings keep Salesforce LIKE semantics, so `%` matches zero or more
+characters and `_` matches one character:
 
-Use allowlisted field names and operators for user-controlled sorting/filtering.
-Do not cast arbitrary request strings to schema keys. See
+```ts
+import { db } from "./db";
+
+const patternQuery = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where("Name", "like", "Acme_%");
+```
+
+When user input should be matched literally, wrap it with `soql.likeLiteral()`.
+The helper escapes `%` and `_` as LIKE metacharacters while the compiler still
+escapes quotes and backslashes as SOQL string content:
+
+```ts
+import { soql } from "@kysoql/core";
+import { db } from "./db";
+
+const search = "50%_off";
+const literalQuery = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where("Name", "like", soql.likeLiteral(search));
+```
+
+Object names, field/relationship references, aliases, operators, and other
+identifier-bearing query parts are runtime-validated as well as typed. Keep an
+application allowlist for which valid fields a caller may choose: syntax
+validation blocks arbitrary SOQL syntax in those inputs, but it is not
+authorisation. See
 [security](/docs/core/reference/security).
+
+## Raw SOQL escape hatch
+
+For syntax Kysoql does not model yet, `soql.raw()` emits a trusted fragment
+verbatim:
+
+```ts
+import { soql } from "@kysoql/core";
+import { db } from "./db";
+
+const query = db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .where(soql.raw("CALENDAR_YEAR(CreatedDate) = 2026"));
+```
+
+`soql.raw()` deliberately bypasses identifier validation and value escaping.
+Only use it with trusted, application-owned SOQL. Never concatenate or
+interpolate request data, form values, search terms, IDs, or other untrusted
+input into a raw fragment. Prefer normal builder values or `soql.likeLiteral()`
+for user-controlled data.
 
 ## Filters over functions
 

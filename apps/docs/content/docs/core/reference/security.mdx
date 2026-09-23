@@ -20,23 +20,30 @@ for supported connection flows.
 ## Pass values through the builder
 
 The default compiler escapes literal values and uses structured expressions.
-Do not concatenate request input into the compiled SOQL afterward. Do not force
-untrusted object names, field names, or operators into types using `as any` or
-an unchecked schema-key assertion.
+Object names, field/relationship references, aliases, operators, and other
+identifier-bearing syntax are also checked at runtime, including when compiling
+a structurally constructed query node. Do not concatenate request input into the
+compiled SOQL afterward.
 
-A runtime API endpoint should validate input lengths, allowed operators, list
-sizes, and sortable fields before query construction. Define a small allowlist
-for user-selectable fields. TypeScript types disappear at runtime and do not
-validate a JSON request.
+Runtime syntax validation is not an application policy. An API endpoint should
+still validate input lengths, allowed operators, list sizes, and sortable fields,
+and should define a small allowlist for fields a caller may choose. A field can
+be a valid Salesforce identifier and still be inappropriate for that caller.
 
 Escaping is not authorisation. Every query still needs the application's
 appropriate tenant, account, or access scope. `clearWhere()` removes **all**
 filters, including any security condition you placed there. Treat optional
 filters and empty input lists deliberately to avoid broadening a query.
 
-LIKE escaping is also not a wildcard policy: the compiler preserves `%` and `_`
-as pattern characters. Decide whether users may submit patterns or only literal
-search terms, and test your implementation against Salesforce.
+Plain LIKE strings preserve `%` and `_` as pattern characters. If input should
+be literal, use `soql.likeLiteral(value)`; it escapes both wildcard characters
+without changing the default pattern behaviour for ordinary strings.
+
+`soql.raw()` is the deliberate exception to these protections. Raw fragments
+are emitted verbatim so advanced callers can use trusted SOQL that Kysoql does
+not model yet. Never build a raw fragment from user-controlled input, even after
+manual quoting or escaping. Keep dynamic values in normal builder arguments and
+reserve raw fragments for application-owned syntax.
 
 ## Respect Salesforce access control
 

@@ -9,6 +9,10 @@ export interface ApexAccessModeNode {
 
 export const ApexAccessModeNode = {
   create(mode: ApexAccessMode): ApexAccessModeNode {
+    if (mode !== "user" && mode !== "system") {
+      throw new TypeError("Apex SOQL access mode must be user or system.");
+    }
+
     return freeze({
       kind: "ApexAccessModeNode",
       mode,

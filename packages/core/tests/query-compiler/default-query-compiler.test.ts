@@ -2,7 +2,9 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 
 import { Kysoql } from "#/kysoql";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
 import type { SalesforceField, SalesforceObject } from "#/schema";
+import { soql } from "#/soql";
 import { soqlRelativeDate } from "#/soql-relative-date-literal";
 import { soqlDate, soqlDateTime, soqlTime } from "#/soql-temporal-literal";
 import type { Simplify } from "#/util/type-utils";
@@ -241,6 +243,133 @@ describe("DefaultQueryCompiler", () => {
 
     expect(compiled.soql).toBe(
       "SELECT Id, FORMAT(CloseDate) formattedCloseDate, FORMAT(convertCurrency(AnnualRevenue)) formattedConvertedRevenue FROM Account",
+    );
+  });
+
+  it("keeps LIKE wildcards by default and can treat them literally", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const wildcard = db
+      .selectFrom("Account")
+      .select("Id")
+      .where("Name", "like", "50%_off")
+      .compile();
+    const literal = db
+      .selectFrom("Account")
+      .select("Id")
+      .where("Name", "like", soql.likeLiteral("50%_off"))
+      .compile();
+
+    expect(wildcard.soql).toBe(
+      "SELECT Id FROM Account WHERE Name LIKE '50%_off'",
+    );
+    expect(literal.soql).toBe(
+      "SELECT Id FROM Account WHERE Name LIKE '50\\%\\_off'",
+    );
+    expect(() =>
+      db
+        .selectFrom("Account")
+        .select("Id")
+        .where("Name", "=" as "like", soql.likeLiteral("50%_off"))
+        .compile(),
+    ).toThrow("soql.likeLiteral() can only be used as a LIKE operand.");
+  });
+
+  it("emits explicit raw fragments verbatim", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select(soql.raw<{ readonly Id: string }>("Id"))
+      .where(soql.raw("Name = 'Trusted'"))
+      .where("AnnualRevenue", ">", soql.raw("100"))
+      .orderBy(soql.raw("Name"), "desc")
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT Id FROM Account WHERE Name = 'Trusted' AND AnnualRevenue > 100 ORDER BY Name DESC",
+    );
+  });
+
+  it("supports raw fragments in grouped clauses", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .groupBy("Industry")
+      .select(soql.raw<{ readonly industry: string }>("Industry industry"))
+      .having(soql.raw("COUNT(Id) > 0"))
+      .orderBy(soql.raw("COUNT(Id)"), "desc")
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT Industry industry FROM Account GROUP BY Industry HAVING COUNT(Id) > 0 ORDER BY COUNT(Id) DESC",
+    );
+  });
+
+  it("only bypasses validation through the explicit raw escape hatch", () => {
+    const injected = "Name = 'x' OR Id != null";
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .where(soql.raw(injected))
+      .compile();
+
+    expect(compiled.soql).toBe(`SELECT Id FROM Account WHERE ${injected}`);
+    expect(() => soql.raw(123 as never)).toThrow(
+      "SOQL raw fragments must be strings.",
+    );
+  });
+
+  it("rejects runtime identifier and operator injection", () => {
+    const db = new Kysoql<FixtureSchema>();
+
+    expect(() =>
+      db.selectFrom("Account WHERE Name != ''" as "Account"),
+    ).toThrow(/SOQL identifiers/);
+    expect(() =>
+      db.selectFrom("Account").select("Name FROM Contact" as "Name"),
+    ).toThrow(/SOQL field references/);
+    expect(() =>
+      db
+        .selectFrom("Account")
+        .select("Id")
+        .where("Name", "like OR Name !=" as "like", "x"),
+    ).toThrow("Unsupported SOQL comparison operator.");
+    expect(() =>
+      db
+        .selectFrom("Account")
+        .select("Id")
+        .orderBy("Name", "asc LIMIT 1" as "asc"),
+    ).toThrow("SOQL ORDER BY direction must be asc or desc.");
+  });
+
+  it("revalidates identifier-bearing nodes during compilation", () => {
+    const compiler = new DefaultQueryCompiler();
+    const query = {
+      kind: "SelectQueryNode",
+      from: { kind: "SObjectNode", name: "Account WHERE Name != ''" },
+      selections: [
+        {
+          kind: "SelectionNode",
+          selection: { kind: "ReferenceNode", name: "Id" },
+        },
+      ],
+    } as Parameters<DefaultQueryCompiler["compileQuery"]>[0];
+
+    expect(() => compiler.compileQuery(query)).toThrow(/SOQL identifiers/);
+  });
+
+  it("rejects structurally forged raw nodes", () => {
+    const compiler = new DefaultQueryCompiler();
+    const query = {
+      kind: "SelectQueryNode",
+      from: { kind: "SObjectNode", name: "Account" },
+      selections: [
+        {
+          kind: "SelectionNode",
+          selection: { kind: "RawNode", soql: "Id FROM Contact" },
+        },
+      ],
+    } as Parameters<DefaultQueryCompiler["compileQuery"]>[0];
+
+    expect(() => compiler.compileQuery(query)).toThrow(
+      "SOQL raw fragments must be created with soql.raw().",
     );
   });
 

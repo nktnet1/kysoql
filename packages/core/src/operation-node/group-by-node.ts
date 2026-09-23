@@ -15,6 +15,10 @@ export const GroupByNode = {
     items: ReadonlyArray<DateFunctionNode | ReferenceNode>,
     mode?: AdvancedGroupByMode,
   ): GroupByNode {
+    if (mode !== undefined && mode !== "rollup" && mode !== "cube") {
+      throw new TypeError("SOQL GROUP BY mode must be rollup or cube.");
+    }
+
     return freeze(
       mode
         ? {

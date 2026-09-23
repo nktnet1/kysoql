@@ -1,3 +1,4 @@
+import { parseSoqlIdentifier } from "#/soql-identifier";
 import { freeze } from "#/util/object-utils";
 
 export interface UsingScopeNode {
@@ -9,7 +10,7 @@ export const UsingScopeNode = {
   create(scope: string): UsingScopeNode {
     return freeze({
       kind: "UsingScopeNode",
-      scope,
+      scope: parseSoqlIdentifier(scope),
     });
   },
 };

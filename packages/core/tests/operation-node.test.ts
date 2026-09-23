@@ -24,6 +24,7 @@ import { OrNode } from "#/operation-node/or-node";
 import { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import { OrderByNode } from "#/operation-node/order-by-node";
 import { QueryNode } from "#/operation-node/query-node";
+import { RawNode } from "#/operation-node/raw-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
 import { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
@@ -50,16 +51,35 @@ describe("operation nodes", () => {
     const operator = OperatorNode.create("like");
     const value = ValueNode.create("Acme%");
     const sobject = SObjectNode.create("Account");
+    const raw = RawNode.create("CALENDAR_YEAR(CreatedDate)");
     const selection = SelectionNode.create(reference);
 
     expect(reference).toEqual({ kind: "ReferenceNode", name: "Name" });
     expect(operator).toEqual({ kind: "OperatorNode", operator: "like" });
     expect(value).toEqual({ kind: "ValueNode", value: "Acme%" });
     expect(sobject).toEqual({ kind: "SObjectNode", name: "Account" });
+    expect(raw).toEqual({
+      kind: "RawNode",
+      soql: "CALENDAR_YEAR(CreatedDate)",
+    });
     expect(selection).toEqual({ kind: "SelectionNode", selection: reference });
-    for (const node of [reference, operator, value, sobject, selection]) {
+    for (const node of [reference, operator, value, sobject, raw, selection]) {
       expectFrozen(node);
     }
+  });
+
+  it("rejects unsafe SOQL identifiers and references at runtime", () => {
+    expect(() => SObjectNode.create("Account WHERE Id != null")).toThrow(
+      /SOQL identifiers/,
+    );
+    expect(() => ReferenceNode.create("Name FROM Contact")).toThrow(
+      /SOQL field references/,
+    );
+    expect(() => ReferenceNode.create("Owner.Name")).not.toThrow();
+    expect(() => SObjectNode.create("ns__Invoice__c")).not.toThrow();
+    expect(() => RawNode.create(123 as never)).toThrow(
+      "SOQL raw fragments must be strings.",
+    );
   });
 
   it("creates frozen aggregate function and alias nodes", () => {
@@ -148,6 +168,9 @@ describe("operation nodes", () => {
     });
     expectFrozen(view);
     expectFrozen(reference);
+    expect(() => ForViewReferenceNode.create("view LIMIT 1" as never)).toThrow(
+      "SOQL FOR mode must be view or reference.",
+    );
   });
 
   it("creates frozen UserProfileFeed WITH UserId nodes", () => {

@@ -1335,14 +1335,19 @@ describe("SelectQueryBuilder", () => {
     // @ts-expect-error Salesforce field is not present on Account.
     query.orderBy("Does_Not_Exist__c");
 
-    // @ts-expect-error ORDER BY direction is limited to Kysely-style asc/desc.
-    query.orderBy("Name", "ascending");
+    // biome-ignore lint/correctness/noConstantCondition: unused at runtime
+    if (false) {
+      // These calls exist only to assert the public TypeScript constraints. Runtime
+      // validation is covered separately by the compiler/operation-node tests.
+      // @ts-expect-error ORDER BY direction is limited to Kysely-style asc/desc.
+      query.orderBy("Name", "ascending");
+
+      // @ts-expect-error ORDER BY null placement is limited to first/last.
+      query.orderBy("Name", "asc", "middle");
+    }
 
     query.orderBy("Name", undefined, "first");
     query.orderBy("Name", "asc", "last");
-
-    // @ts-expect-error ORDER BY null placement is limited to first/last.
-    query.orderBy("Name", "asc", "middle");
   });
 
   it("rejects unknown objects and fields at compile time", () => {

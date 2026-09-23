@@ -20,10 +20,12 @@ import type {
   SemiJoinSubqueryFactory,
 } from "#/query-builder/semi-join-subquery-builder";
 import type { SalesforceFieldFilterValue } from "#/schema";
+import { isSoqlRawBuilder, type SoqlRawBuilder } from "#/soql";
 import {
   isSoqlCurrencyLiteral,
   type SoqlCurrencyLiteral,
 } from "#/soql-currency-literal";
+import type { SoqlLikeLiteral } from "#/soql-like-literal";
 
 export type FilterableFieldName<
   DB,
@@ -155,26 +157,32 @@ export type OperandValueExpression<
   OP extends ComparisonOperatorExpression<DB, TB, RE>,
   AllowSemiJoin extends boolean = true,
   AllowCurrencyLiteral extends boolean = true,
-> = OP extends LikeComparisonOperator
-  ? SalesforceTypeOfField<DB, TB, RE> extends "polymorphicType"
-    ? string
-    : Extract<
-        NonNullable<FieldValueExpression<DB, TB, RE, AllowCurrencyLiteral>>,
-        string
-      >
-  : OP extends OrderedComparisonOperator
-    ? NonNullable<FieldValueExpression<DB, TB, RE, AllowCurrencyLiteral>>
-    : OP extends SetComparisonOperator
-      ?
-          | SetValueListExpression<DB, TB, RE, AllowCurrencyLiteral>
-          | (AllowSemiJoin extends true
-              ? RE extends SemiJoinOperandFieldName<DB, TB, RE>
-                ? SemiJoinSubqueryFactory<DB, TB, RE>
-                : never
-              : never)
-      : OP extends MultiSelectComparisonOperator
-        ? readonly ActivePicklistValueOfField<DB, TB, RE>[]
-        : FieldValueExpression<DB, TB, RE, AllowCurrencyLiteral>;
+> =
+  | SoqlRawBuilder
+  | (OP extends LikeComparisonOperator
+      ? SalesforceTypeOfField<DB, TB, RE> extends "polymorphicType"
+        ? string | SoqlLikeLiteral
+        :
+            | Extract<
+                NonNullable<
+                  FieldValueExpression<DB, TB, RE, AllowCurrencyLiteral>
+                >,
+                string
+              >
+            | SoqlLikeLiteral
+      : OP extends OrderedComparisonOperator
+        ? NonNullable<FieldValueExpression<DB, TB, RE, AllowCurrencyLiteral>>
+        : OP extends SetComparisonOperator
+          ?
+              | SetValueListExpression<DB, TB, RE, AllowCurrencyLiteral>
+              | (AllowSemiJoin extends true
+                  ? RE extends SemiJoinOperandFieldName<DB, TB, RE>
+                    ? SemiJoinSubqueryFactory<DB, TB, RE>
+                    : never
+                  : never)
+          : OP extends MultiSelectComparisonOperator
+            ? readonly ActivePicklistValueOfField<DB, TB, RE>[]
+            : FieldValueExpression<DB, TB, RE, AllowCurrencyLiteral>);
 
 const SET_VALUE_LIST_ERROR =
   "SOQL IN/NOT IN value lists must contain at least one value.";
@@ -200,11 +208,12 @@ export function parseOperationValueBinaryOperation(
   operator: ComparisonOperator,
   right: unknown,
 ): BinaryOperationNode {
-  const rightOperand =
-    operator === "in" ||
-    operator === "not in" ||
-    operator === "includes" ||
-    operator === "excludes"
+  const rightOperand = isSoqlRawBuilder(right)
+    ? right.toOperationNode()
+    : operator === "in" ||
+        operator === "not in" ||
+        operator === "includes" ||
+        operator === "excludes"
       ? parseValueList(right, operator)
       : ValueNode.create(right);
 

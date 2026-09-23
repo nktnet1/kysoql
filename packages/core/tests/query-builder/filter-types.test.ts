@@ -2,6 +2,8 @@ import { it } from "vitest";
 
 import { Kysoql } from "#/kysoql";
 import type { SalesforceField, SalesforceObject } from "#/schema";
+import { soql } from "#/soql";
+import { soqlLikeLiteral } from "#/soql-like-literal";
 import { soqlRelativeDate } from "#/soql-relative-date-literal";
 import { soqlDate, soqlDateTime, soqlTime } from "#/soql-temporal-literal";
 
@@ -200,6 +202,15 @@ it("accepts ordered comparisons for exactly the enabled Salesforce types", () =>
   query.where("Time__c", ">", soqlRelativeDate("TODAY"));
 });
 
+it("accepts explicit raw predicates and operands", () => {
+  const query = new Kysoql<FilterTypeSchema>().selectFrom("Fixture__c");
+
+  query.where(soql.raw("String__c = 'trusted'"));
+  query.where("String__c", "=", soql.raw("'trusted'"));
+  query.orderBy(soql.raw("String__c"));
+  query.select(soql.raw<{ readonly rawValue: string }>("String__c rawValue"));
+});
+
 it("accepts LIKE for exactly the enabled Salesforce string-like types", () => {
   const query = new Kysoql<FilterTypeSchema>().selectFrom("Fixture__c");
 
@@ -208,6 +219,9 @@ it("accepts LIKE for exactly the enabled Salesforce string-like types", () => {
   query.where("Phone__c", "like", "+61%");
   query.where("Picklist__c", "like", "Opt%");
   query.where("String__c", "like", "value%");
+  query.where("String__c", "like", soqlLikeLiteral("value%_literal"));
+  // @ts-expect-error LIKE literal helpers are not equality operands.
+  query.where("String__c", "=", soqlLikeLiteral("value%_literal"));
   query.where("Textarea__c", "like", "%value%");
   query.where("Url__c", "like", "https://example.com/%");
 

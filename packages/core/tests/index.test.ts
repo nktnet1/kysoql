@@ -111,6 +111,7 @@ import {
   QueryCreator,
   type QueryCreatorConfig,
   type QueryExecutor,
+  type RawNode,
   type RecordVisibilityContextNode,
   type RecordVisibilityContextOptions,
   type ReferenceNode,
@@ -155,14 +156,18 @@ import {
   type SoqlCurrencyLiteral,
   type SoqlDateLiteral,
   type SoqlDateTimeLiteral,
+  type SoqlLikeLiteral,
+  type SoqlRawBuilder,
   type SoqlRelativeDateFamily,
   type SoqlRelativeDateLiteral,
   type SoqlRelativeDateValue,
   type SoqlTemporalLiteral,
   type SoqlTimeLiteral,
+  soql,
   soqlCurrency,
   soqlDate,
   soqlDateTime,
+  soqlLikeLiteral,
   soqlRelativeDate,
   soqlTime,
   type ToLabelFilterComparisonOperator,
@@ -411,6 +416,7 @@ type PublicTypeSurface = {
   queryCreatorConfig: QueryCreatorConfig;
   recordVisibilityContextNode: RecordVisibilityContextNode;
   recordVisibilityContextOptions: RecordVisibilityContextOptions;
+  rawNode: RawNode;
   queryExecutor: QueryExecutor;
   referenceNode: ReferenceNode;
   relationshipSubqueryBuilder: RelationshipSubqueryBuilder<
@@ -552,6 +558,8 @@ type PublicTypeSurface = {
   sobjectNode: SObjectNode;
   soqlDateLiteral: SoqlDateLiteral;
   soqlDateTimeLiteral: SoqlDateTimeLiteral;
+  soqlLikeLiteral: SoqlLikeLiteral;
+  soqlRawBuilder: SoqlRawBuilder;
   soqlRelativeDateFamily: SoqlRelativeDateFamily;
   soqlRelativeDateLiteral: SoqlRelativeDateLiteral;
   soqlRelativeDateValue: SoqlRelativeDateValue;
@@ -605,9 +613,12 @@ describe("@kysoql/core public API", () => {
     expect(applyQueryResultAliases).toBeTypeOf("function");
     expect(apexBind).toBeTypeOf("function");
     expect(apexQueryField).toBeTypeOf("function");
+    expect(soql.raw).toBeTypeOf("function");
+    expect(soql.likeLiteral).toBeTypeOf("function");
     expect(soqlCurrency).toBeTypeOf("function");
     expect(soqlDate).toBeTypeOf("function");
     expect(soqlDateTime).toBeTypeOf("function");
+    expect(soqlLikeLiteral).toBeTypeOf("function");
     expect(soqlRelativeDate).toBeTypeOf("function");
     expect(soqlTime).toBeTypeOf("function");
   });

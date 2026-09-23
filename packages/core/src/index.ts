@@ -148,6 +148,7 @@ export type {
   OrderByNulls,
 } from "#/operation-node/order-by-item-node";
 export type { OrderByNode } from "#/operation-node/order-by-node";
+export type { RawNode } from "#/operation-node/raw-node";
 export type { RecordVisibilityContextNode } from "#/operation-node/record-visibility-context-node";
 export type { ReferenceNode } from "#/operation-node/reference-node";
 export type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
@@ -238,10 +239,15 @@ export type {
   SalesforceSchema,
   SalesforceSetOptionsCapability,
 } from "#/schema";
+export { type SoqlRawBuilder, soql } from "#/soql";
 export {
   type SoqlCurrencyLiteral,
   soqlCurrency,
 } from "#/soql-currency-literal";
+export {
+  type SoqlLikeLiteral,
+  soqlLikeLiteral,
+} from "#/soql-like-literal";
 export {
   type SoqlRelativeDateFamily,
   type SoqlRelativeDateLiteral,

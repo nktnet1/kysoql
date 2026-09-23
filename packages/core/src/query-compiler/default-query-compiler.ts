@@ -21,7 +21,7 @@ import type { FieldsFunctionNode } from "#/operation-node/fields-function-node";
 import type { ForViewReferenceNode } from "#/operation-node/for-view-reference-node";
 import type { FormatFunctionNode } from "#/operation-node/format-function-node";
 import type { FormulaFunctionNode } from "#/operation-node/formula-function-node";
-import type { GeolocationFunctionNode } from "#/operation-node/geolocation-function-node";
+import { GeolocationFunctionNode } from "#/operation-node/geolocation-function-node";
 import type { GroupByNode } from "#/operation-node/group-by-node";
 import type { HavingNode } from "#/operation-node/having-node";
 import type { KnowledgeUpdateNode } from "#/operation-node/knowledge-update-node";
@@ -33,6 +33,7 @@ import type { OperatorNode } from "#/operation-node/operator-node";
 import type { OrNode } from "#/operation-node/or-node";
 import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import type { OrderByNode } from "#/operation-node/order-by-node";
+import { isRawNode, type RawNode } from "#/operation-node/raw-node";
 import type { RecordVisibilityContextNode } from "#/operation-node/record-visibility-context-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
@@ -65,6 +66,7 @@ import {
   validateRelationshipQueryLimits,
   validateRelationshipSubqueryOffsets,
 } from "#/parser/relationship-query-limit-parser";
+import { parseSelectionAlias } from "#/parser/selection-alias-parser";
 import { validateSetOptionsQuery } from "#/parser/set-options-parser";
 import { validateTypeOfSelections } from "#/parser/type-of-parser";
 import { validateUserProfileFeedQuery } from "#/parser/user-profile-feed-parser";
@@ -74,6 +76,8 @@ import type {
   QueryCompiler,
 } from "#/query-compiler/query-compiler";
 import { isSoqlCurrencyLiteral } from "#/soql-currency-literal";
+import { parseSoqlIdentifier, parseSoqlReference } from "#/soql-identifier";
+import { isSoqlLikeLiteral } from "#/soql-like-literal";
 import { isSoqlRelativeDateLiteral } from "#/soql-relative-date-literal";
 import { isSoqlTemporalLiteral } from "#/soql-temporal-literal";
 import { freeze } from "#/util/object-utils";
@@ -128,7 +132,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
       query.selections,
       context,
       query.groupBy !== undefined,
-    )} FROM ${query.from.name}`;
+    )} FROM ${parseSoqlIdentifier(query.from.name)}`;
 
     if (query.usingScope) {
       soql += ` USING SCOPE ${this.#compileUsingScope(query.usingScope)}`;
@@ -152,7 +156,11 @@ export class DefaultQueryCompiler implements QueryCompiler {
     }
 
     if (query.apexAccessMode) {
-      soql += ` WITH ${query.apexAccessMode.mode.toUpperCase()}_MODE`;
+      const mode = query.apexAccessMode.mode;
+      if (mode !== "user" && mode !== "system") {
+        throw new TypeError("Apex SOQL access mode must be user or system.");
+      }
+      soql += ` WITH ${mode.toUpperCase()}_MODE`;
     }
 
     if (query.groupBy) {
@@ -262,6 +270,8 @@ export class DefaultQueryCompiler implements QueryCompiler {
         return this.#compileFieldsFunction(
           selection.selection as FieldsFunctionNode,
         );
+      case "RawNode":
+        return this.#compileRaw(selection.selection as RawNode);
       case "ReferenceNode":
         return this.#compileReference(selection.selection as ReferenceNode);
       case "RelationshipSubqueryNode":
@@ -280,7 +290,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
     const whens = node.whens
       .map(
         (when) =>
-          `WHEN ${when.object} THEN ${when.selections
+          `WHEN ${parseSoqlIdentifier(when.object)} THEN ${when.selections
             .map((selection) => this.#compileReference(selection))
             .join(", ")}`,
       )
@@ -394,6 +404,16 @@ export class DefaultQueryCompiler implements QueryCompiler {
   }
 
   #compileFieldsFunction(node: FieldsFunctionNode): string {
+    if (
+      node.selector !== "all" &&
+      node.selector !== "custom" &&
+      node.selector !== "standard"
+    ) {
+      throw new TypeError(
+        "SOQL FIELDS() selector must be all, custom, or standard.",
+      );
+    }
+
     return `FIELDS(${node.selector.toUpperCase()})`;
   }
 
@@ -404,7 +424,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
   }
 
   #compileUsingScope(usingScope: UsingScopeNode): string {
-    return usingScope.scope;
+    return parseSoqlIdentifier(usingScope.scope);
   }
 
   #compileUserProfileFeedWith(node: UserProfileFeedWithNode): string {
@@ -412,12 +432,30 @@ export class DefaultQueryCompiler implements QueryCompiler {
   }
 
   #compileForViewReference(node: ForViewReferenceNode): string {
-    return node.mode === "view" ? "VIEW" : "REFERENCE";
+    switch (node.mode) {
+      case "view":
+        return "VIEW";
+      case "reference":
+        return "REFERENCE";
+      default:
+        throw new TypeError("SOQL FOR mode must be view or reference.");
+    }
   }
 
   #compileKnowledgeUpdate(node: KnowledgeUpdateNode): string {
     return node.modes
-      .map((mode) => (mode === "tracking" ? "TRACKING" : "VIEWSTAT"))
+      .map((mode) => {
+        switch (mode) {
+          case "tracking":
+            return "TRACKING";
+          case "viewstat":
+            return "VIEWSTAT";
+          default:
+            throw new TypeError(
+              "SOQL UPDATE mode must be tracking or viewstat.",
+            );
+        }
+      })
       .join(", ");
   }
 
@@ -426,7 +464,15 @@ export class DefaultQueryCompiler implements QueryCompiler {
       .map((item) => this.#compileOperation(item))
       .join(", ");
 
-    return groupBy.mode ? `${groupBy.mode.toUpperCase()}(${fields})` : fields;
+    if (!groupBy.mode) {
+      return fields;
+    }
+
+    if (groupBy.mode !== "rollup" && groupBy.mode !== "cube") {
+      throw new TypeError("SOQL GROUP BY mode must be rollup or cube.");
+    }
+
+    return `${groupBy.mode.toUpperCase()}(${fields})`;
   }
 
   #compileHaving(having: HavingNode): string {
@@ -443,11 +489,19 @@ export class DefaultQueryCompiler implements QueryCompiler {
     let orderBy = this.#compileOperation(item.orderBy);
 
     if (item.direction) {
-      orderBy += ` ${item.direction === "asc" ? "ASC" : "DESC"}`;
+      if (item.direction !== "asc" && item.direction !== "desc") {
+        throw new TypeError("SOQL ORDER BY direction must be asc or desc.");
+      }
+      orderBy += ` ${item.direction.toUpperCase()}`;
     }
 
     if (item.nulls) {
-      orderBy += ` NULLS ${item.nulls === "first" ? "FIRST" : "LAST"}`;
+      if (item.nulls !== "first" && item.nulls !== "last") {
+        throw new TypeError(
+          "SOQL ORDER BY null placement must be first or last.",
+        );
+      }
+      orderBy += ` NULLS ${item.nulls.toUpperCase()}`;
     }
 
     return orderBy;
@@ -488,6 +542,8 @@ export class DefaultQueryCompiler implements QueryCompiler {
         return this.#compileNot(node as NotNode);
       case "OrNode":
         return this.#compileOr(node as OrNode);
+      case "RawNode":
+        return this.#compileRaw(node as RawNode);
       case "ReferenceNode":
         return this.#compileReference(node as ReferenceNode);
       case "SemiJoinSubqueryNode":
@@ -518,14 +574,14 @@ export class DefaultQueryCompiler implements QueryCompiler {
         )} + ${this.#compileApexExpression(addition.rightOperand)})`;
       }
       case "ApexBindNode":
-        return (node as ApexBindNode).name;
+        return parseSoqlReference((node as ApexBindNode).name);
       case "ApexLiteralNode":
         return this.#compileApexLiteral(node as ApexLiteralNode);
       case "ApexQueryResultNode": {
         const queryResult = node as ApexQueryResultNode;
-        return `[${this.compileQuery(queryResult.query, { apex: true }).soql}].${
-          queryResult.field
-        }`;
+        return `[${this.compileQuery(queryResult.query, { apex: true }).soql}].${parseSoqlIdentifier(
+          queryResult.field,
+        )}`;
       }
       case "ApexSubstringNode": {
         const substring = node as ApexSubstringNode;
@@ -599,11 +655,19 @@ export class DefaultQueryCompiler implements QueryCompiler {
   }
 
   #compileDistanceFunction(node: DistanceFunctionNode): string {
+    if (node.unit !== "mi" && node.unit !== "km") {
+      throw new TypeError("SOQL DISTANCE() unit must be 'mi' or 'km'.");
+    }
+
     return `DISTANCE(${this.#compileReference(node.location)}, ${this.#compileOperation(node.destination)}, '${node.unit}')`;
   }
 
   #compileGeolocationFunction(node: GeolocationFunctionNode): string {
-    return `GEOLOCATION(${node.latitude}, ${node.longitude})`;
+    const parsed = GeolocationFunctionNode.create(
+      node.latitude,
+      node.longitude,
+    );
+    return `GEOLOCATION(${parsed.latitude}, ${parsed.longitude})`;
   }
 
   #compileFormatFunction(node: FormatFunctionNode): string {
@@ -630,7 +694,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
   }
 
   #compileAlias(node: AliasNode): string {
-    return `${this.#compileOperation(node.node)} ${node.alias}`;
+    return `${this.#compileOperation(node.node)} ${parseSelectionAlias(node.alias)}`;
   }
 
   #compileAnd(node: AndNode): string {
@@ -670,7 +734,9 @@ export class DefaultQueryCompiler implements QueryCompiler {
       );
     }
 
-    let soql = `SELECT ${this.#compileReference(query.selection)} FROM ${query.from.name}`;
+    let soql = `SELECT ${this.#compileReference(
+      query.selection,
+    )} FROM ${parseSoqlIdentifier(query.from.name)}`;
 
     if (query.where) {
       soql += ` WHERE ${this.#compileWhere(query.where)}`;
@@ -679,12 +745,29 @@ export class DefaultQueryCompiler implements QueryCompiler {
     return soql;
   }
 
+  #compileRaw(node: RawNode): string {
+    if (!isRawNode(node)) {
+      throw new TypeError(
+        "SOQL raw fragments must be created with soql.raw().",
+      );
+    }
+
+    return node.soql;
+  }
+
   #compileReference(node: ReferenceNode): string {
-    return node.name;
+    return parseSoqlReference(node.name);
   }
 
   #compileOperator(node: OperatorNode): string {
     switch (node.operator) {
+      case "=":
+      case "!=":
+      case "<":
+      case "<=":
+      case ">":
+      case ">=":
+        return node.operator;
       case "excludes":
         return "EXCLUDES";
       case "in":
@@ -696,7 +779,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
       case "not in":
         return "NOT IN";
       default:
-        return node.operator;
+        throw new TypeError("Unsupported SOQL comparison operator.");
     }
   }
 
@@ -721,6 +804,15 @@ export class DefaultQueryCompiler implements QueryCompiler {
       return `${value.isoCode}${this.#compileNumericLiteral(value.value)}`;
     }
 
+    if (isSoqlLikeLiteral(value)) {
+      if (!likePattern) {
+        throw new TypeError(
+          "soql.likeLiteral() can only be used as a LIKE operand.",
+        );
+      }
+      return `'${this.#escapeLikeLiteral(value.value)}'`;
+    }
+
     switch (typeof value) {
       case "string":
         return `'${this.#escapeString(value, likePattern)}'`;
@@ -741,6 +833,17 @@ export class DefaultQueryCompiler implements QueryCompiler {
     }
 
     return String(result.output);
+  }
+
+  #escapeLikeLiteral(value: string): string {
+    let pattern = "";
+
+    for (const character of value) {
+      pattern +=
+        character === "%" || character === "_" ? `\\${character}` : character;
+    }
+
+    return this.#escapeString(pattern, true);
   }
 
   #escapeString(value: string, likePattern: boolean): string {

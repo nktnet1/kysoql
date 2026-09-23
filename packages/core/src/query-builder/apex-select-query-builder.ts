@@ -47,6 +47,7 @@ import type {
 } from "#/query-builder/select-query-builder";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { SalesforceQueryResult } from "#/schema";
+import { isSoqlRawBuilder, type SoqlRawBuilder } from "#/soql";
 import { freeze } from "#/util/object-utils";
 import type { ConditionalOutput, Simplify } from "#/util/type-utils";
 
@@ -148,6 +149,10 @@ export interface ApexSelectQueryBuilder<
     AfterSubqueryMode<Mode, SubqueryFunctionMode>,
     Context
   >;
+
+  where(
+    expression: SoqlRawBuilder,
+  ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
   where(
     expression: ApexWhereExpressionFactory<DB, TB>,
@@ -363,6 +368,9 @@ class ApexSelectQueryBuilderImpl<
   }
 
   where(
+    expression: SoqlRawBuilder,
+  ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
+  where(
     expression: ApexWhereExpressionFactory<DB, TB>,
   ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
   where(
@@ -379,12 +387,14 @@ class ApexSelectQueryBuilderImpl<
     lhsOrExpression:
       | string
       | ApexBindExpression<string>
+      | SoqlRawBuilder
       | ApexWhereExpressionFactory<DB, TB>,
     op?: ComparisonOperator,
     rhs?: unknown,
   ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context> {
-    const operation =
-      typeof lhsOrExpression === "function"
+    const operation = isSoqlRawBuilder(lhsOrExpression)
+      ? lhsOrExpression.toOperationNode()
+      : typeof lhsOrExpression === "function"
         ? lhsOrExpression(
             createApexExpressionBuilder<DB, TB>({
               outerObject: this.#props.queryNode.from.name,

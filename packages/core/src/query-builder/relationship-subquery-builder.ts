@@ -18,9 +18,10 @@ import {
 } from "#/expression/geolocation-function-builder";
 import type { FieldsSelector } from "#/operation-node/fields-function-node";
 import type { ComparisonOperator } from "#/operation-node/operator-node";
-import type {
-  OrderByDirection,
-  OrderByNulls,
+import {
+  type OrderByDirection,
+  OrderByItemNode,
+  type OrderByNulls,
 } from "#/operation-node/order-by-item-node";
 import { QueryNode } from "#/operation-node/query-node";
 import { ReferenceNode } from "#/operation-node/reference-node";
@@ -68,6 +69,7 @@ import {
   type Selection,
 } from "#/parser/select-parser";
 import type { SalesforceQueryResult } from "#/schema";
+import { isSoqlRawBuilder, type SoqlRawBuilder } from "#/soql";
 import { freeze } from "#/util/object-utils";
 import type { ConditionalOutput, Simplify } from "#/util/type-utils";
 
@@ -257,6 +259,12 @@ export interface RelationshipSubqueryBuilder<
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
 
   orderBy(
+    expression: SoqlRawBuilder,
+    direction?: OrderByDirection,
+    nulls?: OrderByNulls,
+  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
+
+  orderBy(
     expression: DistanceOrderByFactory<DB, TB>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
@@ -266,6 +274,10 @@ export interface RelationshipSubqueryBuilder<
     field: OE & SortableFieldName<DB, TB, OE>,
     direction?: OrderByDirection,
     nulls?: OrderByNullsForReference<DB, TB, OE>,
+  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
+
+  where(
+    expression: SoqlRawBuilder,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
 
   where(
@@ -293,6 +305,17 @@ export interface RelationshipSubqueryBuilder<
     op: OP,
     rhs: RHS,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
+
+  select<RawOutput>(
+    selection: SoqlRawBuilder<RawOutput>,
+  ): RelationshipSubqueryBuilder<
+    DB,
+    TB,
+    O & RawOutput,
+    Depth,
+    FunctionMode,
+    ApexMode
+  >;
 
   select<const Selections extends readonly string[]>(
     selections: Selections & CheckedSelectExpressionList<DB, TB, O, Selections>,
@@ -568,6 +591,11 @@ class RelationshipSubqueryBuilderImpl<
   }
 
   orderBy(
+    expression: SoqlRawBuilder,
+    direction?: OrderByDirection,
+    nulls?: OrderByNulls,
+  ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
+  orderBy(
     expression: DistanceOrderByFactory<DB, TB>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
@@ -578,12 +606,17 @@ class RelationshipSubqueryBuilderImpl<
     nulls?: OrderByNullsForReference<DB, TB, OE>,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
   orderBy(
-    fieldOrExpression: string | DistanceOrderByFactory<DB, TB>,
+    fieldOrExpression: string | SoqlRawBuilder | DistanceOrderByFactory<DB, TB>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode> {
-    const item =
-      typeof fieldOrExpression === "function"
+    const item = isSoqlRawBuilder(fieldOrExpression)
+      ? OrderByItemNode.create(
+          fieldOrExpression.toOperationNode(),
+          direction,
+          nulls,
+        )
+      : typeof fieldOrExpression === "function"
         ? parseDistanceOrderBy(
             fieldOrExpression(createGeolocationExpressionBuilder<DB, TB>()),
             direction,
@@ -611,12 +644,14 @@ class RelationshipSubqueryBuilderImpl<
     lhsOrExpression:
       | string
       | ApexBindExpression<string>
+      | SoqlRawBuilder
       | RelationshipWhereExpressionFactory<DB, TB, ApexMode>,
     op?: ComparisonOperator,
     rhs?: unknown,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode> {
-    const operation =
-      typeof lhsOrExpression === "function"
+    const operation = isSoqlRawBuilder(lhsOrExpression)
+      ? lhsOrExpression.toOperationNode()
+      : typeof lhsOrExpression === "function"
         ? this.#props.apex
           ? (lhsOrExpression as ApexWhereExpressionFactory<DB, TB, false>)(
               createApexExpressionBuilder<DB, TB, false>({
@@ -652,6 +687,16 @@ class RelationshipSubqueryBuilderImpl<
     });
   }
 
+  select<RawOutput>(
+    selection: SoqlRawBuilder<RawOutput>,
+  ): RelationshipSubqueryBuilder<
+    DB,
+    TB,
+    O & RawOutput,
+    Depth,
+    FunctionMode,
+    ApexMode
+  >;
   select<FunctionSelection extends SelectFunctionSelectionArg>(
     selection: SelectFunctionForMode<
       FunctionMode,
@@ -691,6 +736,7 @@ class RelationshipSubqueryBuilderImpl<
     selection:
       | string
       | readonly string[]
+      | SoqlRawBuilder<unknown>
       | ((eb: SelectExpressionBuilder<DB, TB>) => SelectFunctionSelectionArg),
   ): RelationshipSubqueryBuilder<
     DB,
@@ -700,8 +746,9 @@ class RelationshipSubqueryBuilderImpl<
     FunctionMode | "present",
     ApexMode
   > {
-    const selections =
-      typeof selection === "function"
+    const selections = isSoqlRawBuilder(selection)
+      ? [SelectionNode.create(selection.toOperationNode())]
+      : typeof selection === "function"
         ? parseSelectFunctionSelectArg(
             selection(createSelectExpressionBuilder<DB, TB>()),
           )

@@ -28,6 +28,7 @@ import type {
 } from "#/query-builder/apex-query-context";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
+import { isSoqlRawBuilder, type SoqlRawBuilder } from "#/soql";
 import { freeze } from "#/util/object-utils";
 
 interface ApexCountQueryBuilderProps {
@@ -56,6 +57,8 @@ export interface ApexCountQueryBuilder<
   limit(
     limit: number | ApexBindExpression<number>,
   ): ApexCountQueryBuilder<DB, TB, Context>;
+
+  where(expression: SoqlRawBuilder): ApexCountQueryBuilder<DB, TB, Context>;
 
   where(
     expression: ApexWhereExpressionFactory<DB, TB>,
@@ -153,6 +156,7 @@ class ApexCountQueryBuilderImpl<
     });
   }
 
+  where(expression: SoqlRawBuilder): ApexCountQueryBuilder<DB, TB, Context>;
   where(
     expression: ApexWhereExpressionFactory<DB, TB>,
   ): ApexCountQueryBuilder<DB, TB, Context>;
@@ -170,12 +174,14 @@ class ApexCountQueryBuilderImpl<
     lhsOrExpression:
       | string
       | ApexBindExpression<string>
+      | SoqlRawBuilder
       | ApexWhereExpressionFactory<DB, TB>,
     op?: ComparisonOperator,
     rhs?: unknown,
   ): ApexCountQueryBuilder<DB, TB, Context> {
-    const operation =
-      typeof lhsOrExpression === "function"
+    const operation = isSoqlRawBuilder(lhsOrExpression)
+      ? lhsOrExpression.toOperationNode()
+      : typeof lhsOrExpression === "function"
         ? lhsOrExpression(
             createApexExpressionBuilder<DB, TB>({
               outerObject: this.#props.queryNode.from.name,

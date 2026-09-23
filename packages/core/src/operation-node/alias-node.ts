@@ -1,4 +1,5 @@
 import type { OperationNode } from "#/operation-node/operation-node";
+import { parseSelectionAlias } from "#/parser/selection-alias-parser";
 import { freeze } from "#/util/object-utils";
 
 export interface AliasNode {
@@ -12,7 +13,7 @@ export const AliasNode = {
     return freeze({
       kind: "AliasNode",
       node,
-      alias,
+      alias: parseSelectionAlias(alias),
     });
   },
 };

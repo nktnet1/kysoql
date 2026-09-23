@@ -129,9 +129,12 @@ nullability, context, and grouping-identity requirements.
 ## Top-level value helpers
 
 `soqlDate`, `soqlDateTime`, `soqlTime`, `soqlRelativeDate`, and `soqlCurrency`
-construct [validated literals](/docs/framework/guides/literals).
-`apexBind`, `apexAdd`, `apexSubstring`, and `apexQueryField` construct
-[Apex expression nodes](/docs/core/apex/bindings).
+construct [validated literals](/docs/framework/guides/literals). `soql.likeLiteral()`
+escapes `%` and `_` when a LIKE value should be literal rather than a pattern.
+`soql.raw()` is an explicit unsafe escape hatch for trusted SOQL syntax that the
+builder does not model; it emits its fragment verbatim and must never contain
+user-controlled input. `apexBind`, `apexAdd`, `apexSubstring`, and
+`apexQueryField` construct [Apex expression nodes](/docs/core/apex/bindings).
 
 ## Integration contracts
 

@@ -41,6 +41,7 @@ import type {
   FieldReferenceDefinition,
   FieldReferenceNullable,
 } from "#/parser/reference-parser";
+import type { SoqlLikeLiteral } from "#/soql-like-literal";
 import type { SoqlDateLiteral } from "#/soql-temporal-literal";
 
 declare const expressionType: unique symbol;
@@ -163,7 +164,7 @@ type ToLabelFilterValue<DB, TB extends keyof DB, Reference extends string> =
 type ToLabelFilterOperandValue<
   Value,
   Operator extends ToLabelFilterComparisonOperator,
-> = Operator extends LikeComparisonOperator ? string : Value;
+> = Operator extends LikeComparisonOperator ? string | SoqlLikeLiteral : Value;
 
 export interface ToLabelFilterFunctionExpression<Reference extends string> {
   readonly [toLabelFilterExpressionType]: {

@@ -26,7 +26,7 @@ import type {
 import { OrderByItemNode } from "#/operation-node/order-by-item-node";
 import { QueryNode } from "#/operation-node/query-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
-import type { SelectionNode } from "#/operation-node/selection-node";
+import { SelectionNode } from "#/operation-node/selection-node";
 import { UsingScopeNode } from "#/operation-node/using-scope-node";
 import {
   type AggregateSelection,
@@ -104,6 +104,7 @@ import type {
   SalesforceObjectMruEnabled,
   SalesforceObjectSupportedScope,
 } from "#/schema";
+import { isSoqlRawBuilder, type SoqlRawBuilder } from "#/soql";
 import { freeze } from "#/util/object-utils";
 import type { ConditionalOutput } from "#/util/type-utils";
 
@@ -608,6 +609,17 @@ export interface AggregateSelectQueryBuilder<
   >;
 
   having(
+    expression: GroupedOnly<GroupedBy, SoqlRawBuilder>,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
+  having(
     expression: GroupedOnly<
       GroupedBy,
       HavingExpressionFactory<
@@ -657,6 +669,19 @@ export interface AggregateSelectQueryBuilder<
 
   offset(
     offset: GroupedOnly<GroupedBy, number>,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
+  orderBy(
+    expression: GroupedOnly<GroupedBy, SoqlRawBuilder>,
+    direction?: OrderByDirection,
+    nulls?: OrderByNulls,
   ): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -735,6 +760,17 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  select<RawOutput>(
+    selection: SoqlRawBuilder<RawOutput>,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O & RawOutput,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
   select<Aggregate extends AggregateSelectionArg>(
     selection: (
       eb: SelectExpressionBuilder<
@@ -788,6 +824,17 @@ export interface AggregateSelectQueryBuilder<
     DB,
     TB,
     O & GroupedSelection<DB, TB, SE, GroupMode>,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
+  where(
+    expression: SoqlRawBuilder,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
     GroupedBy,
     GroupMode,
     AdvancedFieldCount
@@ -1443,6 +1490,16 @@ class AggregateSelectQueryBuilderImpl<
   }
 
   having(
+    expression: GroupedOnly<GroupedBy, SoqlRawBuilder>,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+  having(
     expression: GroupedOnly<
       GroupedBy,
       HavingExpressionFactory<
@@ -1480,6 +1537,7 @@ class AggregateSelectQueryBuilderImpl<
   having(
     lhsOrExpression:
       | string
+      | SoqlRawBuilder
       | HavingExpressionFactory<
           DB,
           TB,
@@ -1500,8 +1558,9 @@ class AggregateSelectQueryBuilderImpl<
 
     const groupedBy = getGroupedByIdentities(this.#props.queryNode);
     const groupingFields = getAdvancedGroupingFields(this.#props.queryNode);
-    const operation =
-      typeof lhsOrExpression === "function"
+    const operation = isSoqlRawBuilder(lhsOrExpression)
+      ? lhsOrExpression.toOperationNode()
+      : typeof lhsOrExpression === "function"
         ? lhsOrExpression(
             createHavingExpressionBuilder<
               DB,
@@ -1593,6 +1652,18 @@ class AggregateSelectQueryBuilderImpl<
     });
   }
 
+  orderBy(
+    expression: GroupedOnly<GroupedBy, SoqlRawBuilder>,
+    direction?: OrderByDirection,
+    nulls?: OrderByNulls,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
   orderBy<OE extends string>(
     field: OE &
       GroupedOnly<GroupedBy, GroupedSortableFieldName<DB, TB, GroupedBy, OE>>,
@@ -1662,6 +1733,7 @@ class AggregateSelectQueryBuilderImpl<
   orderBy(
     fieldOrExpression:
       | string
+      | SoqlRawBuilder
       | GroupingOrderByExpressionFactory<DB, TB, GroupedBy>
       | AggregateOrderByExpressionFactory<DB, TB>
       | ((
@@ -1686,7 +1758,13 @@ class AggregateSelectQueryBuilderImpl<
 
     let item: OrderByItemNode;
 
-    if (typeof fieldOrExpression === "function") {
+    if (isSoqlRawBuilder(fieldOrExpression)) {
+      item = OrderByItemNode.create(
+        fieldOrExpression.toOperationNode(),
+        direction,
+        nulls,
+      );
+    } else if (typeof fieldOrExpression === "function") {
       const groupingFields = getAdvancedGroupingFields(this.#props.queryNode);
       const expression = fieldOrExpression(
         createSelectExpressionBuilder<DB, TB, GroupedBy>({ groupingFields }),
@@ -1736,6 +1814,16 @@ class AggregateSelectQueryBuilderImpl<
     });
   }
 
+  select<RawOutput>(
+    selection: SoqlRawBuilder<RawOutput>,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O & RawOutput,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
   select<Aggregate extends AggregateSelectionArg>(
     selection: (
       eb: SelectExpressionBuilder<
@@ -1794,6 +1882,7 @@ class AggregateSelectQueryBuilderImpl<
     selection:
       | string
       | readonly string[]
+      | SoqlRawBuilder<unknown>
       | ((
           eb: SelectExpressionBuilder<
             DB,
@@ -1809,6 +1898,22 @@ class AggregateSelectQueryBuilderImpl<
     GroupMode,
     AdvancedFieldCount
   > {
+    if (isSoqlRawBuilder(selection)) {
+      return new AggregateSelectQueryBuilderImpl<
+        DB,
+        TB,
+        unknown,
+        GroupedBy,
+        GroupMode,
+        AdvancedFieldCount
+      >({
+        ...this.#props,
+        queryNode: SelectQueryNode.cloneWithSelections(this.#props.queryNode, [
+          SelectionNode.create(selection.toOperationNode()),
+        ]),
+      });
+    }
+
     if (typeof selection !== "function") {
       validateGroupedSelections(this.#props.queryNode, selection);
       const selections = parseSelectArg(selection);
@@ -1866,6 +1971,16 @@ class AggregateSelectQueryBuilderImpl<
   }
 
   where(
+    expression: SoqlRawBuilder,
+  ): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    O,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+  where(
     expression: WhereExpressionFactory<DB, TB>,
   ): AggregateSelectQueryBuilder<
     DB,
@@ -1892,7 +2007,7 @@ class AggregateSelectQueryBuilderImpl<
     AdvancedFieldCount
   >;
   where(
-    lhsOrExpression: string | WhereExpressionFactory<DB, TB>,
+    lhsOrExpression: string | SoqlRawBuilder | WhereExpressionFactory<DB, TB>,
     op?: ComparisonOperator,
     rhs?: unknown,
   ): AggregateSelectQueryBuilder<
@@ -1903,8 +2018,9 @@ class AggregateSelectQueryBuilderImpl<
     GroupMode,
     AdvancedFieldCount
   > {
-    const operation =
-      typeof lhsOrExpression === "function"
+    const operation = isSoqlRawBuilder(lhsOrExpression)
+      ? lhsOrExpression.toOperationNode()
+      : typeof lhsOrExpression === "function"
         ? lhsOrExpression(
             createExpressionBuilder<DB, TB>({
               outerObject: this.#props.queryNode.from.name,

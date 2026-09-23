@@ -24,6 +24,7 @@ import { validateGroupedDateFunctionNode } from "#/parser/date-function-parser";
 import { parseFilterBinaryOperation } from "#/parser/filter-parser";
 import type { GroupableFieldName } from "#/parser/group-by-parser";
 import { validateGroupingFunctionNode } from "#/parser/grouping-expression-parser";
+import type { SoqlLikeLiteral } from "#/soql-like-literal";
 
 const HAVING_FIELD_GROUP_ERROR =
   "SOQL HAVING field references must also appear in GROUP BY.";
@@ -43,7 +44,7 @@ type AggregateOperandValue<
   Value,
   Operator extends ComparisonOperator,
 > = Operator extends LikeComparisonOperator
-  ? Extract<NonNullable<Value>, string>
+  ? Extract<NonNullable<Value>, string> | SoqlLikeLiteral
   : Operator extends OrderedComparisonOperator
     ? NonNullable<Value>
     : Operator extends SetComparisonOperator | MultiSelectComparisonOperator

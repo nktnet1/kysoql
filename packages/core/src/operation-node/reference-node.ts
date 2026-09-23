@@ -1,3 +1,4 @@
+import { parseSoqlReference } from "#/soql-identifier";
 import { freeze } from "#/util/object-utils";
 
 export interface ReferenceNode {
@@ -9,7 +10,7 @@ export const ReferenceNode = {
   create(name: string): ReferenceNode {
     return freeze({
       kind: "ReferenceNode",
-      name,
+      name: parseSoqlReference(name),
     });
   },
 };

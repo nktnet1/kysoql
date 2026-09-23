@@ -1,3 +1,4 @@
+import { parseSoqlReference } from "#/soql-identifier";
 import { freeze } from "#/util/object-utils";
 
 export interface ApexBindNode {
@@ -9,7 +10,7 @@ export const ApexBindNode = {
   create(name: string): ApexBindNode {
     return freeze({
       kind: "ApexBindNode",
-      name,
+      name: parseSoqlReference(name),
     });
   },
 };

@@ -18,8 +18,26 @@ export interface OperatorNode {
   readonly operator: ComparisonOperator;
 }
 
+const comparisonOperators = new Set<ComparisonOperator>([
+  "=",
+  "!=",
+  "<",
+  "<=",
+  ">",
+  ">=",
+  "like",
+  "in",
+  "not in",
+  "includes",
+  "excludes",
+]);
+
 export const OperatorNode = {
   create(operator: ComparisonOperator): OperatorNode {
+    if (!comparisonOperators.has(operator)) {
+      throw new TypeError("Unsupported SOQL comparison operator.");
+    }
+
     return freeze({
       kind: "OperatorNode",
       operator,
