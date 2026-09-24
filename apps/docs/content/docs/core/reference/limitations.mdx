@@ -10,9 +10,10 @@ context.
 
 ## Not part of this builder
 
-There is no DML/CRUD API, SOSL builder, SQL join syntax, arbitrary raw-SOQL
-fragment, generic `SELECT *`, live runtime schema loading, automatic schema refresh,
-Bulk API export, or Apex executor. Native REST provides page/record async iterators,
+There is no DML/CRUD API, SOSL builder, SQL join syntax, generic `SELECT *`, live
+runtime schema loading, automatic schema refresh, Bulk API export, or Apex executor.
+For trusted SOQL syntax outside the modeled builder surface, `soql.raw()` is the
+explicit unsafe escape hatch. Native REST provides page/record async iterators,
 request cancellation, and client-credentials/refresh-token OAuth helpers; these
 are adapter APIs, not new core builder methods. Interactive OAuth orchestration,
 JWT signing, secret storage, and distributed refresh coordination remain outside
