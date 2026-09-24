@@ -1,6 +1,14 @@
 # kysoql
 
-A type-safe, Kysely-inspired SOQL query builder for TypeScript.
+A type-safe, Kysely-inspired query builder for Salesforce SOQL in TypeScript.
+
+Kysoql borrows [Kysely](https://kysely.dev/)'s fluent, immutable TypeScript
+query-building ergonomics, but it is not Kysely, a Kysely dialect, or a SQL
+compatibility layer. It does
+not depend on Kysely. Salesforce SOQL semantics are authoritative: relationships
+use SOQL paths and subqueries, ordinary API values are compiled as escaped SOQL
+literals rather than SQL placeholder parameters, and unsupported SQL features are
+not exposed just because Kysely has an equivalent concept.
 
 ## Workspace
 
@@ -171,13 +179,13 @@ the grouping would leave grouped-only SOQL state behind.
 
 Selected fields, filterable fields, filter values, and operators are checked from
 the generated Salesforce schema. Equality (`=`, `!=`), ordered comparisons
-(`<`, `<=`, `>`, `>=`), and Kysely-style `like` are available where the field
-type supports them. `.compile()` emits SOQL for the currently implemented scalar,
+(`<`, `<=`, `>`, `>=`), and the lowercase `like` operator are available where the
+field type supports them. `.compile()` emits SOQL for the currently implemented scalar,
 relationship-query, and semi/anti-join AST. `.orderBy(field,
 direction?)` only accepts fields
 whose generated Salesforce Describe metadata marks them `sortable: true`.
-Calls are additive, and directions use Kysely-style lowercase `asc` / `desc`
-while the compiler emits SOQL `ASC` / `DESC`. Omitting the direction uses
+Calls are additive, and directions accept lowercase `asc` / `desc` while the
+compiler emits SOQL `ASC` / `DESC`. Omitting the direction uses
 Salesforce's default ascending order. `.limit(n)` accepts non-negative safe
 integers, including `0`; repeated calls replace the previous limit instead of
 emitting multiple `LIMIT` clauses. Multi-currency fields also accept structured
@@ -1081,27 +1089,14 @@ pnpm salesforce:e2e
 pnpm salesforce:e2e -- --target-org my-scratch-org
 ```
 
-See [docs/salesforce-test-org.md](docs/salesforce-test-org.md) for prerequisites,
-manual commands, script options, coverage boundaries, and cleanup instructions.
-
-For future ChatGPT sessions continuing from a project bundle, read
-[docs/chatgpt-handoff.md](docs/chatgpt-handoff.md) first. It records the package
-boundaries, validation workflow, patch discipline, implemented surface, and next
-incremental milestone.
-
 ## Design goals
 
-- Kysely-like fluent query API.
-- SOQL-native semantics instead of pretending Salesforce is SQL.
+- Kysely-inspired fluent, immutable TypeScript query ergonomics.
+- SOQL-native semantics instead of pretending Salesforce is SQL or a Kysely dialect.
 - Generated schemas for standard and custom objects/fields.
 - Compile-time validation of fields, relationships, operators, grouping, sorting, and projections.
 - Native REST execution and authentication helpers, with JSforce as an optional adapter.
-- No raw-string escape hatch in the safe API.
-
-## Development continuity
-
-- `docs/chatgpt-handoff.md` records the current incremental implementation state.
-- `docs/research-notes.md` records external references and settled findings that are useful to future development sessions.
+- An explicit unsafe `soql.raw()` escape hatch, kept separate from the typed builder paths.
 
 ## Apex compilation
 

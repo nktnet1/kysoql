@@ -3,6 +3,29 @@ title: "Mental model"
 description: "Understand immutability, query modes, metadata, and result inference."
 ---
 
+## Kysely inspiration stops at the API boundary
+
+Kysoql is Kysely-inspired, not Kysely-compatible. Familiar method names and
+immutable composition patterns are used where they fit Salesforce, but the
+operation tree and compiler model SOQL rather than SQL. Do not assume a Kysely
+feature exists unless it is documented here.
+
+In particular, there are no arbitrary SQL joins, DML builders, transactions, CTEs,
+or SQL placeholder-parameter arrays. Salesforce relationship paths, child
+subqueries, semi/anti-joins, query modes, and object-specific restrictions replace
+those concepts where SOQL provides an equivalent. Ordinary API values are
+serialized and escaped into the compiled SOQL string; explicit Apex bind helpers
+are a separate compile-only feature.
+
+| Kysely concept | Kysoql / SOQL behaviour |
+| --- | --- |
+| `selectFrom`, `select`, `where`, `orderBy`, `limit`, `offset` | Familiar fluent names where SOQL has a direct equivalent. |
+| SQL joins | No arbitrary join API. Use Salesforce parent paths, child relationship subqueries, and supported semi/anti-joins. |
+| `CompiledQuery.sql` + `parameters` | `CompiledQuery.soql`; ordinary API values are escaped SOQL literals, with no SQL parameter array. |
+| Insert/update/delete builders and transactions | Not part of a SOQL query builder. |
+| Kysely plugins | Kysoql has its own `KysoqlPlugin` contract; Kysely plugins are not drop-in compatible. |
+| Raw SQL | `soql.raw()` is an explicit unsafe SOQL escape hatch, not Kysely's `sql` tag. |
+
 ## A schema is compile-time metadata
 
 `new Kysoql<YourSchema>()` uses the generated interface as a type parameter. It

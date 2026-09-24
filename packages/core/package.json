@@ -1,7 +1,7 @@
 {
   "name": "@kysoql/core",
   "version": "0.0.0",
-  "description": "Type-safe SOQL query builder and compiler",
+  "description": "Kysely-inspired, type-safe Salesforce SOQL query builder and compiler",
   "keywords": [
     "salesforce",
     "soql",

@@ -37,7 +37,11 @@ const rows = await db.executeQuery(compiled);
 ```
 
 Plugins can transform the immutable query tree before compilation and when
-`toOperationNode()` exposes it, and can optionally transform executor results. Hooks run in registration order. A plugin attached
+`toOperationNode()` exposes it, and can optionally transform executor results. This
+API is Kysely-inspired, but `KysoqlPlugin` is a Kysoql-specific contract rather than
+a drop-in `KyselyPlugin`. Hooks run in registration order. `transformQuery` must
+return a `SelectQueryNode`; Kysoql rejects a plugin that replaces the root with
+another node kind. A plugin attached
 with `withPlugin()` also applies to builders created from the returned instance;
 `withoutPlugins()` removes the pipeline without mutating the original instance.
 Result hooks receive transport results before Kysoql applies field-alias projection.
@@ -78,7 +82,7 @@ const accounts = await tracedDb.selectFrom("Account").select("Id").execute();
 | `limit(n)`, `offset(n)` | Replace pagination clauses. [Pagination](/docs/framework/guides/ordering-and-pagination). |
 | `groupBy(fieldOrFieldsOrCallback)` | Enter ordinary grouped mode only before ordinary selections. |
 | `$call(callback)`, `$if(condition, callback)` | Compose while retaining specialised types. [Composition](/docs/framework/guides/composition). |
-| `$castTo<T>()`, `$narrowType<T>()`, `$assertType<T>()` | Kysely-compatible, type-only result helpers; generated SOQL is unchanged. |
+| `$castTo<T>()`, `$narrowType<T>()`, `$assertType<T>()` | Kysely-inspired, type-only result helpers; generated SOQL is unchanged. |
 | `clearSelect()`, `clearWhere()`, `clearOrderBy()`, `clearLimit()`, `clearOffset()` | Reset the named clause immutably. |
 | `execute()`, `executeAll()` | Execute ordinary/QueryAll mode with a configured executor; both accept `{ signal }`. |
 | `executeTakeFirst()`, `executeTakeFirstOrThrow()` | Return the first row or throw `NoResultError`; both accept `{ signal }`, and the throwing form accepts a custom error constructor/factory. |

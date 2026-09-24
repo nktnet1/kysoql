@@ -10,10 +10,22 @@ export function transformQueryWithPlugins(
   let transformedQuery = query;
 
   for (const plugin of plugins) {
-    transformedQuery = plugin.transformQuery({
+    const nextQuery = plugin.transformQuery({
       queryId,
       query: transformedQuery,
     });
+
+    if (
+      typeof nextQuery !== "object" ||
+      nextQuery === null ||
+      nextQuery.kind !== "SelectQueryNode"
+    ) {
+      throw new TypeError(
+        "KysoqlPlugin.transformQuery must return a SelectQueryNode.",
+      );
+    }
+
+    transformedQuery = nextQuery;
   }
 
   return transformedQuery;

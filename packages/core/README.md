@@ -1,6 +1,12 @@
 # @kysoql/core
 
-Type-safe, Kysely-inspired SOQL query building and compilation for TypeScript.
+Type-safe, Kysely-inspired query building and compilation for Salesforce SOQL
+in TypeScript. Kysoql borrows familiar [Kysely](https://kysely.dev/) ergonomics
+such as immutable fluent builders, result inference, `$if`, `$call`, and plugins,
+but it is not Kysely, a Kysely dialect, or a SQL compatibility layer, and it does
+not depend on Kysely.
+SOQL and Salesforce platform rules take precedence whenever the two models differ.
+
 The core package is transport-neutral: it owns schema types, the immutable query
 AST, builders, result inference, compilation, and the executor contract without
 depending on JSforce.

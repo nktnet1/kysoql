@@ -82,9 +82,13 @@ on this monorepo's pinned pnpm workspace.
 
 Document the source as it exists, not planned methods. Check changes against
 `packages/core/src/index.ts`, the builders/compiler, codegen, and adapter tests.
-Keep API execution, static Apex, and dynamic Apex capabilities separate. Never
-imply that `executeAll()` means ordinary pagination, that generated types enforce
-permissions, or that the adapter validates every selected field value.
+Describe Kysoql as a **Kysely-inspired query builder for Salesforce SOQL**. Do not
+describe it as Kysely-compatible, a Kysely dialect, or a SQL abstraction; Kysely
+inspires parts of the TypeScript API while Salesforce SOQL defines query
+semantics. Keep API execution, static Apex, and dynamic Apex capabilities
+separate. Never imply that `executeAll()` means ordinary pagination, that
+generated types enforce permissions, or that the adapter validates every selected
+field value.
 
 The assumed package scope is `@kysoql`, matching the manifests. Keep installation
 instructions honest about the repository's `0.0.0` versions and unpublished

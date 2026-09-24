@@ -1,18 +1,37 @@
 ---
 title: "Framework"
-description: "Build type-safe Salesforce SOQL with Kysoql, from generated schemas through execution."
+description: "Build Salesforce SOQL with a Kysely-inspired, type-safe TypeScript query builder."
 ---
 
 <SalesforceReference title="Salesforce Object Query Language (SOQL) reference" href="https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql.html" />
 
-Kysoql builds Salesforce Object Query Language (SOQL) queries using your org's
-Describe metadata. Select fields, filter records, traverse relationships, and
-build aggregate reports with inferred TypeScript results.
+Kysoql is a **Kysely-inspired query builder for Salesforce Object Query Language
+(SOQL)** using your org's Describe metadata. Select fields, filter records,
+traverse relationships, and build aggregate reports with inferred TypeScript
+results.
+
+The inspiration is in the TypeScript API design, not SQL compatibility.
+[Kysely](https://kysely.dev/) is a SQL query builder; Kysoql is not Kysely, does
+not depend on Kysely, and is not a Kysely dialect or adapter. Salesforce SOQL is
+the target language and its rules are authoritative.
 
 It is a query builder, not an ORM: it does not create records, update records,
 manage transactions, or generate Salesforce objects. You can compile queries
 without a connection, execute API queries through an adapter, or produce
 compile-only SOQL for an Apex caller.
+
+## Kysely-inspired, SOQL-native
+
+Kysoql intentionally carries over familiar ideas such as immutable fluent
+builders, `selectFrom`, `select`, `where`, `orderBy`, `$if`, `$call`, result-type
+helpers, and query/result plugins. Those similarities are ergonomic rather than a
+compatibility promise.
+
+Where SQL and SOQL differ, Kysoql follows SOQL. Relationship paths, parent-to-child
+subqueries, and semi-joins replace arbitrary SQL joins; ordinary REST queries
+compile values into escaped SOQL literals rather than producing a SQL-style
+parameter array; mutations and transactions are outside a SOQL query builder; and
+methods are omitted when Salesforce does not support the corresponding operation.
 
 ## Start here
 
@@ -70,7 +89,7 @@ versions.
 | --- | --- |
 | Understand builders and inferred results | [Mental model](/docs/framework/guides/mental-model) |
 | Select fields and build search filters | [Selecting](/docs/framework/guides/selecting) and [filtering](/docs/framework/guides/filtering) |
-| Query parents, children, and related records | [Relationships and joins](/docs/framework/guides/relationships) |
+| Query parents, children, and related records | [Relationships, semi-joins, and anti-joins](/docs/framework/guides/relationships) |
 | Build grouped reports | [Aggregates](/docs/framework/guides/aggregates) and [date functions](/docs/framework/guides/date-functions) |
 | Run queries or include deleted records | [Execution](/docs/rest/execution) |
 | Check an available method or a restriction | [API reference](/docs/core/reference/api) and [limitations](/docs/core/reference/limitations) |

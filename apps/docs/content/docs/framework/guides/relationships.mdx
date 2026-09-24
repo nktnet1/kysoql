@@ -1,10 +1,15 @@
 ---
-title: "Relationships and joins"
+title: "Relationships, semi-joins, and anti-joins"
 description: "Traverse parents, select child records, and filter with semi-joins or anti-joins."
 ---
 
 <SalesforceReference title="Relationship queries" href="https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-relationships.html" />
 
+
+Kysoql does not expose Kysely-style SQL join methods. In SOQL, related data is
+reached through Salesforce relationship paths and parent-to-child subqueries;
+`semi-join` and `anti-join` below use Salesforce's own `IN (SELECT ...)` /
+`NOT IN (SELECT ...)` terminology.
 
 Generate every referenced object before using these examples. Relationship
 names are Salesforce API relationship names, not arbitrary SQL aliases.

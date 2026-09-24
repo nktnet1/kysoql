@@ -27,8 +27,9 @@ function Home() {
             Salesforce queries, checked by TypeScript.
           </h1>
           <p className="text-fd-muted-foreground text-lg leading-relaxed">
-            Generate types from your org, compose SOQL with an immutable
-            builder, and execute through native REST or compile for Apex.
+            A Kysely-inspired query builder for Salesforce SOQL. Generate types
+            from your org, compose queries with immutable TypeScript builders,
+            and execute through native REST or compile for Apex.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">

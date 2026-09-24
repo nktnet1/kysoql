@@ -1,12 +1,16 @@
 ---
 title: "Introduction"
-description: "Build and compile type-safe Salesforce SOQL with schema-aware TypeScript APIs."
+description: "Use the Kysely-inspired, type-safe core query builder and compiler for Salesforce SOQL."
 icon: "Cpu"
 ---
 
-`@kysoql/core` is the query-builder package. It owns the typed SOQL builders,
-expression helpers, compiler, schema contracts, and the executor interface used by
-transport adapters. It also provides compile-only Apex modes for server-side use.
+`@kysoql/core` is the Kysely-inspired query-builder package for Salesforce SOQL.
+It borrows Kysely-style TypeScript ergonomics without being Kysely, a Kysely
+dialect, or a SQL compatibility layer. SOQL semantics remain authoritative.
+
+Core owns the typed SOQL builders, expression helpers, compiler, schema contracts,
+and the executor interface used by transport adapters. It also provides
+compile-only Apex modes for server-side use.
 
 It has no Salesforce HTTP dependency. You can compile SOQL without a connection,
 or provide an executor such as [`@kysoql/rest`](/docs/rest) or the optional

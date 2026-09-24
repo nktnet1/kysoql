@@ -85,6 +85,25 @@ describe("QueryCreator plugins", () => {
     expect(calls).toEqual(["query:7"]);
   });
 
+  it("rejects plugins that replace the query root node kind", () => {
+    const invalidPlugin: KysoqlPlugin = {
+      transformQuery() {
+        return { kind: "WhereNode" } as unknown as SelectQueryNode;
+      },
+    };
+    const query = new QueryCreator<FixtureSchema>()
+      .withPlugin(invalidPlugin)
+      .selectFrom("Account")
+      .select("Id");
+
+    expect(() => query.toOperationNode()).toThrow(
+      "KysoqlPlugin.transformQuery must return a SelectQueryNode.",
+    );
+    expect(() => query.compile()).toThrow(
+      "KysoqlPlugin.transformQuery must return a SelectQueryNode.",
+    );
+  });
+
   it("reuses one query id across toOperationNode and compile", () => {
     const queryIds: QueryId[] = [];
     const db = new QueryCreator<FixtureSchema>().withPlugin({

@@ -8,8 +8,8 @@ description: "Use typed comparisons, grouped logic, lists, and multipicklist fil
 
 ## Basic conditions
 
-Repeated `where` calls are combined with `AND`. Values are passed separately
-from field names, never interpolated into a SOQL string:
+Repeated `where` calls are combined with `AND`. Pass values as structured
+builder arguments instead of concatenating SOQL yourself:
 
 ```ts
 import { db } from "./db";
@@ -20,6 +20,12 @@ const query = db
   .where("Name", "like", "Acme%")
   .where("AnnualRevenue", ">=", 100_000);
 ```
+
+Unlike Kysely's SQL compilation model, ordinary Kysoql API compilation does not
+return a placeholder SQL string plus a parameter array. The compiler validates,
+serializes, and escapes these values as SOQL literals in `compile().soql`. Use the
+normal builder value positions for dynamic data; do not pre-quote values. Apex
+compile-only builders have separate explicit bind helpers.
 
 ## Operators and values
 

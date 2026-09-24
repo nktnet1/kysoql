@@ -4,7 +4,9 @@ description: "Distinguish compiler checks from org, API, transport, and runtime 
 ---
 
 Kysoql models a substantial SOQL SELECT surface, not every Salesforce API or SQL
-feature. Generated types and structural validation are useful guardrails; the
+feature. It is Kysely-inspired rather than Kysely-compatible: a Kysely method or
+SQL construct is not implicitly supported unless Kysoql documents a SOQL mapping
+for it. Generated types and structural validation are useful guardrails; the
 Salesforce server remains authoritative for the selected org and execution
 context.
 

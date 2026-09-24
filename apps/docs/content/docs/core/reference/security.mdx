@@ -26,6 +26,13 @@ identifier-bearing syntax are also checked at runtime, including when compiling
 a structurally constructed query node. Do not concatenate request input into the
 compiled SOQL afterward.
 
+This is SOQL literal serialization, not Kysely-style SQL parameter binding.
+`compile().soql` contains the escaped literal values needed by the Salesforce API;
+there is no accompanying SQL placeholder/parameter array. Keep untrusted values in
+typed builder value positions so the compiler performs the encoding. For
+compile-only Apex, use the explicit Apex bind helpers where bind syntax is
+supported.
+
 Runtime syntax validation is not an application policy. An API endpoint should
 still validate input lengths, allowed operators, list sizes, and sortable fields,
 and should define a small allowlist for fields a caller may choose. A field can
