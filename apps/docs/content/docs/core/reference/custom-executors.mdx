@@ -9,19 +9,36 @@ Core does not depend on a specific transport. A custom executor implements this
 public interface:
 
 ```ts
-import type { CompiledQuery } from "@kysoql/core";
+import type {
+  AbortableQueryOptions,
+  CompiledQuery,
+} from "@kysoql/core";
 
 interface ExampleExecutorContract {
-  executeQuery<O>(query: CompiledQuery<O>): Promise<readonly O[]>;
-  executeAllQuery?<O>(query: CompiledQuery<O>): Promise<readonly O[]>;
-  executeCountQuery?(query: CompiledQuery<number>): Promise<number>;
-  executeAllCountQuery?(query: CompiledQuery<number>): Promise<number>;
+  executeQuery<O>(
+    query: CompiledQuery<O>,
+    options?: AbortableQueryOptions,
+  ): Promise<readonly O[]>;
+  executeAllQuery?<O>(
+    query: CompiledQuery<O>,
+    options?: AbortableQueryOptions,
+  ): Promise<readonly O[]>;
+  executeCountQuery?(
+    query: CompiledQuery<number>,
+    options?: AbortableQueryOptions,
+  ): Promise<number>;
+  executeAllCountQuery?(
+    query: CompiledQuery<number>,
+    options?: AbortableQueryOptions,
+  ): Promise<number>;
 }
 ```
 
 Only `executeQuery` is required. The builder checks optional capabilities and
 throws when a requested mode is unsupported; it does not silently fall back
 from QueryAll to ordinary execution or reinterpret row arrays as counts.
+Executable builders forward the optional `AbortableQueryOptions` object, so a
+custom executor should honour `signal` when it can stop or abandon work safely.
 
 A transport implementation is responsible for authentication, sending SOQL,
 validating untrusted responses, pagination policy, errors, and returning the
@@ -58,23 +75,24 @@ export function timedExecutor(
   }
 
   const wrapped: QueryExecutor = {
-    executeQuery: (query) => timed("executeQuery", () => inner.executeQuery(query)),
+    executeQuery: (query, options) =>
+      timed("executeQuery", () => inner.executeQuery(query, options)),
   };
   const executeAllQuery = inner.executeAllQuery?.bind(inner);
   const executeCountQuery = inner.executeCountQuery?.bind(inner);
   const executeAllCountQuery = inner.executeAllCountQuery?.bind(inner);
 
   if (executeAllQuery) {
-    wrapped.executeAllQuery = (query) =>
-      timed("executeAllQuery", () => executeAllQuery(query));
+    wrapped.executeAllQuery = (query, options) =>
+      timed("executeAllQuery", () => executeAllQuery(query, options));
   }
   if (executeCountQuery) {
-    wrapped.executeCountQuery = (query) =>
-      timed("executeCountQuery", () => executeCountQuery(query));
+    wrapped.executeCountQuery = (query, options) =>
+      timed("executeCountQuery", () => executeCountQuery(query, options));
   }
   if (executeAllCountQuery) {
-    wrapped.executeAllCountQuery = (query) =>
-      timed("executeAllCountQuery", () => executeAllCountQuery(query));
+    wrapped.executeAllCountQuery = (query, options) =>
+      timed("executeAllCountQuery", () => executeAllCountQuery(query, options));
   }
   return wrapped;
 }

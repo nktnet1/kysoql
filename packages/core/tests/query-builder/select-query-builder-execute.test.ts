@@ -1,7 +1,9 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 import { Kysoql } from "#/kysoql";
+import type { SelectQueryNode } from "#/operation-node/select-query-node";
+import { NoResultError } from "#/query-builder/no-result-error";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
-import type { QueryExecutor } from "#/query-executor";
+import type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
 import type { SalesforceField, SalesforceObject } from "#/schema";
 import type { Simplify } from "#/util/type-utils";
 
@@ -29,10 +31,13 @@ class RecordingExecutor implements QueryExecutor {
     [];
   readonly allCalls: Array<{ readonly soql: string; readonly query: unknown }> =
     [];
+  readonly options: Array<AbortableQueryOptions | undefined> = [];
 
   async executeQuery<O>(
     compiledQuery: CompiledQuery<O>,
+    options?: AbortableQueryOptions,
   ): Promise<readonly O[]> {
+    this.options.push(options);
     this.calls.push({
       query: compiledQuery.query,
       soql: compiledQuery.soql,
@@ -48,7 +53,9 @@ class RecordingExecutor implements QueryExecutor {
 
   async executeAllQuery<O>(
     compiledQuery: CompiledQuery<O>,
+    options?: AbortableQueryOptions,
   ): Promise<readonly O[]> {
+    this.options.push(options);
     this.allCalls.push({
       query: compiledQuery.query,
       soql: compiledQuery.soql,
@@ -111,6 +118,75 @@ describe("SelectQueryBuilder.execute", () => {
       readonly id: string;
       readonly name: string | null;
     }>();
+  });
+
+  it("mirrors Kysely executeTakeFirst and executeTakeFirstOrThrow semantics", async () => {
+    const executor = new RecordingExecutor();
+    const query = new Kysoql<FixtureSchema>({ executor })
+      .selectFrom("Account")
+      .select(["Id", "Name"]);
+
+    await expect(query.executeTakeFirst()).resolves.toEqual({
+      Id: "001000000000001",
+      Name: "Acme",
+    });
+    await expect(query.executeTakeFirstOrThrow()).resolves.toEqual({
+      Id: "001000000000001",
+      Name: "Acme",
+    });
+
+    const emptyExecutor: QueryExecutor = {
+      executeQuery: async () => [],
+    };
+    const emptyQuery = new Kysoql<FixtureSchema>({ executor: emptyExecutor })
+      .selectFrom("Account")
+      .select("Id");
+
+    await expect(emptyQuery.executeTakeFirst()).resolves.toBeUndefined();
+
+    const defaultError = await emptyQuery
+      .executeTakeFirstOrThrow()
+      .catch((error: unknown) => error);
+    expect(defaultError).toBeInstanceOf(NoResultError);
+    expect((defaultError as NoResultError).node).toBe(
+      emptyQuery.toOperationNode(),
+    );
+
+    class MissingAccountError extends Error {
+      readonly node: SelectQueryNode;
+
+      constructor(node: SelectQueryNode) {
+        super("missing account");
+        this.node = node;
+      }
+    }
+
+    await expect(
+      emptyQuery.executeTakeFirstOrThrow(MissingAccountError),
+    ).rejects.toBeInstanceOf(MissingAccountError);
+    await expect(
+      emptyQuery.executeTakeFirstOrThrow(() => new Error("custom missing")),
+    ).rejects.toThrow("custom missing");
+  });
+
+  it("passes abort options through the builder execution surface", async () => {
+    const executor = new RecordingExecutor();
+    const query = new Kysoql<FixtureSchema>({ executor })
+      .selectFrom("Account")
+      .select("Id");
+    const controller = new AbortController();
+
+    await query.execute({ signal: controller.signal });
+    await query.executeTakeFirst({ signal: controller.signal });
+    await query.executeTakeFirstOrThrow({ signal: controller.signal });
+    await query.executeAll({ signal: controller.signal });
+
+    expect(executor.options).toEqual([
+      { signal: controller.signal },
+      { signal: controller.signal },
+      { signal: controller.signal },
+      { signal: controller.signal },
+    ]);
   });
 
   it("keeps compile-only builders usable while rejecting execution without an executor", async () => {

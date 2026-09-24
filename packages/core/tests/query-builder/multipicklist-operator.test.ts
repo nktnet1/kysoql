@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { Kysoql } from "#/kysoql";
+import { soqlMultiSelectAnd } from "#/soql-multi-select-literal";
 import type { SalesforceField, SalesforceObject } from "#/schema";
 
 type MultiPicklistField = SalesforceField<
@@ -52,6 +53,42 @@ describe("INCLUDES and EXCLUDES filters", () => {
           values: [{ kind: "ValueNode", value: "Gamma" }],
         },
       },
+    });
+  });
+
+  it("supports Salesforce semicolon AND semantics with typed picklist values", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .where(
+        "Tags__c",
+        "includes",
+        soqlMultiSelectAnd("Alpha", "Beta"),
+      );
+
+    expect(query.toOperationNode().where?.where).toEqual({
+      kind: "BinaryOperationNode",
+      leftOperand: { kind: "ReferenceNode", name: "Tags__c" },
+      operator: { kind: "OperatorNode", operator: "includes" },
+      rightOperand: {
+        kind: "ValueListNode",
+        values: [{ kind: "ValueNode", value: "Alpha;Beta" }],
+      },
+    });
+
+    query.where("Tags__c", "includes", [
+      soqlMultiSelectAnd("Alpha", "Beta"),
+      "Gamma",
+    ]);
+
+    void (() => {
+      // @ts-expect-error Every AND member is constrained to active picklist values.
+      query.where("Tags__c", "includes", soqlMultiSelectAnd("Alpha", "Retired"));
+
+      // @ts-expect-error Mixed groups remain constrained to active picklist values.
+      query.where("Tags__c", "includes", [
+        soqlMultiSelectAnd("Alpha", "Retired"),
+        "Gamma",
+      ]);
     });
   });
 

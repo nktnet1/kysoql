@@ -26,6 +26,10 @@ import {
   type SoqlCurrencyLiteral,
 } from "#/soql-currency-literal";
 import type { SoqlLikeLiteral } from "#/soql-like-literal";
+import {
+  isSoqlMultiSelectAnd,
+  type SoqlMultiSelectAnd,
+} from "#/soql-multi-select-literal";
 
 export type FilterableFieldName<
   DB,
@@ -181,7 +185,12 @@ export type OperandValueExpression<
                     : never
                   : never)
           : OP extends MultiSelectComparisonOperator
-            ? readonly ActivePicklistValueOfField<DB, TB, RE>[]
+            ?
+                | readonly (
+                    | ActivePicklistValueOfField<DB, TB, RE>
+                    | SoqlMultiSelectAnd<ActivePicklistValueOfField<DB, TB, RE>>
+                  )[]
+                | SoqlMultiSelectAnd<ActivePicklistValueOfField<DB, TB, RE>>
             : FieldValueExpression<DB, TB, RE, AllowCurrencyLiteral>);
 
 const SET_VALUE_LIST_ERROR =
@@ -228,6 +237,13 @@ function parseValueList(
   value: unknown,
   operator: SetComparisonOperator | MultiSelectComparisonOperator,
 ): ValueListNode {
+  if (
+    (operator === "includes" || operator === "excludes") &&
+    isSoqlMultiSelectAnd(value)
+  ) {
+    return ValueListNode.create([value.values.join(";")]);
+  }
+
   const error =
     operator === "includes" || operator === "excludes"
       ? MULTISELECT_VALUE_LIST_ERROR
@@ -250,7 +266,13 @@ function parseValueList(
     ) {
       throw new TypeError(MIXED_CURRENCY_VALUE_LIST_ERROR);
     }
+
+    return ValueListNode.create(result.output);
   }
 
-  return ValueListNode.create(result.output);
+  return ValueListNode.create(
+    result.output.map((item) =>
+      isSoqlMultiSelectAnd(item) ? item.values.join(";") : item,
+    ),
+  );
 }

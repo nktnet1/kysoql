@@ -71,7 +71,12 @@ import {
 import type { SalesforceQueryResult } from "#/schema";
 import { isSoqlRawBuilder, type SoqlRawBuilder } from "#/soql";
 import { freeze } from "#/util/object-utils";
-import type { ConditionalOutput, Simplify } from "#/util/type-utils";
+import type { KysoqlTypeError } from "#/util/type-error";
+import type {
+  ConditionalOutput,
+  NarrowPartial,
+  Simplify,
+} from "#/util/type-utils";
 
 type ParentToChildDepth = readonly unknown[];
 
@@ -184,6 +189,30 @@ export interface RelationshipSubqueryBuilder<
   ApexMode extends boolean = false,
 > {
   $call<T>(func: (qb: this) => T): T;
+
+  $assertType<T extends O>(): O extends T
+    ? RelationshipSubqueryBuilder<DB, TB, T, Depth, FunctionMode, ApexMode>
+    : KysoqlTypeError<
+        "$assertType() call failed: The type passed in is not equal to the output type of the query."
+      >;
+
+  $castTo<C>(): RelationshipSubqueryBuilder<
+    DB,
+    TB,
+    C,
+    Depth,
+    FunctionMode,
+    ApexMode
+  >;
+
+  $narrowType<T>(): RelationshipSubqueryBuilder<
+    DB,
+    TB,
+    NarrowPartial<O, T>,
+    Depth,
+    FunctionMode,
+    ApexMode
+  >;
 
   /**
    * Explicitly opt into Salesforce pilot-only relationship-subquery syntax.
@@ -449,6 +478,50 @@ class RelationshipSubqueryBuilderImpl<
 
   $call<T>(func: (qb: this) => T): T {
     return func(this);
+  }
+
+  $assertType<T extends O>(): O extends T
+    ? RelationshipSubqueryBuilder<DB, TB, T, Depth, FunctionMode, ApexMode>
+    : KysoqlTypeError<
+        "$assertType() call failed: The type passed in is not equal to the output type of the query."
+      > {
+    return new RelationshipSubqueryBuilderImpl({ ...this.#props }) as never;
+  }
+
+  $castTo<C>(): RelationshipSubqueryBuilder<
+    DB,
+    TB,
+    C,
+    Depth,
+    FunctionMode,
+    ApexMode
+  > {
+    return new RelationshipSubqueryBuilderImpl<
+      DB,
+      TB,
+      C,
+      Depth,
+      FunctionMode,
+      ApexMode
+    >({ ...this.#props });
+  }
+
+  $narrowType<T>(): RelationshipSubqueryBuilder<
+    DB,
+    TB,
+    NarrowPartial<O, T>,
+    Depth,
+    FunctionMode,
+    ApexMode
+  > {
+    return new RelationshipSubqueryBuilderImpl<
+      DB,
+      TB,
+      NarrowPartial<O, T>,
+      Depth,
+      FunctionMode,
+      ApexMode
+    >({ ...this.#props });
   }
 
   $if<O2>(

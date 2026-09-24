@@ -18,8 +18,9 @@ are adapter APIs, not new core builder methods. Interactive OAuth orchestration,
 JWT signing, secret storage, and distributed refresh coordination remain outside
 this package's scope.
 
-Selected fields can use Kysely-style `"Field as alias"` strings. There are no
-`executeTakeFirst`, `clearHaving`, or universal mutable query methods. The
+Selected fields can use Kysely-style `"Field as alias"` strings. Record and
+aggregate builders also expose Kysely-style single-row execution and result-type
+helpers. There is no `clearHaving` or universal mutable query surface. The
 [API reference](/docs/core/reference/api) documents the actual supported surfaces.
 
 ## Structural checks in this snapshot
@@ -36,7 +37,7 @@ Selected fields can use Kysely-style `"Field as alias"` strings. There are no
 | Query-wide relationships | At most 20 parent-to-child and 55 child-to-parent, with path-aware counting. |
 | Semi/anti-joins | At most two, top-level WHERE only, compatible direct ID/reference fields. |
 | ROLLUP/CUBE | Up to three fields; cannot mix grouping modes. |
-| Data categories | At most three conditions with distinct groups. |
+| Data categories | At most three conditions with distinct groups; roots must be `Question`, `KnowledgeArticleVersion`, or a concrete `__kav` article version. |
 | Filtering WITH clauses | Only one of data category, UserId, RecordVisibilityContext, or Apex access mode. |
 | `FOR UPDATE` | Apex record queries only; incompatible with ORDER BY and ALL ROWS. |
 | `TYPEOF` | Cannot mix with SELECT functions, aggregate/grouping, or same-relationship ordinary selections. |

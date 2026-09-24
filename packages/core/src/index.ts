@@ -185,6 +185,11 @@ export type { ApexCountQueryBuilder } from "#/query-builder/apex-count-query-bui
 export type { ApexQueryContext } from "#/query-builder/apex-query-context";
 export type { ApexSelectQueryBuilder } from "#/query-builder/apex-select-query-builder";
 export type { CountQueryBuilder } from "#/query-builder/count-query-builder";
+export {
+  type ExecuteTakeFirstOrThrowOptions,
+  NoResultError,
+  type NoResultErrorConstructor,
+} from "#/query-builder/no-result-error";
 export type {
   RelationshipSubqueryBuilder,
   RelationshipSubqueryPilotModule,
@@ -215,8 +220,10 @@ export type {
   QueryCompiler,
 } from "#/query-compiler/query-compiler";
 export { QueryCreator, type QueryCreatorConfig } from "#/query-creator";
-export type { QueryExecutor } from "#/query-executor";
+export type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
 export { applyQueryResultAliases } from "#/query-result-mapper";
+export type { KysoqlTypeError } from "#/util/type-error";
+export type { NarrowPartial, NotNull } from "#/util/type-utils";
 export type {
   SalesforceChildRelationship,
   SalesforceField,
@@ -244,6 +251,10 @@ export {
   type SoqlCurrencyLiteral,
   soqlCurrency,
 } from "#/soql-currency-literal";
+export {
+  type SoqlMultiSelectAnd,
+  soqlMultiSelectAnd,
+} from "#/soql-multi-select-literal";
 export {
   type SoqlLikeLiteral,
   soqlLikeLiteral,

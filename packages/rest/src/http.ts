@@ -1,7 +1,9 @@
+import type { AbortableQueryOptions } from "@kysoql/core";
+
 import { SalesforceResponseError } from "#/errors";
 import { parseTimeout } from "#/validation";
 
-export interface RestRequestOptions {
+export interface RestRequestOptions extends AbortableQueryOptions {
   /** Combines with the client's signal; cancelling one operation does not cancel others. */
   readonly signal?: AbortSignal;
   /** Per HTTP request, including token acquisition and response body. Default: 30 seconds. */

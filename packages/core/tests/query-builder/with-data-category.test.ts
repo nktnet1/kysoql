@@ -154,6 +154,27 @@ describe("WITH DATA CATEGORY", () => {
     );
   });
 
+  it("rejects data-category clauses on unsupported root objects", () => {
+    type UnsafeSchema = {
+      readonly Account: SalesforceObject<
+        { readonly Id: Field<string, "id"> },
+        Record<string, never>,
+        Record<string, never>,
+        never,
+        DataCategoryFixture
+      >;
+    };
+
+    const query = new Kysoql<UnsafeSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .withDataCategory("Geography__c", "at", "usa__c");
+
+    expect(() => query.compile()).toThrow(
+      "SOQL WITH DATA CATEGORY is only supported for Question, KnowledgeArticleVersion, or a specific Knowledge article type (__kav).",
+    );
+  });
+
   it("compiles multiple categories and conditions with every selector", () => {
     const query = new Kysoql<FixtureSchema>()
       .selectFrom("KnowledgeArticleVersion")

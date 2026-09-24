@@ -1,4 +1,5 @@
 import {
+  type AbortableQueryOptions,
   applyQueryResultAliases,
   type CompiledQuery,
   type QueryExecutor,
@@ -38,10 +39,43 @@ export interface JsforceConnection {
 }
 
 export interface JsforceExecutor extends QueryExecutor {
-  executeAllQuery<O>(compiledQuery: CompiledQuery<O>): Promise<readonly O[]>;
-  executeAllCountQuery(compiledQuery: CompiledQuery<number>): Promise<number>;
-  executeCountQuery(compiledQuery: CompiledQuery<number>): Promise<number>;
+  executeAllQuery<O>(
+    compiledQuery: CompiledQuery<O>,
+    options?: AbortableQueryOptions,
+  ): Promise<readonly O[]>;
+  executeAllCountQuery(
+    compiledQuery: CompiledQuery<number>,
+    options?: AbortableQueryOptions,
+  ): Promise<number>;
+  executeCountQuery(
+    compiledQuery: CompiledQuery<number>,
+    options?: AbortableQueryOptions,
+  ): Promise<number>;
 }
+
+const waitForQuery = async <T>(
+  value: PromiseLike<T>,
+  signal?: AbortSignal,
+): Promise<T> => {
+  signal?.throwIfAborted();
+  const promise = Promise.resolve(value);
+
+  if (!signal) {
+    return promise;
+  }
+
+  return new Promise<T>((resolve, reject) => {
+    const aborted = (): void => reject(signal.reason);
+    signal.addEventListener("abort", aborted, { once: true });
+    promise
+      .then(resolve, reject)
+      .finally(() => signal.removeEventListener("abort", aborted));
+
+    if (signal.aborted) {
+      aborted();
+    }
+  });
+};
 
 const parseJsforceQueryResult = (input: unknown): JsforceQueryResult => {
   const result = v.safeParse(jsforceQueryResultSchema, input);
@@ -85,25 +119,31 @@ class JsforceQueryExecutor implements JsforceExecutor {
 
   async executeQuery<O>(
     compiledQuery: CompiledQuery<O>,
+    options: AbortableQueryOptions = {},
   ): Promise<readonly O[]> {
-    return this.#executePagedQuery(compiledQuery, false);
+    return this.#executePagedQuery(compiledQuery, false, options);
   }
 
   async executeAllQuery<O>(
     compiledQuery: CompiledQuery<O>,
+    options: AbortableQueryOptions = {},
   ): Promise<readonly O[]> {
-    return this.#executePagedQuery(compiledQuery, true);
+    return this.#executePagedQuery(compiledQuery, true, options);
   }
 
   async #executePagedQuery<O>(
     compiledQuery: CompiledQuery<O>,
     scanAll: boolean,
+    options: AbortableQueryOptions,
   ): Promise<readonly O[]> {
     const records: Record<string, unknown>[] = [];
     let result = parseJsforceQueryResult(
-      scanAll
-        ? await this.#connection.query(compiledQuery.soql, { scanAll: true })
-        : await this.#connection.query(compiledQuery.soql),
+      await waitForQuery(
+        scanAll
+          ? this.#connection.query(compiledQuery.soql, { scanAll: true })
+          : this.#connection.query(compiledQuery.soql),
+        options.signal,
+      ),
     );
 
     records.push(...result.records);
@@ -116,7 +156,10 @@ class JsforceQueryExecutor implements JsforceExecutor {
       }
 
       result = parseJsforceQueryResult(
-        await this.#connection.queryMore(result.nextRecordsUrl),
+        await waitForQuery(
+          this.#connection.queryMore(result.nextRecordsUrl),
+          options.signal,
+        ),
       );
       records.push(...result.records);
     }
@@ -126,24 +169,30 @@ class JsforceQueryExecutor implements JsforceExecutor {
 
   async executeCountQuery(
     compiledQuery: CompiledQuery<number>,
+    options: AbortableQueryOptions = {},
   ): Promise<number> {
-    return this.#executeCountQuery(compiledQuery, false);
+    return this.#executeCountQuery(compiledQuery, false, options);
   }
 
   async executeAllCountQuery(
     compiledQuery: CompiledQuery<number>,
+    options: AbortableQueryOptions = {},
   ): Promise<number> {
-    return this.#executeCountQuery(compiledQuery, true);
+    return this.#executeCountQuery(compiledQuery, true, options);
   }
 
   async #executeCountQuery(
     compiledQuery: CompiledQuery<number>,
     scanAll: boolean,
+    options: AbortableQueryOptions,
   ): Promise<number> {
     const result = parseJsforceCountQueryResult(
-      scanAll
-        ? await this.#connection.query(compiledQuery.soql, { scanAll: true })
-        : await this.#connection.query(compiledQuery.soql),
+      await waitForQuery(
+        scanAll
+          ? this.#connection.query(compiledQuery.soql, { scanAll: true })
+          : this.#connection.query(compiledQuery.soql),
+        options.signal,
+      ),
     );
 
     if (!result.done) {

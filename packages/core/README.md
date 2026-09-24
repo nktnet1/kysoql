@@ -339,9 +339,12 @@ and rejects calls, indexing, arithmetic text, and other raw fragments. Structure
 `apexQueryField(...)`. Arbitrary method calls remain outside the safe API. Bind
 expressions are
 intentionally unavailable on ordinary API-executable builders and as
-right-hand values for Kysoql's field-left `INCLUDES` / `EXCLUDES` form. The
-separate Apex-only bind-left `INCLUDES` overload keeps its right
-side as literal strings. Knowledge article Apex queries reject all bind forms.
+right-hand values for Kysoql's field-left `INCLUDES` / `EXCLUDES` form. For
+ordinary API SOQL, `soqlMultiSelectAnd("A", "B")` produces Salesforce's
+semicolon-separated multipicklist AND operand while retaining generated value
+types; arrays keep the comma-separated OR form. The separate Apex-only bind-left
+`INCLUDES` overload keeps its right side as literal strings. Knowledge article
+Apex queries reject all bind forms.
 Relationship subqueries remain bind-free outside the Apex context and continue to
 reject semi-joins.
 
@@ -361,9 +364,12 @@ positions, remain compile-only, and intentionally do not expose record locking.
 
 Pass a `QueryExecutor` to `Kysoql` when queries should execute rather than only
 compile. Normal `.execute()` delegates to `QueryExecutor.executeQuery()` (or the
-dedicated count hook for bare `COUNT()`). Root query builders also expose
-`.executeAll()` for Salesforce QueryAll semantics; executors can opt into that
-capability with `executeAllQuery()` and `executeAllCountQuery()`.
+dedicated count hook for bare `COUNT()`). Record and aggregate builders mirror
+Kysely's `executeTakeFirst()` / `executeTakeFirstOrThrow()` and type-only
+`$castTo`, `$narrowType`, and `$assertType` helpers. Executable builder methods
+accept `{ signal }`. Root query builders also expose `.executeAll()` for Salesforce
+QueryAll semantics; executors can opt into that capability with `executeAllQuery()`
+and `executeAllCountQuery()`.
 `@kysoql/rest` provides the default native adapter with both execution modes,
 root pagination, iteration, and cancellation. `@kysoql/jsforce` remains an optional
 adapter for existing JSforce connections.

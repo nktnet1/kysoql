@@ -124,6 +124,12 @@ import {
   createCountQueryBuilder,
 } from "#/query-builder/count-query-builder";
 import {
+  type ExecuteTakeFirstOrThrowOptions,
+  isNoResultErrorConstructor,
+  NoResultError,
+  type NoResultErrorConstructor,
+} from "#/query-builder/no-result-error";
+import {
   createRelationshipSubqueryBuilder,
   type RelationshipSubqueryBuilder,
 } from "#/query-builder/relationship-subquery-builder";
@@ -136,7 +142,7 @@ import {
 } from "#/query-builder/type-of-builder";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
-import type { QueryExecutor } from "#/query-executor";
+import type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
 import { applyQueryResultAliases } from "#/query-result-mapper";
 import type {
   SalesforceObjectDataCategory,
@@ -147,7 +153,12 @@ import type {
 } from "#/schema";
 import { isSoqlRawBuilder, type SoqlRawBuilder } from "#/soql";
 import { freeze } from "#/util/object-utils";
-import type { ConditionalOutput, Simplify } from "#/util/type-utils";
+import type { KysoqlTypeError } from "#/util/type-error";
+import type {
+  ConditionalOutput,
+  NarrowPartial,
+  Simplify,
+} from "#/util/type-utils";
 
 type ChildObjectForRelationship<
   DB,
@@ -239,6 +250,16 @@ export interface SelectQueryBuilder<
 > {
   $call<T>(func: (qb: this) => T): T;
 
+  $assertType<T extends O>(): O extends T
+    ? SelectQueryBuilder<DB, TB, T, Mode>
+    : KysoqlTypeError<
+        "$assertType() call failed: The type passed in is not equal to the output type of the query."
+      >;
+
+  $castTo<C>(): SelectQueryBuilder<DB, TB, C, Mode>;
+
+  $narrowType<T>(): SelectQueryBuilder<DB, TB, NarrowPartial<O, T>, Mode>;
+
   $if<O2>(
     condition: boolean,
     func: (qb: this) => SelectQueryBuilder<DB, TB, O & O2, Mode>,
@@ -256,9 +277,18 @@ export interface SelectQueryBuilder<
 
   compile(): CompiledQuery<O>;
 
-  execute(): Promise<readonly O[]>;
+  execute(options?: AbortableQueryOptions): Promise<readonly O[]>;
 
-  executeAll(): Promise<readonly O[]>;
+  executeTakeFirst(options?: AbortableQueryOptions): Promise<O | undefined>;
+
+  executeTakeFirstOrThrow(
+    options?:
+      | ExecuteTakeFirstOrThrowOptions
+      | NoResultErrorConstructor
+      | ((node: SelectQueryNode) => Error),
+  ): Promise<O>;
+
+  executeAll(options?: AbortableQueryOptions): Promise<readonly O[]>;
 
   apex(): ApexSelectQueryBuilder<DB, TB, O, Mode, "static">;
 
@@ -499,6 +529,24 @@ class SelectQueryBuilderImpl<
     return func(this);
   }
 
+  $assertType<T extends O>(): O extends T
+    ? SelectQueryBuilder<DB, TB, T, Mode>
+    : KysoqlTypeError<
+        "$assertType() call failed: The type passed in is not equal to the output type of the query."
+      > {
+    return new SelectQueryBuilderImpl({ ...this.#props }) as never;
+  }
+
+  $castTo<C>(): SelectQueryBuilder<DB, TB, C, Mode> {
+    return new SelectQueryBuilderImpl<DB, TB, C, Mode>({ ...this.#props });
+  }
+
+  $narrowType<T>(): SelectQueryBuilder<DB, TB, NarrowPartial<O, T>, Mode> {
+    return new SelectQueryBuilderImpl<DB, TB, NarrowPartial<O, T>, Mode>({
+      ...this.#props,
+    });
+  }
+
   $if<O2>(
     condition: boolean,
     func: (qb: this) => SelectQueryBuilder<DB, TB, O & O2, Mode>,
@@ -550,7 +598,7 @@ class SelectQueryBuilderImpl<
     return this.#props.queryCompiler.compileQuery<O>(this.#props.queryNode);
   }
 
-  async execute(): Promise<readonly O[]> {
+  async execute(options?: AbortableQueryOptions): Promise<readonly O[]> {
     if (!this.#props.queryExecutor) {
       throw new Error(
         "No query executor configured. Pass an executor when creating Kysoql.",
@@ -558,14 +606,49 @@ class SelectQueryBuilderImpl<
     }
 
     const compiled = this.compile();
-    const records = await this.#props.queryExecutor.executeQuery(compiled);
+    const records = await this.#props.queryExecutor.executeQuery(
+      compiled,
+      options,
+    );
     return applyQueryResultAliases<O>(
       compiled.query,
       records as unknown as readonly Record<string, unknown>[],
     );
   }
 
-  async executeAll(): Promise<readonly O[]> {
+  async executeTakeFirst(
+    options?: AbortableQueryOptions,
+  ): Promise<O | undefined> {
+    const [result] = await this.execute(options);
+    return result;
+  }
+
+  async executeTakeFirstOrThrow(
+    errorConstructorOrOptions:
+      | ExecuteTakeFirstOrThrowOptions
+      | NoResultErrorConstructor
+      | ((node: SelectQueryNode) => Error) = {},
+  ): Promise<O> {
+    const isFactory = typeof errorConstructorOrOptions === "function";
+    const errorConstructor = isFactory
+      ? errorConstructorOrOptions
+      : (errorConstructorOrOptions.errorConstructor ?? NoResultError);
+    const executeOptions =
+      isFactory || errorConstructorOrOptions.signal === undefined
+        ? undefined
+        : { signal: errorConstructorOrOptions.signal };
+    const result = await this.executeTakeFirst(executeOptions);
+
+    if (result !== undefined) {
+      return result;
+    }
+
+    throw isNoResultErrorConstructor(errorConstructor)
+      ? new errorConstructor(this.#props.queryNode)
+      : errorConstructor(this.#props.queryNode);
+  }
+
+  async executeAll(options?: AbortableQueryOptions): Promise<readonly O[]> {
     if (!this.#props.queryExecutor) {
       throw new Error(
         "No query executor configured. Pass an executor when creating Kysoql.",
@@ -579,7 +662,10 @@ class SelectQueryBuilderImpl<
     }
 
     const compiled = this.compile();
-    const records = await this.#props.queryExecutor.executeAllQuery(compiled);
+    const records = await this.#props.queryExecutor.executeAllQuery(
+      compiled,
+      options,
+    );
     return applyQueryResultAliases<O>(
       compiled.query,
       records as unknown as readonly Record<string, unknown>[],

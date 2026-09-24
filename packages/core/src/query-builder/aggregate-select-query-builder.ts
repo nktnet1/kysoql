@@ -95,9 +95,15 @@ import {
   createApexAggregateSelectQueryBuilder,
   createDynamicApexAggregateSelectQueryBuilder,
 } from "#/query-builder/apex-aggregate-select-query-builder";
+import {
+  type ExecuteTakeFirstOrThrowOptions,
+  isNoResultErrorConstructor,
+  NoResultError,
+  type NoResultErrorConstructor,
+} from "#/query-builder/no-result-error";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
-import type { QueryExecutor } from "#/query-executor";
+import type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
 import type {
   SalesforceObjectDataCategory,
   SalesforceObjectDataCategoryGroup,
@@ -106,7 +112,8 @@ import type {
 } from "#/schema";
 import { isSoqlRawBuilder, type SoqlRawBuilder } from "#/soql";
 import { freeze } from "#/util/object-utils";
-import type { ConditionalOutput } from "#/util/type-utils";
+import type { KysoqlTypeError } from "#/util/type-error";
+import type { ConditionalOutput, NarrowPartial } from "#/util/type-utils";
 
 type AggregateGroupMode = "none" | "ordinary" | AdvancedGroupByMode;
 type AdvancedGroupFieldCount = 0 | 1 | 2 | 3;
@@ -342,6 +349,37 @@ export interface AggregateSelectQueryBuilder<
 > {
   $call<T>(func: (qb: this) => T): T;
 
+  $assertType<T extends O>(): O extends T
+    ? AggregateSelectQueryBuilder<
+        DB,
+        TB,
+        T,
+        GroupedBy,
+        GroupMode,
+        AdvancedFieldCount
+      >
+    : KysoqlTypeError<
+        "$assertType() call failed: The type passed in is not equal to the output type of the query."
+      >;
+
+  $castTo<C>(): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    C,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
+  $narrowType<T>(): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    NarrowPartial<O, T>,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  >;
+
   $if<O2>(
     condition: boolean,
     func: (
@@ -412,9 +450,18 @@ export interface AggregateSelectQueryBuilder<
 
   compile(): CompiledQuery<O>;
 
-  execute(): Promise<readonly O[]>;
+  execute(options?: AbortableQueryOptions): Promise<readonly O[]>;
 
-  executeAll(): Promise<readonly O[]>;
+  executeTakeFirst(options?: AbortableQueryOptions): Promise<O | undefined>;
+
+  executeTakeFirstOrThrow(
+    options?:
+      | ExecuteTakeFirstOrThrowOptions
+      | NoResultErrorConstructor
+      | ((node: SelectQueryNode) => Error),
+  ): Promise<O>;
+
+  executeAll(options?: AbortableQueryOptions): Promise<readonly O[]>;
 
   apex(): ApexAggregateSelectQueryBuilder<DB, TB, O, "static">;
 
@@ -898,6 +945,57 @@ class AggregateSelectQueryBuilderImpl<
     return func(this);
   }
 
+  $assertType<T extends O>(): O extends T
+    ? AggregateSelectQueryBuilder<
+        DB,
+        TB,
+        T,
+        GroupedBy,
+        GroupMode,
+        AdvancedFieldCount
+      >
+    : KysoqlTypeError<
+        "$assertType() call failed: The type passed in is not equal to the output type of the query."
+      > {
+    return new AggregateSelectQueryBuilderImpl({ ...this.#props }) as never;
+  }
+
+  $castTo<C>(): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    C,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      C,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({ ...this.#props });
+  }
+
+  $narrowType<T>(): AggregateSelectQueryBuilder<
+    DB,
+    TB,
+    NarrowPartial<O, T>,
+    GroupedBy,
+    GroupMode,
+    AdvancedFieldCount
+  > {
+    return new AggregateSelectQueryBuilderImpl<
+      DB,
+      TB,
+      NarrowPartial<O, T>,
+      GroupedBy,
+      GroupMode,
+      AdvancedFieldCount
+    >({ ...this.#props });
+  }
+
   $if<O2>(
     condition: boolean,
     func: (
@@ -1046,17 +1144,49 @@ class AggregateSelectQueryBuilderImpl<
     return this.#props.queryCompiler.compileQuery<O>(this.#props.queryNode);
   }
 
-  async execute(): Promise<readonly O[]> {
+  async execute(options?: AbortableQueryOptions): Promise<readonly O[]> {
     if (!this.#props.queryExecutor) {
       throw new Error(
         "No query executor configured. Pass an executor when creating Kysoql.",
       );
     }
 
-    return this.#props.queryExecutor.executeQuery(this.compile());
+    return this.#props.queryExecutor.executeQuery(this.compile(), options);
   }
 
-  async executeAll(): Promise<readonly O[]> {
+  async executeTakeFirst(
+    options?: AbortableQueryOptions,
+  ): Promise<O | undefined> {
+    const [result] = await this.execute(options);
+    return result;
+  }
+
+  async executeTakeFirstOrThrow(
+    errorConstructorOrOptions:
+      | ExecuteTakeFirstOrThrowOptions
+      | NoResultErrorConstructor
+      | ((node: SelectQueryNode) => Error) = {},
+  ): Promise<O> {
+    const isFactory = typeof errorConstructorOrOptions === "function";
+    const errorConstructor = isFactory
+      ? errorConstructorOrOptions
+      : (errorConstructorOrOptions.errorConstructor ?? NoResultError);
+    const executeOptions =
+      isFactory || errorConstructorOrOptions.signal === undefined
+        ? undefined
+        : { signal: errorConstructorOrOptions.signal };
+    const result = await this.executeTakeFirst(executeOptions);
+
+    if (result !== undefined) {
+      return result;
+    }
+
+    throw isNoResultErrorConstructor(errorConstructor)
+      ? new errorConstructor(this.#props.queryNode)
+      : errorConstructor(this.#props.queryNode);
+  }
+
+  async executeAll(options?: AbortableQueryOptions): Promise<readonly O[]> {
     if (!this.#props.queryExecutor) {
       throw new Error(
         "No query executor configured. Pass an executor when creating Kysoql.",
@@ -1069,7 +1199,7 @@ class AggregateSelectQueryBuilderImpl<
       );
     }
 
-    return this.#props.queryExecutor.executeAllQuery(this.compile());
+    return this.#props.queryExecutor.executeAllQuery(this.compile(), options);
   }
 
   apex(): ApexAggregateSelectQueryBuilder<DB, TB, O, "static"> {

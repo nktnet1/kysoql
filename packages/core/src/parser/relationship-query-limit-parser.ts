@@ -26,6 +26,8 @@ const PARENT_TO_CHILD_RELATIONSHIP_ERROR =
   "SOQL queries can specify no more than 20 parent-to-child relationships.";
 const CHILD_TO_PARENT_RELATIONSHIP_ERROR =
   "SOQL queries can specify no more than 55 child-to-parent relationships.";
+const USING_SCOPE_PARENT_TO_CHILD_ERROR =
+  "SOQL USING SCOPE cannot be used with parent-to-child relationship subqueries.";
 
 const RELATIONSHIP_SUBQUERY_OFFSET_PARENT_LIMIT_ERROR =
   "SOQL relationship-subquery OFFSET pilot requires the immediate parent query to use a literal LIMIT 1.";
@@ -310,6 +312,15 @@ export const validateRelationshipSubqueryOffsets = (
 export const validateRelationshipQueryLimits = (
   query: SelectQueryNode,
 ): void => {
+  if (
+    query.usingScope &&
+    query.selections?.some(
+      (selection) => selection.selection.kind === "RelationshipSubqueryNode",
+    )
+  ) {
+    throw new TypeError(USING_SCOPE_PARENT_TO_CHILD_ERROR);
+  }
+
   const counts: RelationshipCounts = {
     parentToChild: new Set<string>(),
     childToParent: new Set<string>(),

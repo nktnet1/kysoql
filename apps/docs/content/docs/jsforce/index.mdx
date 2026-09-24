@@ -79,9 +79,12 @@ Record and aggregate builders return `Promise<readonly Row[]>`. Bare `COUNT()`
 returns `Promise<number>`. A builder created without an executor still compiles,
 but execution throws rather than silently returning an empty result.
 
-There are no `executeTakeFirst`, `executeTakeFirstOrThrow`, streaming, async
-iterator, or cancellation methods in the current public builder. For one row,
-use `limit(1)`, execute, and handle an empty array explicitly.
+Record and aggregate builders expose Kysely-style `executeTakeFirst()` and
+`executeTakeFirstOrThrow()` helpers. Add `limit(1)` when only one server-side row
+should be fetched. Builder execution also accepts `{ signal }`; the JSforce adapter
+stops waiting and prevents further `queryMore` calls after abort, although JSforce's
+underlying in-flight request is not itself cancelled. Streaming and async iteration
+remain native REST-only adapter features.
 
 ## QueryAll is a different Salesforce mode
 

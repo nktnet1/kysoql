@@ -86,5 +86,5 @@ Salesforce server: org permissions, API versions, enabled features, current
 metadata, query selectivity, and runtime governor limits still apply.
 
 Beta and pilot features are [explicitly separated](/docs/core/advanced/experimental),
-not presented as ordinary production features. There is no arbitrary raw-SOQL
-escape hatch in the public builder API.
+not presented as ordinary production features. `soql.raw()` is the explicit unsafe
+escape hatch for trusted SOQL syntax the builder does not model.

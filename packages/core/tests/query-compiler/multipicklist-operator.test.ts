@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { Kysoql } from "#/kysoql";
+import { soqlMultiSelectAnd } from "#/soql-multi-select-literal";
 import type { SalesforceField, SalesforceObject } from "#/schema";
 
 type MultiPicklistField = SalesforceField<
@@ -33,6 +34,37 @@ describe("INCLUDES and EXCLUDES compilation", () => {
 
     expect(compiled.soql).toBe(
       "SELECT Id FROM Account WHERE Tags__c INCLUDES ('Alpha', 'Beta') AND Tags__c EXCLUDES ('O\\'Reilly')",
+    );
+  });
+
+  it("compiles semicolon-delimited multi-select values as AND semantics", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .where(
+        "Tags__c",
+        "includes",
+        soqlMultiSelectAnd("Alpha", "Beta"),
+      )
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT Id FROM Account WHERE Tags__c INCLUDES ('Alpha;Beta')",
+    );
+  });
+
+  it("compiles mixed multipicklist AND/OR groups", () => {
+    const compiled = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .where("Tags__c", "includes", [
+        soqlMultiSelectAnd("Alpha", "Beta"),
+        "O'Reilly",
+      ])
+      .compile();
+
+    expect(compiled.soql).toBe(
+      "SELECT Id FROM Account WHERE Tags__c INCLUDES ('Alpha;Beta', 'O\\'Reilly')",
     );
   });
 });

@@ -76,8 +76,9 @@ and aliased aggregates remain row-producing queries. No matches return `[]` or
 `0`, respectively. Errors are never converted to empty success.
 
 A compile-only `Kysoql` instance still needs no credentials, but throws on
-execution without an executor. There is no `executeTakeFirst` method; use
-`limit(1)` and handle a possibly empty array.
+execution without an executor. Record and aggregate builders also mirror Kysely's
+`executeTakeFirst()` and `executeTakeFirstOrThrow()` helpers when callers want a
+single returned row. Add `limit(1)` when only one server-side row should be fetched.
 
 ## QueryAll is not pagination
 
@@ -159,9 +160,11 @@ a shared token refresh does not cancel other requests using that refresh. A
 client-level signal cancels all requests on that client, so avoid reusing a
 request-scoped client for unrelated requests. Native abort/timeout reasons propagate.
 
-Core `.execute()` and `.executeAll()` signatures have not changed. Use a
-request-scoped client or call the executor with `.compile()` for per-call options.
-An injected `fetch` must honour `signal` and `redirect: "error"`.
+Core `.execute()`, `.executeAll()`, `executeTakeFirst()`, and
+`executeTakeFirstOrThrow()` accept `{ signal }` and forward it to the configured
+executor. REST-only options such as `timeoutMs` and `batchSize` still require a
+request-scoped client or a direct executor call with `.compile()`. An injected
+`fetch` must honour `signal` and `redirect: "error"`.
 
 ## Relationship subqueries are completed automatically
 

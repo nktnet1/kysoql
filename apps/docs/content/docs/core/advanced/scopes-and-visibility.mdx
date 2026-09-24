@@ -23,7 +23,9 @@ The accepted scope is the selected object's generated `supportedScopes` union.
 `"mine"` is valid only when your generated metadata lists it. Repeated calls
 replace the previous scope; the compiler places `USING SCOPE` immediately after
 `FROM`. Root record, aggregate, and count builders expose it where metadata
-allows. It is not available inside a child subquery.
+allows. It is not available inside a child subquery, and Salesforce does not allow
+a root `USING SCOPE` query to also select a parent-to-child relationship subquery.
+Kysoql rejects that combination during compilation.
 
 ## RecordVisibilityContext
 

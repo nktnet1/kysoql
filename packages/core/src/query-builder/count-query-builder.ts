@@ -42,7 +42,7 @@ import {
 } from "#/query-builder/apex-count-query-builder";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
-import type { QueryExecutor } from "#/query-executor";
+import type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
 import type {
   SalesforceObjectDataCategory,
   SalesforceObjectDataCategoryGroup,
@@ -63,9 +63,9 @@ export interface CountQueryBuilder<DB, TB extends keyof DB> {
 
   compile(): CompiledQuery<number>;
 
-  execute(): Promise<number>;
+  execute(options?: AbortableQueryOptions): Promise<number>;
 
-  executeAll(): Promise<number>;
+  executeAll(options?: AbortableQueryOptions): Promise<number>;
 
   apex(): ApexCountQueryBuilder<DB, TB, "static">;
 
@@ -170,7 +170,7 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
     );
   }
 
-  async execute(): Promise<number> {
+  async execute(options?: AbortableQueryOptions): Promise<number> {
     if (!this.#props.queryExecutor) {
       throw new Error(
         "No query executor configured. Pass an executor when creating Kysoql.",
@@ -183,10 +183,10 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
       );
     }
 
-    return this.#props.queryExecutor.executeCountQuery(this.compile());
+    return this.#props.queryExecutor.executeCountQuery(this.compile(), options);
   }
 
-  async executeAll(): Promise<number> {
+  async executeAll(options?: AbortableQueryOptions): Promise<number> {
     if (!this.#props.queryExecutor) {
       throw new Error(
         "No query executor configured. Pass an executor when creating Kysoql.",
@@ -199,7 +199,10 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
       );
     }
 
-    return this.#props.queryExecutor.executeAllCountQuery(this.compile());
+    return this.#props.queryExecutor.executeAllCountQuery(
+      this.compile(),
+      options,
+    );
   }
 
   apex(): ApexCountQueryBuilder<DB, TB, "static"> {

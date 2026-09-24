@@ -121,6 +121,18 @@ describe("USING SCOPE", () => {
     );
   });
 
+  it("rejects USING SCOPE with parent-to-child relationship subqueries", () => {
+    const query = new Kysoql<FixtureSchema>()
+      .selectFrom("Account")
+      .select("Id")
+      .usingScope("mine")
+      .selectSubquery("Contacts", (contacts) => contacts.select("Id"));
+
+    expect(() => query.compile()).toThrow(
+      "SOQL USING SCOPE cannot be used with parent-to-child relationship subqueries.",
+    );
+  });
+
   it("restricts scopes to Describe-generated values and omits child-query support", () => {
     const db = new Kysoql<FixtureSchema>();
     const account = db.selectFrom("Account");

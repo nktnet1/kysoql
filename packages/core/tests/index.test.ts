@@ -1,6 +1,7 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
 import {
+  type AbortableQueryOptions,
   type AdvancedGroupByMode,
   type AggregatableFieldReference,
   type AggregateFormatFunctionBuilder,
@@ -64,6 +65,7 @@ import {
   type DistanceFunctionNode,
   type DistanceUnit,
   type EqualityComparisonOperator,
+  type ExecuteTakeFirstOrThrowOptions,
   type ExpressionBuilder,
   type ExpressionWrapper,
   type FieldsFunctionNode,
@@ -92,11 +94,16 @@ import {
   type KnowledgeUpdateMode,
   type KnowledgeUpdateNode,
   Kysoql,
+  type KysoqlTypeError,
   type LikeComparisonOperator,
   type LimitNode,
   type LocationFieldReference,
   type MultiSelectComparisonOperator,
+  type NarrowPartial,
+  NoResultError,
+  type NoResultErrorConstructor,
   type NotNode,
+  type NotNull,
   type NumericAggregatableFieldReference,
   type OffsetNode,
   type OperationNode,
@@ -157,6 +164,7 @@ import {
   type SoqlDateLiteral,
   type SoqlDateTimeLiteral,
   type SoqlLikeLiteral,
+  type SoqlMultiSelectAnd,
   type SoqlRawBuilder,
   type SoqlRelativeDateFamily,
   type SoqlRelativeDateLiteral,
@@ -168,6 +176,7 @@ import {
   soqlDate,
   soqlDateTime,
   soqlLikeLiteral,
+  soqlMultiSelectAnd,
   soqlRelativeDate,
   soqlTime,
   type ToLabelFilterComparisonOperator,
@@ -192,6 +201,7 @@ import {
 } from "#/index";
 
 type PublicTypeSurface = {
+  abortableQueryOptions: AbortableQueryOptions;
   aggregateFormatFunctionBuilder: AggregateFormatFunctionBuilder<string>;
   advancedGroupByMode: AdvancedGroupByMode;
   aggregateFunction: AggregateFunction;
@@ -394,6 +404,10 @@ type PublicTypeSurface = {
     "Location__c"
   >;
   multiSelectComparisonOperator: MultiSelectComparisonOperator;
+  narrowPartial: NarrowPartial<{ value: string | null }, { value: NotNull }>;
+  noResultErrorConstructor: NoResultErrorConstructor;
+  executeTakeFirstOrThrowOptions: ExecuteTakeFirstOrThrowOptions;
+  kysoqlTypeError: KysoqlTypeError<"test">;
   notNode: NotNode;
   numericAggregatableFieldReference: NumericAggregatableFieldReference<
     Record<string, never>,
@@ -412,6 +426,7 @@ type PublicTypeSurface = {
   setComparisonOperator: SetComparisonOperator;
   setOptionsNode: SetOptionsNode;
   soqlCurrencyLiteral: SoqlCurrencyLiteral;
+  soqlMultiSelectAnd: SoqlMultiSelectAnd<"A" | "B">;
   queryCompiler: QueryCompiler;
   queryCreatorConfig: QueryCreatorConfig;
   recordVisibilityContextNode: RecordVisibilityContextNode;
@@ -616,6 +631,8 @@ describe("@kysoql/core public API", () => {
     expect(soql.raw).toBeTypeOf("function");
     expect(soql.likeLiteral).toBeTypeOf("function");
     expect(soqlCurrency).toBeTypeOf("function");
+    expect(soqlMultiSelectAnd).toBeTypeOf("function");
+    expect(NoResultError).toBeTypeOf("function");
     expect(soqlDate).toBeTypeOf("function");
     expect(soqlDateTime).toBeTypeOf("function");
     expect(soqlLikeLiteral).toBeTypeOf("function");

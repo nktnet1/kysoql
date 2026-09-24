@@ -39,8 +39,10 @@ an SQL-style parameter array or a runtime row validator.
 | `limit(n)`, `offset(n)` | Replace pagination clauses. [Pagination](/docs/framework/guides/ordering-and-pagination). |
 | `groupBy(fieldOrFieldsOrCallback)` | Enter ordinary grouped mode only before ordinary selections. |
 | `$call(callback)`, `$if(condition, callback)` | Compose while retaining specialised types. [Composition](/docs/framework/guides/composition). |
+| `$castTo<T>()`, `$narrowType<T>()`, `$assertType<T>()` | Kysely-compatible, type-only result helpers; generated SOQL is unchanged. |
 | `clearSelect()`, `clearWhere()`, `clearOrderBy()`, `clearLimit()`, `clearOffset()` | Reset the named clause immutably. |
-| `execute()`, `executeAll()` | Execute ordinary/QueryAll mode with a configured executor. |
+| `execute()`, `executeAll()` | Execute ordinary/QueryAll mode with a configured executor; both accept `{ signal }`. |
+| `executeTakeFirst()`, `executeTakeFirstOrThrow()` | Return the first row or throw `NoResultError`; both accept `{ signal }`, and the throwing form accepts a custom error constructor/factory. |
 | `apex()`, `dynamicApex()` | Switch to a compile-only specialised builder. |
 
 ## Aggregate query
@@ -59,7 +61,7 @@ Enter using aliased aggregate `select` on an unselected root, or ordinary
 | `limit(n)`, `offset(n)` | Grouped pagination; unavailable as valid ungrouped pagination. |
 | `clearGroupBy()` | Remove grouping only when no dependent state remains. |
 | `clearSelect()`, `clearWhere()`, `clearOrderBy()`, `clearLimit()`, `clearOffset()` | Clear applicable clauses. |
-| `$call`, `$if`, `compile`, `toOperationNode`, `execute`, `executeAll`, `apex`, `dynamicApex` | Preserve the aggregate mode/output contracts. |
+| `$call`, `$if`, `$castTo`, `$narrowType`, `$assertType`, `compile`, `toOperationNode`, `execute`, `executeTakeFirst`, `executeTakeFirstOrThrow`, `executeAll`, `apex`, `dynamicApex` | Preserve the aggregate mode/output contracts. |
 
 ## Scalar count query
 
@@ -92,7 +94,8 @@ re-expose the same root methods.
 
 `RelationshipSubqueryBuilder` provides ordinary `select`, supported function
 `select`, `selectFields`, `selectSubquery`, `where`, `orderBy`, `limit`, their
-applicable clearing helpers, `$call`, `$if`, `toOperationNode`, and the explicit
+applicable clearing helpers, `$call`, `$if`, `$castTo`, `$narrowType`,
+`$assertType`, `toOperationNode`, and the explicit
 `pilot.offset`/`pilot.clearOffset` namespace. Apex-created child builders enable
 supported WHERE binds. There is no root `compile`/`execute`, general `offset`,
 aggregate/HAVING, `TYPEOF`, semi-join, or root Salesforce clause surface.
@@ -129,8 +132,11 @@ nullability, context, and grouping-identity requirements.
 ## Top-level value helpers
 
 `soqlDate`, `soqlDateTime`, `soqlTime`, `soqlRelativeDate`, and `soqlCurrency`
-construct [validated literals](/docs/framework/guides/literals). `soql.likeLiteral()`
-escapes `%` and `_` when a LIKE value should be literal rather than a pattern.
+construct [validated literals](/docs/framework/guides/literals).
+`soqlMultiSelectAnd(...)` constructs Salesforce's semicolon-separated
+multi-select-picklist AND operand while retaining generated picklist value types.
+`soql.likeLiteral()` escapes `%` and `_` when a LIKE value should be literal rather
+than a pattern.
 `soql.raw()` is an explicit unsafe escape hatch for trusted SOQL syntax that the
 builder does not model; it emits its fragment verbatim and must never contain
 user-controlled input. `apexBind`, `apexAdd`, `apexSubstring`, and
@@ -139,8 +145,9 @@ user-controlled input. `apexBind`, `apexAdd`, `apexSubstring`, and
 ## Integration contracts
 
 Core exports [schema helpers](/docs/core/reference/schema-types), builder and
-expression types, `CompiledQuery`, `QueryCompiler`, `QueryCompileContext`, and
-`QueryExecutor`. `applyQueryResultAliases(query, records)` is the low-level
+expression types, `CompiledQuery`, `QueryCompiler`, `QueryCompileContext`,
+`QueryExecutor`, `AbortableQueryOptions`, `NoResultError`, and `NotNull`.
+`applyQueryResultAliases(query, records)` is the low-level
 result projection helper used by transport adapters for Kysely-style field
 aliases; normal builder execution applies the same projection automatically. It
 also exposes operation-node **types** for inspection and integration; those type

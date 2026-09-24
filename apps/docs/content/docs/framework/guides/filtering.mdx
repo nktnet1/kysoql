@@ -96,17 +96,31 @@ This example requires a custom multipicklist `Account.Interests__c` whose
 Describe metadata includes active values `Email` and `Events`:
 
 ```ts
+import { soqlMultiSelectAnd } from "@kysoql/core";
 import { db } from "./db";
 
-const query = db
+const eitherValue = db
   .selectFrom("Account")
   .select(["Id", "Interests__c"])
   .where("Interests__c", "includes", ["Email", "Events"]);
+
+const bothValues = db
+  .selectFrom("Account")
+  .select(["Id", "Interests__c"])
+  .where(
+    "Interests__c",
+    "includes",
+    soqlMultiSelectAnd("Email", "Events"),
+  );
 ```
 
-The normal field-left overload accepts active values from the generated schema,
-not arbitrary raw SOQL or right-hand Apex binds. It does not provide a general
-escape hatch for hand-built semicolon expressions. Apex has a separate
+A value array compiles to Salesforce's comma-separated OR form.
+`soqlMultiSelectAnd(...)` compiles the same generated active values into the
+semicolon-separated AND form. It can also appear inside the value array to express
+Salesforce's mixed form, for example `[soqlMultiSelectAnd("Email", "Events"),
+"Other"]` for `(Email AND Events) OR Other`. These helpers stay typed against the
+generated picklist. `soql.raw()` remains the explicit unsafe escape hatch for trusted
+SOQL that the builder does not model. Apex has a separate
 [bind-left INCLUDES form](/docs/core/apex/bindings#bind-left-includes).
 
 ## LIKE patterns and input safety

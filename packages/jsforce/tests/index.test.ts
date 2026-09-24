@@ -274,6 +274,31 @@ describe("createJsforceExecutor", () => {
     ]);
   });
 
+  it("supports Kysely-style abort signals without starting an aborted query", async () => {
+    const query = vi.fn(
+      async (_soql: string): Promise<JsforceQueryResult> => ({
+        done: true,
+        records: [],
+      }),
+    );
+    const queryMore = vi.fn(
+      async (_locator: string): Promise<JsforceQueryResult> => ({
+        done: true,
+        records: [],
+      }),
+    );
+    const controller = new AbortController();
+    controller.abort(new Error("stop"));
+
+    const executor = createJsforceExecutor({ query, queryMore });
+
+    await expect(
+      executor.executeQuery(compiledQuery, { signal: controller.signal }),
+    ).rejects.toThrow("stop");
+    expect(query).not.toHaveBeenCalled();
+    expect(queryMore).not.toHaveBeenCalled();
+  });
+
   it("rejects malformed initial query results", async () => {
     const query = vi.fn(async (_soql: string) => ({
       done: "true",

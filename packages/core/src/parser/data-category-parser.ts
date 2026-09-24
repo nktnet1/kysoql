@@ -103,6 +103,9 @@ const isKnowledgeArticleObject = (objectName: string): boolean => {
   );
 };
 
+const supportsDataCategory = (objectName: string): boolean =>
+  objectName.toLowerCase() === "question" || isKnowledgeArticleObject(objectName);
+
 const isKnowledgeArticleRequiredReference = (node: OperationNode): boolean => {
   if (node.kind !== "ReferenceNode") {
     return false;
@@ -146,6 +149,12 @@ export const validateDataCategoryQuery = (query: SelectQueryNode): void => {
   }
 
   validateWithDataCategory(query.withDataCategory);
+
+  if (!supportsDataCategory(query.from.name)) {
+    throw new TypeError(
+      "SOQL WITH DATA CATEGORY is only supported for Question, KnowledgeArticleVersion, or a specific Knowledge article type (__kav).",
+    );
+  }
 
   if (
     isKnowledgeArticleObject(query.from.name) &&

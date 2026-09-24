@@ -21,10 +21,12 @@ import type { SalesforceSchema } from "./kysoql/salesforce.generated";
 const executor = createJsforceExecutor(connection);
 const db = new Kysoql<SalesforceSchema>({ executor });
 
-const accounts = await db
+const controller = new AbortController();
+const account = await db
   .selectFrom("Account")
   .select(["Id", "Name"])
-  .execute();
+  .limit(1)
+  .executeTakeFirst({ signal: controller.signal });
 
 const accountsIncludingDeleted = await db
   .selectFrom("Account")
@@ -37,4 +39,6 @@ request. Pagination continues through `queryMore`, which Salesforce keeps tied
 to the original QueryAll result set.
 
 The adapter intentionally stays small; authentication and connection lifecycle
-remain the application's responsibility.
+remain the application's responsibility. Abort signals stop waiting for the
+current JSforce promise and prevent additional `queryMore` calls, but do not
+cancel the underlying in-flight JSforce request.

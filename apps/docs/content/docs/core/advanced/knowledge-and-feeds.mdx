@@ -48,9 +48,11 @@ const query = db
 category name or a non-empty list. A query permits at most three conditions,
 with no repeated category group.
 
-These conditions accumulate within one `WITH DATA CATEGORY` clause. They do
-not combine with another filtering `WITH` form. The child-query builder does
-not expose this method. See [schema generation](/docs/codegen/schema-generation#knowledge-categories)
+These conditions accumulate within one `WITH DATA CATEGORY` clause. Salesforce
+restricts this clause to `Question`, `KnowledgeArticleVersion`, and concrete
+Knowledge article-version objects ending in `__kav`; Kysoql validates that root
+shape at compile time. They do not combine with another filtering `WITH` form.
+The child-query builder does not expose this method. See [schema generation](/docs/codegen/schema-generation#knowledge-categories)
 for visibility and REST discovery limitations.
 
 ## Knowledge tracking and view statistics
