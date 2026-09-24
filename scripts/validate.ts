@@ -9,6 +9,7 @@ try {
   requireNode26();
   requireCommand("pnpm");
 
+  runStep("Biome", ["check"]);
   runStep("TypeScript source typecheck", ["typecheck:source"]);
   runStep("TypeScript test typecheck", ["typecheck:test"]);
   runStep("Vitest", ["test"]);

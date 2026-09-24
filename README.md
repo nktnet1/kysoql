@@ -16,8 +16,8 @@ A type-safe, Kysely-inspired SOQL query builder for TypeScript.
 
 ## Requirements
 
-- Node.js 26 (`package.json` enforces the Node 26 range; `.node-version` pins 26.8.2 for version managers that support it).
-- pnpm 12.4.1.
+- Node.js 26 (`package.json` enforces the Node 26 range; `.node-version` pins 26.10.0 for version managers that support it).
+- pnpm 12.5.1.
 
 Activate Node 26 using whichever version manager you prefer, then install:
 
@@ -34,13 +34,21 @@ Run the local validation gate with one command:
 pnpm validate
 ```
 
-It runs source TypeScript typechecking, test TypeScript typechecking, Vitest,
-all package builds, and publish-shape verification in fail-fast order. The
-publish check confirms that every declared package export, declaration file, and
-CLI binary exists in the built output. The validation gate also verifies release
-metadata, package-specific README files, version alignment, and the root
-changelog. Biome is intentionally separate so
-formatting can be run manually when needed:
+It runs Biome, source TypeScript typechecking, test TypeScript typechecking,
+Vitest, all package builds, and publish-shape verification in fail-fast order.
+The publish check confirms that every declared package export, declaration file,
+and CLI binary exists in the built output. The validation gate also verifies
+release metadata, package-specific README files, and version alignment.
+
+Before publishing, run the stricter release gate:
+
+```bash
+pnpm release:check
+```
+
+It includes the full validation gate, rejects the workspace's `0.0.0`
+development placeholder, and requires every publishable package to declare its
+license explicitly. Individual checks remain available when needed:
 
 ```bash
 pnpm check
@@ -53,6 +61,7 @@ pnpm test:coverage
 pnpm build
 pnpm verify:publish
 pnpm verify:release
+pnpm verify:release:publish
 ```
 
 Additional arguments passed to `pnpm check` are forwarded through Turborepo to
@@ -61,6 +70,8 @@ and import-organization fixes across the workspace. `pnpm verify:publish` expect
 the packages to be built first; `pnpm validate` handles that ordering
 automatically. `pnpm verify:release` can run independently because it checks
 manifest/documentation metadata rather than build artifacts.
+`pnpm verify:release:publish` adds the non-placeholder version requirement used
+by `pnpm release:check`.
 
 `pnpm typecheck:source` first runs the dependency-free task-configuration
 regressions (`pnpm test:tasks`). Turbo then owns the dependency builds: package

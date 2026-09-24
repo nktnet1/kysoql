@@ -8,8 +8,12 @@ metadata from Salesforce's DLO (`__dll`) and DMO (`__dlm`) API-name suffixes.
 ## Install
 
 ```bash
+pnpm add @kysoql/auth @kysoql/core
 pnpm add -D @kysoql/codegen
 ```
+
+`@kysoql/auth` is used by the configuration example below, while generated
+schema files import the schema helper types from `@kysoql/core`.
 
 Create `kysoql.config.ts` beside your application's `package.json`:
 

@@ -256,6 +256,11 @@ const verifyBinTargets = async (
     }
 
     await assertExists(packageName, packageDir, entry);
+
+    const source = await readFile(resolvePackageTarget(packageDir, entry), "utf8");
+    if (!source.startsWith("#!/usr/bin/env node\n")) {
+      fail(`${packageName}.bin target ${entry} must start with a Node shebang.`);
+    }
   }
 };
 

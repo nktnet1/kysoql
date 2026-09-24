@@ -41,9 +41,9 @@ import {
   createDynamicApexCountQueryBuilder,
 } from "#/query-builder/apex-count-query-builder";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
-import type { QueryId } from "#/query-id";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
+import type { QueryId } from "#/query-id";
 import type {
   SalesforceObjectDataCategory,
   SalesforceObjectDataCategoryGroup,

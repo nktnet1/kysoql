@@ -94,6 +94,7 @@ const verifyPackage = async (
   workspacePath: string,
   rootVersion: string,
   rootNodeRange: string,
+  publishReady: boolean,
 ): Promise<void> => {
   const packageDir = resolve(ROOT_DIR, workspacePath);
   const manifest = await readManifest(resolve(packageDir, "package.json"));
@@ -115,6 +116,10 @@ const verifyPackage = async (
   }
 
   requireString(manifest, "description", packageName);
+
+  if (publishReady) {
+    requireString(manifest, "license", packageName);
+  }
 
   if (manifest.sideEffects !== false) {
     fail(`${packageName}.sideEffects must be false.`);
@@ -164,6 +169,13 @@ const verifyPackage = async (
 
 const rootManifest = await readManifest(resolve(ROOT_DIR, "package.json"));
 const rootVersion = requireString(rootManifest, "version", "workspace");
+const publishReady = process.argv.includes("--publish-ready");
+
+if (publishReady && rootVersion === "0.0.0") {
+  fail(
+    'workspace.version must be changed from the development placeholder "0.0.0" before publishing.',
+  );
+}
 
 if (rootManifest.private !== true) {
   fail("workspace root must remain private.");
@@ -173,5 +185,10 @@ const rootEngines = requireObject(rootManifest, "engines", "workspace");
 const rootNodeRange = requireString(rootEngines, "node", "workspace.engines");
 
 for (const workspacePath of PUBLISHABLE_PACKAGES) {
-  await verifyPackage(workspacePath, rootVersion, rootNodeRange);
+  await verifyPackage(
+    workspacePath,
+    rootVersion,
+    rootNodeRange,
+    publishReady,
+  );
 }

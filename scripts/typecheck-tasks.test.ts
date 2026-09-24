@@ -192,6 +192,12 @@ for (const name of [
   });
 }
 
+it("keeps JSforce as a development-only compatibility fixture", () => {
+  const jsforce = manifests.get("@kysoql/jsforce");
+  expect(jsforce?.dependencies?.jsforce).toBeUndefined();
+  expect(jsforce?.devDependencies?.jsforce).toBe("3.10.25");
+});
+
 for (const [consumer, dependency] of [
   ["@kysoql/rest", "@kysoql/core"],
   ["@kysoql/codegen", "@kysoql/auth"],

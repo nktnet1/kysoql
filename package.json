@@ -20,6 +20,7 @@
     "typecheck:source": "pnpm test:tasks && tsc -p tsconfig.scripts.json && turbo run typecheck:source",
     "typecheck:test": "tsc -p tsconfig.json && tsc -p scripts/tsconfig.json && tsc -p test/tsconfig.json && turbo run typecheck:test",
     "validate": "node scripts/validate.ts",
+    "release:check": "pnpm validate && pnpm verify:release:publish",
     "clean": "turbo run clean && rm -rf node_modules",
     "salesforce:setup": "node scripts/setup-salesforce-test-org.ts",
     "salesforce:apex-binds": "node scripts/run-salesforce-apex-bind-smoke.ts",
@@ -27,7 +28,8 @@
     "salesforce:e2e": "node scripts/run-salesforce-generated-e2e.ts",
     "salesforce:schema": "node scripts/generate-salesforce-schema.ts",
     "verify:publish": "node scripts/verify-publish-shape.ts",
-    "verify:release": "node scripts/verify-release-metadata.ts"
+    "verify:release": "node scripts/verify-release-metadata.ts",
+    "verify:release:publish": "node scripts/verify-release-metadata.ts --publish-ready"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

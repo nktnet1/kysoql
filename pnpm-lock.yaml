@@ -313,12 +313,13 @@ importers:
       '@kysoql/core':
         specifier: workspace:*
         version: link:../core
-      jsforce:
-        specifier: 3.10.25
-        version: 3.10.25(@types/node@26.6.2)
       valibot:
         specifier: 1.5.0
         version: 1.5.0(typescript@6.0.3)
+    devDependencies:
+      jsforce:
+        specifier: 3.10.25
+        version: 3.10.25(@types/node@26.6.2)
 
   packages/rest:
     dependencies:

@@ -7,8 +7,8 @@ indexes. It does not connect to Salesforce or require Salesforce credentials.
 
 ## Run locally
 
-Use the repository's declared toolchain: Node.js `26.8.2` (`.node-version`) and
-pnpm `12.4.1` (`packageManager`). From the repository root:
+Use the repository's declared toolchain: Node.js `26.10.0` (`.node-version`) and
+pnpm `12.5.1` (`packageManager`). From the repository root:
 
 ```bash
 pnpm install --frozen-lockfile
