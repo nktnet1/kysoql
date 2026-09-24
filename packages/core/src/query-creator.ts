@@ -7,6 +7,7 @@ import {
 import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { KysoqlPlugin } from "#/plugin";
+import { transformQueryWithPlugins } from "#/plugin-query-transformer";
 import { PluginQueryCompiler } from "#/plugin-query-compiler";
 import { createPluginQueryExecutor } from "#/plugin-query-executor";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
@@ -84,6 +85,12 @@ export class QueryCreator<DB> {
       queryCompiler: this.#queryCompiler,
       queryExecutor: this.#queryExecutor,
       queryNode: SelectQueryNode.createFrom(SObjectNode.create(from)),
+      ...(this.#plugins.length > 0
+        ? {
+            queryNodeTransformer: (query: SelectQueryNode) =>
+              transformQueryWithPlugins(query, this.#plugins),
+          }
+        : {}),
     });
   }
 

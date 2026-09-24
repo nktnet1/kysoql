@@ -21,7 +21,7 @@ name in this table does not mean every argument is valid for every object.
 | `selectFrom(object)` | Starts an unselected root builder for a schema object. |
 | `compile()` | Returns `CompiledQuery<O>` with `soql` and `query`. |
 | `executeQuery(compiledQuery, options?)` | Executes a previously compiled query with the configured executor; preserves result aliases and accepts `{ signal }`. Bare `COUNT()` queries return `number`. |
-| `toOperationNode()` | Returns the current operation tree without executing. |
+| `toOperationNode()` | Returns the current plugin-transformed operation tree without executing. |
 
 A `QueryCompiler` instance can also be passed directly to the constructor for
 compile-only compatibility. Prefer the config object when combining an executor
@@ -36,8 +36,8 @@ const compiled = db.selectFrom("Account").select(["Id", "Name"]).compile();
 const rows = await db.executeQuery(compiled);
 ```
 
-Plugins can transform the immutable query tree before compilation and optionally
-transform executor results. Hooks run in registration order. A plugin attached
+Plugins can transform the immutable query tree before compilation and when
+`toOperationNode()` exposes it, and can optionally transform executor results. Hooks run in registration order. A plugin attached
 with `withPlugin()` also applies to builders created from the returned instance;
 `withoutPlugins()` removes the pipeline without mutating the original instance.
 Result hooks receive transport results before Kysoql applies field-alias projection.

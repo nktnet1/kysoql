@@ -2183,7 +2183,10 @@ class AggregateSelectQueryBuilderImpl<
   }
 
   toOperationNode(): SelectQueryNode {
-    return this.#props.queryNode;
+    return (
+      this.#props.queryNodeTransformer?.(this.#props.queryNode) ??
+      this.#props.queryNode
+    );
   }
 }
 
@@ -2191,6 +2194,7 @@ export interface AggregateSelectQueryBuilderProps {
   readonly queryCompiler: QueryCompiler;
   readonly queryExecutor: QueryExecutor | undefined;
   readonly queryNode: SelectQueryNode;
+  readonly queryNodeTransformer?: (query: SelectQueryNode) => SelectQueryNode;
 }
 
 export function createAggregateSelectQueryBuilder<DB, TB extends keyof DB, O>(

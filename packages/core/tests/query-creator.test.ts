@@ -69,6 +69,21 @@ describe("QueryCreator plugins", () => {
     },
   });
 
+  it("applies query plugins to toOperationNode without changing compile semantics", () => {
+    const calls: string[] = [];
+    const db = new QueryCreator<FixtureSchema>().withPlugin(
+      limitPlugin(7, calls),
+    );
+    const query = db.selectFrom("Account").select("Id");
+
+    expect(query.toOperationNode().limit?.limit).toBe(7);
+    expect(calls).toEqual(["query:7"]);
+
+    calls.length = 0;
+    expect(query.compile().soql).toContain("LIMIT 7");
+    expect(calls).toEqual(["query:7"]);
+  });
+
   it("applies query and result plugins in registration order", async () => {
     const calls: string[] = [];
     const executor = new RecordingExecutor();

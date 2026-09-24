@@ -455,7 +455,10 @@ class ApexSelectQueryBuilderImpl<
   }
 
   toOperationNode(): SelectQueryNode {
-    return this.#props.queryNode;
+    return (
+      this.#props.queryNodeTransformer?.(this.#props.queryNode) ??
+      this.#props.queryNode
+    );
   }
 }
 

@@ -33,6 +33,7 @@ import { freeze } from "#/util/object-utils";
 
 interface ApexCountQueryBuilderProps {
   readonly queryNode: SelectQueryNode;
+  readonly queryNodeTransformer?: (query: SelectQueryNode) => SelectQueryNode;
   readonly queryCompiler: QueryCompiler;
   readonly apexContext: ApexQueryContext;
 }
@@ -242,7 +243,10 @@ class ApexCountQueryBuilderImpl<
   }
 
   toOperationNode(): SelectQueryNode {
-    return this.#props.queryNode;
+    return (
+      this.#props.queryNodeTransformer?.(this.#props.queryNode) ??
+      this.#props.queryNode
+    );
   }
 }
 

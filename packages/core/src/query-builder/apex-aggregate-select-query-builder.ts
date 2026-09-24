@@ -35,6 +35,7 @@ import { freeze } from "#/util/object-utils";
 
 interface ApexAggregateSelectQueryBuilderProps {
   readonly queryNode: SelectQueryNode;
+  readonly queryNodeTransformer?: (query: SelectQueryNode) => SelectQueryNode;
   readonly queryCompiler: QueryCompiler;
   readonly apexContext: ApexQueryContext;
 }
@@ -292,7 +293,10 @@ class ApexAggregateSelectQueryBuilderImpl<
   }
 
   toOperationNode(): SelectQueryNode {
-    return this.#props.queryNode;
+    return (
+      this.#props.queryNodeTransformer?.(this.#props.queryNode) ??
+      this.#props.queryNode
+    );
   }
 }
 

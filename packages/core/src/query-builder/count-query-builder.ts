@@ -382,7 +382,10 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
   }
 
   toOperationNode(): SelectQueryNode {
-    return this.#props.queryNode;
+    return (
+      this.#props.queryNodeTransformer?.(this.#props.queryNode) ??
+      this.#props.queryNode
+    );
   }
 }
 
@@ -390,6 +393,7 @@ export interface CountQueryBuilderProps {
   readonly queryCompiler: QueryCompiler;
   readonly queryExecutor: QueryExecutor | undefined;
   readonly queryNode: SelectQueryNode;
+  readonly queryNodeTransformer?: (query: SelectQueryNode) => SelectQueryNode;
 }
 
 export function createCountQueryBuilder<DB, TB extends keyof DB>(

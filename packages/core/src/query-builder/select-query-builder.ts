@@ -1259,7 +1259,10 @@ class SelectQueryBuilderImpl<
   }
 
   toOperationNode(): SelectQueryNode {
-    return this.#props.queryNode;
+    return (
+      this.#props.queryNodeTransformer?.(this.#props.queryNode) ??
+      this.#props.queryNode
+    );
   }
 }
 
@@ -1267,6 +1270,7 @@ export interface SelectQueryBuilderProps {
   readonly queryCompiler: QueryCompiler;
   readonly queryExecutor: QueryExecutor | undefined;
   readonly queryNode: SelectQueryNode;
+  readonly queryNodeTransformer?: (query: SelectQueryNode) => SelectQueryNode;
 }
 
 export function createSelectQueryBuilder<
