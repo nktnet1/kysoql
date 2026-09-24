@@ -41,18 +41,20 @@ Plugins can transform the immutable query tree before compilation and when
 with `withPlugin()` also applies to builders created from the returned instance;
 `withoutPlugins()` removes the pipeline without mutating the original instance.
 Result hooks receive transport results before Kysoql applies field-alias projection.
+Each compile/execution lifecycle also receives a stable `queryId`, allowing plugins
+to correlate query and result hooks even when multiple queries execute concurrently.
 
 ```ts
 import type { KysoqlPlugin } from "@kysoql/core";
 import { db } from "./db";
 
 const tracePlugin: KysoqlPlugin = {
-  transformQuery({ query }) {
-    console.debug("Compiling", query.from.name);
+  transformQuery({ queryId, query }) {
+    console.debug(queryId.queryId, "Compiling", query.from.name);
     return query;
   },
-  transformResult({ result }) {
-    console.debug("Executed query");
+  transformResult({ queryId, result }) {
+    console.debug(queryId.queryId, "Executed query");
     return result;
   },
 };
@@ -183,7 +185,7 @@ user-controlled input. `apexBind`, `apexAdd`, `apexSubstring`, and
 
 Core exports [schema helpers](/docs/core/reference/schema-types), builder and
 expression types, `CompiledQuery`, `QueryCompiler`, `QueryCompileContext`,
-`QueryExecutor`, `KysoqlPlugin`, `PluginTransformQueryArgs`,
+`QueryExecutor`, `KysoqlPlugin`, `QueryId`, `PluginTransformQueryArgs`,
 `PluginTransformResultArgs`, `AbortableQueryOptions`, `QueryAbortSignal`,
 `NoResultError`, and `NotNull`.
 `applyQueryResultAliases(query, records)` is the low-level

@@ -219,6 +219,7 @@ export type {
   PluginTransformResultArgs,
 } from "#/plugin";
 export type { CompiledQuery } from "#/query-compiler/compiled-query";
+export type { QueryId } from "#/query-id";
 export { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
 export type {
   QueryCompileContext,

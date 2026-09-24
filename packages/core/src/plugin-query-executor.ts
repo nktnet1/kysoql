@@ -1,4 +1,5 @@
 import type { KysoqlPlugin } from "#/plugin";
+import { getOrCreateCompiledQueryId } from "#/plugin-query-correlation";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
 
@@ -8,10 +9,12 @@ const transformResult = async <Result>(
   initialResult: Result,
 ): Promise<Result> => {
   let result = initialResult;
+  const queryId = getOrCreateCompiledQueryId(compiledQuery);
 
   for (const plugin of plugins) {
     if (plugin.transformResult) {
       result = await plugin.transformResult({
+        queryId,
         query: compiledQuery,
         result,
       });

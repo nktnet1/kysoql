@@ -5,6 +5,7 @@ import { LimitNode } from "#/operation-node/limit-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
 import type { KysoqlPlugin, PluginTransformResultArgs } from "#/plugin";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import type { QueryId } from "#/query-id";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import { QueryCreator } from "#/query-creator";
 import type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
@@ -105,6 +106,36 @@ describe("QueryCreator plugins", () => {
       "result:10",
       "result:5",
     ]);
+  });
+
+  it("correlates query and result plugin hooks with a stable query id", async () => {
+    const queryIds: QueryId[] = [];
+    const resultIds: QueryId[] = [];
+    const plugin: KysoqlPlugin = {
+      transformQuery({ queryId, query }) {
+        queryIds.push(queryId);
+        return query;
+      },
+      transformResult<Result>(
+        { queryId, result }: PluginTransformResultArgs<Result>,
+      ): Result {
+        resultIds.push(queryId);
+        return result;
+      },
+    };
+    const db = new QueryCreator<FixtureSchema>({
+      executor: new RecordingExecutor(),
+    }).withPlugin(plugin);
+
+    const first = db.selectFrom("Account").select("Id").compile();
+    const second = db.selectFrom("Account").select("Id").compile();
+
+    await Promise.all([db.executeQuery(first), db.executeQuery(second)]);
+
+    expect(queryIds).toHaveLength(2);
+    expect(queryIds[0]).not.toBe(queryIds[1]);
+    expect(resultIds).toEqual(queryIds);
+    expect(resultIds[0]?.queryId).toMatch(/^kysoql-\d+$/);
   });
 
   it("preserves the concrete Kysoql creator type", () => {
