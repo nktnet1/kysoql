@@ -17,12 +17,21 @@ name in this table does not mean every argument is valid for every object.
 | `QueryCreatorConfig.queryCompiler?` | Optional `QueryCompiler`; defaults to `DefaultQueryCompiler`. |
 | `selectFrom(object)` | Starts an unselected root builder for a schema object. |
 | `compile()` | Returns `CompiledQuery<O>` with `soql` and `query`. |
+| `executeQuery(compiledQuery, options?)` | Executes a previously compiled query with the configured executor; preserves result aliases and accepts `{ signal }`. Bare `COUNT()` queries return `number`. |
 | `toOperationNode()` | Returns the current operation tree without executing. |
 
 A `QueryCompiler` instance can also be passed directly to the constructor for
 compile-only compatibility. Prefer the config object when combining an executor
 and compiler. `CompiledQuery` has a type-only output carrier; it does not contain
-an SQL-style parameter array or a runtime row validator.
+an SQL-style parameter array or a runtime row validator. Use `executeQuery` when
+building, compiling, and executing need to happen in separate layers:
+
+```ts
+import { db } from "./db";
+
+const compiled = db.selectFrom("Account").select(["Id", "Name"]).compile();
+const rows = await db.executeQuery(compiled);
+```
 
 ## Root record query
 
