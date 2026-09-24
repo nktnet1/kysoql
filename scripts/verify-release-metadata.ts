@@ -14,6 +14,10 @@ const REQUIRED_KEYWORDS: readonly string[] = [
   "soql",
   "typescript",
 ];
+const REPOSITORY_TYPE = "git";
+const REPOSITORY_URL = "git+https://github.com/nktnet1/kysoql.git";
+const BUGS_URL = "https://github.com/nktnet1/kysoql/issues";
+const HOMEPAGE_URL = "https://github.com/nktnet1/kysoql#readme";
 type JsonObject = Readonly<Record<string, unknown>>;
 
 const isJsonObject = (value: unknown): value is JsonObject =>
@@ -90,6 +94,52 @@ const requireStringArray = (
   return value;
 };
 
+const verifyProjectLinks = (
+  manifest: JsonObject,
+  context: string,
+  workspacePath?: string,
+): void => {
+  const repository = requireObject(manifest, "repository", context);
+  const repositoryType = requireString(
+    repository,
+    "type",
+    `${context}.repository`,
+  );
+  const repositoryUrl = requireString(
+    repository,
+    "url",
+    `${context}.repository`,
+  );
+
+  if (repositoryType !== REPOSITORY_TYPE || repositoryUrl !== REPOSITORY_URL) {
+    fail(
+      `${context}.repository must point to ${REPOSITORY_URL} using type ${REPOSITORY_TYPE}.`,
+    );
+  }
+
+  if (workspacePath !== undefined) {
+    const directory = requireString(
+      repository,
+      "directory",
+      `${context}.repository`,
+    );
+    if (directory !== workspacePath) {
+      fail(
+        `${context}.repository.directory must be ${workspacePath}; found ${directory}.`,
+      );
+    }
+  }
+
+  const bugs = requireObject(manifest, "bugs", context);
+  if (requireString(bugs, "url", `${context}.bugs`) !== BUGS_URL) {
+    fail(`${context}.bugs.url must be ${BUGS_URL}.`);
+  }
+
+  if (requireString(manifest, "homepage", context) !== HOMEPAGE_URL) {
+    fail(`${context}.homepage must be ${HOMEPAGE_URL}.`);
+  }
+};
+
 const verifyPackage = async (
   workspacePath: string,
   rootVersion: string,
@@ -116,6 +166,7 @@ const verifyPackage = async (
   }
 
   requireString(manifest, "description", packageName);
+  verifyProjectLinks(manifest, packageName, workspacePath);
 
   if (publishReady) {
     requireString(manifest, "license", packageName);
@@ -163,6 +214,11 @@ const verifyPackage = async (
   if (!readme.startsWith(`# ${packageName}\n`)) {
     fail(`${packageName}/README.md must start with "# ${packageName}".`);
   }
+  if (/\]\(\.\.\//u.test(readme)) {
+    fail(
+      `${packageName}/README.md must not contain repository-relative parent links that break on npm.`,
+    );
+  }
 
   console.log(`verified release metadata for ${packageName}`);
 };
@@ -180,6 +236,7 @@ if (publishReady && rootVersion === "0.0.0") {
 if (rootManifest.private !== true) {
   fail("workspace root must remain private.");
 }
+verifyProjectLinks(rootManifest, "workspace");
 
 const rootEngines = requireObject(rootManifest, "engines", "workspace");
 const rootNodeRange = requireString(rootEngines, "node", "workspace.engines");

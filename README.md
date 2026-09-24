@@ -46,7 +46,8 @@ It runs Biome, source TypeScript typechecking, test TypeScript typechecking,
 Vitest, all package builds, and publish-shape verification in fail-fast order.
 The publish check confirms that every declared package export, declaration file,
 and CLI binary exists in the built output. The validation gate also verifies
-release metadata, package-specific README files, and version alignment.
+release metadata, repository links, package-specific README files, and version
+alignment.
 
 Before publishing, run the stricter release gate:
 

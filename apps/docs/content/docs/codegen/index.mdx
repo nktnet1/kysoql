@@ -20,6 +20,7 @@ dependency:
   <Tab value="npm">
 
 ```bash
+npm install @kysoql/core
 npm install --save-dev @kysoql/codegen
 ```
 
@@ -27,6 +28,7 @@ npm install --save-dev @kysoql/codegen
   <Tab value="yarn">
 
 ```bash
+yarn add @kysoql/core
 yarn add --dev @kysoql/codegen
 ```
 
@@ -34,6 +36,7 @@ yarn add --dev @kysoql/codegen
   <Tab value="pnpm">
 
 ```bash
+pnpm add @kysoql/core
 pnpm add -D @kysoql/codegen
 ```
 
@@ -41,12 +44,15 @@ pnpm add -D @kysoql/codegen
   <Tab value="bun">
 
 ```bash
+bun add @kysoql/core
 bun add --dev @kysoql/codegen
 ```
 
   </Tab>
 </Tabs>
 
+Generated schema modules import schema helper types from `@kysoql/core`, so keep
+Core as a regular application dependency even when Codegen itself is dev-only.
 If application runtime code imports the programmatic codegen APIs, install
 `@kysoql/codegen` as a regular dependency instead.
 

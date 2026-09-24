@@ -13,7 +13,7 @@ pnpm add -D @kysoql/codegen
 ```
 
 Requires Node 26 and ESM. Generate your schema first; see
-[codegen](../codegen/README.md).
+[codegen](https://github.com/nktnet1/kysoql/blob/main/packages/codegen/README.md).
 
 ```ts
 import { SalesforceAuth } from "@kysoql/auth";
@@ -147,6 +147,6 @@ application setup and credential storage remain outside this package's scope; us
 `@kysoql/auth` for authentication orchestration and refresh-token persistence. Runtime options do not read CLI configuration or environment
 variables automatically.
 
-Full guides: [execution](../../apps/docs/content/docs/rest/execution.mdx),
-[authentication](../../apps/docs/content/docs/rest/authentication.mdx), and
-[security](../../apps/docs/content/docs/core/reference/security.mdx).
+Full guides: [execution](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/rest/execution.mdx),
+[authentication](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/rest/authentication.mdx), and
+[security](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/core/reference/security.mdx).

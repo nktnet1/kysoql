@@ -52,5 +52,14 @@
   },
   "devDependencies": {
     "jsforce": "3.10.25"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nktnet1/kysoql.git",
+    "directory": "packages/jsforce"
+  },
+  "bugs": {
+    "url": "https://github.com/nktnet1/kysoql/issues"
+  },
+  "homepage": "https://github.com/nktnet1/kysoql#readme"
 }

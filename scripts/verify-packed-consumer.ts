@@ -147,6 +147,39 @@ const assertNoWorkspaceDependencies = (
   }
 };
 
+const assertInternalDependencyVersions = (
+  manifest: JsonObject,
+  packageName: string,
+  version: string,
+): void => {
+  for (const section of ["dependencies", "optionalDependencies"] as const) {
+    const value = manifest[section];
+    if (value === undefined) {
+      continue;
+    }
+    const dependencies = isJsonObject(value)
+      ? value
+      : fail(`${packageName}.${section} must be an object when present.`);
+
+    for (const [dependencyName, specifier] of Object.entries(dependencies)) {
+      if (!dependencyName.startsWith("@kysoql/")) {
+        continue;
+      }
+      const dependencySpecifier =
+        typeof specifier === "string"
+          ? specifier
+          : fail(
+              `${packageName}.${section}.${dependencyName} must be a string.`,
+            );
+      if (dependencySpecifier !== version) {
+        fail(
+          `${packageName}.${section}.${dependencyName} must pack as ${version}; found ${dependencySpecifier}.`,
+        );
+      }
+    }
+  }
+};
+
 const assertPackageShape = async (
   consumerDir: string,
   packedPackage: PackedPackage,
@@ -174,6 +207,20 @@ const assertPackageShape = async (
   }
 
   assertNoWorkspaceDependencies(manifest, packedPackage.name);
+  assertInternalDependencyVersions(manifest, packedPackage.name, version);
+
+  const repository = requireObject(manifest, "repository", packedPackage.name);
+  const repositoryDirectory = requireString(
+    repository,
+    "directory",
+    `${packedPackage.name}.repository`,
+  );
+  if (repositoryDirectory !== packedPackage.workspacePath) {
+    fail(
+      `${packedPackage.name}.repository.directory changed while packing.`,
+    );
+  }
+
   const exportsField = requireObject(manifest, "exports", packedPackage.name);
   const rootExport = exportsField["."];
   if (rootExport === undefined) {
@@ -191,6 +238,7 @@ const assertPackageShape = async (
   }
 
   await Promise.all([
+    access(resolve(packageDir, "README.md")),
     access(resolve(packageDir, "dist/index.mjs")),
     access(resolve(packageDir, "dist/index.d.mts")),
   ]);
