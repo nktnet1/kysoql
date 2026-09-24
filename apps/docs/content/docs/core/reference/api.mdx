@@ -15,6 +15,9 @@ name in this table does not mean every argument is valid for every object.
 | `new QueryCreator<DB>(config?)` | Same query-creation contract. |
 | `QueryCreatorConfig.executor?` | Optional `QueryExecutor` for API execution. |
 | `QueryCreatorConfig.queryCompiler?` | Optional `QueryCompiler`; defaults to `DefaultQueryCompiler`. |
+| `QueryCreatorConfig.plugins?` | Optional ordered `KysoqlPlugin` list. |
+| `withPlugin(plugin)` | Returns a new creator with the plugin appended; the original creator is unchanged. |
+| `withoutPlugins()` | Returns an equivalent creator with the plugin pipeline removed. |
 | `selectFrom(object)` | Starts an unselected root builder for a schema object. |
 | `compile()` | Returns `CompiledQuery<O>` with `soql` and `query`. |
 | `executeQuery(compiledQuery, options?)` | Executes a previously compiled query with the configured executor; preserves result aliases and accepts `{ signal }`. Bare `COUNT()` queries return `number`. |
@@ -31,6 +34,31 @@ import { db } from "./db";
 
 const compiled = db.selectFrom("Account").select(["Id", "Name"]).compile();
 const rows = await db.executeQuery(compiled);
+```
+
+Plugins can transform the immutable query tree before compilation and optionally
+transform executor results. Hooks run in registration order. A plugin attached
+with `withPlugin()` also applies to builders created from the returned instance;
+`withoutPlugins()` removes the pipeline without mutating the original instance.
+Result hooks receive transport results before Kysoql applies field-alias projection.
+
+```ts
+import type { KysoqlPlugin } from "@kysoql/core";
+import { db } from "./db";
+
+const tracePlugin: KysoqlPlugin = {
+  transformQuery({ query }) {
+    console.debug("Compiling", query.from.name);
+    return query;
+  },
+  transformResult({ result }) {
+    console.debug("Executed query");
+    return result;
+  },
+};
+
+const tracedDb = db.withPlugin(tracePlugin);
+const accounts = await tracedDb.selectFrom("Account").select("Id").execute();
 ```
 
 ## Root record query
@@ -155,7 +183,9 @@ user-controlled input. `apexBind`, `apexAdd`, `apexSubstring`, and
 
 Core exports [schema helpers](/docs/core/reference/schema-types), builder and
 expression types, `CompiledQuery`, `QueryCompiler`, `QueryCompileContext`,
-`QueryExecutor`, `AbortableQueryOptions`, `QueryAbortSignal`, `NoResultError`, and `NotNull`.
+`QueryExecutor`, `KysoqlPlugin`, `PluginTransformQueryArgs`,
+`PluginTransformResultArgs`, `AbortableQueryOptions`, `QueryAbortSignal`,
+`NoResultError`, and `NotNull`.
 `applyQueryResultAliases(query, records)` is the low-level
 result projection helper used by transport adapters for Kysely-style field
 aliases; normal builder execution applies the same projection automatically. It

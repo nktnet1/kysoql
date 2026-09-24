@@ -6,6 +6,9 @@ import {
 } from "#/query-builder/select-query-builder";
 import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import type { KysoqlPlugin } from "#/plugin";
+import { PluginQueryCompiler } from "#/plugin-query-compiler";
+import { createPluginQueryExecutor } from "#/plugin-query-executor";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
 import { applyQueryResultAliases } from "#/query-result-mapper";
@@ -15,6 +18,7 @@ export interface QueryCreatorConfig {
   readonly executor?: QueryExecutor;
   readonly queryCompiler?: QueryCompiler;
   readonly schemaMetadata?: SalesforceSchemaMetadata;
+  readonly plugins?: readonly KysoqlPlugin[];
 }
 
 const isQueryCompiler = (
@@ -22,6 +26,9 @@ const isQueryCompiler = (
 ): value is QueryCompiler => "compileQuery" in value;
 
 export class QueryCreator<DB> {
+  readonly #baseQueryCompiler: QueryCompiler;
+  readonly #baseQueryExecutor: QueryExecutor | undefined;
+  readonly #plugins: readonly KysoqlPlugin[];
   readonly #queryCompiler: QueryCompiler;
   readonly #queryExecutor: QueryExecutor | undefined;
 
@@ -30,9 +37,44 @@ export class QueryCreator<DB> {
       ? { queryCompiler: configOrQueryCompiler }
       : configOrQueryCompiler;
 
-    this.#queryCompiler =
+    this.#baseQueryCompiler =
       config.queryCompiler ?? new DefaultQueryCompiler(config.schemaMetadata);
-    this.#queryExecutor = config.executor;
+    this.#baseQueryExecutor = config.executor;
+    this.#plugins = [...(config.plugins ?? [])];
+    this.#queryCompiler =
+      this.#plugins.length === 0
+        ? this.#baseQueryCompiler
+        : new PluginQueryCompiler(this.#baseQueryCompiler, this.#plugins);
+    this.#queryExecutor =
+      !this.#baseQueryExecutor || this.#plugins.length === 0
+        ? this.#baseQueryExecutor
+        : createPluginQueryExecutor(this.#baseQueryExecutor, this.#plugins);
+  }
+
+  withPlugin(plugin: KysoqlPlugin): this {
+    return this.#cloneWithPlugins([...this.#plugins, plugin]);
+  }
+
+  withoutPlugins(): this {
+    if (this.#plugins.length === 0) {
+      return this;
+    }
+
+    return this.#cloneWithPlugins([]);
+  }
+
+  #cloneWithPlugins(plugins: readonly KysoqlPlugin[]): this {
+    const Constructor = this.constructor as new (
+      config: QueryCreatorConfig,
+    ) => this;
+
+    return new Constructor({
+      queryCompiler: this.#baseQueryCompiler,
+      ...(this.#baseQueryExecutor
+        ? { executor: this.#baseQueryExecutor }
+        : {}),
+      plugins,
+    });
   }
 
   selectFrom<TB extends keyof DB & string>(

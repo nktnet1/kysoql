@@ -1,6 +1,9 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import type { SelectQueryNode } from "#/operation-node/select-query-node";
+import { Kysoql } from "#/kysoql";
+import { LimitNode } from "#/operation-node/limit-node";
+import { SelectQueryNode } from "#/operation-node/select-query-node";
+import type { KysoqlPlugin, PluginTransformResultArgs } from "#/plugin";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import { QueryCreator } from "#/query-creator";
@@ -51,6 +54,90 @@ class RecordingExecutor implements QueryExecutor {
     return 42;
   }
 }
+
+describe("QueryCreator plugins", () => {
+  const limitPlugin = (limit: number, calls: string[]): KysoqlPlugin => ({
+    transformQuery({ query }) {
+      calls.push(`query:${limit}`);
+      return SelectQueryNode.cloneWithLimit(query, LimitNode.create(limit));
+    },
+    transformResult<Result>(
+      { result }: PluginTransformResultArgs<Result>,
+    ): Result {
+      calls.push(`result:${limit}`);
+      return result;
+    },
+  });
+
+  it("applies query and result plugins in registration order", async () => {
+    const calls: string[] = [];
+    const executor = new RecordingExecutor();
+    const db = new QueryCreator<FixtureSchema>({ executor })
+      .withPlugin(limitPlugin(10, calls))
+      .withPlugin(limitPlugin(5, calls));
+
+    const query = db.selectFrom("Account").select("Id");
+    const compiled = query.compile();
+
+    expect(compiled.soql).toContain("LIMIT 5");
+    expect(calls).toEqual(["query:10", "query:5"]);
+
+    calls.length = 0;
+    await query.execute();
+    expect(calls).toEqual([
+      "query:10",
+      "query:5",
+      "result:10",
+      "result:5",
+    ]);
+  });
+
+  it("preserves the concrete Kysoql creator type", () => {
+    const db = new Kysoql<FixtureSchema>();
+    const plugged = db.withPlugin(limitPlugin(1, []));
+
+    expect(plugged).toBeInstanceOf(Kysoql);
+    expectTypeOf(plugged).toEqualTypeOf<Kysoql<FixtureSchema>>();
+  });
+
+  it("leaves the original creator unchanged and can remove plugins", () => {
+    const calls: string[] = [];
+    const db = new QueryCreator<FixtureSchema>();
+    const withPlugin = db.withPlugin(limitPlugin(1, calls));
+
+    expect(db.selectFrom("Account").select("Id").compile().soql).not.toContain(
+      "LIMIT 1",
+    );
+    expect(
+      withPlugin.selectFrom("Account").select("Id").compile().soql,
+    ).toContain("LIMIT 1");
+    expect(
+      withPlugin
+        .withoutPlugins()
+        .selectFrom("Account")
+        .select("Id")
+        .compile().soql,
+    ).not.toContain("LIMIT 1");
+  });
+
+  it("transforms scalar COUNT() results", async () => {
+    const plugin: KysoqlPlugin = {
+      transformQuery: ({ query }) => query,
+      transformResult<Result>(
+        { result }: PluginTransformResultArgs<Result>,
+      ): Result {
+        return (typeof result === "number" ? result + 1 : result) as Result;
+      },
+    };
+    const db = new QueryCreator<FixtureSchema>({
+      executor: new RecordingExecutor(),
+    }).withPlugin(plugin);
+
+    await expect(
+      db.selectFrom("Account").select(({ fn }) => fn.count()).execute(),
+    ).resolves.toBe(43);
+  });
+});
 
 describe("QueryCreator", () => {
   it("uses the default compiler when constructed without config", () => {

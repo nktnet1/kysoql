@@ -213,6 +213,11 @@ export type {
   TypeOfFieldList,
   TypeOfWhenBuilder,
 } from "#/query-builder/type-of-builder";
+export type {
+  KysoqlPlugin,
+  PluginTransformQueryArgs,
+  PluginTransformResultArgs,
+} from "#/plugin";
 export type { CompiledQuery } from "#/query-compiler/compiled-query";
 export { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
 export type {
