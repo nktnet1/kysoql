@@ -1361,3 +1361,7 @@ const apexCount = db
   .limit(apexBind<number>("rowLimit"))
   .compile();
 ```
+
+## License
+
+MIT. See [`LICENSE`](LICENSE).

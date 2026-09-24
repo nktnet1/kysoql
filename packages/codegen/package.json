@@ -2,6 +2,7 @@
   "name": "@kysoql/codegen",
   "version": "0.0.0",
   "description": "Schema generation CLI for kysoql",
+  "license": "MIT",
   "keywords": [
     "salesforce",
     "soql",

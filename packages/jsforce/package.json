@@ -2,6 +2,7 @@
   "name": "@kysoql/jsforce",
   "version": "0.0.0",
   "description": "JSforce adapter for kysoql",
+  "license": "MIT",
   "keywords": [
     "salesforce",
     "soql",

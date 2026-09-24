@@ -2,6 +2,7 @@
   "name": "@kysoql/auth",
   "version": "0.0.0",
   "description": "Salesforce OAuth authentication and refresh-token storage for kysoql",
+  "license": "MIT",
   "keywords": [
     "salesforce",
     "soql",

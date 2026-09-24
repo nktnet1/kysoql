@@ -18,6 +18,7 @@ const REPOSITORY_TYPE = "git";
 const REPOSITORY_URL = "git+https://github.com/nktnet1/kysoql.git";
 const BUGS_URL = "https://github.com/nktnet1/kysoql/issues";
 const HOMEPAGE_URL = "https://github.com/nktnet1/kysoql#readme";
+const LICENSE_ID = "MIT";
 type JsonObject = Readonly<Record<string, unknown>>;
 
 const isJsonObject = (value: unknown): value is JsonObject =>
@@ -144,7 +145,7 @@ const verifyPackage = async (
   workspacePath: string,
   rootVersion: string,
   rootNodeRange: string,
-  publishReady: boolean,
+  rootLicense: string,
 ): Promise<void> => {
   const packageDir = resolve(ROOT_DIR, workspacePath);
   const manifest = await readManifest(resolve(packageDir, "package.json"));
@@ -168,8 +169,17 @@ const verifyPackage = async (
   requireString(manifest, "description", packageName);
   verifyProjectLinks(manifest, packageName, workspacePath);
 
-  if (publishReady) {
-    requireString(manifest, "license", packageName);
+  const license = requireString(manifest, "license", packageName);
+  if (license !== LICENSE_ID) {
+    fail(`${packageName}.license must be ${LICENSE_ID}; found ${license}.`);
+  }
+
+  const packageLicense = await readText(
+    resolve(packageDir, "LICENSE"),
+    `${packageName} LICENSE`,
+  );
+  if (packageLicense !== rootLicense) {
+    fail(`${packageName}/LICENSE must match the workspace LICENSE exactly.`);
   }
 
   if (manifest.sideEffects !== false) {
@@ -226,6 +236,14 @@ const verifyPackage = async (
 const rootManifest = await readManifest(resolve(ROOT_DIR, "package.json"));
 const rootVersion = requireString(rootManifest, "version", "workspace");
 const publishReady = process.argv.includes("--publish-ready");
+const rootLicense = await readText(
+  resolve(ROOT_DIR, "LICENSE"),
+  "workspace LICENSE",
+);
+const rootLicenseId = requireString(rootManifest, "license", "workspace");
+if (rootLicenseId !== LICENSE_ID) {
+  fail(`workspace.license must be ${LICENSE_ID}; found ${rootLicenseId}.`);
+}
 
 if (publishReady && rootVersion === "0.0.0") {
   fail(
@@ -246,6 +264,6 @@ for (const workspacePath of PUBLISHABLE_PACKAGES) {
     workspacePath,
     rootVersion,
     rootNodeRange,
-    publishReady,
+    rootLicense,
   );
 }

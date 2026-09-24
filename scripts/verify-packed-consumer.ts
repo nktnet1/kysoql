@@ -13,6 +13,7 @@ import { relative, resolve } from "node:path";
 import { parseJson, requireCommand, requireNode26, run } from "./lib/command.ts";
 
 const ROOT_DIR = resolve(import.meta.dirname, "..");
+const LICENSE_ID = "MIT";
 const PUBLISHABLE_PACKAGES = [
   { name: "@kysoql/auth", workspacePath: "packages/auth" },
   { name: "@kysoql/core", workspacePath: "packages/core" },
@@ -184,6 +185,7 @@ const assertPackageShape = async (
   consumerDir: string,
   packedPackage: PackedPackage,
   version: string,
+  rootLicense: string,
 ): Promise<void> => {
   const packageDir = resolve(
     consumerDir,
@@ -204,6 +206,9 @@ const assertPackageShape = async (
     fail(
       `${packedPackage.name} packed version does not match the workspace version ${version}.`,
     );
+  }
+  if (requireString(manifest, "license", packedPackage.name) !== LICENSE_ID) {
+    fail(`${packedPackage.name} packed license must be ${LICENSE_ID}.`);
   }
 
   assertNoWorkspaceDependencies(manifest, packedPackage.name);
@@ -239,9 +244,16 @@ const assertPackageShape = async (
 
   await Promise.all([
     access(resolve(packageDir, "README.md")),
+    access(resolve(packageDir, "LICENSE")),
     access(resolve(packageDir, "dist/index.mjs")),
     access(resolve(packageDir, "dist/index.d.mts")),
   ]);
+  const packedLicense = await readFile(resolve(packageDir, "LICENSE"), "utf8");
+  if (packedLicense !== rootLicense) {
+    fail(
+      `${packedPackage.name} packed LICENSE must match the workspace LICENSE.`,
+    );
+  }
 
   try {
     await access(resolve(packageDir, "src/index.ts"));
@@ -516,6 +528,7 @@ const main = async (): Promise<void> => {
     "root package.json",
   );
   const version = requireString(rootManifest, "version", "root package.json");
+  const rootLicense = await readFile(resolve(ROOT_DIR, "LICENSE"), "utf8");
   const devDependencies = requireObject(
     rootManifest,
     "devDependencies",
@@ -565,7 +578,12 @@ const main = async (): Promise<void> => {
     );
 
     for (const packedPackage of packedPackages) {
-      await assertPackageShape(consumerDir, packedPackage, version);
+      await assertPackageShape(
+        consumerDir,
+        packedPackage,
+        version,
+        rootLicense,
+      );
     }
 
     console.log("running packed ESM/runtime smoke test");
