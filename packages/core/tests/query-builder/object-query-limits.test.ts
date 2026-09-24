@@ -181,6 +181,26 @@ interface FixtureSchema {
     readonly Id: Field<string, "id">;
     readonly Name: Field;
   }>;
+  readonly Profile__dlm: SalesforceObject<
+    {
+      readonly Id: Field<string, "id">;
+      readonly Name__c: Field;
+      readonly Score__c: Field<number, "double">;
+      readonly Account__c: ReferenceField<"Account__dlm">;
+    },
+    {
+      readonly Account__r: SalesforceParentRelationship<
+        "Account__dlm",
+        "Account__c",
+        false
+      >;
+    }
+  >;
+  readonly Account__dlm: SalesforceObject<{
+    readonly Id: Field<string, "id">;
+    readonly Name__c: Field;
+    readonly Profile__c: ReferenceField<"Profile__dlm">;
+  }>;
 }
 
 describe("object-specific SOQL query limits", () => {
@@ -835,6 +855,84 @@ describe("object-specific SOQL query limits", () => {
     expect(() =>
       base.where("Payload__c", "=", "payload").compile(),
     ).toThrow(error);
+  });
+
+  it("validates Data 360 query restrictions", () => {
+    const db = new Kysoql<FixtureSchema>({
+      schemaMetadata: {
+        data360StringFields: {
+          Profile__dlm: ["Name__c"],
+          Account__dlm: ["Name__c"],
+        },
+        data360LookupFields: {
+          Profile__dlm: ["Account__c"],
+          Account__dlm: ["Profile__c"],
+        },
+      },
+    });
+    const profile = db.selectFrom("Profile__dlm");
+
+    expect(() =>
+      profile
+        .select(({ fn }) => fn.count("Id").as("count"))
+        .groupBy("Id")
+        .compile(),
+    ).toThrow("SOQL Data 360 queries cannot GROUP BY Id.");
+
+    expect(() =>
+      profile
+        .select(({ fn }) => fn.count("Id").as("count"))
+        .groupBy("Name__c")
+        .having((eb) => eb(eb.fn.count("Id"), ">", 1))
+        .compile(),
+    ).toThrow("SOQL Data 360 HAVING clauses cannot reference Id or COUNT(Id), use IN, or compare with null.");
+
+    expect(() =>
+      profile
+        .groupBy("Name__c")
+        .select("Name__c")
+        .having("Name__c", "in", ["A", "B"])
+        .compile(),
+    ).toThrow("SOQL Data 360 HAVING clauses cannot reference Id or COUNT(Id), use IN, or compare with null.");
+
+    expect(() =>
+      profile
+        .groupBy("Name__c")
+        .select("Name__c")
+        .having("Name__c", "!=", null as never)
+        .compile(),
+    ).toThrow("SOQL Data 360 HAVING clauses cannot reference Id or COUNT(Id), use IN, or compare with null.");
+
+    expect(() =>
+      profile.select("Id").where("Name__c", ">", "M").compile(),
+    ).toThrow("SOQL Data 360 queries do not support >, <, >=, or <= comparisons on string fields.");
+    expect(
+      profile.select("Id").where("Score__c", ">", 10).compile().soql,
+    ).toContain("Score__c > 10");
+
+    expect(() => profile.select("Account__r.Id").compile()).toThrow(
+      "SOQL Data 360 queries do not support child-to-parent relationships.",
+    );
+
+    expect(
+      profile
+        .select("Id")
+        .where("Account__c", "in", (subquery) =>
+          subquery.selectFrom("Account__dlm").select("Profile__c" as never),
+        )
+        .compile().soql,
+    ).toContain("Account__c IN (SELECT Profile__c FROM Account__dlm)");
+
+    expect(() =>
+      profile
+        .select("Id")
+        .where("Id", "in", (subquery) =>
+          subquery.selectFrom("Account__dlm").select("Id" as never),
+        )
+        .compile(),
+    ).toThrow(
+      "SOQL semi-joins between Data 360 DMOs must use lookup fields on both sides.",
+    );
   });
 
   it("does not impose the specialist limits on ordinary objects", () => {

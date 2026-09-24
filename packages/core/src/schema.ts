@@ -173,6 +173,8 @@ export interface SalesforceObject<
 
 export interface SalesforceSchemaMetadata {
   readonly bigObjectIndexes?: Readonly<Record<string, readonly string[]>>;
+  readonly data360StringFields?: Readonly<Record<string, readonly string[]>>;
+  readonly data360LookupFields?: Readonly<Record<string, readonly string[]>>;
 }
 
 export type SalesforceSchema = Record<

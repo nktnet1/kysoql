@@ -48,8 +48,13 @@ aggregate/count option support is not exposed. Ordinary CRM objects have no
 Data 360 `setOptions` capability.
 
 `honorEmptyStrings: true` distinguishes empty strings from null in the supported
-Data 360 contexts. Do not assume ordinary Salesforce CRM string-filter behaviour
-is identical. See Salesforce's [SET OPTIONS reference](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-set-options.html)
+Data 360 contexts. Generated runtime metadata also lets the compiler enforce Data
+360 query restrictions for `GROUP BY Id`, `HAVING Id`/`COUNT(Id)`, `HAVING ... IN`,
+null comparisons in `HAVING`, ordered comparisons on string fields, child-to-parent
+relationships, and DMO-to-DMO semi-joins that do not use lookup fields. Raw SOQL
+remains an explicit unsafe escape hatch for syntax the AST cannot inspect.
+
+Do not assume ordinary Salesforce CRM string-filter behaviour is identical. See Salesforce's [SET OPTIONS reference](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-set-options.html)
 for server-side behaviour and context restrictions.
 
 ## Managed dynamic Apex options

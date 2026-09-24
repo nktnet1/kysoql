@@ -268,7 +268,39 @@ describe("renderSchema", () => {
         "  bigObjectIndexes: {",
         '    "EventLog__b": ["Account__c", "Kind__c", "CreatedAt__c"],',
         "  },",
+        "  data360StringFields: {",
+        "  },",
+        "  data360LookupFields: {",
+        "  },",
         "} as const;",
+      ].join("\n"),
+    );
+  });
+
+  it("renders Data 360 string and lookup fields as runtime compiler metadata", () => {
+    const source = renderSchema([
+      objectWith(
+        [
+          field({ name: "Name__c", type: "string" }),
+          field({
+            name: "Account__c",
+            type: "reference",
+            referenceTo: ["Account__dlm"],
+          }),
+          field({ name: "Score__c", type: "double" }),
+        ],
+        { name: "Profile__dlm" },
+      ),
+    ]);
+
+    expect(source).toContain(
+      [
+        "  data360StringFields: {",
+        '    "Profile__dlm": ["Name__c"],',
+        "  },",
+        "  data360LookupFields: {",
+        '    "Profile__dlm": ["Account__c"],',
+        "  },",
       ].join("\n"),
     );
   });
@@ -558,6 +590,10 @@ describe("renderSchema", () => {
         "",
         "export const salesforceSchemaMetadata = {",
         "  bigObjectIndexes: {",
+        "  },",
+        "  data360StringFields: {",
+        "  },",
+        "  data360LookupFields: {",
         "  },",
         "} as const;",
         "",

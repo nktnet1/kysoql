@@ -128,4 +128,8 @@ export interface SalesforceSchema {
 
 export const salesforceSchemaMetadata = {
   bigObjectIndexes: {},
+  data360StringFields: {
+    ContactPoint__dll: ["EmailOptIn__c"],
+  },
+  data360LookupFields: {},
 } as const;

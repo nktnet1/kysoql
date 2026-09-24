@@ -56,6 +56,7 @@ import { validateAllRowsQuery } from "#/parser/all-rows-parser";
 import { validateApexAccessModeQuery } from "#/parser/apex-access-mode-parser";
 import { validateApexBindQuery } from "#/parser/apex-bind-parser";
 import { validateDataCategoryQuery } from "#/parser/data-category-parser";
+import { validateData360QueryLimits } from "#/parser/data360-query-limit-parser";
 import { validateFieldsSelections } from "#/parser/fields-selection-parser";
 import { validateForUpdateQuery } from "#/parser/for-update-parser";
 import { validateGroupByQuery } from "#/parser/group-by-parser";
@@ -130,6 +131,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
     validateRelationshipQueryLimits(query);
     validateRelationshipSubqueryOffsets(query);
     validateObjectQueryLimits(query, this.#schemaMetadata);
+    validateData360QueryLimits(query, this.#schemaMetadata);
     validateSetOptionsQuery(
       query,
       context.apex === true && context.dynamicApex === true,

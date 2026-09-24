@@ -201,4 +201,8 @@ export interface FilteredSchema {
 export const salesforceSchemaMetadata = {
   bigObjectIndexes: {
   },
+  data360StringFields: {
+  },
+  data360LookupFields: {
+  },
 } as const;

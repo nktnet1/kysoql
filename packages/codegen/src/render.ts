@@ -315,6 +315,35 @@ const renderObject = (object: SalesforceObjectDescription): string => {
   ].join("\n");
 };
 
+const DATA360_STRING_FIELD_TYPES = new Set([
+  "combobox",
+  "email",
+  "encryptedstring",
+  "multipicklist",
+  "phone",
+  "picklist",
+  "string",
+  "textarea",
+  "url",
+]);
+
+const renderMetadataFieldMap = (
+  objects: readonly SalesforceObjectDescription[],
+  selectFields: (object: SalesforceObjectDescription) => readonly string[],
+): readonly string[] =>
+  objects
+    .filter((object) => {
+      const lower = object.name.toLowerCase();
+      return lower.endsWith("__dll") || lower.endsWith("__dlm");
+    })
+    .sort((left, right) => left.name.localeCompare(right.name))
+    .map((object) => {
+      const fields = [...selectFields(object)].sort((left, right) =>
+        left.localeCompare(right),
+      );
+      return `    ${quote(object.name)}: [${fields.map(quote).join(", ")}],`;
+    });
+
 const renderSchemaMetadata = (
   objects: readonly SalesforceObjectDescription[],
 ): string => {
@@ -325,11 +354,27 @@ const renderSchemaMetadata = (
       (object) =>
         `    ${quote(object.name)}: [${object.bigObjectIndex!.map(quote).join(", ")}],`,
     );
+  const data360StringFields = renderMetadataFieldMap(objects, (object) =>
+    object.fields
+      .filter((field) => DATA360_STRING_FIELD_TYPES.has(field.type.toLowerCase()))
+      .map((field) => field.name),
+  );
+  const data360LookupFields = renderMetadataFieldMap(objects, (object) =>
+    object.fields
+      .filter((field) => (field.referenceTo?.length ?? 0) > 0)
+      .map((field) => field.name),
+  );
 
   return [
     "export const salesforceSchemaMetadata = {",
     "  bigObjectIndexes: {",
     ...bigObjectIndexes,
+    "  },",
+    "  data360StringFields: {",
+    ...data360StringFields,
+    "  },",
+    "  data360LookupFields: {",
+    ...data360LookupFields,
     "  },",
     "} as const;",
   ].join("\n");
