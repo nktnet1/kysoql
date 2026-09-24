@@ -102,6 +102,7 @@ import {
   type NoResultErrorConstructor,
 } from "#/query-builder/no-result-error";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import type { QueryId } from "#/query-id";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
 import type {
@@ -1137,7 +1138,9 @@ class AggregateSelectQueryBuilderImpl<
   }
 
   compile(): CompiledQuery<O> {
-    return this.#props.queryCompiler.compileQuery<O>(this.#props.queryNode);
+    return this.#props.queryCompiler.compileQuery<O>(this.#props.queryNode, {
+      queryId: this.#props.queryId,
+    });
   }
 
   async execute(options?: AbortableQueryOptions): Promise<readonly O[]> {
@@ -2189,6 +2192,7 @@ class AggregateSelectQueryBuilderImpl<
 export interface AggregateSelectQueryBuilderProps {
   readonly queryCompiler: QueryCompiler;
   readonly queryExecutor: QueryExecutor | undefined;
+  readonly queryId: QueryId;
   readonly queryNode: SelectQueryNode;
   readonly queryNodeTransformer?: (query: SelectQueryNode) => SelectQueryNode;
 }

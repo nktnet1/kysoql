@@ -22,7 +22,7 @@ export class PluginQueryCompiler implements QueryCompiler {
     query: SelectQueryNode,
     context?: QueryCompileContext,
   ): CompiledQuery<O> {
-    const queryId = createQueryId();
+    const queryId = context?.queryId ?? createQueryId();
     const compiledQuery = this.#compiler.compileQuery<O>(
       transformQueryWithPlugins(query, this.#plugins, queryId),
       context,

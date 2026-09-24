@@ -29,11 +29,13 @@ import type {
   DynamicApexOnly,
 } from "#/query-builder/apex-query-context";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import type { QueryId } from "#/query-id";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import { isSoqlRawBuilder, type SoqlRawBuilder } from "#/soql";
 import { freeze } from "#/util/object-utils";
 
 interface ApexAggregateSelectQueryBuilderProps {
+  readonly queryId: QueryId;
   readonly queryNode: SelectQueryNode;
   readonly queryNodeTransformer?: (query: SelectQueryNode) => SelectQueryNode;
   readonly queryCompiler: QueryCompiler;
@@ -168,6 +170,7 @@ class ApexAggregateSelectQueryBuilderImpl<
     return this.#props.queryCompiler.compileQuery<O>(this.#props.queryNode, {
       apex: true,
       dynamicApex: this.#props.apexContext === "dynamic",
+      queryId: this.#props.queryId,
     });
   }
 

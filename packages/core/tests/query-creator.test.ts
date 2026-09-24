@@ -85,6 +85,23 @@ describe("QueryCreator plugins", () => {
     expect(calls).toEqual(["query:7"]);
   });
 
+  it("reuses one query id across toOperationNode and compile", () => {
+    const queryIds: QueryId[] = [];
+    const db = new QueryCreator<FixtureSchema>().withPlugin({
+      transformQuery({ queryId, query }) {
+        queryIds.push(queryId);
+        return query;
+      },
+    });
+    const query = db.selectFrom("Account").select("Id");
+
+    query.toOperationNode();
+    query.compile();
+
+    expect(queryIds).toHaveLength(2);
+    expect(queryIds[0]).toBe(queryIds[1]);
+  });
+
   it("applies query and result plugins in registration order", async () => {
     const calls: string[] = [];
     const executor = new RecordingExecutor();

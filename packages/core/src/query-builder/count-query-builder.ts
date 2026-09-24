@@ -41,6 +41,7 @@ import {
   createDynamicApexCountQueryBuilder,
 } from "#/query-builder/apex-count-query-builder";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import type { QueryId } from "#/query-id";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
 import type {
@@ -167,6 +168,7 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
   compile(): CompiledQuery<number> {
     return this.#props.queryCompiler.compileQuery<number>(
       this.#props.queryNode,
+      { queryId: this.#props.queryId },
     );
   }
 
@@ -392,6 +394,7 @@ class CountQueryBuilderImpl<DB, TB extends keyof DB>
 export interface CountQueryBuilderProps {
   readonly queryCompiler: QueryCompiler;
   readonly queryExecutor: QueryExecutor | undefined;
+  readonly queryId: QueryId;
   readonly queryNode: SelectQueryNode;
   readonly queryNodeTransformer?: (query: SelectQueryNode) => SelectQueryNode;
 }

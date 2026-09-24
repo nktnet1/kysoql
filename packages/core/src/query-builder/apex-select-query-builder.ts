@@ -247,6 +247,7 @@ class ApexSelectQueryBuilderImpl<
     return this.#props.queryCompiler.compileQuery<O>(this.#props.queryNode, {
       apex: true,
       dynamicApex: this.#props.apexContext === "dynamic",
+      queryId: this.#props.queryId,
     });
   }
 

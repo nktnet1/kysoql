@@ -80,14 +80,17 @@ export class QueryCreator<DB> {
   selectFrom<TB extends keyof DB & string>(
     from: TB,
   ): SelectQueryBuilder<DB, TB, unknown, "plain"> {
+    const queryId = createQueryId();
+
     return createSelectQueryBuilder({
       queryCompiler: this.#queryCompiler,
       queryExecutor: this.#queryExecutor,
+      queryId,
       queryNode: SelectQueryNode.createFrom(SObjectNode.create(from)),
       ...(this.#plugins.length > 0
         ? {
             queryNodeTransformer: (query: SelectQueryNode) =>
-              transformQueryWithPlugins(query, this.#plugins, createQueryId()),
+              transformQueryWithPlugins(query, this.#plugins, queryId),
           }
         : {}),
     });
