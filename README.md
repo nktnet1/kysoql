@@ -55,8 +55,9 @@ pnpm release:check
 ```
 
 It includes the full validation gate, rejects the workspace's `0.0.0`
-development placeholder, and requires every publishable package to declare its
-license explicitly. Individual checks remain available when needed:
+development placeholder, requires every publishable package to declare its
+license explicitly, and verifies the built npm tarballs from isolated
+offline consumer projects. Individual checks remain available when needed:
 
 ```bash
 pnpm check
@@ -66,9 +67,11 @@ pnpm typecheck:source
 pnpm typecheck:test
 pnpm test
 pnpm test:conformance
+pnpm test:packed-consumer
 pnpm test:coverage
 pnpm build
 pnpm verify:publish
+pnpm verify:packed-consumer
 pnpm verify:release
 pnpm verify:release:publish
 ```
@@ -80,7 +83,13 @@ the packages to be built first; `pnpm validate` handles that ordering
 automatically. `pnpm verify:release` can run independently because it checks
 manifest/documentation metadata rather than build artifacts.
 `pnpm verify:release:publish` adds the non-placeholder version requirement used
-by `pnpm release:check`.
+by `pnpm release:check`. `pnpm verify:packed-consumer` expects built package
+artifacts and packs all five public workspaces, verifies each package imports in
+isolation with only its declared dependencies, then installs the tarballs into a
+combined temporary project using pnpm's offline store. It checks packed manifests
+and declaration files, runs ESM/runtime imports, typechecks a generated schema,
+and executes the installed `kysoql --help` binary. `pnpm test:packed-consumer`
+performs the package build first when running that smoke test on its own.
 
 `pnpm typecheck:source` first runs the dependency-free task-configuration
 regressions (`pnpm test:tasks`). Turbo then owns the dependency builds: package

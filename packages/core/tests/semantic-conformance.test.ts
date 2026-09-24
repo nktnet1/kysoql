@@ -8,11 +8,7 @@ import type {
   SalesforceParentRelationship,
 } from "#/schema";
 import { soqlRelativeDate } from "#/soql-relative-date-literal";
-import {
-  soqlDate,
-  soqlDateTime,
-  soqlTime,
-} from "#/soql-temporal-literal";
+import { soqlDate, soqlDateTime, soqlTime } from "#/soql-temporal-literal";
 
 /**
  * Representative semantic conformance matrix for the SOQL surface Kysoql exposes.
@@ -75,7 +71,7 @@ type ReferenceField<
 interface ConformanceSchema {
   readonly Account: SalesforceObject<
     {
-      readonly Id: Field<string, "id">;
+      readonly Id: Field<string, "id", false, true>;
       readonly Name: Field<string, "string", true>;
       readonly AnnualRevenue: Field<number, "currency", true, true>;
       readonly Active__c: Field<boolean, "boolean">;
@@ -93,7 +89,7 @@ interface ConformanceSchema {
   >;
   readonly Contact: SalesforceObject<
     {
-      readonly Id: Field<string, "id">;
+      readonly Id: Field<string, "id", false, true>;
       readonly AccountId: ReferenceField<"Account", "Account", true>;
       readonly LastName: Field<string, "string">;
       readonly CreatedDate: Field<string, "datetime">;
@@ -107,7 +103,7 @@ interface ConformanceSchema {
     }
   >;
   readonly Opportunity: SalesforceObject<{
-    readonly Id: Field<string, "id">;
+    readonly Id: Field<string, "id", false, true>;
     readonly AccountId: ReferenceField<"Account", "Account", true>;
     readonly Name: Field<string, "string">;
     readonly StageName: SalesforceField<
@@ -125,12 +121,12 @@ interface ConformanceSchema {
     readonly CloseDate: Field<string, "date">;
   }>;
   readonly User: SalesforceObject<{
-    readonly Id: Field<string, "id">;
+    readonly Id: Field<string, "id", false, true>;
     readonly Name: Field<string, "string">;
   }>;
   readonly Event: SalesforceObject<
     {
-      readonly Id: Field<string, "id">;
+      readonly Id: Field<string, "id", false, true>;
       readonly WhatId: ReferenceField<
         "Account" | "Opportunity",
         "What",
@@ -181,11 +177,7 @@ describe("SOQL semantic conformance", () => {
         soqlDateTime("2026-09-25T08:30:00+10:00"),
       )
       .where("OpeningTime__c", "<", soqlTime("17:30:00.000Z"))
-      .where(
-        "CloseDate__c",
-        ">=",
-        soqlRelativeDate("LAST_N_DAYS", 30),
-      );
+      .where("CloseDate__c", ">=", soqlRelativeDate("LAST_N_DAYS", 30));
 
     expect(query.compile().soql).toBe(
       String.raw`SELECT Id FROM Account WHERE Name = 'Bob\'s \\ BBQ\n' AND Active__c = TRUE AND AnnualRevenue >= 12.5 AND CloseDate__c = 2026-09-25 AND LastActivityAt__c >= 2026-09-25T08:30:00+10:00 AND OpeningTime__c < 17:30:00.000Z AND CloseDate__c >= LAST_N_DAYS:30`,
@@ -301,9 +293,9 @@ describe("SOQL semantic conformance", () => {
     expect(query.compile().soql).toBe(
       "SELECT Id, Name FROM Account ORDER BY Name DESC NULLS LAST, Id LIMIT 25 OFFSET 2000",
     );
-    expect(() =>
-      db.selectFrom("Account").select("Id").offset(2001),
-    ).toThrow("SOQL OFFSET must be a safe integer between 0 and 2000.");
+    expect(() => db.selectFrom("Account").select("Id").offset(2001)).toThrow(
+      "SOQL OFFSET must be a safe integer between 0 and 2000.",
+    );
   });
 
   it("keeps relationship-subquery OFFSET behind Salesforce's LIMIT 1 pilot rule", () => {
@@ -383,16 +375,8 @@ describe("SOQL semantic conformance", () => {
     const query = base
       .where("Account__c", "=", "001xx000003DGbYAAW")
       .where("Kind__c", "=", "audit")
-      .where(
-        "CreatedAt__c",
-        ">=",
-        soqlDateTime("2026-01-01T00:00:00Z"),
-      )
-      .where(
-        "CreatedAt__c",
-        "<",
-        soqlDateTime("2027-01-01T00:00:00Z"),
-      );
+      .where("CreatedAt__c", ">=", soqlDateTime("2026-01-01T00:00:00Z"))
+      .where("CreatedAt__c", "<", soqlDateTime("2027-01-01T00:00:00Z"));
 
     expect(query.compile().soql).toBe(
       "SELECT Payload__c FROM EventLog__b WHERE Account__c = '001xx000003DGbYAAW' AND Kind__c = 'audit' AND CreatedAt__c >= 2026-01-01T00:00:00Z AND CreatedAt__c < 2027-01-01T00:00:00Z",

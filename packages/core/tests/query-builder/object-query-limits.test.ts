@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { Kysoql } from "#/kysoql";
-import { soqlDateTime } from "#/soql-temporal-literal";
 import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 import { OperatorNode } from "#/operation-node/operator-node";
 import { QueryNode } from "#/operation-node/query-node";
@@ -15,6 +14,7 @@ import type {
   SalesforceObject,
   SalesforceParentRelationship,
 } from "#/schema";
+import { soqlDateTime } from "#/soql-temporal-literal";
 
 type Field<Value = string, Type extends string = "string"> = SalesforceField<
   Value,
@@ -837,16 +837,8 @@ describe("object-specific SOQL query limits", () => {
       base
         .where("Account__c", "=", "001")
         .where("Kind__c", "=", "audit")
-        .where(
-          "CreatedAt__c",
-          ">=",
-          soqlDateTime("2026-01-01T00:00:00Z"),
-        )
-        .where(
-          "CreatedAt__c",
-          "<",
-          soqlDateTime("2027-01-01T00:00:00Z"),
-        )
+        .where("CreatedAt__c", ">=", soqlDateTime("2026-01-01T00:00:00Z"))
+        .where("CreatedAt__c", "<", soqlDateTime("2027-01-01T00:00:00Z"))
         .compile().soql,
     ).toContain(
       "CreatedAt__c >= 2026-01-01T00:00:00Z AND CreatedAt__c < 2027-01-01T00:00:00Z",
