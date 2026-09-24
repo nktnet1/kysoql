@@ -12,6 +12,7 @@
     "check": "turbo run check --",
     "dev": "turbo run dev",
     "test": "vitest run",
+    "test:conformance": "vitest run packages/core/tests/semantic-conformance.test.ts",
     "test:tasks": "vitest run scripts/typecheck-tasks.test.ts",
     "t": "vitest run",
     "test:watch": "vitest",

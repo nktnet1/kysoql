@@ -65,6 +65,7 @@ pnpm typecheck
 pnpm typecheck:source
 pnpm typecheck:test
 pnpm test
+pnpm test:conformance
 pnpm test:coverage
 pnpm build
 pnpm verify:publish
@@ -94,7 +95,9 @@ pnpm exec turbo run typecheck:source --filter=docs
 ```
 
 Vitest is configured at the workspace root and discovers tests under
-`packages/**/tests/**/*.test.ts` plus `scripts/**/*.test.ts`. `pnpm typecheck:test`
+`packages/**/tests/**/*.test.ts` plus `scripts/**/*.test.ts`. `pnpm test:conformance`
+runs the focused SOQL semantic conformance matrix, which asserts exact rendered
+SOQL plus representative Salesforce-invalid combinations. `pnpm typecheck:test`
 checks those test files with their package-specific TypeScript configs and also
 checks root test tooling plus the generated Salesforce fixture under `test/`.
 V8 coverage output is written to `coverage/`.
