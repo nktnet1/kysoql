@@ -9,6 +9,7 @@ import type {
   SalesforceDescribeClient,
 } from "#/types";
 import {
+  parseSalesforceBigObjectIndex,
   parseSalesforceDataCategoryGroups,
   parseSalesforceGlobalDescription,
   parseSalesforceObjectDescription,
@@ -26,6 +27,32 @@ export const createRestDescribeClient = (
   return {
     describeGlobal: async () =>
       parseSalesforceGlobalDescription(await client.request("/sobjects/")),
+    describeBigObjectIndex: async (objectName) => {
+      if (!/^[A-Za-z_][A-Za-z0-9_]*__b$/i.test(objectName)) {
+        return undefined;
+      }
+      const withoutSuffix = objectName.slice(0, -3);
+      const namespaceSeparator = withoutSuffix.indexOf("__");
+      const namespace =
+        namespaceSeparator < 0
+          ? undefined
+          : withoutSuffix.slice(0, namespaceSeparator);
+      const developerName =
+        namespaceSeparator < 0
+          ? withoutSuffix
+          : withoutSuffix.slice(namespaceSeparator + 2);
+      const where = [
+        `DeveloperName = '${developerName}'`,
+        namespace === undefined
+          ? "NamespacePrefix = null"
+          : `NamespacePrefix = '${namespace}'`,
+      ].join(" AND ");
+      const query = `SELECT Metadata FROM CustomObject WHERE ${where}`;
+      const body = await client.request(
+        `/tooling/query/?${new URLSearchParams({ q: query })}`,
+      );
+      return parseSalesforceBigObjectIndex(body, objectName);
+    },
     describe: async (objectName) => {
       if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(objectName)) {
         throw new TypeError("Expected a Salesforce object API name.");

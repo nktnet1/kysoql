@@ -95,6 +95,30 @@ when introducing an unfamiliar field type.
 Generated files have a `Do not edit manually` header. Empty metadata maps use
 `Record<string, never>`. Imports are generated only when needed.
 
+## Big object indexes
+
+For custom Big Objects (`__b`), the native REST client also reads the ordered
+composite index from Tooling API. Generated files export
+`salesforceSchemaMetadata`; pass it to `Kysoql` so the compiler can validate
+Big Object `WHERE` clauses against the same index order Salesforce enforces.
+
+```ts
+import { Kysoql } from "@kysoql/core";
+import {
+  salesforceSchemaMetadata,
+  type SalesforceSchema,
+} from "./kysoql/salesforce.generated";
+
+const db = new Kysoql<SalesforceSchema>({
+  schemaMetadata: salesforceSchemaMetadata,
+});
+```
+
+Programmatic Describe clients can provide `describeBigObjectIndex(objectName)`
+for any Big Object whose ordered index is available through another metadata
+transport. Omitting runtime schema metadata preserves the previous compiler
+behaviour.
+
 ## Knowledge categories
 
 For `KnowledgeArticleVersion` and objects ending in `__kav`, the bundled CLI
@@ -166,7 +190,7 @@ export async function preview(client: SalesforceDescribeClient): Promise<string>
 | `generateSchema(options)` | Loads metadata and writes the file. Resolves to `void`; does not discover config files. |
 | `loadSchema(client, requestedObjects?, fields?)` | Loads and validates descriptions, applies field rules, and returns a readonly list. |
 | `renderSchema(objects, schemaName?)` | Renders supplied descriptions to a TypeScript string without network or filesystem access. |
-| `SalesforceDescribeClient` | `describeGlobal()`, `describe(objectName)`, and optional `describeDataCategoryGroups(objectName)`. |
+| `SalesforceDescribeClient` | `describeGlobal()`, `describe(objectName)`, and optional `describeDataCategoryGroups(objectName)` / `describeBigObjectIndex(objectName)`. |
 | `GenerateSchemaOptions` | Required `client` and `output`; optional `objects`, `fields`, and `schemaName`. |
 
 The package exports the normalized Describe interfaces for objects, fields,

@@ -171,6 +171,10 @@ export interface SalesforceObject<
   readonly fieldsComplete?: FieldsComplete;
 }
 
+export interface SalesforceSchemaMetadata {
+  readonly bigObjectIndexes?: Readonly<Record<string, readonly string[]>>;
+}
+
 export type SalesforceSchema = Record<
   string,
   SalesforceObject<

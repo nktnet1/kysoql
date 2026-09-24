@@ -125,3 +125,7 @@ export interface SalesforceSchema {
     Id: Field<string, "id">;
   }, Empty, Empty, never, Empty, false, "data360-dmo">;
 }
+
+export const salesforceSchemaMetadata = {
+  bigObjectIndexes: {},
+} as const;

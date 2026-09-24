@@ -110,19 +110,22 @@ export const loadSchema = async (
         await client.describe(objectName),
         objectName,
       );
-      const dataCategoryResponse =
-        await client.describeDataCategoryGroups?.(objectName);
-
-      if (dataCategoryResponse === undefined) {
-        return object;
-      }
+      const [dataCategoryResponse, bigObjectIndex] = await Promise.all([
+        client.describeDataCategoryGroups?.(objectName),
+        client.describeBigObjectIndex?.(objectName),
+      ]);
 
       return {
         ...object,
-        dataCategoryGroups: parseSalesforceDataCategoryGroupsResponse(
-          dataCategoryResponse,
-          objectName,
-        ),
+        ...(dataCategoryResponse === undefined
+          ? {}
+          : {
+              dataCategoryGroups: parseSalesforceDataCategoryGroupsResponse(
+                dataCategoryResponse,
+                objectName,
+              ),
+            }),
+        ...(bigObjectIndex === undefined ? {} : { bigObjectIndex }),
       };
     }),
   );

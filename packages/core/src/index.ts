@@ -248,6 +248,7 @@ export type {
   SalesforceRecordAttributes,
   SalesforceRow,
   SalesforceSchema,
+  SalesforceSchemaMetadata,
   SalesforceSetOptionsCapability,
 } from "#/schema";
 export { type SoqlRawBuilder, soql } from "#/soql";

@@ -60,6 +60,7 @@ export interface SalesforceDataCategoryGroupDescription {
 }
 
 export interface SalesforceObjectDescription {
+  readonly bigObjectIndex?: readonly string[];
   /** Codegen annotation, not a Salesforce Describe property. Omission means full. */
   readonly fieldsComplete?: boolean;
   readonly name: string;
@@ -73,6 +74,9 @@ export interface SalesforceObjectDescription {
 export interface SalesforceDescribeClient {
   describeGlobal(): Promise<SalesforceGlobalDescription>;
   describe(objectName: string): Promise<SalesforceObjectDescription>;
+  describeBigObjectIndex?(
+    objectName: string,
+  ): Promise<readonly string[] | undefined>;
   describeDataCategoryGroups?(
     objectName: string,
   ): Promise<SalesforceDataCategoryGroupsResponse | undefined>;

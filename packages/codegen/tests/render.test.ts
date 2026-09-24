@@ -254,6 +254,25 @@ describe("renderSchema", () => {
     );
   });
 
+  it("renders ordered big-object indexes as runtime compiler metadata", () => {
+    const source = renderSchema([
+      objectWith([], {
+        name: "EventLog__b",
+        bigObjectIndex: ["Account__c", "Kind__c", "CreatedAt__c"],
+      }),
+    ]);
+
+    expect(source).toContain(
+      [
+        "export const salesforceSchemaMetadata = {",
+        "  bigObjectIndexes: {",
+        '    "EventLog__b": ["Account__c", "Kind__c", "CreatedAt__c"],',
+        "  },",
+        "} as const;",
+      ].join("\n"),
+    );
+  });
+
   it("renders Data 360 SET OPTIONS capability from object API-name suffixes", () => {
     const source = renderSchema([
       objectWith([], { name: "ContactPoint__dll" }),
@@ -536,6 +555,11 @@ describe("renderSchema", () => {
         "export interface SalesforceSchema {",
         "",
         "}",
+        "",
+        "export const salesforceSchemaMetadata = {",
+        "  bigObjectIndexes: {",
+        "  },",
+        "} as const;",
         "",
       ].join("\n"),
     );

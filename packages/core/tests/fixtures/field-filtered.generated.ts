@@ -197,3 +197,8 @@ export interface FilteredSchema {
     "none"
   >;
 }
+
+export const salesforceSchemaMetadata = {
+  bigObjectIndexes: {
+  },
+} as const;

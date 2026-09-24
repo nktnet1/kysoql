@@ -80,6 +80,7 @@ import { parseSoqlIdentifier, parseSoqlReference } from "#/soql-identifier";
 import { isSoqlLikeLiteral } from "#/soql-like-literal";
 import { isSoqlRelativeDateLiteral } from "#/soql-relative-date-literal";
 import { isSoqlTemporalLiteral } from "#/soql-temporal-literal";
+import type { SalesforceSchemaMetadata } from "#/schema";
 import { freeze } from "#/util/object-utils";
 
 const NUMERIC_LITERAL_ERROR = "SOQL numeric literals must be finite numbers.";
@@ -89,6 +90,12 @@ const numericLiteralSchema = v.pipe(
 );
 
 export class DefaultQueryCompiler implements QueryCompiler {
+  readonly #schemaMetadata: SalesforceSchemaMetadata | undefined;
+
+  constructor(schemaMetadata?: SalesforceSchemaMetadata) {
+    this.#schemaMetadata = schemaMetadata;
+  }
+
   compileQuery<O = unknown>(
     query: SelectQueryNode,
     context: QueryCompileContext = {},
@@ -122,7 +129,7 @@ export class DefaultQueryCompiler implements QueryCompiler {
     validateUserProfileFeedQuery(query);
     validateRelationshipQueryLimits(query);
     validateRelationshipSubqueryOffsets(query);
-    validateObjectQueryLimits(query);
+    validateObjectQueryLimits(query, this.#schemaMetadata);
     validateSetOptionsQuery(
       query,
       context.apex === true && context.dynamicApex === true,

@@ -165,6 +165,50 @@ export const parseSalesforceDataCategoryGroupsResponse = (
     }));
 };
 
+const toolingBigObjectIndexFieldSchema = v.object({
+  name: v.string(),
+});
+const toolingBigObjectIndexSchema = v.object({
+  fields: v.array(toolingBigObjectIndexFieldSchema),
+});
+const toolingBigObjectMetadataSchema = v.object({
+  indexes: v.array(toolingBigObjectIndexSchema),
+});
+const toolingBigObjectRecordSchema = v.object({
+  Metadata: toolingBigObjectMetadataSchema,
+});
+const toolingBigObjectQuerySchema = v.object({
+  records: v.array(toolingBigObjectRecordSchema),
+});
+
+export const parseSalesforceBigObjectIndex = (
+  input: unknown,
+  objectName: string,
+): readonly string[] => {
+  const result = v.safeParse(toolingBigObjectQuerySchema, input);
+  if (!result.success) {
+    throw new TypeError(
+      `Invalid Salesforce Tooling metadata response for ${objectName}.`,
+    );
+  }
+
+  const [record] = result.output.records;
+  if (result.output.records.length !== 1 || !record) {
+    throw new TypeError(
+      `Invalid Salesforce Tooling metadata response for ${objectName}.`,
+    );
+  }
+
+  const indexes = record.Metadata.indexes;
+  const [index] = indexes;
+  if (indexes.length !== 1 || !index || index.fields.length === 0) {
+    throw new TypeError(
+      `Expected exactly one non-empty index for Salesforce big object ${objectName}.`,
+    );
+  }
+  return index.fields.map((field) => field.name);
+};
+
 export const parseSchemaName = (input: unknown): string => {
   const result = v.safeParse(
     v.pipe(

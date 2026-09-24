@@ -171,6 +171,12 @@ interface FixtureSchema {
     readonly Id: Field<string, "id">;
     readonly Name: Field;
   }>;
+  readonly EventLog__b: SalesforceObject<{
+    readonly Account__c: Field;
+    readonly Kind__c: Field;
+    readonly CreatedAt__c: Field;
+    readonly Payload__c: Field;
+  }>;
   readonly Opportunity: SalesforceObject<{
     readonly Id: Field<string, "id">;
     readonly Name: Field;
@@ -788,6 +794,46 @@ describe("object-specific SOQL query limits", () => {
           typeOf.when("Account", ["Name"]).when("Opportunity", ["Name"]),
         )
         .compile(),
+    ).toThrow(error);
+  });
+
+  it("validates big-object index prefixes and final-field operators", () => {
+    const db = new Kysoql<FixtureSchema>({
+      schemaMetadata: {
+        bigObjectIndexes: {
+          EventLog__b: ["Account__c", "Kind__c", "CreatedAt__c"],
+        },
+      },
+    });
+    const base = db.selectFrom("EventLog__b").select("Payload__c");
+    const error =
+      "SOQL big object WHERE clauses must use a leading, gap-free prefix of the configured index; preceding index fields require =, and the final field supports only =, <, >, <=, >=, or IN.";
+
+    expect(
+      base.where("Account__c", "=", "001").compile().soql,
+    ).toBe("SELECT Payload__c FROM EventLog__b WHERE Account__c = '001'");
+    expect(
+      base
+        .where("Account__c", "=", "001")
+        .where("Kind__c", "=", "audit")
+        .where("CreatedAt__c", ">=", "2026-01-01T00:00:00Z")
+        .where("CreatedAt__c", "<", "2027-01-01T00:00:00Z")
+        .compile().soql,
+    ).toContain(
+      "CreatedAt__c >= '2026-01-01T00:00:00Z' AND CreatedAt__c < '2027-01-01T00:00:00Z'",
+    );
+
+    expect(base.compile().soql).toBe("SELECT Payload__c FROM EventLog__b");
+    expect(() => base.where("Kind__c", "=", "audit").compile()).toThrow(error);
+    expect(() =>
+      base
+        .where("Account__c", ">", "001")
+        .where("Kind__c", "=", "audit")
+        .compile(),
+    ).toThrow(error);
+    expect(() => base.where("Account__c", "!=", "001").compile()).toThrow(error);
+    expect(() =>
+      base.where("Payload__c", "=", "payload").compile(),
     ).toThrow(error);
   });
 

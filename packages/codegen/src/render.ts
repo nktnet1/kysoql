@@ -315,6 +315,26 @@ const renderObject = (object: SalesforceObjectDescription): string => {
   ].join("\n");
 };
 
+const renderSchemaMetadata = (
+  objects: readonly SalesforceObjectDescription[],
+): string => {
+  const bigObjectIndexes = objects
+    .filter((object) => object.bigObjectIndex !== undefined)
+    .sort((left, right) => left.name.localeCompare(right.name))
+    .map(
+      (object) =>
+        `    ${quote(object.name)}: [${object.bigObjectIndex!.map(quote).join(", ")}],`,
+    );
+
+  return [
+    "export const salesforceSchemaMetadata = {",
+    "  bigObjectIndexes: {",
+    ...bigObjectIndexes,
+    "  },",
+    "} as const;",
+  ].join("\n");
+};
+
 export const renderSchema = (
   objects: readonly SalesforceObjectDescription[],
   schemaName = "SalesforceSchema",
@@ -330,5 +350,7 @@ export const renderSchema = (
     `export interface ${schemaName} {`,
     sortedObjects.map(renderObject).join("\n"),
     "}",
+    "",
+    renderSchemaMetadata(sortedObjects),
   ].join("\n")}\n`;
 };

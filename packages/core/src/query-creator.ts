@@ -7,10 +7,12 @@ import {
 import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { QueryExecutor } from "#/query-executor";
+import type { SalesforceSchemaMetadata } from "#/schema";
 
 export interface QueryCreatorConfig {
   readonly executor?: QueryExecutor;
   readonly queryCompiler?: QueryCompiler;
+  readonly schemaMetadata?: SalesforceSchemaMetadata;
 }
 
 const isQueryCompiler = (
@@ -26,7 +28,8 @@ export class QueryCreator<DB> {
       ? { queryCompiler: configOrQueryCompiler }
       : configOrQueryCompiler;
 
-    this.#queryCompiler = config.queryCompiler ?? new DefaultQueryCompiler();
+    this.#queryCompiler =
+      config.queryCompiler ?? new DefaultQueryCompiler(config.schemaMetadata);
     this.#queryExecutor = config.executor;
   }
 

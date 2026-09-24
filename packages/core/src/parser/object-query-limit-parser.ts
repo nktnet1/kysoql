@@ -10,6 +10,7 @@ import type { OrNode } from "#/operation-node/or-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { SelectQueryNode } from "#/operation-node/select-query-node";
 import type { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
+import type { SalesforceSchemaMetadata } from "#/schema";
 import type { ValueListNode } from "#/operation-node/value-list-node";
 import type { ValueNode } from "#/operation-node/value-node";
 
@@ -577,8 +578,113 @@ const validateExternalObjectQuery = (query: SelectQueryNode): void => {
   }
 };
 
-export const validateObjectQueryLimits = (query: SelectQueryNode): void => {
+const BIG_OBJECT_FILTER_ERROR =
+  "SOQL big object WHERE clauses must use a leading, gap-free prefix of the configured index; preceding index fields require =, and the final field supports only =, <, >, <=, >=, or IN.";
+const BIG_OBJECT_FINAL_OPERATORS = new Set([
+  "=",
+  "<",
+  ">",
+  "<=",
+  ">=",
+  "in",
+]);
+
+const containsRawNode = (node: OperationNode): boolean => {
+  switch (node.kind) {
+    case "AndNode": {
+      const and = node as AndNode;
+      return containsRawNode(and.left) || containsRawNode(and.right);
+    }
+    case "BinaryOperationNode": {
+      const binary = node as BinaryOperationNode;
+      return (
+        containsRawNode(binary.leftOperand) ||
+        containsRawNode(binary.rightOperand)
+      );
+    }
+    case "NotNode":
+      return containsRawNode((node as NotNode).operand);
+    case "OrNode": {
+      const or = node as OrNode;
+      return containsRawNode(or.left) || containsRawNode(or.right);
+    }
+    case "RawNode":
+      return true;
+    default:
+      return false;
+  }
+};
+
+const validateBigObjectWhere = (
+  query: SelectQueryNode,
+  index: readonly string[],
+): void => {
+  if (!query.where || containsRawNode(query.where.where)) {
+    return;
+  }
+
+  const predicates = conjunctivePredicates(query.where.where);
+  if (!predicates?.length || index.length === 0) {
+    throw new TypeError(BIG_OBJECT_FILTER_ERROR);
+  }
+
+  const normalizedIndex = index.map((field) => field.toLowerCase());
+  const operatorsByPosition = new Map<number, string[]>();
+  let highestPosition = -1;
+
+  for (const predicate of predicates) {
+    if (
+      predicate.leftOperand.kind !== "ReferenceNode" ||
+      predicate.operator.kind !== "OperatorNode"
+    ) {
+      throw new TypeError(BIG_OBJECT_FILTER_ERROR);
+    }
+
+    const reference = (predicate.leftOperand as ReferenceNode).name;
+    if (reference.includes(".")) {
+      throw new TypeError(BIG_OBJECT_FILTER_ERROR);
+    }
+    const position = normalizedIndex.indexOf(reference.toLowerCase());
+    const operator = (predicate.operator as OperatorNode).operator;
+
+    if (
+      position < 0 ||
+      position > highestPosition + 1 ||
+      position < highestPosition ||
+      !BIG_OBJECT_FINAL_OPERATORS.has(operator)
+    ) {
+      throw new TypeError(BIG_OBJECT_FILTER_ERROR);
+    }
+
+    highestPosition = Math.max(highestPosition, position);
+    const operators = operatorsByPosition.get(position) ?? [];
+    operators.push(operator);
+    operatorsByPosition.set(position, operators);
+  }
+
+  for (let position = 0; position <= highestPosition; position++) {
+    const operators = operatorsByPosition.get(position);
+    if (!operators?.length) {
+      throw new TypeError(BIG_OBJECT_FILTER_ERROR);
+    }
+    if (
+      position < highestPosition &&
+      operators.some((operator) => operator !== "=")
+    ) {
+      throw new TypeError(BIG_OBJECT_FILTER_ERROR);
+    }
+  }
+};
+
+export const validateObjectQueryLimits = (
+  query: SelectQueryNode,
+  schemaMetadata?: SalesforceSchemaMetadata,
+): void => {
   const objectName = query.from.name.toLowerCase();
+  const configuredIndex = schemaMetadata?.bigObjectIndexes?.[query.from.name];
+  if (configuredIndex) {
+    validateBigObjectWhere(query, configuredIndex);
+  }
   const rule = REQUIRED_ROOT_FILTERS.get(objectName);
 
   if (

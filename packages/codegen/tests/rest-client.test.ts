@@ -47,6 +47,45 @@ describe("native Describe client", () => {
     assert.equal(schema[0]?.fieldsComplete, false);
   });
 
+  it("loads ordered big-object index metadata through Tooling API", async () => {
+    const bigObject = { name: "EventLog__b", fields: [field("Account__c")] };
+    const bigGlobal = {
+      sobjects: [{ name: "EventLog__b", queryable: true }],
+    };
+    const tooling = {
+      records: [
+        {
+          Metadata: {
+            indexes: [
+              {
+                fields: [
+                  { name: "Account__c" },
+                  { name: "Kind__c" },
+                  { name: "CreatedAt__c" },
+                ],
+              },
+            ],
+          },
+        },
+      ],
+    };
+    const http = transport([bigGlobal, bigObject, tooling]);
+
+    const schema = await loadSchema(
+      createRestDescribeClient(http.client),
+      ["EventLog__b"],
+    );
+
+    assert.deepEqual(schema[0]?.bigObjectIndex, [
+      "Account__c",
+      "Kind__c",
+      "CreatedAt__c",
+    ]);
+    assert.equal(http.paths[0], "/sobjects/");
+    assert.equal(http.paths[1], "/sobjects/EventLog__b/describe");
+    assert.match(http.paths[2] ?? "", /^\/tooling\/query\/\?q=/);
+  });
+
   it("also accepts native connection options rather than a custom RestClient", async () => {
     const urls: string[] = [];
     const fetch: typeof globalThis.fetch = async (input) => {

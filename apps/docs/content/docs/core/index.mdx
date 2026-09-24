@@ -49,9 +49,14 @@ bun add @kysoql/core
 
 ```ts
 import { Kysoql } from "@kysoql/core";
-import type { SalesforceSchema } from "./kysoql/salesforce.generated";
+import {
+  salesforceSchemaMetadata,
+  type SalesforceSchema,
+} from "./kysoql/salesforce.generated";
 
-const db = new Kysoql<SalesforceSchema>();
+const db = new Kysoql<SalesforceSchema>({
+  schemaMetadata: salesforceSchemaMetadata,
+});
 
 const query = db
   .selectFrom("Account")
