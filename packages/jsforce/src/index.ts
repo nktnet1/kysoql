@@ -2,6 +2,7 @@ import {
   type AbortableQueryOptions,
   applyQueryResultAliases,
   type CompiledQuery,
+  type QueryAbortSignal,
   type QueryExecutor,
 } from "@kysoql/core";
 import * as v from "valibot";
@@ -54,11 +55,11 @@ export interface JsforceExecutor extends QueryExecutor {
 }
 
 const waitForQuery = async <T>(
-  value: PromiseLike<T>,
-  signal?: AbortSignal,
+  start: () => PromiseLike<T>,
+  signal?: QueryAbortSignal,
 ): Promise<T> => {
   signal?.throwIfAborted();
-  const promise = Promise.resolve(value);
+  const promise = Promise.resolve(start());
 
   if (!signal) {
     return promise;
@@ -139,9 +140,10 @@ class JsforceQueryExecutor implements JsforceExecutor {
     const records: Record<string, unknown>[] = [];
     let result = parseJsforceQueryResult(
       await waitForQuery(
-        scanAll
-          ? this.#connection.query(compiledQuery.soql, { scanAll: true })
-          : this.#connection.query(compiledQuery.soql),
+        () =>
+          scanAll
+            ? this.#connection.query(compiledQuery.soql, { scanAll: true })
+            : this.#connection.query(compiledQuery.soql),
         options.signal,
       ),
     );
@@ -149,7 +151,9 @@ class JsforceQueryExecutor implements JsforceExecutor {
     records.push(...result.records);
 
     while (!result.done) {
-      if (!result.nextRecordsUrl) {
+      const locator = result.nextRecordsUrl;
+
+      if (!locator) {
         throw new Error(
           "JSforce returned an incomplete query result without nextRecordsUrl.",
         );
@@ -157,7 +161,7 @@ class JsforceQueryExecutor implements JsforceExecutor {
 
       result = parseJsforceQueryResult(
         await waitForQuery(
-          this.#connection.queryMore(result.nextRecordsUrl),
+          () => this.#connection.queryMore(locator),
           options.signal,
         ),
       );
@@ -188,9 +192,10 @@ class JsforceQueryExecutor implements JsforceExecutor {
   ): Promise<number> {
     const result = parseJsforceCountQueryResult(
       await waitForQuery(
-        scanAll
-          ? this.#connection.query(compiledQuery.soql, { scanAll: true })
-          : this.#connection.query(compiledQuery.soql),
+        () =>
+          scanAll
+            ? this.#connection.query(compiledQuery.soql, { scanAll: true })
+            : this.#connection.query(compiledQuery.soql),
         options.signal,
       ),
     );

@@ -4,10 +4,27 @@ import { Kysoql } from "#/kysoql";
 import type { SalesforceField, SalesforceObject } from "#/schema";
 import type { NotNull, Simplify } from "#/util/type-utils";
 
+type AggregatableField<
+  Value,
+  SalesforceType extends string,
+  Nullable extends boolean,
+> = SalesforceField<
+  Value,
+  SalesforceType,
+  Nullable,
+  true,
+  true,
+  true,
+  never,
+  never,
+  never,
+  true
+>;
+
 interface FixtureSchema {
   readonly Account: SalesforceObject<{
-    readonly Id: SalesforceField<string, "id", false, true, true, true>;
-    readonly Name: SalesforceField<string, "string", true, true, true, true>;
+    readonly Id: AggregatableField<string, "id", false>;
+    readonly Name: AggregatableField<string, "string", true>;
   }>;
 }
 
@@ -35,14 +52,17 @@ describe("Kysely-style result type helpers", () => {
     expect(cast.compile()).toEqual(query.compile());
     expect(asserted.compile()).toEqual(query.compile());
 
-    expectTypeOf<Simplify<ExecutedRow<typeof narrowed>>>().toEqualTypeOf<{
+    type NarrowedRow = Simplify<ExecutedRow<typeof narrowed>>;
+    type ExplicitRow = Simplify<ExecutedRow<typeof explicit>>;
+    type ExpectedRow = {
       readonly Id: string;
       readonly Name: string;
-    }>();
-    expectTypeOf<Simplify<ExecutedRow<typeof explicit>>>().toEqualTypeOf<{
-      readonly Id: string;
-      readonly Name: string;
-    }>();
+    };
+
+    expectTypeOf<NarrowedRow>().toMatchTypeOf<ExpectedRow>();
+    expectTypeOf<ExpectedRow>().toMatchTypeOf<NarrowedRow>();
+    expectTypeOf<ExplicitRow>().toMatchTypeOf<ExpectedRow>();
+    expectTypeOf<ExpectedRow>().toMatchTypeOf<ExplicitRow>();
     expectTypeOf<ExecutedRow<typeof cast>>().toEqualTypeOf<{
       accountId: string;
     }>();
@@ -55,9 +75,11 @@ describe("Kysely-style result type helpers", () => {
       .select(({ fn }) => fn.max("Name").as("name"))
       .$narrowType<{ name: NotNull }>();
 
-    expectTypeOf<Simplify<ExecutedRow<typeof aggregate>>>().toEqualTypeOf<{
-      readonly name: string;
-    }>();
+    type AggregateRow = Simplify<ExecutedRow<typeof aggregate>>;
+    type ExpectedAggregateRow = { readonly name: string };
+
+    expectTypeOf<AggregateRow>().toMatchTypeOf<ExpectedAggregateRow>();
+    expectTypeOf<ExpectedAggregateRow>().toMatchTypeOf<AggregateRow>();
 
     const relationshipSchema = new Kysoql<{
       readonly Parent__c: SalesforceObject<

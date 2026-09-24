@@ -220,7 +220,11 @@ export type {
   QueryCompiler,
 } from "#/query-compiler/query-compiler";
 export { QueryCreator, type QueryCreatorConfig } from "#/query-creator";
-export type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
+export type {
+  AbortableQueryOptions,
+  QueryAbortSignal,
+  QueryExecutor,
+} from "#/query-executor";
 export { applyQueryResultAliases } from "#/query-result-mapper";
 export type { KysoqlTypeError } from "#/util/type-error";
 export type { NarrowPartial, NotNull } from "#/util/type-utils";

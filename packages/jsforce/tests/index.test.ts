@@ -1,4 +1,8 @@
-import type { CompiledQuery, ReferenceNode } from "@kysoql/core";
+import type {
+  CompiledQuery,
+  QueryAbortSignal,
+  ReferenceNode,
+} from "@kysoql/core";
 import type { Connection } from "jsforce";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 
@@ -287,13 +291,55 @@ describe("createJsforceExecutor", () => {
         records: [],
       }),
     );
-    const controller = new AbortController();
-    controller.abort(new Error("stop"));
+    const reason = new Error("stop");
+    const signal: QueryAbortSignal = {
+      aborted: true,
+      reason,
+      throwIfAborted: () => {
+        throw reason;
+      },
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    };
 
     const executor = createJsforceExecutor({ query, queryMore });
 
     await expect(
-      executor.executeQuery(compiledQuery, { signal: controller.signal }),
+      executor.executeQuery(compiledQuery, { signal }),
+    ).rejects.toThrow("stop");
+    expect(query).not.toHaveBeenCalled();
+    expect(queryMore).not.toHaveBeenCalled();
+  });
+
+  it("does not start a COUNT() query when the signal is already aborted", async () => {
+    const query = vi.fn(
+      async (_soql: string): Promise<JsforceCountQueryResult> => ({
+        done: true,
+        records: null,
+        totalSize: 0,
+      }),
+    );
+    const queryMore = vi.fn(
+      async (_locator: string): Promise<JsforceQueryResult> => ({
+        done: true,
+        records: [],
+      }),
+    );
+    const reason = new Error("stop");
+    const signal: QueryAbortSignal = {
+      aborted: true,
+      reason,
+      throwIfAborted: () => {
+        throw reason;
+      },
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    };
+
+    const executor = createJsforceExecutor({ query, queryMore });
+
+    await expect(
+      executor.executeCountQuery(compiledCountQuery, { signal }),
     ).rejects.toThrow("stop");
     expect(query).not.toHaveBeenCalled();
     expect(queryMore).not.toHaveBeenCalled();

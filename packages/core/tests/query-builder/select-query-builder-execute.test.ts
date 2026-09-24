@@ -3,7 +3,11 @@ import { Kysoql } from "#/kysoql";
 import type { SelectQueryNode } from "#/operation-node/select-query-node";
 import { NoResultError } from "#/query-builder/no-result-error";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
-import type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
+import type {
+  AbortableQueryOptions,
+  QueryAbortSignal,
+  QueryExecutor,
+} from "#/query-executor";
 import type { SalesforceField, SalesforceObject } from "#/schema";
 import type { Simplify } from "#/util/type-utils";
 
@@ -174,18 +178,24 @@ describe("SelectQueryBuilder.execute", () => {
     const query = new Kysoql<FixtureSchema>({ executor })
       .selectFrom("Account")
       .select("Id");
-    const controller = new AbortController();
+    const signal: QueryAbortSignal = {
+      aborted: false,
+      reason: undefined,
+      throwIfAborted: () => undefined,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    };
 
-    await query.execute({ signal: controller.signal });
-    await query.executeTakeFirst({ signal: controller.signal });
-    await query.executeTakeFirstOrThrow({ signal: controller.signal });
-    await query.executeAll({ signal: controller.signal });
+    await query.execute({ signal });
+    await query.executeTakeFirst({ signal });
+    await query.executeTakeFirstOrThrow({ signal });
+    await query.executeAll({ signal });
 
     expect(executor.options).toEqual([
-      { signal: controller.signal },
-      { signal: controller.signal },
-      { signal: controller.signal },
-      { signal: controller.signal },
+      { signal },
+      { signal },
+      { signal },
+      { signal },
     ]);
   });
 

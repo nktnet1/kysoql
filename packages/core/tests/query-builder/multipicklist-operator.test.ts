@@ -81,11 +81,15 @@ describe("INCLUDES and EXCLUDES filters", () => {
     ]);
 
     void (() => {
-      // @ts-expect-error Every AND member is constrained to active picklist values.
-      query.where("Tags__c", "includes", soqlMultiSelectAnd("Alpha", "Retired"));
+      query.where(
+        "Tags__c",
+        "includes",
+        // @ts-expect-error Every AND member is constrained to active picklist values.
+        soqlMultiSelectAnd("Alpha", "Retired"),
+      );
 
-      // @ts-expect-error Mixed groups remain constrained to active picklist values.
       query.where("Tags__c", "includes", [
+        // @ts-expect-error Mixed groups remain constrained to active picklist values.
         soqlMultiSelectAnd("Alpha", "Retired"),
         "Gamma",
       ]);
