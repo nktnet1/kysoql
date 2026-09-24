@@ -348,15 +348,20 @@ const renderSchemaMetadata = (
   objects: readonly SalesforceObjectDescription[],
 ): string => {
   const bigObjectIndexes = objects
-    .filter((object) => object.bigObjectIndex !== undefined)
+    .flatMap((object) => {
+      const index = object.bigObjectIndex;
+      return index === undefined ? [] : [{ name: object.name, index }];
+    })
     .sort((left, right) => left.name.localeCompare(right.name))
     .map(
-      (object) =>
-        `    ${quote(object.name)}: [${object.bigObjectIndex!.map(quote).join(", ")}],`,
+      ({ name, index }) =>
+        `    ${quote(name)}: [${index.map(quote).join(", ")}],`,
     );
   const data360StringFields = renderMetadataFieldMap(objects, (object) =>
     object.fields
-      .filter((field) => DATA360_STRING_FIELD_TYPES.has(field.type.toLowerCase()))
+      .filter((field) =>
+        DATA360_STRING_FIELD_TYPES.has(field.type.toLowerCase()),
+      )
       .map((field) => field.name),
   );
   const data360LookupFields = renderMetadataFieldMap(objects, (object) =>

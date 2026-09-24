@@ -179,6 +179,11 @@ export type {
   Data360DmoSetOptions,
   Data360SetOptionsFor,
 } from "#/parser/set-options-parser";
+export type {
+  KysoqlPlugin,
+  PluginTransformQueryArgs,
+  PluginTransformResultArgs,
+} from "#/plugin";
 export type { AggregateSelectQueryBuilder } from "#/query-builder/aggregate-select-query-builder";
 export type { ApexAggregateSelectQueryBuilder } from "#/query-builder/apex-aggregate-select-query-builder";
 export type { ApexCountQueryBuilder } from "#/query-builder/apex-count-query-builder";
@@ -213,13 +218,7 @@ export type {
   TypeOfFieldList,
   TypeOfWhenBuilder,
 } from "#/query-builder/type-of-builder";
-export type {
-  KysoqlPlugin,
-  PluginTransformQueryArgs,
-  PluginTransformResultArgs,
-} from "#/plugin";
 export type { CompiledQuery } from "#/query-compiler/compiled-query";
-export type { QueryId } from "#/query-id";
 export { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
 export type {
   QueryCompileContext,
@@ -231,9 +230,8 @@ export type {
   QueryAbortSignal,
   QueryExecutor,
 } from "#/query-executor";
+export type { QueryId } from "#/query-id";
 export { applyQueryResultAliases } from "#/query-result-mapper";
-export type { KysoqlTypeError } from "#/util/type-error";
-export type { NarrowPartial, NotNull } from "#/util/type-utils";
 export type {
   SalesforceChildRelationship,
   SalesforceField,
@@ -263,13 +261,13 @@ export {
   soqlCurrency,
 } from "#/soql-currency-literal";
 export {
-  type SoqlMultiSelectAnd,
-  soqlMultiSelectAnd,
-} from "#/soql-multi-select-literal";
-export {
   type SoqlLikeLiteral,
   soqlLikeLiteral,
 } from "#/soql-like-literal";
+export {
+  type SoqlMultiSelectAnd,
+  soqlMultiSelectAnd,
+} from "#/soql-multi-select-literal";
 export {
   type SoqlRelativeDateFamily,
   type SoqlRelativeDateLiteral,
@@ -285,3 +283,5 @@ export {
   soqlDateTime,
   soqlTime,
 } from "#/soql-temporal-literal";
+export type { KysoqlTypeError } from "#/util/type-error";
+export type { NarrowPartial, NotNull } from "#/util/type-utils";

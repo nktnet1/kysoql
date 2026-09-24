@@ -1,18 +1,18 @@
 import { SelectQueryNode } from "#/operation-node/select-query-node";
 import { SObjectNode } from "#/operation-node/sobject-node";
+import type { KysoqlPlugin } from "#/plugin";
+import { PluginQueryCompiler } from "#/plugin-query-compiler";
+import { createPluginQueryExecutor } from "#/plugin-query-executor";
+import { transformQueryWithPlugins } from "#/plugin-query-transformer";
 import {
   createSelectQueryBuilder,
   type SelectQueryBuilder,
 } from "#/query-builder/select-query-builder";
-import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
-import type { KysoqlPlugin } from "#/plugin";
-import { createQueryId } from "#/query-id";
-import { transformQueryWithPlugins } from "#/plugin-query-transformer";
-import { PluginQueryCompiler } from "#/plugin-query-compiler";
-import { createPluginQueryExecutor } from "#/plugin-query-executor";
+import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
+import { createQueryId } from "#/query-id";
 import { applyQueryResultAliases } from "#/query-result-mapper";
 import type { SalesforceSchemaMetadata } from "#/schema";
 
@@ -72,9 +72,7 @@ export class QueryCreator<DB> {
 
     return new Constructor({
       queryCompiler: this.#baseQueryCompiler,
-      ...(this.#baseQueryExecutor
-        ? { executor: this.#baseQueryExecutor }
-        : {}),
+      ...(this.#baseQueryExecutor ? { executor: this.#baseQueryExecutor } : {}),
       plugins,
     });
   }

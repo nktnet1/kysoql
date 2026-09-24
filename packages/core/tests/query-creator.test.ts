@@ -5,10 +5,10 @@ import { LimitNode } from "#/operation-node/limit-node";
 import { SelectQueryNode } from "#/operation-node/select-query-node";
 import type { KysoqlPlugin, PluginTransformResultArgs } from "#/plugin";
 import type { CompiledQuery } from "#/query-compiler/compiled-query";
-import type { QueryId } from "#/query-id";
 import type { QueryCompiler } from "#/query-compiler/query-compiler";
 import { QueryCreator } from "#/query-creator";
 import type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
+import type { QueryId } from "#/query-id";
 import type { SalesforceField, SalesforceObject } from "#/schema";
 
 interface FixtureSchema {
@@ -62,9 +62,9 @@ describe("QueryCreator plugins", () => {
       calls.push(`query:${limit}`);
       return SelectQueryNode.cloneWithLimit(query, LimitNode.create(limit));
     },
-    transformResult<Result>(
-      { result }: PluginTransformResultArgs<Result>,
-    ): Result {
+    transformResult<Result>({
+      result,
+    }: PluginTransformResultArgs<Result>): Result {
       calls.push(`result:${limit}`);
       return result;
     },
@@ -100,12 +100,7 @@ describe("QueryCreator plugins", () => {
 
     calls.length = 0;
     await query.execute();
-    expect(calls).toEqual([
-      "query:10",
-      "query:5",
-      "result:10",
-      "result:5",
-    ]);
+    expect(calls).toEqual(["query:10", "query:5", "result:10", "result:5"]);
   });
 
   it("correlates query and result plugin hooks with a stable query id", async () => {
@@ -116,9 +111,10 @@ describe("QueryCreator plugins", () => {
         queryIds.push(queryId);
         return query;
       },
-      transformResult<Result>(
-        { queryId, result }: PluginTransformResultArgs<Result>,
-      ): Result {
+      transformResult<Result>({
+        queryId,
+        result,
+      }: PluginTransformResultArgs<Result>): Result {
         resultIds.push(queryId);
         return result;
       },
@@ -158,20 +154,17 @@ describe("QueryCreator plugins", () => {
       withPlugin.selectFrom("Account").select("Id").compile().soql,
     ).toContain("LIMIT 1");
     expect(
-      withPlugin
-        .withoutPlugins()
-        .selectFrom("Account")
-        .select("Id")
-        .compile().soql,
+      withPlugin.withoutPlugins().selectFrom("Account").select("Id").compile()
+        .soql,
     ).not.toContain("LIMIT 1");
   });
 
   it("transforms scalar COUNT() results", async () => {
     const plugin: KysoqlPlugin = {
       transformQuery: ({ query }) => query,
-      transformResult<Result>(
-        { result }: PluginTransformResultArgs<Result>,
-      ): Result {
+      transformResult<Result>({
+        result,
+      }: PluginTransformResultArgs<Result>): Result {
         return (typeof result === "number" ? result + 1 : result) as Result;
       },
     };
@@ -180,7 +173,10 @@ describe("QueryCreator plugins", () => {
     }).withPlugin(plugin);
 
     await expect(
-      db.selectFrom("Account").select(({ fn }) => fn.count()).execute(),
+      db
+        .selectFrom("Account")
+        .select(({ fn }) => fn.count())
+        .execute(),
     ).resolves.toBe(43);
   });
 });

@@ -22,9 +22,7 @@ export type NarrowPartial<O, T> = T extends object
             ? T[K]
             : T[K] extends object
               ? SimplifyDeep<O[K] & NarrowPartial<O[K], T[K]>>
-              : KysoqlTypeError<
-                  `$narrowType() call failed: passed type does not exist in '${K}'s type union`
-                >
+              : KysoqlTypeError<`$narrowType() call failed: passed type does not exist in '${K}'s type union`>
         : O[K];
     }>
   : never;

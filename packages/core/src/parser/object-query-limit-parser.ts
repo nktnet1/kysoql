@@ -10,9 +10,9 @@ import type { OrNode } from "#/operation-node/or-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import type { SelectQueryNode } from "#/operation-node/select-query-node";
 import type { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
-import type { SalesforceSchemaMetadata } from "#/schema";
 import type { ValueListNode } from "#/operation-node/value-list-node";
 import type { ValueNode } from "#/operation-node/value-node";
+import type { SalesforceSchemaMetadata } from "#/schema";
 
 interface RequiredRootFilterRule {
   readonly fields: ReadonlySet<string>;
@@ -580,14 +580,7 @@ const validateExternalObjectQuery = (query: SelectQueryNode): void => {
 
 const BIG_OBJECT_FILTER_ERROR =
   "SOQL big object WHERE clauses must use a leading, gap-free prefix of the configured index; preceding index fields require =, and the final field supports only =, <, >, <=, >=, or IN.";
-const BIG_OBJECT_FINAL_OPERATORS = new Set([
-  "=",
-  "<",
-  ">",
-  "<=",
-  ">=",
-  "in",
-]);
+const BIG_OBJECT_FINAL_OPERATORS = new Set(["=", "<", ">", "<=", ">=", "in"]);
 
 const containsRawNode = (node: OperationNode): boolean => {
   switch (node.kind) {

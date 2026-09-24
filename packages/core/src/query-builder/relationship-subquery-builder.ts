@@ -192,9 +192,7 @@ export interface RelationshipSubqueryBuilder<
 
   $assertType<T extends O>(): O extends T
     ? RelationshipSubqueryBuilder<DB, TB, T, Depth, FunctionMode, ApexMode>
-    : KysoqlTypeError<
-        "$assertType() call failed: The type passed in is not equal to the output type of the query."
-      >;
+    : KysoqlTypeError<"$assertType() call failed: The type passed in is not equal to the output type of the query.">;
 
   $castTo<C>(): RelationshipSubqueryBuilder<
     DB,
@@ -482,9 +480,7 @@ class RelationshipSubqueryBuilderImpl<
 
   $assertType<T extends O>(): O extends T
     ? RelationshipSubqueryBuilder<DB, TB, T, Depth, FunctionMode, ApexMode>
-    : KysoqlTypeError<
-        "$assertType() call failed: The type passed in is not equal to the output type of the query."
-      > {
+    : KysoqlTypeError<"$assertType() call failed: The type passed in is not equal to the output type of the query."> {
     return new RelationshipSubqueryBuilderImpl({ ...this.#props }) as never;
   }
 

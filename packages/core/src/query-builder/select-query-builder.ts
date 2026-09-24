@@ -252,9 +252,7 @@ export interface SelectQueryBuilder<
 
   $assertType<T extends O>(): O extends T
     ? SelectQueryBuilder<DB, TB, T, Mode>
-    : KysoqlTypeError<
-        "$assertType() call failed: The type passed in is not equal to the output type of the query."
-      >;
+    : KysoqlTypeError<"$assertType() call failed: The type passed in is not equal to the output type of the query.">;
 
   $castTo<C>(): SelectQueryBuilder<DB, TB, C, Mode>;
 
@@ -531,9 +529,7 @@ class SelectQueryBuilderImpl<
 
   $assertType<T extends O>(): O extends T
     ? SelectQueryBuilder<DB, TB, T, Mode>
-    : KysoqlTypeError<
-        "$assertType() call failed: The type passed in is not equal to the output type of the query."
-      > {
+    : KysoqlTypeError<"$assertType() call failed: The type passed in is not equal to the output type of the query."> {
     return new SelectQueryBuilderImpl({ ...this.#props }) as never;
   }
 

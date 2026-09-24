@@ -71,10 +71,9 @@ describe("native Describe client", () => {
     };
     const http = transport([bigGlobal, bigObject, tooling]);
 
-    const schema = await loadSchema(
-      createRestDescribeClient(http.client),
-      ["EventLog__b"],
-    );
+    const schema = await loadSchema(createRestDescribeClient(http.client), [
+      "EventLog__b",
+    ]);
 
     assert.deepEqual(schema[0]?.bigObjectIndex, [
       "Account__c",

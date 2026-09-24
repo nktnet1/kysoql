@@ -27,54 +27,65 @@ const transformResult = async <Result>(
 export const createPluginQueryExecutor = (
   executor: QueryExecutor,
   plugins: readonly KysoqlPlugin[],
-): QueryExecutor => ({
-  async executeQuery<O>(
-    compiledQuery: CompiledQuery<O>,
-    options?: AbortableQueryOptions,
-  ) {
-    const result = await executor.executeQuery<O>(compiledQuery, options);
-    return transformResult(plugins, compiledQuery, result);
-  },
-  ...(executor.executeAllQuery
-    ? {
-        async executeAllQuery<O>(
-          compiledQuery: CompiledQuery<O>,
-          options?: AbortableQueryOptions,
-        ) {
-          const result = await executor.executeAllQuery!(
-            compiledQuery,
-            options,
-          );
-          return transformResult(plugins, compiledQuery, result);
-        },
-      }
-    : {}),
-  ...(executor.executeCountQuery
-    ? {
-        async executeCountQuery(
-          compiledQuery: CompiledQuery<number>,
-          options?: AbortableQueryOptions,
-        ) {
-          const result = await executor.executeCountQuery!(
-            compiledQuery,
-            options,
-          );
-          return transformResult(plugins, compiledQuery, result);
-        },
-      }
-    : {}),
-  ...(executor.executeAllCountQuery
-    ? {
-        async executeAllCountQuery(
-          compiledQuery: CompiledQuery<number>,
-          options?: AbortableQueryOptions,
-        ) {
-          const result = await executor.executeAllCountQuery!(
-            compiledQuery,
-            options,
-          );
-          return transformResult(plugins, compiledQuery, result);
-        },
-      }
-    : {}),
-});
+): QueryExecutor => {
+  const pluginExecutor: QueryExecutor = {
+    async executeQuery<O>(
+      compiledQuery: CompiledQuery<O>,
+      options?: AbortableQueryOptions,
+    ) {
+      const result = await executor.executeQuery<O>(compiledQuery, options);
+      return transformResult(plugins, compiledQuery, result);
+    },
+  };
+
+  const executeAllQuery = executor.executeAllQuery;
+  if (executeAllQuery) {
+    const executeAllQueryFor = <O>(
+      compiledQuery: CompiledQuery<O>,
+      options?: AbortableQueryOptions,
+    ): Promise<readonly O[]> =>
+      executeAllQuery.call(executor, compiledQuery, options) as Promise<
+        readonly O[]
+      >;
+
+    pluginExecutor.executeAllQuery = async <O>(
+      compiledQuery: CompiledQuery<O>,
+      options?: AbortableQueryOptions,
+    ) => {
+      const result = await executeAllQueryFor(compiledQuery, options);
+      return transformResult(plugins, compiledQuery, result);
+    };
+  }
+
+  const executeCountQuery = executor.executeCountQuery;
+  if (executeCountQuery) {
+    pluginExecutor.executeCountQuery = async (
+      compiledQuery: CompiledQuery<number>,
+      options?: AbortableQueryOptions,
+    ) => {
+      const result = await executeCountQuery.call(
+        executor,
+        compiledQuery,
+        options,
+      );
+      return transformResult(plugins, compiledQuery, result);
+    };
+  }
+
+  const executeAllCountQuery = executor.executeAllCountQuery;
+  if (executeAllCountQuery) {
+    pluginExecutor.executeAllCountQuery = async (
+      compiledQuery: CompiledQuery<number>,
+      options?: AbortableQueryOptions,
+    ) => {
+      const result = await executeAllCountQuery.call(
+        executor,
+        compiledQuery,
+        options,
+      );
+      return transformResult(plugins, compiledQuery, result);
+    };
+  }
+
+  return pluginExecutor;
+};

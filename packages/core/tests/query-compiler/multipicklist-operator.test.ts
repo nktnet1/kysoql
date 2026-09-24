@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { Kysoql } from "#/kysoql";
-import { soqlMultiSelectAnd } from "#/soql-multi-select-literal";
 import type { SalesforceField, SalesforceObject } from "#/schema";
+import { soqlMultiSelectAnd } from "#/soql-multi-select-literal";
 
 type MultiPicklistField = SalesforceField<
   string,
@@ -41,11 +41,7 @@ describe("INCLUDES and EXCLUDES compilation", () => {
     const compiled = new Kysoql<FixtureSchema>()
       .selectFrom("Account")
       .select("Id")
-      .where(
-        "Tags__c",
-        "includes",
-        soqlMultiSelectAnd("Alpha", "Beta"),
-      )
+      .where("Tags__c", "includes", soqlMultiSelectAnd("Alpha", "Beta"))
       .compile();
 
     expect(compiled.soql).toBe(

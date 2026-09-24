@@ -5,6 +5,7 @@ export interface QueryId {
   readonly queryId: string;
 }
 
-export const createQueryId = (): QueryId => ({
-  queryId: `kysoql-${(nextQueryId += 1)}`,
-});
+export const createQueryId = (): QueryId => {
+  nextQueryId += 1;
+  return { queryId: `kysoql-${nextQueryId}` };
+};

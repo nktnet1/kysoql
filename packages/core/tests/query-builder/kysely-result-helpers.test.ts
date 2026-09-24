@@ -94,7 +94,14 @@ describe("Kysely-style result type helpers", () => {
       >;
       readonly Child__c: SalesforceObject<{
         readonly Id: SalesforceField<string, "id", false, true, true, true>;
-        readonly Name: SalesforceField<string, "string", true, true, true, true>;
+        readonly Name: SalesforceField<
+          string,
+          "string",
+          true,
+          true,
+          true,
+          true
+        >;
         readonly Parent__c: SalesforceField<
           string,
           "reference",

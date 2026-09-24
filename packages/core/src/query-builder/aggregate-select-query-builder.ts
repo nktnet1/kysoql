@@ -358,9 +358,7 @@ export interface AggregateSelectQueryBuilder<
         GroupMode,
         AdvancedFieldCount
       >
-    : KysoqlTypeError<
-        "$assertType() call failed: The type passed in is not equal to the output type of the query."
-      >;
+    : KysoqlTypeError<"$assertType() call failed: The type passed in is not equal to the output type of the query.">;
 
   $castTo<C>(): AggregateSelectQueryBuilder<
     DB,
@@ -954,9 +952,7 @@ class AggregateSelectQueryBuilderImpl<
         GroupMode,
         AdvancedFieldCount
       >
-    : KysoqlTypeError<
-        "$assertType() call failed: The type passed in is not equal to the output type of the query."
-      > {
+    : KysoqlTypeError<"$assertType() call failed: The type passed in is not equal to the output type of the query."> {
     return new AggregateSelectQueryBuilderImpl({ ...this.#props }) as never;
   }
 

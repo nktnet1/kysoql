@@ -76,12 +76,12 @@ import type {
   QueryCompileContext,
   QueryCompiler,
 } from "#/query-compiler/query-compiler";
+import type { SalesforceSchemaMetadata } from "#/schema";
 import { isSoqlCurrencyLiteral } from "#/soql-currency-literal";
 import { parseSoqlIdentifier, parseSoqlReference } from "#/soql-identifier";
 import { isSoqlLikeLiteral } from "#/soql-like-literal";
 import { isSoqlRelativeDateLiteral } from "#/soql-relative-date-literal";
 import { isSoqlTemporalLiteral } from "#/soql-temporal-literal";
-import type { SalesforceSchemaMetadata } from "#/schema";
 import { freeze } from "#/util/object-utils";
 
 const NUMERIC_LITERAL_ERROR = "SOQL numeric literals must be finite numbers.";

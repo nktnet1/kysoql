@@ -104,7 +104,8 @@ const isKnowledgeArticleObject = (objectName: string): boolean => {
 };
 
 const supportsDataCategory = (objectName: string): boolean =>
-  objectName.toLowerCase() === "question" || isKnowledgeArticleObject(objectName);
+  objectName.toLowerCase() === "question" ||
+  isKnowledgeArticleObject(objectName);
 
 const isKnowledgeArticleRequiredReference = (node: OperationNode): boolean => {
   if (node.kind !== "ReferenceNode") {

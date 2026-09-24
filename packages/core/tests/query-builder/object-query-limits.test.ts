@@ -829,9 +829,9 @@ describe("object-specific SOQL query limits", () => {
     const error =
       "SOQL big object WHERE clauses must use a leading, gap-free prefix of the configured index; preceding index fields require =, and the final field supports only =, <, >, <=, >=, or IN.";
 
-    expect(
-      base.where("Account__c", "=", "001").compile().soql,
-    ).toBe("SELECT Payload__c FROM EventLog__b WHERE Account__c = '001'");
+    expect(base.where("Account__c", "=", "001").compile().soql).toBe(
+      "SELECT Payload__c FROM EventLog__b WHERE Account__c = '001'",
+    );
     expect(
       base
         .where("Account__c", "=", "001")
@@ -851,10 +851,12 @@ describe("object-specific SOQL query limits", () => {
         .where("Kind__c", "=", "audit")
         .compile(),
     ).toThrow(error);
-    expect(() => base.where("Account__c", "!=", "001").compile()).toThrow(error);
-    expect(() =>
-      base.where("Payload__c", "=", "payload").compile(),
-    ).toThrow(error);
+    expect(() => base.where("Account__c", "!=", "001").compile()).toThrow(
+      error,
+    );
+    expect(() => base.where("Payload__c", "=", "payload").compile()).toThrow(
+      error,
+    );
   });
 
   it("validates Data 360 query restrictions", () => {
@@ -885,7 +887,9 @@ describe("object-specific SOQL query limits", () => {
         .groupBy("Name__c")
         .having((eb) => eb(eb.fn.count("Id"), ">", 1))
         .compile(),
-    ).toThrow("SOQL Data 360 HAVING clauses cannot reference Id or COUNT(Id), use IN, or compare with null.");
+    ).toThrow(
+      "SOQL Data 360 HAVING clauses cannot reference Id or COUNT(Id), use IN, or compare with null.",
+    );
 
     expect(() =>
       profile
@@ -893,7 +897,9 @@ describe("object-specific SOQL query limits", () => {
         .select("Name__c")
         .having("Name__c", "in", ["A", "B"])
         .compile(),
-    ).toThrow("SOQL Data 360 HAVING clauses cannot reference Id or COUNT(Id), use IN, or compare with null.");
+    ).toThrow(
+      "SOQL Data 360 HAVING clauses cannot reference Id or COUNT(Id), use IN, or compare with null.",
+    );
 
     expect(() =>
       profile
@@ -901,11 +907,15 @@ describe("object-specific SOQL query limits", () => {
         .select("Name__c")
         .having("Name__c", "!=", null as never)
         .compile(),
-    ).toThrow("SOQL Data 360 HAVING clauses cannot reference Id or COUNT(Id), use IN, or compare with null.");
+    ).toThrow(
+      "SOQL Data 360 HAVING clauses cannot reference Id or COUNT(Id), use IN, or compare with null.",
+    );
 
     expect(() =>
       profile.select("Id").where("Name__c", ">", "M").compile(),
-    ).toThrow("SOQL Data 360 queries do not support >, <, >=, or <= comparisons on string fields.");
+    ).toThrow(
+      "SOQL Data 360 queries do not support >, <, >=, or <= comparisons on string fields.",
+    );
     expect(
       profile.select("Id").where("Score__c", ">", 10).compile().soql,
     ).toContain("Score__c > 10");
