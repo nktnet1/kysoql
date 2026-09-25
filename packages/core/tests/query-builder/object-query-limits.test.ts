@@ -340,6 +340,18 @@ describe("object-specific SOQL query limits", () => {
     expect(() => base.where("Id", "!=", "0D6000000000001").compile()).toThrow(
       error,
     );
+    expect(() =>
+      base
+        .where((eb) => eb.not(eb("ParentId", "=", "0D5000000000001")))
+        .compile(),
+    ).toThrow(error);
+    expect(() =>
+      base
+        .where((eb) =>
+          eb.or([eb("Type", "=", "Up"), eb("Id", "=", "0D6000000000001")]),
+        )
+        .compile(),
+    ).toThrow(error);
 
     expect(base.where("ParentId", "=", "0D5000000000001").compile().soql).toBe(
       "SELECT Id FROM Vote WHERE ParentId = '0D5000000000001'",

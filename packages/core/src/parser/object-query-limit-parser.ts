@@ -756,7 +756,7 @@ export const validateObjectQueryLimits = (
   if (
     objectName === "vote" &&
     (!query.where ||
-      !hasMatchingRootPredicate(query.where.where, votePredicateMatches))
+      !hasPositiveConjunctivePredicate(query.where.where, votePredicateMatches))
   ) {
     throw new TypeError(VOTE_FILTER_ERROR);
   }
