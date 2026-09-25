@@ -654,8 +654,9 @@ Generated child-relationship metadata enables typed parent-to-child subqueries
 without accepting arbitrary subquery `FROM` strings. `.selectSubquery()` takes a
 generated child relationship name and a dedicated child-query builder with the
 same scalar selection/filter/order/limit rules as the root query. Child queries
-can also select child-to-parent paths and nest further child subqueries through
-Salesforce's supported REST/SOAP relationship-query depth.
+can also select child-to-parent paths and nest further child subqueries up to
+Kysoql's four-level-below-root typed cap. Whether that depth is executable depends
+on the Salesforce API version, object family, and execution context.
 
 ```ts
 const accountsWithContacts = await db
