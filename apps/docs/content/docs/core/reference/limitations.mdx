@@ -58,7 +58,7 @@ of every Salesforce limitation:
 | `KnowledgeArticleVersion`, `__kav` | Root predicate on PublishStatus or Id; Apex binds rejected. |
 | `UserProfileFeed` | Requires `withUserId`; relationship-path ordering rejected. |
 | `NewsFeed` | Relationship-path ordering rejected. |
-| `ContentDocumentLink` | Root predicate on Id, ContentDocumentId, or LinkedEntityId. |
+| `ContentDocumentLink` | Positive root `=`/`IN` predicate on Id, ContentDocumentId, or LinkedEntityId. |
 | `ContentHubItem` | Root predicate on Id, ExternalId, or ContentHubRepositoryId. |
 | `Vote` | ParentId equality, Parent.Type equality, Id equality, or Id IN a literal list. |
 | `UserRecordAccess` | Coupled user/record filters, selected access fields, and ordering constraints described below. |

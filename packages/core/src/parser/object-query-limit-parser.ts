@@ -155,6 +155,61 @@ const nonEmptyStringValueList = (
 const trueValue = (node: OperationNode): boolean =>
   node.kind === "ValueNode" && (node as ValueNode).value === true;
 
+const CONTENT_DOCUMENT_LINK_FILTER_FIELDS = new Set([
+  "id",
+  "contentdocumentid",
+  "linkedentityid",
+]);
+
+const contentDocumentLinkPredicateMatches = (
+  node: BinaryOperationNode,
+): boolean => {
+  if (
+    node.leftOperand.kind !== "ReferenceNode" ||
+    node.operator.kind !== "OperatorNode"
+  ) {
+    return false;
+  }
+
+  const field = (node.leftOperand as ReferenceNode).name.toLowerCase();
+  if (!CONTENT_DOCUMENT_LINK_FILTER_FIELDS.has(field)) {
+    return false;
+  }
+
+  const operator = (node.operator as OperatorNode).operator;
+  if (operator === "=") {
+    return (
+      nonEmptyStringValue(node.rightOperand) ||
+      node.rightOperand.kind === "ApexBindNode"
+    );
+  }
+
+  return (
+    operator === "in" &&
+    (nonEmptyStringValueList(node.rightOperand) ||
+      node.rightOperand.kind === "ApexBindNode")
+  );
+};
+
+const hasPositiveConjunctivePredicate = (
+  node: OperationNode,
+  matches: BinaryPredicateMatcher,
+): boolean => {
+  if (node.kind === "BinaryOperationNode") {
+    return matches(node as BinaryOperationNode);
+  }
+
+  if (node.kind !== "AndNode") {
+    return false;
+  }
+
+  const and = node as AndNode;
+  return (
+    hasPositiveConjunctivePredicate(and.left, matches) ||
+    hasPositiveConjunctivePredicate(and.right, matches)
+  );
+};
+
 const votePredicateMatches = (node: BinaryOperationNode): boolean => {
   if (
     node.leftOperand.kind !== "ReferenceNode" ||
@@ -679,6 +734,17 @@ export const validateObjectQueryLimits = (
     validateBigObjectWhere(query, configuredIndex);
   }
   const rule = REQUIRED_ROOT_FILTERS.get(objectName);
+
+  if (
+    objectName === "contentdocumentlink" &&
+    (!query.where ||
+      !hasPositiveConjunctivePredicate(
+        query.where.where,
+        contentDocumentLinkPredicateMatches,
+      ))
+  ) {
+    throw new TypeError(rule?.error);
+  }
 
   if (
     rule &&

@@ -215,6 +215,16 @@ describe("object-specific SOQL query limits", () => {
     expect(() => base.where("ShareType", "=", "V").compile()).toThrow(
       "SOQL ContentDocumentLink queries require a WHERE predicate on Id, ContentDocumentId, or LinkedEntityId.",
     );
+    expect(() =>
+      base.where("ContentDocumentId", "!=", "069000000000001").compile(),
+    ).toThrow(
+      "SOQL ContentDocumentLink queries require a WHERE predicate on Id, ContentDocumentId, or LinkedEntityId.",
+    );
+    expect(() =>
+      base.where("LinkedEntityId", "not in", ["001000000000001"]).compile(),
+    ).toThrow(
+      "SOQL ContentDocumentLink queries require a WHERE predicate on Id, ContentDocumentId, or LinkedEntityId.",
+    );
 
     expect(base.where("Id", "=", "06A000000000001").compile().soql).toBe(
       "SELECT Id FROM ContentDocumentLink WHERE Id = '06A000000000001'",
@@ -258,25 +268,35 @@ describe("object-specific SOQL query limits", () => {
     );
   });
 
-  it("finds required predicates inside nested boolean expressions", () => {
+  it("requires the ContentDocumentLink ID predicate to be positive and conjunctive", () => {
     const db = new Kysoql<FixtureSchema>();
-    const query = db
-      .selectFrom("ContentDocumentLink")
-      .select("Id")
-      .where((eb) =>
-        eb.and([
-          eb("ShareType", "=", "V"),
-          eb.not(
-            eb.or([
-              eb("LinkedEntityId", "=", "001000000000001"),
-              eb("ShareType", "=", "C"),
-            ]),
-          ),
-        ]),
-      );
+    const base = db.selectFrom("ContentDocumentLink").select("Id");
+    const error =
+      "SOQL ContentDocumentLink queries require a WHERE predicate on Id, ContentDocumentId, or LinkedEntityId.";
 
-    expect(query.compile().soql).toBe(
-      "SELECT Id FROM ContentDocumentLink WHERE ShareType = 'V' AND NOT (LinkedEntityId = '001000000000001' OR ShareType = 'C')",
+    expect(() =>
+      base
+        .where((eb) => eb.not(eb("LinkedEntityId", "=", "001000000000001")))
+        .compile(),
+    ).toThrow(error);
+    expect(() =>
+      base
+        .where((eb) =>
+          eb.or([
+            eb("LinkedEntityId", "=", "001000000000001"),
+            eb("ShareType", "=", "V"),
+          ]),
+        )
+        .compile(),
+    ).toThrow(error);
+
+    expect(
+      base
+        .where("LinkedEntityId", "=", "001000000000001")
+        .where("ShareType", "=", "V")
+        .compile().soql,
+    ).toBe(
+      "SELECT Id FROM ContentDocumentLink WHERE LinkedEntityId = '001000000000001' AND ShareType = 'V'",
     );
   });
 
