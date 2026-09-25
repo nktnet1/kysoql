@@ -23,6 +23,15 @@ let internalLinkCount = 0;
 const complain = (page: string, message: string) =>
   errors.push(`${page}: ${message}`);
 
+function pageIcon(text: string): string | undefined {
+  const frontmatter = /^---\n([\s\S]*?)\n---\n/.exec(text)?.[1] ?? "";
+  return /^icon: "([^"]+)"$/m.exec(frontmatter)?.[1];
+}
+
+function separatorHasIcon(item: string): boolean {
+  return /^---\[[^\]]+\]/.test(item);
+}
+
 for (const page of pages) {
   const frontmatter = /^---\n([\s\S]*?)\n---\n/.exec(page.text);
   if (!frontmatter) {
@@ -102,6 +111,7 @@ const allFiles = await walk(contentRoot);
 const metadataFiles = allFiles.filter(
   (file) => path.basename(file) === "meta.json",
 );
+const pagesByFilename = new Map(pages.map((page) => [page.filename, page]));
 const rootTabs = ["framework", "core", "rest", "auth", "codegen", "jsforce"];
 const packageRoots = ["core", "rest", "auth", "codegen", "jsforce"];
 try {
@@ -134,9 +144,7 @@ for (const page of pages) {
     continue;
   }
 
-  const frontmatter = /^---\n([\s\S]*?)\n---\n/.exec(page.text)?.[1] ?? "";
-  const icon = /^icon: "([^"]+)"$/m.exec(frontmatter)?.[1];
-  if (!icon) {
+  if (!pageIcon(page.text)) {
     complain(page.relative, "package-level pages must declare an icon");
   }
 }
@@ -150,12 +158,17 @@ for (const file of metadataFiles) {
       "pages must be an explicit ordered array",
     );
     const seen = new Set<string>();
+    const itemIcons: boolean[] = [];
+    let hasIconSeparator = false;
     for (const item of meta.pages) {
       assert.equal(typeof item, "string");
       assert.ok(!seen.has(item), `duplicate navigation entry: ${item}`);
       seen.add(item);
+      if (item.startsWith("---")) {
+        hasIconSeparator ||= separatorHasIcon(item);
+        continue;
+      }
       if (
-        item.startsWith("---") ||
         item.startsWith("external:") ||
         /^\[[^\]]+\](?:\[[^\]]+\])?\(/.test(item)
       ) {
@@ -163,11 +176,35 @@ for (const file of metadataFiles) {
       }
       const fileTarget = path.join(path.dirname(file), `${item}.mdx`);
       const folderTarget = path.join(path.dirname(file), item, "meta.json");
-      assert.ok(
-        allFiles.includes(fileTarget) || allFiles.includes(folderTarget),
-        `missing navigation target: ${item}`,
+      const isPage = allFiles.includes(fileTarget);
+      const isFolder = allFiles.includes(folderTarget);
+      assert.ok(isPage || isFolder, `missing navigation target: ${item}`);
+      referenced.add(isPage ? fileTarget : folderTarget);
+
+      if (isPage) {
+        itemIcons.push(
+          Boolean(pageIcon(pagesByFilename.get(fileTarget)?.text ?? "")),
+        );
+      } else {
+        const childMeta = JSON.parse(await readFile(folderTarget, "utf8")) as {
+          readonly icon?: unknown;
+        };
+        itemIcons.push(
+          typeof childMeta.icon === "string" && childMeta.icon.length > 0,
+        );
+      }
+    }
+
+    const hasItemIcons = itemIcons.some(Boolean);
+    const hasItemsWithoutIcons = itemIcons.some((hasIcon) => !hasIcon);
+    if (hasItemIcons && hasItemsWithoutIcons) {
+      complain(label, "navigation depth mixes items with and without icons");
+    }
+    if (hasIconSeparator && hasItemsWithoutIcons) {
+      complain(
+        label,
+        "navigation depth uses separator icons while items have no icons",
       );
-      referenced.add(allFiles.includes(fileTarget) ? fileTarget : folderTarget);
     }
   } catch (error) {
     complain(label, error instanceof Error ? error.message : String(error));

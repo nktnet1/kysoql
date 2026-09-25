@@ -92,6 +92,74 @@ function generatedFrontmatter(title: string, packageName: string): string {
   )}\ngenerated: true\n---\n\n`;
 }
 
+function frontmatterHasIcon(contents: string): boolean {
+  const frontmatter = frontmatterPattern.exec(contents)?.[0] ?? "";
+  return /^icon:\s*.+$/m.test(frontmatter);
+}
+
+async function navigationItemHasIcon(
+  directory: string,
+  item: string,
+): Promise<boolean | undefined> {
+  if (
+    item.startsWith("---") ||
+    item.startsWith("external:") ||
+    /^\[[^\]]+\](?:\[[^\]]+\])?\(/.test(item)
+  ) {
+    return undefined;
+  }
+
+  try {
+    return frontmatterHasIcon(
+      await readFile(path.join(directory, `${item}.mdx`), "utf8"),
+    );
+  } catch {
+    // The item can be a folder instead of a page.
+  }
+
+  try {
+    const meta = JSON.parse(
+      await readFile(path.join(directory, item, "meta.json"), "utf8"),
+    ) as { readonly icon?: unknown };
+    return typeof meta.icon === "string" && meta.icon.length > 0;
+  } catch {
+    return undefined;
+  }
+}
+
+async function parentNavigationUsesIcons(outputPath: string): Promise<boolean> {
+  const parentDirectory = path.dirname(outputPath);
+  let pages: unknown;
+
+  try {
+    const meta = JSON.parse(
+      await readFile(path.join(parentDirectory, "meta.json"), "utf8"),
+    ) as { readonly pages?: unknown };
+    pages = meta.pages;
+  } catch {
+    return false;
+  }
+
+  if (!Array.isArray(pages)) {
+    return false;
+  }
+
+  const currentItem = path.basename(outputPath);
+  const iconStates = await Promise.all(
+    pages
+      .filter(
+        (item): item is string =>
+          typeof item === "string" && item !== currentItem,
+      )
+      .map((item) => navigationItemHasIcon(parentDirectory, item)),
+  );
+  const siblingIcons = iconStates.filter(
+    (state): state is boolean => state !== undefined,
+  );
+
+  return siblingIcons.length > 0 && siblingIcons.every(Boolean);
+}
+
 function routeForGeneratedFile(filename: string): string | undefined {
   const relative = toPosix(path.relative(contentRoot, filename));
   if (relative.startsWith("../") || !relative.endsWith(".mdx")) {
@@ -300,6 +368,7 @@ async function processDirectory(
   outputPath: string,
   packageName: string,
   pages: GeneratedPages,
+  rootUsesIcons: boolean,
 ): Promise<void> {
   const entries = await readdir(directory, { withFileTypes: true });
   const directories = entries
@@ -335,6 +404,7 @@ async function processDirectory(
       outputPath,
       packageName,
       pages,
+      rootUsesIcons,
     );
   }
 
@@ -344,7 +414,7 @@ async function processDirectory(
     ...(isRoot
       ? {
           description: `Generated API reference for ${packageName}.`,
-          icon: "FileCode",
+          ...(rootUsesIcons ? { icon: "FileCode" } : {}),
         }
       : {}),
     pages: [...pageNames, ...directories],
@@ -360,11 +430,13 @@ export async function postprocessGeneratedDocs(target: Target): Promise<void> {
     force: true,
   });
   const pages = await collectGeneratedPages(target.outputPath);
+  const rootUsesIcons = await parentNavigationUsesIcons(target.outputPath);
   await processDirectory(
     target.outputPath,
     target.outputPath,
     target.packageName,
     pages,
+    rootUsesIcons,
   );
 }
 
