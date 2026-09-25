@@ -65,10 +65,14 @@ pnpm --filter docs docs:api:codegen
 pnpm --filter docs docs:api:jsforce
 ```
 
-The generated `api.mdx` files are ignored by Git and are recreated before docs
-`dev`, `build`, and content validation. TypeScript example validation skips these
-pages because TypeDoc signature blocks are API declarations, not standalone
-consumer examples.
+The generated `api/` trees are ignored by Git and are recreated before docs
+`dev`, `build`, and content validation. TypeDoc uses its member router, so each
+public API gets its own page under kind folders such as `classes/`, `functions/`,
+and `type-aliases/`. A post-processing step adds Fumadocs frontmatter and a
+`meta.json` file for every generated folder, while rewriting TypeDoc cross-page
+links to extensionless `/docs/...` routes. TypeScript example validation skips
+these pages because TypeDoc signature blocks are API declarations, not
+standalone consumer examples.
 
 ## Authoring conventions
 

@@ -15,11 +15,11 @@
   "scripts": {
     "check": "biome check",
     "docs:gen": "pnpm docs:core && pnpm docs:rest && pnpm docs:auth && pnpm docs:codegen && pnpm docs:jsforce",
-    "docs:core": "typedoc --options ./src/configs/core.ts",
-    "docs:rest": "typedoc --options ./src/configs/rest.ts",
-    "docs:auth": "typedoc --options ./src/configs/auth.ts",
-    "docs:codegen": "typedoc --options ./src/configs/codegen.ts",
-    "docs:jsforce": "typedoc --options ./src/configs/jsforce.ts",
+    "docs:core": "typedoc --options ./src/configs/core.ts && node ./src/postprocess.ts core",
+    "docs:rest": "typedoc --options ./src/configs/rest.ts && node ./src/postprocess.ts rest",
+    "docs:auth": "typedoc --options ./src/configs/auth.ts && node ./src/postprocess.ts auth",
+    "docs:codegen": "typedoc --options ./src/configs/codegen.ts && node ./src/postprocess.ts codegen",
+    "docs:jsforce": "typedoc --options ./src/configs/jsforce.ts && node ./src/postprocess.ts jsforce",
     "typecheck:source": "tsc --noEmit"
   },
   "devDependencies": {

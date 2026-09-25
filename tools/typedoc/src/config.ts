@@ -41,9 +41,9 @@ export function createTypeDocConfig({
     hidePageHeader: true,
 
     out: outputPath,
-    entryFileName: "api",
+    entryFileName: "index",
     fileExtension: ".mdx",
-    cleanOutputDir: false,
+    cleanOutputDir: true,
     readme: "none",
 
     typePrintWidth: 180,
@@ -62,7 +62,7 @@ export function createTypeDocConfig({
     anchorPrefix: "api-",
 
     categorizeByGroup: true,
-    router: "module",
+    router: "member",
     expandObjects: false,
     disableSources: true,
     jsDocCompatibility: true,

@@ -17,9 +17,9 @@ node_modules
 
 .source
 
-# Generated TypeDoc API reference pages.
-/content/docs/auth/api.mdx
-/content/docs/codegen/api.mdx
-/content/docs/core/reference/api.mdx
-/content/docs/jsforce/api.mdx
-/content/docs/rest/api.mdx
+# Generated TypeDoc API reference trees.
+/content/docs/auth/api/
+/content/docs/codegen/api/
+/content/docs/core/reference/api/
+/content/docs/jsforce/api/
+/content/docs/rest/api/

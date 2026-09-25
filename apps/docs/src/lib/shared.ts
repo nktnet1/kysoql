@@ -8,17 +8,19 @@ export const repositoryUrl = "https://github.com/nktnet1/kysoql";
 const repositoryBranch =
   import.meta.env.VITE_DOCS_REPOSITORY_BRANCH?.trim() || "main";
 
-const generatedApiSources: Readonly<Record<string, string>> = {
-  "auth/api.mdx": "packages/auth/src/index.ts",
-  "codegen/api.mdx": "packages/codegen/src/index.ts",
-  "core/reference/api.mdx": "packages/core/src/index.ts",
-  "jsforce/api.mdx": "packages/jsforce/src/index.ts",
-  "rest/api.mdx": "packages/rest/src/index.ts",
-};
+const generatedApiSources = [
+  ["auth/api/", "packages/auth/src/index.ts"],
+  ["codegen/api/", "packages/codegen/src/index.ts"],
+  ["core/reference/api/", "packages/core/src/index.ts"],
+  ["jsforce/api/", "packages/jsforce/src/index.ts"],
+  ["rest/api/", "packages/rest/src/index.ts"],
+] as const;
 
 export function getPageSourceUrl(path: string): string {
-  const sourcePath =
-    generatedApiSources[path] ?? `apps/docs/content/docs/${path}`;
+  const generatedSource = generatedApiSources.find(([prefix]) =>
+    path.startsWith(prefix),
+  )?.[1];
+  const sourcePath = generatedSource ?? `apps/docs/content/docs/${path}`;
   const filePath = sourcePath.split("/").map(encodeURIComponent).join("/");
   return `${repositoryUrl}/blob/${encodeURIComponent(repositoryBranch)}/${filePath}`;
 }
