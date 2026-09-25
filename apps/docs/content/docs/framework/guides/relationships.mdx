@@ -71,8 +71,10 @@ functions, `FIELDS` selectors, scalar/grouped filters, ordering, limits,
 composition helpers, and further child subqueries. It intentionally omits root
 execution, semi-joins, aggregates, and root-only Salesforce clauses. Nested child
 queries are capped at four child levels below the root by the typed surface;
-actual support depends on the Salesforce API and execution context. Do not
-assume a deeply nested REST query is valid in Apex.
+actual support depends on the Salesforce API and execution context. API 58+
+supports up to five parent-to-child levels through REST, SOAP, and Apex for
+standard and custom objects; Bulk APIs, big objects, and external objects have
+stricter limits.
 
 ## Read child results
 
