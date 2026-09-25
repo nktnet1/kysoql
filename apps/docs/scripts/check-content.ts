@@ -5,6 +5,7 @@ import {
   codeBlockIssues,
   codeBlocks,
   contentRoot,
+  linkTargetIds,
   readPages,
   stripCodeBlocks,
   walk,
@@ -14,28 +15,13 @@ const errors: string[] = [];
 const pages = await readPages();
 const routes = new Map<
   string,
-  { relative: string; route: string; prose: string; headings: Set<string> }
+  { relative: string; route: string; prose: string; linkTargets: Set<string> }
 >();
 const titles = new Set<string>();
 let snippetCount = 0;
 let internalLinkCount = 0;
 const complain = (page: string, message: string) =>
   errors.push(`${page}: ${message}`);
-
-function headingIds(text: string): Set<string> {
-  const counts = new Map<string, number>();
-  return new Set(
-    [...text.matchAll(/^#{2,6}\s+(.+)$/gm)].map((match) => {
-      const base = match[1]
-        .toLowerCase()
-        .replace(/[^\w\s-]/g, "")
-        .replace(/\s/g, "-");
-      const count = counts.get(base) ?? 0;
-      counts.set(base, count + 1);
-      return count === 0 ? base : `${base}-${count}`;
-    }),
-  );
-}
 
 for (const page of pages) {
   const frontmatter = /^---\n([\s\S]*?)\n---\n/.exec(page.text);
@@ -84,7 +70,7 @@ for (const page of pages) {
   if (routes.has(page.route)) {
     complain(page.relative, `duplicate route: ${page.route}`);
   }
-  routes.set(page.route, { ...page, prose, headings: headingIds(prose) });
+  routes.set(page.route, { ...page, prose, linkTargets: linkTargetIds(prose) });
 }
 
 for (const page of routes.values()) {
@@ -105,9 +91,9 @@ for (const page of routes.values()) {
       complain(page.relative, `unknown internal page: ${target}`);
     } else if (
       url.hash &&
-      !destination.headings.has(decodeURIComponent(url.hash.slice(1)))
+      !destination.linkTargets.has(decodeURIComponent(url.hash.slice(1)))
     ) {
-      complain(page.relative, `unknown heading: ${target}`);
+      complain(page.relative, `unknown heading or anchor: ${target}`);
     }
   }
 }

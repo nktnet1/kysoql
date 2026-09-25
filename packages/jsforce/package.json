@@ -52,7 +52,7 @@
     }
   },
   "devDependencies": {
-    "jsforce": "3.10.25"
+    "jsforce": "3.10.26"
   },
   "repository": {
     "type": "git",

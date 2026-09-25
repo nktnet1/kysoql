@@ -40,6 +40,10 @@ await copyFile(
 
 const manifest: Array<{ filename: string; source: string; line: number }> = [];
 for (const page of await readPages()) {
+  if (page.generated) {
+    continue;
+  }
+
   let number = 0;
   for (const block of codeBlocks(page.text)) {
     if (!["ts", "tsx"].includes(block.language)) {

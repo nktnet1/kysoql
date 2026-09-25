@@ -10,6 +10,7 @@ export interface DocPage {
   readonly relative: string;
   readonly route: string;
   readonly text: string;
+  readonly generated: boolean;
 }
 
 export interface CodeBlock {
@@ -48,11 +49,14 @@ export async function readPages(): Promise<DocPage[]> {
         .split(path.sep)
         .join("/");
       const slug = relative.replace(/\.mdx$/, "").replace(/(^|\/)index$/, "");
+      const text = (await readFile(filename, "utf8")).replace(/\r\n?/g, "\n");
+      const frontmatter = /^---\n([\s\S]*?)\n---\n/.exec(text)?.[1] ?? "";
       return {
         filename,
         relative,
         route: `/docs${slug ? `/${slug}` : ""}`.replace(/\/$/, ""),
-        text: (await readFile(filename, "utf8")).replace(/\r\n?/g, "\n"),
+        text,
+        generated: /^generated: true$/m.test(frontmatter),
       };
     }),
   );
@@ -164,6 +168,36 @@ export function stripCodeBlocks(
     lines.fill("", block.fenceLine - 1, block.endLine);
   }
   return lines.join("\n");
+}
+
+/** Collect linkable Markdown heading IDs and explicit HTML anchor IDs. */
+export function linkTargetIds(text: string): Set<string> {
+  const ids = new Set<string>();
+  const counts = new Map<string, number>();
+
+  for (const match of text.matchAll(/^#{2,6}\s+(.+)$/gm)) {
+    const base = match[1]
+      ?.toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s/g, "-");
+    if (!base) {
+      continue;
+    }
+    const count = counts.get(base) ?? 0;
+    counts.set(base, count + 1);
+    ids.add(count === 0 ? base : `${base}-${count}`);
+  }
+
+  // typedoc-plugin-markdown emits explicit HTML anchors for linkable symbols
+  // rendered inside tables because those symbols do not have heading IDs.
+  for (const match of text.matchAll(/<a\b[^>]*\bid=(["'])([^"']+)\1[^>]*>/gi)) {
+    const id = match[2];
+    if (id) {
+      ids.add(id);
+    }
+  }
+
+  return ids;
 }
 
 export function codeBlockIssues(block: CodeBlock): string[] {

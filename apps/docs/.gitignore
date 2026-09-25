@@ -16,3 +16,10 @@ node_modules
 .tanstack
 
 .source
+
+# Generated TypeDoc API reference pages.
+/content/docs/auth/api.mdx
+/content/docs/codegen/api.mdx
+/content/docs/core/reference/api.mdx
+/content/docs/jsforce/api.mdx
+/content/docs/rest/api.mdx

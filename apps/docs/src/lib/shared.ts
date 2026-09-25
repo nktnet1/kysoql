@@ -8,9 +8,19 @@ export const repositoryUrl = "https://github.com/nktnet1/kysoql";
 const repositoryBranch =
   import.meta.env.VITE_DOCS_REPOSITORY_BRANCH?.trim() || "main";
 
+const generatedApiSources: Readonly<Record<string, string>> = {
+  "auth/api.mdx": "packages/auth/src/index.ts",
+  "codegen/api.mdx": "packages/codegen/src/index.ts",
+  "core/reference/api.mdx": "packages/core/src/index.ts",
+  "jsforce/api.mdx": "packages/jsforce/src/index.ts",
+  "rest/api.mdx": "packages/rest/src/index.ts",
+};
+
 export function getPageSourceUrl(path: string): string {
-  const filePath = path.split("/").map(encodeURIComponent).join("/");
-  return `${repositoryUrl}/blob/${encodeURIComponent(repositoryBranch)}/apps/docs/content/docs/${filePath}`;
+  const sourcePath =
+    generatedApiSources[path] ?? `apps/docs/content/docs/${path}`;
+  const filePath = sourcePath.split("/").map(encodeURIComponent).join("/");
+  return `${repositoryUrl}/blob/${encodeURIComponent(repositoryBranch)}/${filePath}`;
 }
 
 const getDocsUrl = createGetUrl(docsRoute);

@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { codeBlockIssues, codeBlocks, stripCodeBlocks } from "./content.ts";
+import {
+  codeBlockIssues,
+  codeBlocks,
+  linkTargetIds,
+  stripCodeBlocks,
+} from "./content.ts";
 
 const block = (info: string, code = "const answer: number = 42;") =>
   `\`\`\`${info}\n${code}\n\`\`\`\n`;
@@ -133,5 +138,26 @@ describe("documentation code fences", () => {
     assert.ok(!prose.includes("/missing"));
     assert.ok(!prose.includes("Not a heading"));
     assert.equal(prose.split("\n").length, source.split("\n").length);
+  });
+
+  it("recognises TypeDoc table anchors as link targets", () => {
+    const ids = linkTargetIds(
+      [
+        "## signal",
+        "## signal",
+        '| <a id="api-property-signal-1"></a> `signal` | `AbortSignal` |',
+        "<a class='anchor' id='api-property-timeoutms-1'></a>",
+      ].join("\n"),
+    );
+
+    assert.deepEqual(
+      [...ids],
+      [
+        "signal",
+        "signal-1",
+        "api-property-signal-1",
+        "api-property-timeoutms-1",
+      ],
+    );
   });
 });

@@ -44,6 +44,31 @@ a `meta.json` with an explicit `pages` array; add new pages there rather than
 relying on alphabetical ordering. Keep package-specific pages inside the matching
 root so navigation and search filtering stay aligned.
 
+### Generated API reference
+
+The package API-reference pages are generated from each package's public
+`src/index.ts` entry point with TypeDoc and `typedoc-plugin-markdown`. The shared
+configuration in `typedoc/config.ts` emits MDX directly into the existing
+Fumadocs content routes and uses table layouts for indexes, parameters, and
+public properties. `typedoc-plugin-frontmatter` only supplies the page metadata
+required by this app; there are no custom conversion or reflection plugins.
+
+Generate every package or one package at a time:
+
+```bash
+pnpm --filter docs docs:api
+pnpm --filter docs docs:api:core
+pnpm --filter docs docs:api:rest
+pnpm --filter docs docs:api:auth
+pnpm --filter docs docs:api:codegen
+pnpm --filter docs docs:api:jsforce
+```
+
+The generated `api.mdx` files are ignored by Git and are recreated before docs
+`dev`, `build`, and content validation. TypeScript example validation skips these
+pages because TypeDoc signature blocks are API declarations, not standalone
+consumer examples.
+
 ## Authoring conventions
 
 Start each page with JSON-quoted YAML frontmatter:
@@ -127,8 +152,9 @@ The workspace lint command for this app remains `pnpm --filter docs check`.
 
 ### Content validation
 
-`check:content` first runs the shared parser's `node:test` regression suite, then
-the content checker. Both use only Node.js built-ins. They check frontmatter,
+`check:content` first regenerates the TypeDoc API pages, then runs the shared
+parser's `node:test` regression suite and the content checker. The parser and
+checker themselves use only Node.js built-ins. They check frontmatter,
 duplicate routes/titles, balanced and labelled code fences, JSON examples, internal page
 and heading links, starter placeholders, and navigation coverage. The checker
 supports the site's explicit navigation entries and JSON-quoted frontmatter;
@@ -188,8 +214,9 @@ Salesforce integration tests remain separate responsibilities.
 ## Repository links
 
 The header and page source controls link to
-`https://github.com/nktnet1/kysoql`. Source links include the monorepo path
-`apps/docs/content/docs/`. `VITE_DOCS_REPOSITORY_BRANCH` can override the source
+`https://github.com/nktnet1/kysoql`. Authored pages link to their files under
+`apps/docs/content/docs/`; generated API pages link to the corresponding package
+`src/index.ts` entry point. `VITE_DOCS_REPOSITORY_BRANCH` can override the source
 branch used by page links; it defaults to `main`. Changing the branch requires
 rebuilding the site. Never use a `VITE_` variable for access tokens, instance
 secrets, or credentials.
