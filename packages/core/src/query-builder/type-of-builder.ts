@@ -1,6 +1,6 @@
 import { ReferenceNode } from "#/operation-node/reference-node";
 import { TypeOfNode } from "#/operation-node/type-of-node";
-import type { SelectExpression } from "#/parser/select-parser";
+import type { FieldReference } from "#/parser/reference-parser";
 import type {
   KnownPolymorphicTarget,
   TypeOfBranchSelection,
@@ -16,8 +16,8 @@ export type TypeOfFieldList<
   TB extends keyof DB,
   SE extends string,
 > = readonly [
-  SE & SelectExpression<DB, TB, SE>,
-  ...(SE & SelectExpression<DB, TB, SE>)[],
+  SE & FieldReference<DB, TB, SE>,
+  ...(SE & FieldReference<DB, TB, SE>)[],
 ];
 
 export type TypeOfElseFieldList<

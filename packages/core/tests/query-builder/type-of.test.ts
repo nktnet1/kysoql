@@ -425,6 +425,10 @@ describe("polymorphic TYPEOF selection", () => {
         typeOf.when("Account", ["Amount"]),
       );
       base.selectTypeOf("What", (typeOf) =>
+        // @ts-expect-error TYPEOF WHEN field lists do not support aliases.
+        typeOf.when("Account", ["Name as label"]),
+      );
+      base.selectTypeOf("What", (typeOf) =>
         typeOf
           .when("Account", ["Name"])
           // @ts-expect-error Each WHEN object can appear only once.
@@ -448,6 +452,13 @@ describe("polymorphic TYPEOF selection", () => {
           .when("Account", ["Name"])
           // @ts-expect-error ELSE fields must be valid for every remaining generated target.
           .else(["Amount"]),
+      );
+      base.selectTypeOf("What", (typeOf) =>
+        typeOf
+          .when("Account", ["Name"])
+          .when("Opportunity", ["Name"])
+          // @ts-expect-error TYPEOF ELSE field lists do not support aliases.
+          .else(["Name as label"]),
       );
 
       const typeOfQuery = base.selectTypeOf("What", (typeOf) =>
