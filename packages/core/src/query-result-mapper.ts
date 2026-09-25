@@ -210,9 +210,11 @@ function mapRecords(
 /**
  * Applies Kysoql-only field aliases to records returned by Salesforce.
  *
- * Salesforce only accepts field aliases in grouped queries. For ordinary
- * record queries the compiler requests the source field and adapters use this
- * function to expose the requested `field as alias` property in the result.
+ * Ordinary Salesforce field references do not support SQL-style aliases. For
+ * ordinary record queries the compiler requests the source field and adapters
+ * use this function to expose the requested `field as alias` property in the
+ * result. Native SOQL aliases remain available where Salesforce supports them,
+ * such as grouped selections and supported SELECT functions.
  *
  * Official adapters call this for direct executor APIs. Query builders also
  * apply it after custom executor calls, so ordinary `.execute()` users do not
