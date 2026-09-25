@@ -37,9 +37,10 @@ const query = db
   .where((eb) => eb(eb.fn.toLabel("StageName"), "like", "Pros%"));
 ```
 
-The field must be filterable. Translated comparisons support `=`, `!=`, and
-`like`, not arbitrary ordered/list operators. Filtering translated
-`CurrencyIsoCode` and the standard `Division` field is intentionally rejected.
+The field must be filterable. Translated picklists support `=`, `!=`, and
+`like`; translated multipicklists support `=` and `!=` only. Neither form
+exposes arbitrary ordered/list operators. Filtering translated `CurrencyIsoCode`
+and the standard `Division` field is intentionally rejected.
 The SELECT helper is not a general translated ORDER BY facility.
 
 ## Currency conversion
