@@ -151,6 +151,8 @@ Restrictions enforced by the builder/compiler include:
   `OR` or `NOT`.
 - No same-object outer/inner query, nested semi-joins, relationship-path selected
   fields, ordering, limit, or offset in the subquery.
+- `ActivityHistory`, `Attachment`, `Event`, `Note`, `OpenActivity`, `Task`, and
+  `*Tag` objects cannot be used as the semi/anti-join subquery object.
 - No semi-joins inside a relationship subquery or `HAVING` expression.
 
 To negate existence, use `not in`, not `eb.not(...)` around a semi-join.
