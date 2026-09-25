@@ -1,0 +1,31 @@
+{
+  "name": "@kysoql/typedoc",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=26.0.0 <27"
+  },
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "imports": {
+    "#/*": "./src/*.ts"
+  },
+  "scripts": {
+    "check": "biome check",
+    "docs:gen": "pnpm docs:core && pnpm docs:rest && pnpm docs:auth && pnpm docs:codegen && pnpm docs:jsforce",
+    "docs:core": "typedoc --options ./src/configs/core.ts",
+    "docs:rest": "typedoc --options ./src/configs/rest.ts",
+    "docs:auth": "typedoc --options ./src/configs/auth.ts",
+    "docs:codegen": "typedoc --options ./src/configs/codegen.ts",
+    "docs:jsforce": "typedoc --options ./src/configs/jsforce.ts",
+    "typecheck:source": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "typedoc": "0.28.20",
+    "typedoc-plugin-markdown": "4.13.1",
+    "typescript": "6.0.3"
+  }
+}

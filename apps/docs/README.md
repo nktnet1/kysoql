@@ -47,11 +47,12 @@ root so navigation and search filtering stay aligned.
 ### Generated API reference
 
 The package API-reference pages are generated from each package's public
-`src/index.ts` entry point with TypeDoc and `typedoc-plugin-markdown`. The shared
-configuration in `typedoc/config.ts` emits MDX directly into the existing
-Fumadocs content routes and uses table layouts for indexes, parameters, and
-public properties. `typedoc-plugin-frontmatter` only supplies the page metadata
-required by this app; there are no custom conversion or reflection plugins.
+`src/index.ts` entry point by the standalone `tools/typedoc` workspace package.
+Its shared TypeDoc configuration emits MDX directly into the existing Fumadocs
+content routes and uses table layouts for indexes, parameters, and public
+properties. The Markdown pipeline keeps the reference tool's lightweight render
+plugins for return-union cleanup, trailing-whitespace cleanup, and frontmatter
+wrapping; it does not mutate TypeDoc's reflection model.
 
 Generate every package or one package at a time:
 

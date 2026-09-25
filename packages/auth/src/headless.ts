@@ -229,7 +229,7 @@ export type HeadlessGuestAuthorizationOptions = HeadlessGuestAuthorizationBase &
  * Builds the authorization request for Salesforce Headless Identity's guest
  * variation of Authorization Code and Credentials. Salesforce requires the
  * UVID/JWT prefix during authorization; the later token exchange uses the raw
- * value through exchangeAuthorizationCode({ authRequestType: "guest", ... }).
+ * value through `exchangeAuthorizationCode({ authRequestType: "guest", ... })`.
  */
 export const createHeadlessGuestAuthorizationRequest = (
   options: HeadlessGuestAuthorizationOptions,

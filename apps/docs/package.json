@@ -12,12 +12,12 @@
     "check:content": "pnpm docs:api && node --test scripts/content.test.ts && node scripts/check-content.ts",
     "check:examples": "node scripts/check-examples.ts",
     "typecheck:source": "pnpm check:content && pnpm check:examples && pnpm types:check",
-    "docs:api": "pnpm docs:api:core && pnpm docs:api:rest && pnpm docs:api:auth && pnpm docs:api:codegen && pnpm docs:api:jsforce",
-    "docs:api:core": "typedoc --options ./typedoc/core.ts",
-    "docs:api:rest": "typedoc --options ./typedoc/rest.ts",
-    "docs:api:auth": "typedoc --options ./typedoc/auth.ts",
-    "docs:api:codegen": "typedoc --options ./typedoc/codegen.ts",
-    "docs:api:jsforce": "typedoc --options ./typedoc/jsforce.ts"
+    "docs:api": "pnpm --filter @kysoql/typedoc docs:gen",
+    "docs:api:core": "pnpm --filter @kysoql/typedoc docs:core",
+    "docs:api:rest": "pnpm --filter @kysoql/typedoc docs:rest",
+    "docs:api:auth": "pnpm --filter @kysoql/typedoc docs:auth",
+    "docs:api:codegen": "pnpm --filter @kysoql/typedoc docs:codegen",
+    "docs:api:jsforce": "pnpm --filter @kysoql/typedoc docs:jsforce"
   },
   "dependencies": {
     "@tanstack/react-router": "1.170.39",
@@ -38,6 +38,7 @@
     "@kysoql/core": "workspace:*",
     "@kysoql/jsforce": "workspace:*",
     "@kysoql/rest": "workspace:*",
+    "@kysoql/typedoc": "workspace:*",
     "@tailwindcss/vite": "^4.3.3",
     "@types/mdx": "^2.0.14",
     "@types/node": "^26.6.2",
@@ -46,10 +47,7 @@
     "@vitejs/plugin-react": "^6.1.1",
     "srvx": "^1.0.5",
     "tailwindcss": "^4.3.3",
-    "typedoc": "0.28.20",
-    "typedoc-plugin-frontmatter": "1.3.2",
-    "typedoc-plugin-markdown": "4.13.1",
-    "typescript": "6.0.3",
+    "typescript": "^7.0.2",
     "vite": "^8.3.0"
   }
 }

@@ -79,11 +79,18 @@ function Content({ path, markdownUrl }: { path: string; markdownUrl: string }) {
   }
 
   const { toc } = use(page.load());
+  const docsToc = toc.filter(
+    (item) =>
+      item.depth <= 4 &&
+      !["#properties", "#parameters", "#returns"].some((p) =>
+        item.url.startsWith(p),
+      ),
+  );
   const MDX = page.body;
   const sourceUrl = getPageSourceUrl(path);
 
   return (
-    <DocsPage toc={toc}>
+    <DocsPage toc={docsToc}>
       <DocsTitle>{page.title}</DocsTitle>
       <DocsDescription>{page.description}</DocsDescription>
       <div className="-mt-4 flex flex-row items-center gap-2 border-b pb-6">
