@@ -79,13 +79,7 @@ function Content({ path, markdownUrl }: { path: string; markdownUrl: string }) {
   }
 
   const { toc } = use(page.load());
-  const docsToc = toc.filter(
-    (item) =>
-      item.depth <= 4 &&
-      !["#properties", "#parameters", "#returns"].some((p) =>
-        item.url.startsWith(p),
-      ),
-  );
+  const docsToc = toc.filter((item) => item.depth <= 4);
   const MDX = page.body;
   const sourceUrl = getPageSourceUrl(path);
 
