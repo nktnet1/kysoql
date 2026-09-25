@@ -42,58 +42,75 @@ interface ApexAggregateSelectQueryBuilderProps {
   readonly apexContext: ApexQueryContext;
 }
 
+/** Apex rendering wrapper for an aggregate SELECT query. */
 export interface ApexAggregateSelectQueryBuilder<
   DB,
   TB extends keyof DB,
   O,
   Context extends ApexQueryContext = "static",
 > {
+  /** Passes this builder to `func` and returns the callback result. */
   $call<T>(func: (qb: this) => T): T;
 
+  /** Conditionally applies a builder callback; when false, the runtime query is unchanged. */
   $if(condition: boolean, func: (qb: this) => this): this;
 
+  /** Returns a builder with the `GROUP BY` clause removed. */
   clearGroupBy(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
+  /** Returns a builder with the `LIMIT` clause removed. */
   clearLimit(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
+  /** Returns a builder with the `OFFSET` clause removed. */
   clearOffset(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
+  /** Returns a builder with all `ORDER BY` items removed. */
   clearOrderBy(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
+  /** Returns a builder with the `WHERE` predicate removed. */
   clearWhere(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
+  /** Compiles the current operation tree into a `CompiledQuery`. */
   compile(): CompiledQuery<O>;
 
+  /** Adds the Apex `ALL ROWS` clause. */
   allRows(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
+  /** Adds or replaces the SOQL `LIMIT` clause. */
   limit(
     limit: number | ApexBindExpression<number>,
   ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
+  /** Adds or replaces the SOQL `OFFSET` clause. */
   offset(
     offset: number | ApexBindExpression<number>,
   ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where(
     expression: SoqlRawBuilder,
   ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where(
     expression: ApexWhereExpressionFactory<DB, TB>,
   ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where(
     lhs: ApexBindExpression<string>,
     op: "includes",
     rhs: readonly string[],
   ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where<RE extends string, OP extends ComparisonOperatorExpression<DB, TB, RE>>(
     lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
     op: OP,
     rhs: ApexOperandValueExpression<DB, TB, NoInfer<RE>, NoInfer<OP>>,
   ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
+  /** Adds dynamic Apex `SET OPTIONS` from a bound `Database.QueryOptions` variable. */
   setOptions(
     options: DynamicApexOnly<
       Context,
@@ -101,10 +118,13 @@ export interface ApexAggregateSelectQueryBuilder<
     >,
   ): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
+  /** Compiles the Apex query with `WITH SYSTEM_MODE`. */
   withSystemMode(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
+  /** Compiles the Apex query with `WITH USER_MODE`. */
   withUserMode(): ApexAggregateSelectQueryBuilder<DB, TB, O, Context>;
 
+  /** Returns the immutable operation node represented by this builder. */
   toOperationNode(): SelectQueryNode;
 }
 

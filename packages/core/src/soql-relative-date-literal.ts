@@ -53,19 +53,33 @@ const relativeDateFamilies = [
   "N_FISCAL_YEARS_AGO",
 ] as const;
 
+/**
+ * Parameterized Salesforce relative-date literal families such as
+ * LAST_N_DAYS.
+ */
 export type SoqlRelativeDateFamily = (typeof relativeDateFamilies)[number];
 
 type SoqlFixedRelativeDateValue = (typeof fixedRelativeDateValues)[number];
 
 type SoqlParameterizedRelativeDateValue = `${SoqlRelativeDateFamily}:${number}`;
 
+/**
+ * Validated fixed or parameterized Salesforce relative-date literal value.
+ */
 export type SoqlRelativeDateValue =
   | SoqlFixedRelativeDateValue
   | SoqlParameterizedRelativeDateValue;
 
+/**
+ * Branded Salesforce relative-date literal accepted by date and datetime
+ * filters.
+ */
 export interface SoqlRelativeDateLiteral {
+  /** Literal discriminator used by the compiler. */
   readonly kind: "SoqlRelativeDateLiteral";
+  /** Validated Salesforce relative-date literal, such as `LAST_N_DAYS:30`. */
   readonly value: SoqlRelativeDateValue;
+  /** Type-only brand used by Kysoql to preserve compile-time information; it has no user-facing runtime meaning. */
   readonly [soqlRelativeDateLiteralBrand]: never;
 }
 
@@ -98,6 +112,10 @@ const relativeDateLiteralSchema = v.object({
   value: relativeDateValueSchema,
 });
 
+/**
+ * Creates a validated fixed or parameterized Salesforce relative-date
+ * literal.
+ */
 export function soqlRelativeDate(
   value: SoqlFixedRelativeDateValue,
 ): SoqlRelativeDateLiteral;

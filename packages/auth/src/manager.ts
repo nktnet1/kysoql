@@ -7,19 +7,37 @@ import {
 import type { RefreshTokenStore } from "#/storage";
 import { nonEmptySecret, parseOAuthBaseUrl } from "#/validation";
 
+/**
+ * Describes whether an access-token provider should force a token refresh.
+ */
 export interface AccessTokenRequest {
+  /** Whether the caller requires a freshly refreshed access token. */
   readonly refresh: boolean;
 }
 
+/**
+ * Provides an access token, optionally forcing refresh for an authentication
+ * retry.
+ */
 export type AccessTokenProvider = (
   options: AccessTokenRequest,
 ) => string | Promise<string>;
 
+/**
+ * Creates a client assertion, typically regenerated for each token refresh.
+ */
 export type ClientAssertionProvider = () => string | Promise<string>;
 
+/**
+ * Options for access-token management backed by a persistent refresh-token
+ * store.
+ */
 export interface StoredRefreshTokenAuthOptions extends OAuthRequestOptions {
+  /** Salesforce login or My Domain base URL used for token refresh. */
   readonly loginUrl: string;
+  /** Connected App consumer key / OAuth client ID. */
   readonly clientId: string;
+  /** Connected App client secret for confidential-client authentication. */
   readonly clientSecret?: string;
   /** Default: body. Salesforce also accepts HTTP Basic for client secrets. */
   readonly clientSecretTransport?: "body" | "basic";
@@ -33,6 +51,7 @@ export interface StoredRefreshTokenAuthOptions extends OAuthRequestOptions {
    * tokens.
    */
   readonly refreshMode?: "standard" | "hybrid";
+  /** Store used to load and persist refresh tokens, including rotated tokens. */
   readonly refreshTokenStore: RefreshTokenStore;
   /**
    * Used only when the store is initially empty. Persisted after the first
@@ -41,13 +60,25 @@ export interface StoredRefreshTokenAuthOptions extends OAuthRequestOptions {
   readonly initialRefreshToken?: string;
 }
 
+/**
+ * Access-token manager that refreshes and persists rotated Salesforce
+ * refresh tokens.
+ */
 export interface StoredRefreshTokenAuth {
+  /** Returns the cached session, refreshing from the stored refresh token when needed. */
   getSession(): Promise<SalesforceOAuthSession>;
+  /** Forces a token refresh and persists any rotated refresh token. */
   refresh(): Promise<SalesforceOAuthSession>;
+  /** Provider suitable for REST clients that can request a forced refresh after authentication failure. */
   readonly accessTokenProvider: AccessTokenProvider;
+  /** Clears cached session state and deletes the persisted refresh token. */
   clear(): Promise<void>;
 }
 
+/**
+ * Creates a refresh-token-backed access-token manager with single-flight
+ * refreshes.
+ */
 export const createStoredRefreshTokenAuth = (
   options: StoredRefreshTokenAuthOptions,
 ): StoredRefreshTokenAuth => {

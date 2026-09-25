@@ -4,9 +4,16 @@ import { freeze } from "#/util/object-utils";
 
 declare const soqlLikeLiteralBrand: unique symbol;
 
+/**
+ * LIKE operand wrapper that treats percent and underscore characters
+ * literally.
+ */
 export interface SoqlLikeLiteral {
+  /** Literal discriminator used by the compiler. */
   readonly kind: "SoqlLikeLiteral";
+  /** LIKE pattern text whose `%` and `_` characters are treated literally. */
   readonly value: string;
+  /** Type-only brand used by Kysoql to preserve compile-time information; it has no user-facing runtime meaning. */
   readonly [soqlLikeLiteralBrand]: never;
 }
 

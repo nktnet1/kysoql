@@ -1,7 +1,10 @@
 import { freeze } from "#/util/object-utils";
 
+/** Immutable query AST node for a trusted raw SOQL fragment. */
 export interface RawNode {
+  /** Node discriminator used by Kysoql compilers and plugin visitors. */
   readonly kind: "RawNode";
+  /** Trusted SOQL fragment emitted verbatim. */
   readonly soql: string;
 }
 

@@ -49,6 +49,7 @@ import {
 import { generatePkcePair, type PkcePair } from "#/pkce";
 import { nonEmptySecret, parseOAuthBaseUrl } from "#/validation";
 
+/** Options for the high-level Salesforce authentication helper. */
 export interface SalesforceAuthOptions extends OAuthRequestOptions {
   /** Salesforce login, My Domain, or Experience Cloud site base URL. */
   readonly loginUrl: string;
@@ -107,13 +108,19 @@ type BoundFirstPartyAuthorizationChallengeOptions = Omit<
   "siteUrl"
 >;
 
+/** JWT bearer credentials accepted by SalesforceAuth. */
 export interface SalesforceJwtBearerOptions extends OAuthRequestOptions {
+  /** Salesforce username placed in the JWT `sub` claim. */
   readonly username: string;
+  /** Private key used to sign the JWT bearer assertion. */
   readonly privateKey: PrivateKeyInput;
+  /** Assertion lifetime in seconds. */
   readonly expiresInSeconds?: number;
+  /** Epoch time used as the assertion issue time; primarily useful for deterministic tests. */
   readonly now?: number;
 }
 
+/** Client-assertion credentials accepted by SalesforceAuth. */
 export type SalesforceClientAssertionOptions = Omit<
   OAuthClientAssertionOptions,
   "loginUrl" | "clientId"
@@ -143,10 +150,13 @@ const requestOptions = (
  * compatibility.
  */
 export class SalesforceAuth {
+  /** Salesforce login or My Domain base URL. */
   readonly loginUrl: string;
+  /** Connected App consumer key / OAuth client ID. */
   readonly clientId: string;
   readonly #requestDefaults: OAuthRequestOptions;
 
+  /** Creates a Salesforce authentication helper bound to a login URL and Connected App client ID. */
   constructor(options: SalesforceAuthOptions) {
     this.loginUrl = parseOAuthBaseUrl(options.loginUrl, "loginUrl");
     this.clientId = nonEmptySecret(options.clientId, "clientId");

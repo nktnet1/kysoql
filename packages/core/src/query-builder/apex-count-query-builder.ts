@@ -40,45 +40,58 @@ interface ApexCountQueryBuilderProps {
   readonly apexContext: ApexQueryContext;
 }
 
+/** Apex rendering wrapper for a COUNT() query. */
 export interface ApexCountQueryBuilder<
   DB,
   TB extends keyof DB,
   Context extends ApexQueryContext = "static",
 > {
+  /** Passes this builder to `func` and returns the callback result. */
   $call<T>(func: (qb: this) => T): T;
 
+  /** Conditionally applies a builder callback; when false, the runtime query is unchanged. */
   $if(condition: boolean, func: (qb: this) => this): this;
 
+  /** Returns a builder with the `LIMIT` clause removed. */
   clearLimit(): ApexCountQueryBuilder<DB, TB, Context>;
 
+  /** Returns a builder with the `WHERE` predicate removed. */
   clearWhere(): ApexCountQueryBuilder<DB, TB, Context>;
 
+  /** Compiles the current operation tree into a `CompiledQuery`. */
   compile(): CompiledQuery<number>;
 
+  /** Adds the Apex `ALL ROWS` clause. */
   allRows(): ApexCountQueryBuilder<DB, TB, Context>;
 
+  /** Adds or replaces the SOQL `LIMIT` clause. */
   limit(
     limit: number | ApexBindExpression<number>,
   ): ApexCountQueryBuilder<DB, TB, Context>;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where(expression: SoqlRawBuilder): ApexCountQueryBuilder<DB, TB, Context>;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where(
     expression: ApexWhereExpressionFactory<DB, TB>,
   ): ApexCountQueryBuilder<DB, TB, Context>;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where(
     lhs: ApexBindExpression<string>,
     op: "includes",
     rhs: readonly string[],
   ): ApexCountQueryBuilder<DB, TB, Context>;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where<RE extends string, OP extends ComparisonOperatorExpression<DB, TB, RE>>(
     lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
     op: OP,
     rhs: ApexOperandValueExpression<DB, TB, NoInfer<RE>, NoInfer<OP>>,
   ): ApexCountQueryBuilder<DB, TB, Context>;
 
+  /** Adds dynamic Apex `SET OPTIONS` from a bound `Database.QueryOptions` variable. */
   setOptions(
     options: DynamicApexOnly<
       Context,
@@ -86,10 +99,13 @@ export interface ApexCountQueryBuilder<
     >,
   ): ApexCountQueryBuilder<DB, TB, Context>;
 
+  /** Compiles the Apex query with `WITH SYSTEM_MODE`. */
   withSystemMode(): ApexCountQueryBuilder<DB, TB, Context>;
 
+  /** Compiles the Apex query with `WITH USER_MODE`. */
   withUserMode(): ApexCountQueryBuilder<DB, TB, Context>;
 
+  /** Returns the immutable operation node represented by this builder. */
   toOperationNode(): SelectQueryNode;
 }
 

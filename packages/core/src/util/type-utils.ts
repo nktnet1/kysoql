@@ -10,7 +10,10 @@ export type DrainOuterGeneric<T> = [T] extends [unknown] ? T : never;
 export type Simplify<T> = DrainOuterGeneric<{ [K in keyof T]: T[K] } & {}>;
 
 /** Marker used by `$narrowType()` to remove null from a selected field. */
-export type NotNull = { readonly __notNull__: unique symbol };
+export type NotNull = {
+  /** Type-only marker consumed by `$narrowType()`; it has no runtime meaning. */
+  readonly __notNull__: unique symbol;
+};
 
 /** Narrows selected output properties without changing the generated SOQL. */
 export type NarrowPartial<O, T> = T extends object

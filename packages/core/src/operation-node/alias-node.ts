@@ -2,9 +2,13 @@ import type { OperationNode } from "#/operation-node/operation-node";
 import { parseSelectionAlias } from "#/parser/selection-alias-parser";
 import { freeze } from "#/util/object-utils";
 
+/** Immutable query AST node for a SELECT alias. */
 export interface AliasNode {
+  /** Node discriminator used by Kysoql compilers and plugin visitors. */
   readonly kind: "AliasNode";
+  /** Operation node wrapped by this node. */
   readonly node: OperationNode;
+  /** Selection alias emitted for the wrapped expression. */
   readonly alias: string;
 }
 

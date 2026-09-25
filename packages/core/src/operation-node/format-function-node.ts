@@ -3,8 +3,11 @@ import type { ConvertCurrencyFunctionNode } from "#/operation-node/convert-curre
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import { freeze } from "#/util/object-utils";
 
+/** Immutable query AST node for a FORMAT() expression. */
 export interface FormatFunctionNode {
+  /** Node discriminator used by Kysoql compilers and plugin visitors. */
   readonly kind: "FormatFunctionNode";
+  /** Expression wrapped by this function node. */
   readonly expression:
     | AggregateFunctionNode
     | ConvertCurrencyFunctionNode

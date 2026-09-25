@@ -340,6 +340,9 @@ type NextAdvancedGroupFieldCount<
   Input extends AdvancedGroupByInput,
 > = AddAdvancedGroupFieldCount<Count, AdvancedGroupByInputCount<Input>>;
 
+/**
+ * Type-safe builder for grouped and aggregate Salesforce SELECT queries.
+ */
 export interface AggregateSelectQueryBuilder<
   DB,
   TB extends keyof DB,
@@ -348,8 +351,10 @@ export interface AggregateSelectQueryBuilder<
   GroupMode extends AggregateGroupMode = "none",
   AdvancedFieldCount extends AdvancedGroupFieldCount = 0,
 > {
+  /** Passes this builder to `func` and returns the callback result. */
   $call<T>(func: (qb: this) => T): T;
 
+  /** Asserts at compile time that the current query output exactly matches `T`. */
   $assertType<T extends O>(): O extends T
     ? AggregateSelectQueryBuilder<
         DB,
@@ -361,6 +366,7 @@ export interface AggregateSelectQueryBuilder<
       >
     : KysoqlTypeError<"$assertType() call failed: The type passed in is not equal to the output type of the query.">;
 
+  /** Changes only the TypeScript output type; the generated SOQL is unchanged. */
   $castTo<C>(): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -370,6 +376,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Narrows selected output properties at the type level without changing SOQL. */
   $narrowType<T>(): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -379,6 +386,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Conditionally applies a builder callback; when false, the runtime query is unchanged. */
   $if<O2>(
     condition: boolean,
     func: (
@@ -400,8 +408,10 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Returns a builder with the `GROUP BY` clause removed. */
   clearGroupBy(): AggregateSelectQueryBuilder<DB, TB, O, never, "none", 0>;
 
+  /** Returns a builder with the `LIMIT` clause removed. */
   clearLimit(): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -411,6 +421,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Returns a builder with the `OFFSET` clause removed. */
   clearOffset(): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -420,6 +431,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Returns a builder with all `ORDER BY` items removed. */
   clearOrderBy(): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -429,6 +441,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Returns a builder with all current selections removed. */
   clearSelect(): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -438,6 +451,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Returns a builder with the `WHERE` predicate removed. */
   clearWhere(): AggregateSelectQueryBuilder<
     DB,
     TB,
@@ -447,12 +461,16 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Compiles the current operation tree into a `CompiledQuery`. */
   compile(): CompiledQuery<O>;
 
+  /** Compiles and executes the query with the configured executor. */
   execute(options?: AbortableQueryOptions): Promise<readonly O[]>;
 
+  /** Executes the query and returns the first row, or `undefined` when no rows match. */
   executeTakeFirst(options?: AbortableQueryOptions): Promise<O | undefined>;
 
+  /** Executes the query and returns the first row, throwing when no rows match. */
   executeTakeFirstOrThrow(
     options?:
       | ExecuteTakeFirstOrThrowOptions
@@ -460,12 +478,16 @@ export interface AggregateSelectQueryBuilder<
       | ((node: SelectQueryNode) => Error),
   ): Promise<O>;
 
+  /** Executes with the executor's Salesforce query-all semantics. */
   executeAll(options?: AbortableQueryOptions): Promise<readonly O[]>;
 
+  /** Switches to the static Apex builder for the current query. */
   apex(): ApexAggregateSelectQueryBuilder<DB, TB, O, "static">;
 
+  /** Switches to the dynamic Apex builder for the current query. */
   dynamicApex(): ApexAggregateSelectQueryBuilder<DB, TB, O, "dynamic">;
 
+  /** Adds `FOR VIEW`; available only for MRU-enabled objects. */
   forView(
     ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
       ? readonly [mruDisabled: never]
@@ -479,6 +501,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds `FOR REFERENCE`; available only for MRU-enabled objects. */
   forReference(
     ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
       ? readonly [mruDisabled: never]
@@ -492,6 +515,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds the KnowledgeArticle `UPDATE TRACKING` clause. */
   updateTracking(
     ..._knowledgeArticleCheck: KnowledgeArticleUpdateCheck<TB>
   ): AggregateSelectQueryBuilder<
@@ -503,6 +527,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds the KnowledgeArticle `UPDATE VIEWSTAT` clause. */
   updateViewstat(
     ..._knowledgeArticleCheck: KnowledgeArticleUpdateCheck<TB>
   ): AggregateSelectQueryBuilder<
@@ -514,6 +539,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds a Salesforce `USING SCOPE` clause validated against schema metadata. */
   usingScope(
     scope: SalesforceObjectSupportedScope<DB[TB]>,
   ): AggregateSelectQueryBuilder<
@@ -525,6 +551,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds the UserProfileFeed `WITH USER_ID` clause. */
   withUserId(
     userId: string,
     ..._userProfileFeedCheck: UserProfileFeedWithUserIdCheck<TB>
@@ -537,6 +564,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds `WITH RECORD_VISIBILITY_CONTEXT` options. */
   withRecordVisibilityContext(
     parameters: RecordVisibilityContextOptions,
   ): AggregateSelectQueryBuilder<
@@ -548,6 +576,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds object-specific Salesforce `SET OPTIONS` values. */
   setOptions(
     options: Data360AggregateSetOptionsFor<DB[TB]>,
   ): AggregateSelectQueryBuilder<
@@ -559,6 +588,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds a typed `WITH DATA CATEGORY` filter. */
   withDataCategory<Group extends SalesforceObjectDataCategoryGroup<DB[TB]>>(
     group: Group,
     selector: DataCategorySelector,
@@ -572,6 +602,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds a `GROUP BY` expression and enters aggregate-query mode. */
   groupBy<GE extends string>(
     field: GroupModeOnly<
       GroupMode,
@@ -587,6 +618,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds a `GROUP BY` expression and enters aggregate-query mode. */
   groupBy<
     Expression extends DateFunctionExpression<
       unknown,
@@ -609,6 +641,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds a `GROUP BY` expression and enters aggregate-query mode. */
   groupBy<GE extends string>(
     fields: GroupModeOnly<
       GroupMode,
@@ -624,6 +657,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds a `GROUP BY ROLLUP` expression. */
   groupByRollup<const Input extends AdvancedGroupByInput>(
     fields: GroupModeOnly<
       GroupMode,
@@ -639,6 +673,7 @@ export interface AggregateSelectQueryBuilder<
     NextAdvancedGroupFieldCount<AdvancedFieldCount, Input>
   >;
 
+  /** Adds a `GROUP BY CUBE` expression. */
   groupByCube<const Input extends AdvancedGroupByInput>(
     fields: GroupModeOnly<
       GroupMode,
@@ -654,6 +689,7 @@ export interface AggregateSelectQueryBuilder<
     NextAdvancedGroupFieldCount<AdvancedFieldCount, Input>
   >;
 
+  /** Adds a typed `HAVING` predicate to the aggregate query. */
   having(
     expression: GroupedOnly<GroupedBy, SoqlRawBuilder>,
   ): AggregateSelectQueryBuilder<
@@ -665,6 +701,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds a typed `HAVING` predicate to the aggregate query. */
   having(
     expression: GroupedOnly<
       GroupedBy,
@@ -684,6 +721,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds a typed `HAVING` predicate to the aggregate query. */
   having<
     RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
@@ -702,6 +740,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds or replaces the SOQL `LIMIT` clause. */
   limit(
     limit: GroupedOnly<GroupedBy, number>,
   ): AggregateSelectQueryBuilder<
@@ -713,6 +752,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds or replaces the SOQL `OFFSET` clause. */
   offset(
     offset: GroupedOnly<GroupedBy, number>,
   ): AggregateSelectQueryBuilder<
@@ -724,6 +764,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds a typed `ORDER BY` item. */
   orderBy(
     expression: GroupedOnly<GroupedBy, SoqlRawBuilder>,
     direction?: OrderByDirection,
@@ -737,6 +778,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds a typed `ORDER BY` item. */
   orderBy<OE extends string>(
     field: OE &
       GroupedOnly<GroupedBy, GroupedSortableFieldName<DB, TB, GroupedBy, OE>>,
@@ -751,6 +793,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds a typed `ORDER BY` item. */
   orderBy(
     expression: AdvancedGroupingOnly<
       GroupMode,
@@ -766,6 +809,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds a typed `ORDER BY` item. */
   orderBy<Output, Value, Operator extends ComparisonOperator>(
     expression: GroupedOnly<
       GroupedBy,
@@ -784,6 +828,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds a typed `ORDER BY` item. */
   orderBy<
     Output,
     Value,
@@ -806,6 +851,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds one or more typed selections to the query output. */
   select<RawOutput>(
     selection: SoqlRawBuilder<RawOutput>,
   ): AggregateSelectQueryBuilder<
@@ -817,6 +863,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds one or more typed selections to the query output. */
   select<Aggregate extends AggregateSelectionArg>(
     selection: (
       eb: SelectExpressionBuilder<
@@ -834,6 +881,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds one or more typed selections to the query output. */
   select<Selection extends GroupedSelectionArg>(
     selection: (
       eb: SelectExpressionBuilder<
@@ -852,6 +900,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds one or more typed selections to the query output. */
   select<const Selections extends readonly string[]>(
     selections: Selections &
       GroupedSelectExpressionList<DB, TB, GroupedBy, Selections>,
@@ -864,6 +913,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds one or more typed selections to the query output. */
   select<SE extends string>(
     selection: SE & GroupedSelectExpression<DB, TB, GroupedBy, SE>,
   ): AggregateSelectQueryBuilder<
@@ -875,6 +925,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where(
     expression: SoqlRawBuilder,
   ): AggregateSelectQueryBuilder<
@@ -886,6 +937,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where(
     expression: WhereExpressionFactory<DB, TB>,
   ): AggregateSelectQueryBuilder<
@@ -897,6 +949,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where<
     RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
@@ -914,6 +967,7 @@ export interface AggregateSelectQueryBuilder<
     AdvancedFieldCount
   >;
 
+  /** Returns the immutable operation node represented by this builder. */
   toOperationNode(): SelectQueryNode;
 }
 

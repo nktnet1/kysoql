@@ -1,12 +1,20 @@
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import { freeze } from "#/util/object-utils";
 
+/**
+ * Arithmetic operators supported by Salesforce formula filter functions.
+ */
 export type FormulaArithmeticOperator = "+" | "-";
 
+/** Immutable query AST node for a Salesforce formula filter function. */
 export interface FormulaFunctionNode {
+  /** Node discriminator used by Kysoql compilers and plugin visitors. */
   readonly kind: "FormulaFunctionNode";
+  /** Left operand of the operation. */
   readonly leftOperand: ReferenceNode;
+  /** SOQL comparison or arithmetic operator. */
   readonly operator: FormulaArithmeticOperator;
+  /** Right operand of the operation. */
   readonly rightOperand: ReferenceNode;
 }
 

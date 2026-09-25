@@ -12,8 +12,10 @@ declare const soqlRawBuilderType: unique symbol;
  * from untrusted or user-controlled input.
  */
 export interface SoqlRawBuilder<Output = unknown> {
+  /** Type-only brand used by Kysoql to preserve compile-time information; it has no user-facing runtime meaning. */
   readonly [soqlRawBuilderType]: Output;
 
+  /** Returns the immutable operation node represented by this builder. */
   toOperationNode(): RawNode;
 }
 
@@ -40,6 +42,10 @@ function raw<Output = unknown>(fragment: string): SoqlRawBuilder<Output> {
   return new SoqlRawBuilderImpl<Output>(fragment);
 }
 
+/**
+ * SOQL literal helpers, including the explicit unsafe raw-fragment escape
+ * hatch.
+ */
 export const soql = freeze({
   /**
    * Emit trusted SOQL verbatim. Do not pass user-controlled input.

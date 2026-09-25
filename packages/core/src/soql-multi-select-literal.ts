@@ -5,10 +5,16 @@ import { freeze } from "#/util/object-utils";
  * where every listed value must be selected on the matching record.
  */
 export interface SoqlMultiSelectAnd<Value extends string = string> {
+  /** Literal discriminator for an `INCLUDES`/`EXCLUDES` multi-select AND value. */
   readonly kind: "SoqlMultiSelectAnd";
+  /** Multi-select picklist values that must all be matched together. */
   readonly values: readonly [Value, Value, ...Value[]];
 }
 
+/**
+ * Creates a multi-select picklist operand that requires every listed value
+ * to match.
+ */
 export const soqlMultiSelectAnd = <Value extends string>(
   first: Value,
   second: Value,

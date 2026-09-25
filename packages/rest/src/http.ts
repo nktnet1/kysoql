@@ -3,6 +3,7 @@ import type { AbortableQueryOptions } from "@kysoql/core";
 import { SalesforceResponseError } from "#/errors";
 import { parseTimeout } from "#/validation";
 
+/** Abort and timeout options shared by Salesforce REST operations. */
 export interface RestRequestOptions extends AbortableQueryOptions {
   /** Combines with the client's signal; cancelling one operation does not cancel others. */
   readonly signal?: AbortSignal;
@@ -10,6 +11,7 @@ export interface RestRequestOptions extends AbortableQueryOptions {
   readonly timeoutMs?: number;
 }
 
+/** REST request options plus an injectable fetch implementation. */
 export interface HttpOptions extends RestRequestOptions {
   /** Native fetch by default. An injected implementation must honour signal and redirect. */
   readonly fetch?: typeof globalThis.fetch;

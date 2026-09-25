@@ -10,18 +10,29 @@ import {
   parseScope,
 } from "#/validation";
 
+/**
+ * Fetch-compatible request data for a Salesforce Headless Identity
+ * authorization call.
+ */
 export interface HeadlessAuthorizationRequest {
+  /** Salesforce authorization endpoint URL to pass to `fetch`. */
   readonly url: string;
+  /** Fetch options for the headless authorization request, including `redirect: "manual"`. */
   readonly init: RequestInit;
 }
 
 interface CodeCredentialsAuthorizationBase {
   /** Experience Cloud site base URL, including a site path when configured. */
   readonly siteUrl: string;
+  /** Connected App consumer key / OAuth client ID. */
   readonly clientId: string;
+  /** Redirect URI registered with the Connected App. */
   readonly redirectUri: string;
+  /** PKCE S256 challenge paired with the verifier used during code exchange. */
   readonly codeChallenge?: string;
+  /** OAuth scopes requested from Salesforce. */
   readonly scope?: string | readonly string[];
+  /** Opaque state value returned unchanged for request correlation. */
   readonly state?: string;
   /** Plain UVID body parameter. Mutually exclusive with uvidHintToken. */
   readonly uvidHint?: string;
@@ -29,30 +40,49 @@ interface CodeCredentialsAuthorizationBase {
   readonly uvidHintToken?: string;
 }
 
+/**
+ * Options for headless authorization with an explicit Salesforce username
+ * and password.
+ */
 export interface CodeCredentialsNamedUserOptions
   extends CodeCredentialsAuthorizationBase {
+  /** Salesforce username associated with the authorization flow. */
   readonly username: string;
+  /** Salesforce password supplied to the headless credentials flow. */
   readonly password: string;
   /**
    * Default: authorization-header. Use body when the app requires POST-body
    * credentials.
    */
   readonly credentialsPlacement?: "authorization-header" | "body";
+  /** Not accepted in named-user mode; use user-discovery options instead. */
   readonly loginHint?: never;
+  /** Not accepted in named-user mode; only user-discovery requests support custom data. */
   readonly customData?: never;
 }
 
+/**
+ * Options for headless authorization that discovers the Salesforce user from
+ * a login hint.
+ */
 export interface CodeCredentialsUserDiscoveryOptions
   extends CodeCredentialsAuthorizationBase {
   /** Headless user-discovery identifier passed to the Apex discovery handler. */
   readonly loginHint: string;
+  /** Salesforce password supplied to the headless credentials flow. */
   readonly password: string;
+  /** Application-defined data forwarded to the Salesforce user-discovery handler. */
   readonly customData?: string;
+  /** Not accepted in user-discovery mode; Salesforce resolves the user from `loginHint`. */
   readonly username?: never;
   /** User-discovery credentials must be sent in the POST body. */
   readonly credentialsPlacement?: "body";
 }
 
+/**
+ * Options accepted by the Headless Identity
+ * authorization-code-and-credentials flow.
+ */
 export type CodeCredentialsAuthorizationOptions =
   | CodeCredentialsNamedUserOptions
   | CodeCredentialsUserDiscoveryOptions;
@@ -161,23 +191,34 @@ export const createCodeCredentialsAuthorizationRequest = (
 interface HeadlessGuestAuthorizationBase {
   /** Experience Cloud site base URL, including a site path when configured. */
   readonly siteUrl: string;
+  /** Connected App consumer key / OAuth client ID. */
   readonly clientId: string;
+  /** Redirect URI registered with the Connected App. */
   readonly redirectUri: string;
+  /** PKCE S256 challenge paired with the verifier used during code exchange. */
   readonly codeChallenge?: string;
+  /** OAuth scopes requested from Salesforce. */
   readonly scope?: string | readonly string[];
+  /** Opaque state value returned unchanged for request correlation. */
   readonly state?: string;
   /** Default: header. Salesforce also accepts the prefixed value in the body. */
   readonly uvidPlacement?: "header" | "body";
 }
 
+/**
+ * Options for the guest variant of Salesforce Headless Identity
+ * authorization.
+ */
 export type HeadlessGuestAuthorizationOptions = HeadlessGuestAuthorizationBase &
   (
     | {
         /** Plain UVID generated and managed by the application. */
         readonly uvidHint: string;
+        /** Not accepted when `uvidHint` is supplied. */
         readonly uvidHintToken?: never;
       }
     | {
+        /** Not accepted when `uvidHintToken` is supplied. */
         readonly uvidHint?: never;
         /** JWT-based Salesforce access token that contains the UVID. */
         readonly uvidHintToken: string;
@@ -244,6 +285,9 @@ export const createHeadlessGuestAuthorizationRequest = (
   };
 };
 
+/**
+ * Options for requesting a first-party Salesforce authorization challenge.
+ */
 export interface FirstPartyAuthorizationChallengeOptions
   extends OAuthRequestOptions {
   /** Experience Cloud site base URL, including a site path when configured. */
@@ -261,24 +305,36 @@ export interface FirstPartyAuthorizationChallengeOptions
   readonly accessToken?: string;
 }
 
+/** Serializable value accepted in first-party authorization challenge parameters. */
 export type FirstPartyAuthorizationValue =
   | string
   | number
   | boolean
   | null
   | readonly FirstPartyAuthorizationValue[]
-  | { readonly [key: string]: FirstPartyAuthorizationValue };
+  | {
+      /** Flow-specific property keyed by the field name expected by Salesforce. */
+      readonly [key: string]: FirstPartyAuthorizationValue;
+    };
 
+/** Result of a first-party Salesforce authorization challenge request. */
 export type FirstPartyAuthorizationChallenge =
   | {
+      /** Indicates that Salesforce returned an authorization code. */
       readonly kind: "authorized";
+      /** Authorization code to exchange at the token endpoint. */
       readonly authorizationCode: string;
     }
   | {
+      /** Indicates that Salesforce requires another authorization step. */
       readonly kind: "challenge";
+      /** HTTP status returned for the challenge response. */
       readonly status: number;
+      /** Salesforce OAuth error identifier for the challenge. */
       readonly error: string;
+      /** More specific Salesforce error code, when supplied. */
       readonly errorCode?: string;
+      /** Session token to send when continuing the challenge flow. */
       readonly authSession: string;
       /** Flow-specific response fields such as login_status. */
       readonly response: Readonly<Record<string, unknown>>;

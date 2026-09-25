@@ -12,12 +12,21 @@ import {
   parseScope,
 } from "#/validation";
 
+/**
+ * Tokens and instance metadata returned by a Salesforce OAuth exchange.
+ */
 export interface SalesforceOAuthSession {
+  /** Bearer access token returned by Salesforce. */
   readonly accessToken: string;
+  /** Salesforce instance origin associated with the access token. */
   readonly instanceUrl: string;
+  /** Refresh token returned or rotated by Salesforce, when present. */
   readonly refreshToken?: string;
+  /** Space-delimited OAuth scope string returned by Salesforce, when present. */
   readonly scope?: string;
+  /** OpenID Connect ID token returned by Salesforce, when requested. */
   readonly idToken?: string;
+  /** Salesforce-issued timestamp from the token response, when present. */
   readonly issuedAt?: string;
 }
 
@@ -31,6 +40,7 @@ export interface OAuthClientAuthentication {
 }
 
 interface TokenEndpointOptions extends OAuthRequestOptions {
+  /** Salesforce login or My Domain base URL for the token endpoint. */
   readonly loginUrl: string;
   /**
    * Persist a newly issued/rotated refresh token before returning the session.
@@ -38,20 +48,27 @@ interface TokenEndpointOptions extends OAuthRequestOptions {
   readonly refreshTokenStore?: RefreshTokenStore;
 }
 
+/** Options for the Salesforce OAuth client-credentials grant. */
 export interface ClientCredentialsOptions extends TokenEndpointOptions {
   /** Salesforce My Domain origin configured for client credentials. */
   readonly clientId: string;
+  /** Connected App client secret used by the client-credentials grant. */
   readonly clientSecret: string;
   /** Default: body. Salesforce also accepts HTTP Basic. */
   readonly clientSecretTransport?: "body" | "basic";
 }
 
+/** Options for exchanging a Salesforce authorization code for tokens. */
 export interface AuthorizationCodeOptions
   extends TokenEndpointOptions,
     OAuthClientAuthentication {
+  /** Connected App consumer key / OAuth client ID. */
   readonly clientId: string;
+  /** Authorization code returned by Salesforce. */
   readonly code: string;
+  /** Redirect URI used for the original authorization request. */
   readonly redirectUri: string;
+  /** PKCE verifier corresponding to the authorization request challenge. */
   readonly codeVerifier?: string;
   /**
    * Headless Identity code exchanges can require an Auth-Request-Type header,
@@ -65,25 +82,35 @@ export interface AuthorizationCodeOptions
   readonly uvidHint?: string;
 }
 
+/** Options for exchanging a Salesforce refresh token for a new session. */
 export interface RefreshTokenOptions
   extends TokenEndpointOptions,
     OAuthClientAuthentication {
+  /** Connected App consumer key / OAuth client ID. */
   readonly clientId: string;
+  /** Refresh token to exchange for a new access token. */
   readonly refreshToken: string;
 }
 
+/** Options for the Salesforce JWT bearer token grant. */
 export interface JwtBearerOptions extends TokenEndpointOptions {
+  /** Signed JWT bearer assertion submitted to the Salesforce token endpoint. */
   readonly assertion: string;
 }
 
+/** Options for the Salesforce SAML bearer token grant. */
 export interface SamlBearerOptions extends TokenEndpointOptions {
+  /** Base64-encoded SAML bearer assertion submitted to Salesforce. */
   readonly assertion: string;
 }
 
+/** Options for the Salesforce SAML assertion token grant. */
 export interface SamlAssertionOptions extends TokenEndpointOptions {
+  /** SAML assertion submitted to the Salesforce assertion grant. */
   readonly assertion: string;
 }
 
+/** Subject-token types supported by Salesforce OAuth token exchange. */
 export type TokenExchangeSubjectTokenType =
   | "urn:ietf:params:oauth:token-type:access_token"
   | "urn:ietf:params:oauth:token-type:refresh_token"
@@ -91,46 +118,82 @@ export type TokenExchangeSubjectTokenType =
   | "urn:ietf:params:oauth:token-type:saml2"
   | "urn:ietf:params:oauth:token-type:jwt";
 
+/** Options for Salesforce OAuth 2.0 token exchange. */
 export interface TokenExchangeOptions
   extends TokenEndpointOptions,
     OAuthClientAuthentication {
+  /** Connected App consumer key / OAuth client ID. */
   readonly clientId: string;
+  /** Token being exchanged. */
   readonly subjectToken: string;
+  /** RFC token-type identifier describing `subjectToken`. */
   readonly subjectTokenType: TokenExchangeSubjectTokenType;
+  /** Scopes requested for the exchanged token. */
   readonly scope?: string | readonly string[];
+  /** Salesforce token-handler URL or identifier used for token exchange, when required. */
   readonly tokenHandler?: string;
 }
 
+/** Options for starting the Salesforce device authorization flow. */
 export interface DeviceAuthorizationOptions extends OAuthRequestOptions {
+  /** Salesforce login or My Domain base URL used for device authorization. */
   readonly loginUrl: string;
+  /** Connected App consumer key / OAuth client ID. */
   readonly clientId: string;
+  /** OAuth scopes requested by the device flow. */
   readonly scope?: string | readonly string[];
+  /** Optional redirect URI forwarded to Salesforce for the device flow. */
   readonly redirectUri?: string;
 }
 
+/**
+ * Device-code response returned when starting Salesforce device
+ * authorization.
+ */
 export interface DeviceAuthorization {
+  /** Opaque device code later exchanged by the polling client. */
   readonly deviceCode: string;
+  /** Short code the user enters during device authorization. */
   readonly userCode: string;
+  /** Salesforce URL where the user completes device authorization. */
   readonly verificationUri: string;
+  /** Minimum polling interval requested by Salesforce, in seconds. */
   readonly intervalSeconds: number;
+  /** Lifetime of the device code in seconds, when Salesforce supplies it. */
   readonly expiresInSeconds?: number;
 }
 
+/**
+ * Options for polling Salesforce for completion of device authorization.
+ */
 export interface DeviceTokenOptions extends TokenEndpointOptions {
+  /** Connected App consumer key / OAuth client ID. */
   readonly clientId: string;
+  /** Device code returned by `startDeviceAuthorization`. */
   readonly deviceCode: string;
 }
 
+/** Options for building a Salesforce OAuth authorization URL. */
 export interface AuthorizationUrlOptions {
+  /** Salesforce login or My Domain base URL used for authorization. */
   readonly loginUrl: string;
+  /** Connected App consumer key / OAuth client ID. */
   readonly clientId: string;
+  /** Redirect URI registered with the Connected App. */
   readonly redirectUri: string;
+  /** Requested OAuth scopes; arrays are serialized as a space-delimited value. */
   readonly scope?: string | readonly string[];
+  /** Opaque state value returned unchanged by Salesforce for request correlation. */
   readonly state?: string;
+  /** OpenID Connect nonce used to correlate an ID token with the authorization request. */
   readonly nonce?: string;
+  /** OAuth `prompt` parameter forwarded to Salesforce. */
   readonly prompt?: string;
+  /** Optional username/login hint forwarded to Salesforce. */
   readonly loginHint?: string;
+  /** Salesforce `display` parameter for the authorization UI. */
   readonly display?: string;
+  /** PKCE S256 code challenge paired with the verifier used during token exchange. */
   readonly codeChallenge?: string;
 }
 
@@ -329,6 +392,10 @@ const authorizationCodeParameters = (
   };
 };
 
+/**
+ * Builds a validated Salesforce OAuth authorization URL without making a
+ * network request.
+ */
 export const createAuthorizationUrl = (
   options: AuthorizationUrlOptions,
 ): string => {

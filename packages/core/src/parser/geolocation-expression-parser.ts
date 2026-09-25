@@ -6,6 +6,7 @@ import type { ComparisonOperator } from "#/operation-node/operator-node";
 import { OperatorNode } from "#/operation-node/operator-node";
 import { ValueNode } from "#/operation-node/value-node";
 
+/** Comparison operators accepted for Salesforce DISTANCE() predicates. */
 export type DistanceComparisonOperator = "<" | ">";
 
 const DISTANCE_FILTER_OPERATOR_ERROR =

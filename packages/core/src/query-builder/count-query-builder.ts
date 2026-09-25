@@ -53,74 +53,97 @@ import type {
 import { isSoqlRawBuilder, type SoqlRawBuilder } from "#/soql";
 import { freeze } from "#/util/object-utils";
 
+/** Type-safe builder for Salesforce COUNT() queries. */
 export interface CountQueryBuilder<DB, TB extends keyof DB> {
+  /** Passes this builder to `func` and returns the callback result. */
   $call<T>(func: (qb: this) => T): T;
 
+  /** Conditionally applies a builder callback; when false, the runtime query is unchanged. */
   $if(condition: boolean, func: (qb: this) => this): this;
 
+  /** Returns a builder with the `LIMIT` clause removed. */
   clearLimit(): CountQueryBuilder<DB, TB>;
 
+  /** Returns a builder with the `WHERE` predicate removed. */
   clearWhere(): CountQueryBuilder<DB, TB>;
 
+  /** Compiles the current operation tree into a `CompiledQuery`. */
   compile(): CompiledQuery<number>;
 
+  /** Compiles and executes the query with the configured executor. */
   execute(options?: AbortableQueryOptions): Promise<number>;
 
+  /** Executes with the executor's Salesforce query-all semantics. */
   executeAll(options?: AbortableQueryOptions): Promise<number>;
 
+  /** Switches to the static Apex builder for the current query. */
   apex(): ApexCountQueryBuilder<DB, TB, "static">;
 
+  /** Switches to the dynamic Apex builder for the current query. */
   dynamicApex(): ApexCountQueryBuilder<DB, TB, "dynamic">;
 
+  /** Adds or replaces the SOQL `LIMIT` clause. */
   limit(limit: number): CountQueryBuilder<DB, TB>;
 
+  /** Adds `FOR VIEW`; available only for MRU-enabled objects. */
   forView(
     ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
       ? readonly [mruDisabled: never]
       : readonly []
   ): CountQueryBuilder<DB, TB>;
 
+  /** Adds `FOR REFERENCE`; available only for MRU-enabled objects. */
   forReference(
     ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
       ? readonly [mruDisabled: never]
       : readonly []
   ): CountQueryBuilder<DB, TB>;
 
+  /** Adds the KnowledgeArticle `UPDATE TRACKING` clause. */
   updateTracking(
     ..._knowledgeArticleCheck: KnowledgeArticleUpdateCheck<TB>
   ): CountQueryBuilder<DB, TB>;
 
+  /** Adds the KnowledgeArticle `UPDATE VIEWSTAT` clause. */
   updateViewstat(
     ..._knowledgeArticleCheck: KnowledgeArticleUpdateCheck<TB>
   ): CountQueryBuilder<DB, TB>;
 
+  /** Adds a Salesforce `USING SCOPE` clause validated against schema metadata. */
   usingScope(
     scope: SalesforceObjectSupportedScope<DB[TB]>,
   ): CountQueryBuilder<DB, TB>;
 
+  /** Adds the UserProfileFeed `WITH USER_ID` clause. */
   withUserId(
     userId: string,
     ..._userProfileFeedCheck: UserProfileFeedWithUserIdCheck<TB>
   ): CountQueryBuilder<DB, TB>;
 
+  /** Adds `WITH RECORD_VISIBILITY_CONTEXT` options. */
   withRecordVisibilityContext(
     parameters: RecordVisibilityContextOptions,
   ): CountQueryBuilder<DB, TB>;
 
+  /** Adds object-specific Salesforce `SET OPTIONS` values. */
   setOptions(
     options: Data360AggregateSetOptionsFor<DB[TB]>,
   ): CountQueryBuilder<DB, TB>;
 
+  /** Adds a typed `WITH DATA CATEGORY` filter. */
   withDataCategory<Group extends SalesforceObjectDataCategoryGroup<DB[TB]>>(
     group: Group,
     selector: DataCategorySelector,
     categories: DataCategoryInput<SalesforceObjectDataCategory<DB[TB], Group>>,
   ): CountQueryBuilder<DB, TB>;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where(expression: SoqlRawBuilder): CountQueryBuilder<DB, TB>;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where(expression: WhereExpressionFactory<DB, TB>): CountQueryBuilder<DB, TB>;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where<
     RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
@@ -131,6 +154,7 @@ export interface CountQueryBuilder<DB, TB extends keyof DB> {
     rhs: RHS,
   ): CountQueryBuilder<DB, TB>;
 
+  /** Returns the immutable operation node represented by this builder. */
   toOperationNode(): SelectQueryNode;
 }
 

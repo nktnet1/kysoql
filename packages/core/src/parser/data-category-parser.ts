@@ -13,6 +13,7 @@ import {
 
 export type { DataCategorySelector } from "#/operation-node/with-data-category-node";
 
+/** Input accepted when adding a Salesforce WITH DATA CATEGORY filter. */
 export type DataCategoryInput<Category extends string> =
   | Category
   | readonly [Category, ...Category[]];

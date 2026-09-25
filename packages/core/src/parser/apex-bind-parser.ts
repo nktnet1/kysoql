@@ -82,6 +82,9 @@ type ApexBindOperandValueExpression<
     ? ApexBindExpression<readonly ApexFieldValue<DB, TB, RE>[]>
     : ApexBindExpression<ApexScalarBindValue<DB, TB, RE, OP>>;
 
+/**
+ * Value accepted where a dynamic Apex expression or literal may be used.
+ */
 export type ApexOperandValueExpression<
   DB,
   TB extends keyof DB,

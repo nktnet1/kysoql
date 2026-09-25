@@ -19,35 +19,57 @@ const jsforceCountQueryResultSchema = v.object({
   totalSize: v.pipe(v.number(), v.safeInteger(), v.minValue(0)),
 });
 
+/**
+ * Minimal JSforce paginated query result shape consumed by the executor.
+ */
 export interface JsforceQueryResult {
+  /** Whether JSforce has returned the final query page. */
   readonly done: boolean;
+  /** Query locator URL used for `queryMore()` when additional pages remain. */
   readonly nextRecordsUrl?: string;
+  /** Records returned in this JSforce page. */
   readonly records: readonly Record<string, unknown>[];
 }
 
+/** Minimal JSforce COUNT() result shape consumed by the executor. */
 export interface JsforceCountQueryResult {
+  /** Whether the `COUNT()` response is complete. */
   readonly done: boolean;
+  /** Optional records payload returned by JSforce; ignored for count extraction. */
   readonly records?: readonly Record<string, unknown>[] | null;
+  /** Count reported by JSforce for the query. */
   readonly totalSize: number;
 }
 
+/** Subset of a JSforce connection required by Kysoql query execution. */
 export interface JsforceConnection {
+  /** Runs SOQL through JSforce; `scanAll` enables Salesforce query-all semantics. */
   query(
     soql: string,
-    options?: { readonly scanAll?: boolean },
+    options?: {
+      /** Use JSforce query-all semantics, including deleted and archived records. */
+      readonly scanAll?: boolean;
+    },
   ): PromiseLike<unknown>;
+  /** Loads the next JSforce page using a query locator. */
   queryMore(locator: string): PromiseLike<unknown>;
 }
 
+/**
+ * Query executor backed by a JSforce connection, including queryAll support.
+ */
 export interface JsforceExecutor extends QueryExecutor {
+  /** Executes using JSforce `scanAll` semantics and follows all pages. */
   executeAllQuery<O>(
     compiledQuery: CompiledQuery<O>,
     options?: AbortableQueryOptions,
   ): Promise<readonly O[]>;
+  /** Executes `COUNT()` using JSforce `scanAll` semantics. */
   executeAllCountQuery(
     compiledQuery: CompiledQuery<number>,
     options?: AbortableQueryOptions,
   ): Promise<number>;
+  /** Executes a normal JSforce `COUNT()` query. */
   executeCountQuery(
     compiledQuery: CompiledQuery<number>,
     options?: AbortableQueryOptions,
@@ -210,6 +232,7 @@ class JsforceQueryExecutor implements JsforceExecutor {
   }
 }
 
+/** Creates a Kysoql executor around an existing JSforce connection. */
 export const createJsforceExecutor = (
   connection: JsforceConnection,
 ): JsforceExecutor => new JsforceQueryExecutor(connection);

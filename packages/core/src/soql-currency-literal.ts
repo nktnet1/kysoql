@@ -4,10 +4,15 @@ import { freeze } from "#/util/object-utils";
 
 declare const soqlCurrencyLiteralBrand: unique symbol;
 
+/** Validated ISO currency literal used in Salesforce SOQL comparisons. */
 export interface SoqlCurrencyLiteral {
+  /** Literal discriminator used by the compiler. */
   readonly kind: "SoqlCurrencyLiteral";
+  /** ISO 4217 currency code emitted before the numeric literal. */
   readonly isoCode: string;
+  /** Numeric currency amount. */
   readonly value: number;
+  /** Type-only brand used by Kysoql to preserve compile-time information; it has no user-facing runtime meaning. */
   readonly [soqlCurrencyLiteralBrand]: never;
 }
 
@@ -31,6 +36,10 @@ const currencyLiteralSchema = v.object({
   value: currencyValueSchema,
 });
 
+/**
+ * Creates a validated SOQL currency literal from a three-letter ISO code and
+ * finite value.
+ */
 export function soqlCurrency(
   isoCode: string,
   value: number,

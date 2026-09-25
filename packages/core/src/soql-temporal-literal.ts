@@ -6,24 +6,39 @@ declare const soqlDateLiteralBrand: unique symbol;
 declare const soqlDateTimeLiteralBrand: unique symbol;
 declare const soqlTimeLiteralBrand: unique symbol;
 
+/** Validated Salesforce SOQL date literal. */
 export interface SoqlDateLiteral {
+  /** Literal discriminator used by the compiler. */
   readonly kind: "SoqlDateLiteral";
+  /** Validated Salesforce date literal in `YYYY-MM-DD` form. */
   readonly value: string;
+  /** Type-only brand used by Kysoql to preserve compile-time information; it has no user-facing runtime meaning. */
   readonly [soqlDateLiteralBrand]: never;
 }
 
+/**
+ * Validated Salesforce SOQL datetime literal with an explicit UTC offset.
+ */
 export interface SoqlDateTimeLiteral {
+  /** Literal discriminator used by the compiler. */
   readonly kind: "SoqlDateTimeLiteral";
+  /** Validated Salesforce datetime literal. */
   readonly value: string;
+  /** Type-only brand used by Kysoql to preserve compile-time information; it has no user-facing runtime meaning. */
   readonly [soqlDateTimeLiteralBrand]: never;
 }
 
+/** Validated Salesforce SOQL time literal in UTC. */
 export interface SoqlTimeLiteral {
+  /** Literal discriminator used by the compiler. */
   readonly kind: "SoqlTimeLiteral";
+  /** Validated Salesforce time literal. */
   readonly value: string;
+  /** Type-only brand used by Kysoql to preserve compile-time information; it has no user-facing runtime meaning. */
   readonly [soqlTimeLiteralBrand]: never;
 }
 
+/** Union of validated SOQL date, datetime, and time literals. */
 export type SoqlTemporalLiteral =
   | SoqlDateLiteral
   | SoqlDateTimeLiteral
@@ -85,6 +100,7 @@ const temporalLiteralSchema = v.variant("kind", [
   }),
 ]);
 
+/** Creates a validated Salesforce SOQL date literal. */
 export function soqlDate(value: string): SoqlDateLiteral {
   return freeze({
     kind: "SoqlDateLiteral",
@@ -92,6 +108,7 @@ export function soqlDate(value: string): SoqlDateLiteral {
   }) as SoqlDateLiteral;
 }
 
+/** Creates a validated Salesforce SOQL datetime literal. */
 export function soqlDateTime(value: string): SoqlDateTimeLiteral {
   return freeze({
     kind: "SoqlDateTimeLiteral",
@@ -99,6 +116,7 @@ export function soqlDateTime(value: string): SoqlDateTimeLiteral {
   }) as SoqlDateTimeLiteral;
 }
 
+/** Creates a validated Salesforce SOQL time literal. */
 export function soqlTime(value: string): SoqlTimeLiteral {
   return freeze({
     kind: "SoqlTimeLiteral",

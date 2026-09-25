@@ -119,6 +119,9 @@ type DateFunctionOperandValue<
     ? readonly Value[]
     : Value;
 
+/**
+ * Comparison operators supported when filtering a toLabel() expression.
+ */
 export type ToLabelFilterComparisonOperator =
   | EqualityComparisonOperator
   | LikeComparisonOperator;
@@ -130,6 +133,9 @@ type TerminalFieldName<Reference extends string> =
 
 type UnsupportedToLabelWhereFieldName = "CurrencyIsoCode" | "Division";
 
+/**
+ * Restricts a field reference to filterable values supported by toLabel().
+ */
 export type FilterableToLabelFieldReference<
   DB,
   TB extends keyof DB,
@@ -166,11 +172,15 @@ type ToLabelFilterOperandValue<
   Operator extends ToLabelFilterComparisonOperator,
 > = Operator extends LikeComparisonOperator ? string | SoqlLikeLiteral : Value;
 
+/** Typed toLabel() expression used in WHERE comparisons. */
 export interface ToLabelFilterFunctionExpression<Reference extends string> {
+  /** Type-only marker used to preserve this expression capability through TypeScript inference. */
   readonly [toLabelFilterExpressionType]: {
+    /** Field reference wrapped by this `toLabel()` expression. */
     readonly reference: Reference;
   };
 
+  /** Returns the immutable operation node represented by this expression. */
   toOperationNode(): ToLabelFunctionNode;
 }
 
@@ -246,31 +256,40 @@ type FilterFunctionModule<DB, TB extends keyof DB> = DateFilterFunctionModule<
   GeolocationFilterFunctionModule<DB, TB> &
   ToLabelFilterFunctionModule<DB, TB>;
 
+/** Typed wrapper around a filter operation node. */
 export interface ExpressionWrapper<
   DB,
   TB extends keyof DB,
   ContainsSemiJoin extends boolean = false,
 > {
+  /** Type-only marker used to preserve this expression capability through TypeScript inference. */
   readonly [expressionType]: {
+    /** Schema type carried through expression inference. */
     readonly db: DB;
+    /** Salesforce object type carried through expression inference. */
     readonly table: TB;
+    /** Whether this expression already contains a semi-join. */
     readonly containsSemiJoin: ContainsSemiJoin;
   };
 
+  /** Returns the immutable operation node represented by this expression. */
   toOperationNode(): OperationNode;
 }
 
+/** Expression helper passed to typed WHERE callbacks. */
 export interface ExpressionBuilder<
   DB,
   TB extends keyof DB,
   AllowSemiJoin extends boolean = true,
 > {
+  /** Builds a typed `WHERE` comparison from the supplied left operand, operator, and right operand. */
   <Output, Sortable extends boolean>(
     lhs: DistanceFunctionExpression<Output, true, Sortable>,
     op: DistanceComparisonOperator,
     rhs: number,
   ): ExpressionWrapper<DB, TB, false>;
 
+  /** Builds a typed `WHERE` comparison from the supplied left operand, operator, and right operand. */
   <
     Output,
     Value,
@@ -284,6 +303,7 @@ export interface ExpressionBuilder<
     rhs: Right,
   ): ExpressionWrapper<DB, TB, false>;
 
+  /** Builds a typed `WHERE` comparison from the supplied left operand, operator, and right operand. */
   <
     Reference extends string,
     Operator extends ToLabelFilterOperatorForReference<DB, TB, Reference>,
@@ -297,12 +317,14 @@ export interface ExpressionBuilder<
     rhs: Right,
   ): ExpressionWrapper<DB, TB, false>;
 
+  /** Builds a typed `WHERE` comparison from the supplied left operand, operator, and right operand. */
   <Value, Operator extends FormulaFilterComparisonOperator>(
     lhs: FormulaFilterFunctionExpression<Value>,
     op: Operator,
     rhs: Value,
   ): ExpressionWrapper<DB, TB, false>;
 
+  /** Builds a typed `WHERE` comparison from the supplied left operand, operator, and right operand. */
   <
     RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
@@ -313,6 +335,7 @@ export interface ExpressionBuilder<
     rhs: RHS,
   ): ExpressionWrapper<DB, TB, SemiJoinFlag<RHS>>;
 
+  /** Combines two or more expressions with boolean `AND`. */
   and<
     Expressions extends readonly [
       ExpressionWrapper<DB, TB, boolean>,
@@ -323,10 +346,12 @@ export interface ExpressionBuilder<
     expressions: Expressions,
   ): ExpressionWrapper<DB, TB, CombinedSemiJoinFlag<Expressions>>;
 
+  /** Negates an expression with boolean `NOT`. */
   not(
     expression: ExpressionWrapper<DB, TB, false>,
   ): ExpressionWrapper<DB, TB, false>;
 
+  /** Combines two or more expressions with boolean `OR`. */
   or(
     expressions: readonly [
       ExpressionWrapper<DB, TB, false>,
@@ -335,10 +360,15 @@ export interface ExpressionBuilder<
     ],
   ): ExpressionWrapper<DB, TB, false>;
 
+  /** Opt-in helpers for beta SOQL expression features. */
   readonly beta: BetaExpressionModule<DB, TB>;
+  /** Function helpers available in this expression context. */
   readonly fn: FilterFunctionModule<DB, TB>;
 }
 
+/**
+ * Callback that builds a typed WHERE expression from an ExpressionBuilder.
+ */
 export type WhereExpressionFactory<
   DB,
   TB extends keyof DB,

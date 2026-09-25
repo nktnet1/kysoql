@@ -1,8 +1,11 @@
 import type { OperationNode } from "#/operation-node/operation-node";
 import { freeze } from "#/util/object-utils";
 
+/** Immutable query AST node for logical NOT. */
 export interface NotNode {
+  /** Node discriminator used by Kysoql compilers and plugin visitors. */
   readonly kind: "NotNode";
+  /** Expression operand being negated. */
   readonly operand: OperationNode;
 }
 

@@ -23,6 +23,7 @@ const base64UrlEncode = (bytes: Uint8Array): string => {
 
 const PKCE_VERIFIER = /^[A-Za-z0-9._~-]{43,128}$/;
 
+/** Derives an S256 PKCE code challenge from a verifier. */
 export const createPkceChallenge = async (
   verifier: string,
 ): Promise<string> => {
@@ -39,11 +40,17 @@ export const createPkceChallenge = async (
   return base64UrlEncode(new Uint8Array(digest));
 };
 
+/** PKCE verifier and matching S256 challenge. */
 export interface PkcePair {
+  /** High-entropy PKCE code verifier retained for the token exchange. */
   readonly verifier: string;
+  /** Base64url-encoded SHA-256 challenge sent during authorization. */
   readonly challenge: string;
 }
 
+/**
+ * Generates a cryptographically random PKCE verifier and its S256 challenge.
+ */
 export const generatePkcePair = async (): Promise<PkcePair> => {
   const bytes = globalThis.crypto.getRandomValues(new Uint8Array(96));
   const verifier = base64UrlEncode(bytes);

@@ -385,6 +385,9 @@ const renderSchemaMetadata = (
   ].join("\n");
 };
 
+/**
+ * Renders Salesforce object metadata as a TypeScript Kysoql schema module.
+ */
 export const renderSchema = (
   objects: readonly SalesforceObjectDescription[],
   schemaName = "SalesforceSchema",

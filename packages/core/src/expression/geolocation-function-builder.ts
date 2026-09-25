@@ -15,6 +15,7 @@ import { freeze } from "#/util/object-utils";
 declare const distanceFunctionCapabilitiesType: unique symbol;
 declare const distanceFunctionSelectionType: unique symbol;
 
+/** Restricts a field reference to Salesforce geolocation fields. */
 export type LocationFieldReference<
   DB,
   TB extends keyof DB,
@@ -23,12 +24,16 @@ export type LocationFieldReference<
   ? [FieldReferenceDefinition<DB, TB, Reference>] extends [never]
     ? never
     : FieldReferenceDefinition<DB, TB, Reference> extends {
+          /** Salesforce field type must be `location`. */
           readonly salesforceType: "location";
         }
       ? Reference
       : never
   : never;
 
+/**
+ * Restricts a field reference to filterable Salesforce geolocation fields.
+ */
 export type FilterableLocationFieldReference<
   DB,
   TB extends keyof DB,
@@ -36,6 +41,7 @@ export type FilterableLocationFieldReference<
 > =
   Reference extends LocationFieldReference<DB, TB, Reference>
     ? FieldReferenceDefinition<DB, TB, Reference> extends {
+        /** Field metadata must explicitly allow filtering. */
         readonly filterable: true;
       }
       ? Reference
@@ -76,45 +82,65 @@ type DistanceFieldOutput<
 type DistanceLiteralOutput<DB, TB extends keyof DB, First extends string> =
   true extends FieldReferenceNullable<DB, TB, First> ? number | null : number;
 
+/** Builder for Salesforce GEOLOCATION() expressions. */
 export interface GeolocationFunctionBuilder {
+  /** Returns the immutable operation node represented by this expression. */
   toOperationNode(): GeolocationFunctionNode;
 }
 
+/** Typed Salesforce DISTANCE() expression. */
 export interface DistanceFunctionExpression<
   Output,
   Filterable extends boolean,
   Sortable extends boolean,
 > {
+  /** Type-only output marker used for fluent-query inference; implementations do not expose a meaningful runtime value. */
   readonly expressionType: Output | undefined;
+  /** Type-only marker used to preserve this expression capability through TypeScript inference. */
   readonly [distanceFunctionCapabilitiesType]: {
+    /** Whether this distance expression may be used in `WHERE`. */
     readonly filterable: Filterable;
+    /** Whether this distance expression may be used in `ORDER BY`. */
     readonly sortable: Sortable;
   };
 
+  /** Returns the immutable operation node represented by this expression. */
   toOperationNode(): DistanceFunctionNode;
 }
 
+/** Builder for Salesforce DISTANCE() expressions. */
 export interface DistanceFunctionBuilder<
   Output,
   Filterable extends boolean,
   Sortable extends boolean,
 > extends DistanceFunctionExpression<Output, Filterable, Sortable> {
+  /** Aliases this expression for SELECT output and result mapping. */
   as<Alias extends string>(
     alias: Alias,
   ): AliasedDistanceFunctionBuilder<Output, Alias>;
 }
 
+/** Aliased DISTANCE() expression produced for SELECT output. */
 export interface AliasedDistanceFunctionBuilder<Output, Alias extends string> {
+  /** Type-only output marker used for fluent-query inference; implementations do not expose a meaningful runtime value. */
   readonly expressionType: Output | undefined;
+  /** Selection alias used as the mapped result property name. */
   readonly alias: Alias | undefined;
+  /** Type-only marker used to preserve this expression capability through TypeScript inference. */
   readonly [distanceFunctionSelectionType]: true;
 
+  /** Returns the immutable operation node represented by this expression. */
   toOperationNode(): AliasNode;
 }
 
+/**
+ * Geolocation expression helpers exposed to SELECT and ORDER BY callbacks.
+ */
 export interface GeolocationFunctionModule<DB, TB extends keyof DB> {
+  /** Builds a Salesforce `GEOLOCATION(latitude, longitude)` expression. */
   geolocation(latitude: number, longitude: number): GeolocationFunctionBuilder;
 
+  /** Builds a typed Salesforce `DISTANCE(...)` expression. */
   distance<First extends string>(
     location: First & LocationFieldReference<DB, TB, First>,
     destination: GeolocationFunctionBuilder,
@@ -125,6 +151,7 @@ export interface GeolocationFunctionModule<DB, TB extends keyof DB> {
     ReferenceSortable<DB, TB, First>
   >;
 
+  /** Builds a typed Salesforce `DISTANCE(...)` expression. */
   distance<First extends string, Second extends string>(
     location: First & LocationFieldReference<DB, TB, First>,
     destination: Second & LocationFieldReference<DB, TB, Second>,
@@ -142,15 +169,19 @@ export interface GeolocationFunctionModule<DB, TB extends keyof DB> {
   >;
 }
 
+/** Geolocation expression helpers exposed to WHERE callbacks. */
 export interface GeolocationFilterFunctionModule<DB, TB extends keyof DB> {
+  /** Builds a Salesforce `GEOLOCATION(latitude, longitude)` expression. */
   geolocation(latitude: number, longitude: number): GeolocationFunctionBuilder;
 
+  /** Builds a typed Salesforce `DISTANCE(...)` expression. */
   distance<First extends string>(
     location: First & FilterableLocationFieldReference<DB, TB, First>,
     destination: GeolocationFunctionBuilder,
     unit: DistanceUnit,
   ): DistanceFunctionExpression<number | null, true, boolean>;
 
+  /** Builds a typed Salesforce `DISTANCE(...)` expression. */
   distance<First extends string, Second extends string>(
     location: First & FilterableLocationFieldReference<DB, TB, First>,
     destination: Second & FilterableLocationFieldReference<DB, TB, Second>,
@@ -299,7 +330,9 @@ export class GeolocationFunctionModuleImpl<DB, TB extends keyof DB>
   }
 }
 
+/** Expression helper for geolocation-aware WHERE callbacks. */
 export interface GeolocationFilterExpressionBuilder<DB, TB extends keyof DB> {
+  /** Function helpers available in this expression context. */
   readonly fn: GeolocationFilterFunctionModule<DB, TB>;
 }
 
@@ -315,7 +348,11 @@ export function createGeolocationFilterExpressionBuilder<
   });
 }
 
+/**
+ * Expression helper for geolocation-aware SELECT and ORDER BY callbacks.
+ */
 export interface GeolocationExpressionBuilder<DB, TB extends keyof DB> {
+  /** Function helpers available in this expression context. */
   readonly fn: GeolocationFunctionModule<DB, TB>;
 }
 

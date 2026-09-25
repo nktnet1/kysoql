@@ -7,13 +7,21 @@ import type { SelectionNode } from "#/operation-node/selection-node";
 import type { WhereNode } from "#/operation-node/where-node";
 import { freeze } from "#/util/object-utils";
 
+/** Immutable query AST node for a child relationship subquery. */
 export interface RelationshipSubqueryNode {
+  /** Node discriminator used by Kysoql compilers and plugin visitors. */
   readonly kind: "RelationshipSubqueryNode";
+  /** Child relationship referenced by the subquery. */
   readonly relationship: ReferenceNode;
+  /** Selections emitted by this query or subquery. */
   readonly selections?: ReadonlyArray<SelectionNode>;
+  /** Optional `WHERE` expression tree. */
   readonly where?: WhereNode;
+  /** Optional `ORDER BY` clause. */
   readonly orderBy?: OrderByNode;
+  /** Optional `LIMIT` clause. */
   readonly limit?: LimitNode;
+  /** Optional `OFFSET` clause. */
   readonly offset?: OffsetNode;
 }
 

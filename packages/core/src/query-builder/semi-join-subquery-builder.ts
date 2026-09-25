@@ -107,17 +107,26 @@ type SelectableSemiJoinSubqueryObjectName<
         ? TB
         : never;
 
+/**
+ * Typed semi-join or anti-join subquery expression for IN and NOT IN
+ * filters.
+ */
 export interface SemiJoinSubqueryExpression<
   DB,
   OuterTB extends keyof DB,
   OuterReference extends string,
 > {
+  /** Type-only brand used by Kysoql to preserve compile-time information; it has no user-facing runtime meaning. */
   readonly [semiJoinSubqueryExpressionType]: {
+    /** Schema type shared by the outer query and semi-join. */
     readonly db: DB;
+    /** Salesforce object queried by the outer query. */
     readonly outerTable: OuterTB;
+    /** Outer field compared with the semi-join selection. */
     readonly outerReference: OuterReference;
   };
 
+  /** Returns the immutable operation node represented by this builder. */
   toOperationNode(): SemiJoinSubqueryNode;
 }
 
@@ -131,6 +140,7 @@ interface SemiJoinWhereBuilder<DB, TB extends keyof DB, Result> {
   >(lhs: RE & FilterableFieldName<DB, TB, RE>, op: OP, rhs: RHS): Result;
 }
 
+/** Builder for the filtering portion of a semi-join subquery. */
 export interface SemiJoinSubqueryBuilder<
   DB,
   OuterTB extends keyof DB,
@@ -141,18 +151,23 @@ export interface SemiJoinSubqueryBuilder<
     TB,
     SemiJoinSubqueryBuilder<DB, OuterTB, OuterReference, TB>
   > {
+  /** Passes this builder to `func` and returns the callback result. */
   $call<T>(func: (qb: this) => T): T;
 
+  /** Conditionally applies a builder callback; when false, the runtime query is unchanged. */
   $if(condition: boolean, func: (qb: this) => this): this;
 
+  /** Returns a builder with the `WHERE` predicate removed. */
   clearWhere(): this;
 
+  /** Adds one or more typed selections to the query output. */
   select<SE extends string>(
     selection: SE &
       SemiJoinSelectionFieldName<DB, OuterTB, OuterReference, TB, SE>,
   ): SelectedSemiJoinSubqueryBuilder<DB, OuterTB, OuterReference, TB>;
 }
 
+/** Completed semi-join subquery with its selected reference field. */
 export interface SelectedSemiJoinSubqueryBuilder<
   DB,
   OuterTB extends keyof DB,
@@ -164,23 +179,29 @@ export interface SelectedSemiJoinSubqueryBuilder<
       TB,
       SelectedSemiJoinSubqueryBuilder<DB, OuterTB, OuterReference, TB>
     > {
+  /** Passes this builder to `func` and returns the callback result. */
   $call<T>(func: (qb: this) => T): T;
 
+  /** Conditionally applies a builder callback; when false, the runtime query is unchanged. */
   $if(condition: boolean, func: (qb: this) => this): this;
 
+  /** Returns a builder with the `WHERE` predicate removed. */
   clearWhere(): this;
 }
 
+/** Query-creator contract exposed inside semi-join callbacks. */
 export interface SemiJoinQueryCreator<
   DB,
   OuterTB extends keyof DB,
   OuterReference extends string,
 > {
+  /** Starts a typed query for the specified Salesforce object. */
   selectFrom<TB extends keyof DB & string>(
     from: TB & SelectableSemiJoinSubqueryObjectName<DB, OuterTB, TB>,
   ): SemiJoinSubqueryBuilder<DB, OuterTB, OuterReference, TB>;
 }
 
+/** Callback that builds a typed semi-join or anti-join subquery. */
 export type SemiJoinSubqueryFactory<
   DB,
   OuterTB extends keyof DB,

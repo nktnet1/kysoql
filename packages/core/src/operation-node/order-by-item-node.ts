@@ -5,18 +5,25 @@ import type { RawNode } from "#/operation-node/raw-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import { freeze } from "#/util/object-utils";
 
+/** Sort directions accepted by SOQL ORDER BY. */
 export type OrderByDirection = "asc" | "desc";
+/** NULLS FIRST and NULLS LAST modifiers accepted by SOQL ORDER BY. */
 export type OrderByNulls = "first" | "last";
 
+/** Immutable query AST node for one ORDER BY item. */
 export interface OrderByItemNode {
+  /** Node discriminator used by Kysoql compilers and plugin visitors. */
   readonly kind: "OrderByItemNode";
+  /** Expression being sorted. */
   readonly orderBy:
     | AggregateFunctionNode
     | DateFunctionNode
     | DistanceFunctionNode
     | RawNode
     | ReferenceNode;
+  /** Sort direction, when explicitly specified. */
   readonly direction?: OrderByDirection;
+  /** Explicit Salesforce null ordering, when specified. */
   readonly nulls?: OrderByNulls;
 }
 

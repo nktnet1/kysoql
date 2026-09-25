@@ -1,8 +1,11 @@
 import { parseSoqlIdentifier } from "#/soql-identifier";
 import { freeze } from "#/util/object-utils";
 
+/** Immutable query AST node for a Salesforce object reference. */
 export interface SObjectNode {
+  /** Node discriminator used by Kysoql compilers and plugin visitors. */
   readonly kind: "SObjectNode";
+  /** Identifier or reference name represented by this node. */
   readonly name: string;
 }
 

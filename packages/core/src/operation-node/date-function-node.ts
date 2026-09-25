@@ -2,6 +2,7 @@ import type { ConvertTimezoneFunctionNode } from "#/operation-node/convert-timez
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import { freeze } from "#/util/object-utils";
 
+/** Salesforce date and fiscal date function names supported by Kysoql. */
 export type DateFunction =
   | "calendarMonth"
   | "calendarQuarter"
@@ -17,13 +18,20 @@ export type DateFunction =
   | "weekInMonth"
   | "weekInYear";
 
+/** Immutable query AST node for a Salesforce date-function argument. */
 export type DateFunctionArgumentNode =
   | ConvertTimezoneFunctionNode
   | ReferenceNode;
 
+/**
+ * Immutable query AST node for a Salesforce date or fiscal date function.
+ */
 export interface DateFunctionNode {
+  /** Node discriminator used by Kysoql compilers and plugin visitors. */
   readonly kind: "DateFunctionNode";
+  /** Salesforce function represented by this node. */
   readonly function: DateFunction;
+  /** Field or relationship reference passed to the expression. */
   readonly reference: DateFunctionArgumentNode;
 }
 

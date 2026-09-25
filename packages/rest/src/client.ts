@@ -18,22 +18,39 @@ import {
 /** Deliberately pinned, not auto-upgraded when Salesforce publishes a release. */
 export const DEFAULT_API_VERSION = "65.0";
 
+/**
+ * Provides a Salesforce access token and can be asked to force a refresh
+ * after 401.
+ */
 export type AccessTokenProvider = (context: {
+  /** `true` when a previous token was rejected and a forced refresh is required. */
   readonly refresh: boolean;
 }) => string | Promise<string>;
 
+/**
+ * Connection, authentication, and transport options for the Salesforce REST
+ * client.
+ */
 export interface RestClientOptions extends HttpOptions {
+  /** Salesforce instance origin used for REST requests. */
   readonly instanceUrl: string;
   /** Provider is called lazily, then again only after INVALID_SESSION_ID. */
   readonly accessToken: string | AccessTokenProvider;
+  /** Salesforce REST API version, for example `65.0`; defaults to `DEFAULT_API_VERSION`. */
   readonly apiVersion?: string;
 }
 
+/** Options for one authenticated Salesforce REST GET request. */
 export interface RestGetOptions extends RestRequestOptions {
+  /** Requested Salesforce query batch size (200-2000). */
   readonly batchSize?: number;
 }
 
+/**
+ * Minimal authenticated Salesforce REST client used by the query executor.
+ */
 export interface RestClient {
+  /** Normalized Salesforce API version used by this client. */
   readonly apiVersion: string;
   /** GET a version-relative API path or a same-version /services/data/ path. */
   request(path: string, options?: RestGetOptions): Promise<unknown>;
@@ -171,6 +188,10 @@ class NativeRestClient implements RestClient {
   }
 }
 
+/**
+ * Creates an authenticated Salesforce REST client with optional token
+ * refresh retry.
+ */
 export const createRestClient = (options: RestClientOptions): RestClient =>
   new NativeRestClient(options);
 

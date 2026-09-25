@@ -78,6 +78,7 @@ interface ApexSelectQueryBuilderProps extends SelectQueryBuilderProps {
   readonly apexContext: ApexQueryContext;
 }
 
+/** Apex rendering wrapper for a typed SELECT query. */
 export interface ApexSelectQueryBuilder<
   DB,
   TB extends keyof DB,
@@ -85,35 +86,47 @@ export interface ApexSelectQueryBuilder<
   Mode extends SelectQueryMode = SelectQueryMode,
   Context extends ApexQueryContext = "static",
 > {
+  /** Passes this builder to `func` and returns the callback result. */
   $call<T>(func: (qb: this) => T): T;
 
+  /** Conditionally applies a builder callback; when false, the runtime query is unchanged. */
   $if<O2>(
     condition: boolean,
     func: (qb: this) => ApexSelectQueryBuilder<DB, TB, O & O2, Mode, Context>,
   ): ApexSelectQueryBuilder<DB, TB, ConditionalOutput<O, O2>, Mode, Context>;
 
+  /** Returns a builder with the `LIMIT` clause removed. */
   clearLimit(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
+  /** Returns a builder with the `OFFSET` clause removed. */
   clearOffset(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
+  /** Returns a builder with all `ORDER BY` items removed. */
   clearOrderBy(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
+  /** Returns a builder with the `WHERE` predicate removed. */
   clearWhere(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
+  /** Compiles the current operation tree into a `CompiledQuery`. */
   compile(): CompiledQuery<O>;
 
+  /** Adds the Apex `ALL ROWS` clause. */
   allRows(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
+  /** Adds `FOR UPDATE` so Salesforce locks the selected records. */
   forUpdate(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
+  /** Adds or replaces the SOQL `LIMIT` clause. */
   limit(
     limit: number | ApexBindExpression<number>,
   ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
+  /** Adds or replaces the SOQL `OFFSET` clause. */
   offset(
     offset: number | ApexBindExpression<number>,
   ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
+  /** Adds a typed child-relationship subquery selection. */
   selectSubquery<
     Relationship extends string,
     SubqueryOutput,
@@ -150,26 +163,31 @@ export interface ApexSelectQueryBuilder<
     Context
   >;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where(
     expression: SoqlRawBuilder,
   ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where(
     expression: ApexWhereExpressionFactory<DB, TB>,
   ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where(
     lhs: ApexBindExpression<string>,
     op: "includes",
     rhs: readonly string[],
   ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where<RE extends string, OP extends ComparisonOperatorExpression<DB, TB, RE>>(
     lhs: RE extends FilterableFieldName<DB, TB, RE> ? RE : never,
     op: OP,
     rhs: ApexOperandValueExpression<DB, TB, NoInfer<RE>, NoInfer<OP>>,
   ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
+  /** Adds dynamic Apex `SET OPTIONS` from a bound `Database.QueryOptions` variable. */
   setOptions(
     options: DynamicApexOnly<
       Context,
@@ -177,10 +195,13 @@ export interface ApexSelectQueryBuilder<
     >,
   ): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
+  /** Compiles the Apex query with `WITH SYSTEM_MODE`. */
   withSystemMode(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
+  /** Compiles the Apex query with `WITH USER_MODE`. */
   withUserMode(): ApexSelectQueryBuilder<DB, TB, O, Mode, Context>;
 
+  /** Returns the immutable operation node represented by this builder. */
   toOperationNode(): SelectQueryNode;
 }
 

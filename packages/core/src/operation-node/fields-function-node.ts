@@ -1,9 +1,13 @@
 import { freeze } from "#/util/object-utils";
 
+/** Selectors accepted by Salesforce FIELDS(). */
 export type FieldsSelector = "all" | "custom" | "standard";
 
+/** Immutable query AST node for a FIELDS() selection. */
 export interface FieldsFunctionNode {
+  /** Node discriminator used by Kysoql compilers and plugin visitors. */
   readonly kind: "FieldsFunctionNode";
+  /** Salesforce `FIELDS()` selector. */
   readonly selector: FieldsSelector;
 }
 

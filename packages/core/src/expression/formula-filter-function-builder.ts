@@ -17,6 +17,7 @@ import { freeze } from "#/util/object-utils";
 
 declare const formulaFilterExpressionType: unique symbol;
 
+/** Comparison operators supported by formula filter functions. */
 export type FormulaFilterComparisonOperator =
   | EqualityComparisonOperator
   | OrderedComparisonOperator;
@@ -38,6 +39,10 @@ type FormulaSalesforceTypeOfReference<
     ? SalesforceType
     : never;
 
+/**
+ * Restricts a field reference to fields accepted by formula filter
+ * functions.
+ */
 export type FilterableFormulaFieldReference<
   DB,
   TB extends keyof DB,
@@ -100,15 +105,23 @@ type FormulaRightFieldReference<
       : Right
     : never;
 
+/** Typed formula-function expression used in WHERE comparisons. */
 export interface FormulaFilterFunctionExpression<Value> {
+  /** Type-only marker used to preserve this expression capability through TypeScript inference. */
   readonly [formulaFilterExpressionType]: {
+    /** Comparison value type produced by the formula expression. */
     readonly value: Value;
   };
 
+  /** Returns the immutable operation node represented by this expression. */
   toOperationNode(): FormulaFunctionNode;
 }
 
+/**
+ * Beta expression helpers for Salesforce formula-field filter functions.
+ */
 export interface BetaExpressionModule<DB, TB extends keyof DB> {
+  /** Builds a beta formula expression for a filter predicate. */
   formula<
     Left extends string,
     Operator extends FormulaArithmeticOperator,

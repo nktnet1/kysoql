@@ -8,8 +8,11 @@ import type { RelationshipSubqueryNode } from "#/operation-node/relationship-sub
 import type { TypeOfNode } from "#/operation-node/type-of-node";
 import { freeze } from "#/util/object-utils";
 
+/** Immutable query AST node for one SELECT projection. */
 export interface SelectionNode {
+  /** Node discriminator used by Kysoql compilers and plugin visitors. */
   readonly kind: "SelectionNode";
+  /** Selected expression represented by this node. */
   readonly selection:
     | AggregateFunctionNode
     | AliasNode

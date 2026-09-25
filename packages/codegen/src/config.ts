@@ -8,11 +8,15 @@ export type SalesforceAuthProvider = () =>
 /** Exact field API names; include and exclude are mutually exclusive. */
 export type ObjectFieldFilter =
   | {
+      /** Exact field API names to retain for this object. */
       readonly include: readonly string[];
+      /** Cannot be combined with `include`. */
       readonly exclude?: never;
     }
   | {
+      /** Cannot be combined with `exclude`. */
       readonly include?: never;
+      /** Exact field API names to omit for this object. */
       readonly exclude: readonly string[];
     };
 

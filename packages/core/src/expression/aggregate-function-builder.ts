@@ -35,6 +35,9 @@ import type {
 import type { SoqlDateLiteral } from "#/soql-temporal-literal";
 import { freeze } from "#/util/object-utils";
 
+/**
+ * Restricts a field reference to Salesforce fields that support aggregation.
+ */
 export type AggregatableFieldReference<
   DB,
   TB extends keyof DB,
@@ -43,7 +46,9 @@ export type AggregatableFieldReference<
   ? [FieldReferenceDefinition<DB, TB, Reference>] extends [never]
     ? never
     : FieldReferenceDefinition<DB, TB, Reference> extends {
+          /** Field metadata must explicitly allow aggregation. */
           readonly aggregatable: true;
+          /** Salesforce field type used to exclude geolocation values. */
           readonly salesforceType: infer SalesforceType extends string;
         }
       ? SalesforceType extends "location"
@@ -65,6 +70,10 @@ type SalesforceTypeOfReference<
 
 type NumericAggregateSalesforceType = "currency" | "double" | "int" | "percent";
 
+/**
+ * Restricts a field reference to numeric Salesforce fields that support
+ * aggregation.
+ */
 export type NumericAggregatableFieldReference<
   DB,
   TB extends keyof DB,
@@ -112,6 +121,10 @@ type FormattableSalesforceType =
   | TemporalSalesforceType
   | "time";
 
+/**
+ * Restricts a field reference to date or datetime fields that can be
+ * grouped.
+ */
 export type DateGroupableFieldReference<
   DB,
   TB extends keyof DB,
@@ -148,69 +161,103 @@ declare const convertTimezoneReferenceType: unique symbol;
 declare const aggregateFunctionSelectionType: unique symbol;
 declare const selectFunctionSelectionType: unique symbol;
 
+/**
+ * Type-level identity used to track a date-function expression through a
+ * query.
+ */
 export type DateFunctionIdentity<
   Function extends DateFunction,
   ArgumentIdentity extends string,
 > = `${Function}(${ArgumentIdentity})`;
 
+/** Type-level identity used to track a convertTimezone() expression. */
 export type ConvertTimezoneIdentity<Reference extends string> =
   `convertTimezone(${Reference})`;
 
+/**
+ * Typed aggregate-function expression that can be selected or compared.
+ */
 export interface AggregateFunctionExpression<
   Output,
   ComparisonValue = unknown,
   Operator extends ComparisonOperator = ComparisonOperator,
 > {
+  /** Type-only output marker used for fluent-query inference; implementations do not expose a meaningful runtime value. */
   readonly expressionType: Output | undefined;
+  /** Type-only marker for values accepted when comparing this expression. */
   readonly comparisonValueType?: ComparisonValue;
+  /** Type-only marker for comparison operators supported by this expression. */
   readonly comparisonOperatorType?: Operator;
 
+  /** Returns the immutable operation node represented by this expression. */
   toOperationNode(): AggregateFunctionNode;
 }
 
+/**
+ * Typed Salesforce date-function expression that can be selected or grouped.
+ */
 export interface DateFunctionExpression<
   Output,
   ComparisonValue,
   Operator extends ComparisonOperator,
   Identity extends string,
 > {
+  /** Type-only output marker used for fluent-query inference; implementations do not expose a meaningful runtime value. */
   readonly expressionType: Output | undefined;
+  /** Type-only marker for values accepted when comparing this expression. */
   readonly comparisonValueType?: ComparisonValue;
+  /** Type-only marker for comparison operators supported by this expression. */
   readonly comparisonOperatorType?: Operator;
+  /** Type-only marker used to preserve this expression capability through TypeScript inference. */
   readonly [dateFunctionIdentityType]: Identity;
 
+  /** Returns the immutable operation node represented by this expression. */
   toOperationNode(): DateFunctionNode;
 }
 
+/**
+ * Builder for Salesforce date functions such as CALENDAR_YEAR() and
+ * DAY_ONLY().
+ */
 export interface DateFunctionBuilder<
   Output,
   ComparisonValue,
   Operator extends ComparisonOperator,
   Identity extends string,
 > extends DateFunctionExpression<Output, ComparisonValue, Operator, Identity> {
+  /** Aliases this expression for SELECT output and result mapping. */
   as<Alias extends string>(
     alias: Alias,
   ): AliasedDateFunctionBuilder<Output, Alias, Identity>;
 }
 
+/** Builder for an unaliased Salesforce convertTimezone() expression. */
 export interface ConvertTimezoneFunctionBuilder<Reference extends string> {
+  /** Type-only marker used to preserve this expression capability through TypeScript inference. */
   readonly [convertTimezoneReferenceType]: Reference;
 
+  /** Returns the immutable operation node represented by this expression. */
   toOperationNode(): ConvertTimezoneFunctionNode;
 }
 
+/** Aliased date-function expression produced for SELECT output. */
 export interface AliasedDateFunctionBuilder<
   Output,
   Alias extends string,
   Identity extends string,
 > {
+  /** Type-only output marker used for fluent-query inference; implementations do not expose a meaningful runtime value. */
   readonly expressionType: Output | undefined;
+  /** Selection alias used as the mapped result property name. */
   readonly alias: Alias | undefined;
+  /** Type-only marker used to preserve this expression capability through TypeScript inference. */
   readonly [dateFunctionIdentityType]: Identity;
 
+  /** Returns the immutable operation node represented by this expression. */
   toOperationNode(): AliasNode;
 }
 
+/** Builder for Salesforce COUNT() without a field argument. */
 export interface CountAllFunctionBuilder
   extends AggregateFunctionExpression<
     number,
@@ -220,29 +267,39 @@ export interface CountAllFunctionBuilder
     | SetComparisonOperator
   > {}
 
+/** Builder for a typed Salesforce aggregate function expression. */
 export interface AggregateFunctionBuilder<
   Output,
   ComparisonValue = unknown,
   Operator extends ComparisonOperator = ComparisonOperator,
 > extends AggregateFunctionExpression<Output, ComparisonValue, Operator> {
+  /** Aliases this expression for SELECT output and result mapping. */
   as<Alias extends string>(
     alias: Alias,
   ): AliasedAggregateFunctionBuilder<Output, Alias>;
 }
 
+/** Builder for Salesforce GROUPING() in aggregate queries. */
 export interface GroupingFunctionBuilder
   extends AggregateFunctionBuilder<0 | 1, 0 | 1, NumericAggregateOperator> {
+  /** Type-only marker used to preserve this expression capability through TypeScript inference. */
   readonly [groupingFunctionType]: true;
 }
 
+/** Aliased aggregate expression produced for SELECT output. */
 export interface AliasedAggregateFunctionBuilder<Output, Alias extends string> {
+  /** Type-only output marker used for fluent-query inference; implementations do not expose a meaningful runtime value. */
   readonly expressionType: Output | undefined;
+  /** Selection alias used as the mapped result property name. */
   readonly alias: Alias | undefined;
+  /** Type-only marker used to preserve this expression capability through TypeScript inference. */
   readonly [aggregateFunctionSelectionType]: true;
 
+  /** Returns the immutable operation node represented by this expression. */
   toOperationNode(): AliasNode;
 }
 
+/** Restricts a field reference to values supported by toLabel(). */
 export type TranslatableFieldReference<
   DB,
   TB extends keyof DB,
@@ -251,12 +308,17 @@ export type TranslatableFieldReference<
   ? [FieldReferenceDefinition<DB, TB, Reference>] extends [never]
     ? never
     : FieldReferenceDefinition<DB, TB, Reference> extends {
+          /** Salesforce field type must support translation through `toLabel()`. */
           readonly salesforceType: TranslatableSalesforceType;
         }
       ? Reference
       : never
   : never;
 
+/**
+ * Restricts a field reference to currency values supported by
+ * convertCurrency().
+ */
 export type CurrencyFieldReference<
   DB,
   TB extends keyof DB,
@@ -265,12 +327,14 @@ export type CurrencyFieldReference<
   ? [FieldReferenceDefinition<DB, TB, Reference>] extends [never]
     ? never
     : FieldReferenceDefinition<DB, TB, Reference> extends {
+          /** Salesforce field type must be `currency`. */
           readonly salesforceType: "currency";
         }
       ? Reference
       : never
   : never;
 
+/** Restricts a field reference to values supported by FORMAT(). */
 export type FormattableFieldReference<
   DB,
   TB extends keyof DB,
@@ -312,51 +376,72 @@ type ToLabelOutput<DB, TB extends keyof DB, Reference extends string> =
     ? string | null
     : string;
 
+/** Builder for Salesforce toLabel() expressions. */
 export interface ToLabelFunctionBuilder<Output> {
+  /** Type-only output marker used for fluent-query inference; implementations do not expose a meaningful runtime value. */
   readonly expressionType: Output | undefined;
 
+  /** Aliases this expression for SELECT output and result mapping. */
   as<Alias extends string>(
     alias: Alias,
   ): AliasedSelectFunctionBuilder<Output, Alias>;
 
+  /** Returns the immutable operation node represented by this expression. */
   toOperationNode(): ToLabelFunctionNode;
 }
 
+/** Builder for Salesforce convertCurrency() expressions. */
 export interface ConvertCurrencyFunctionBuilder<Output> {
+  /** Type-only output marker used for fluent-query inference; implementations do not expose a meaningful runtime value. */
   readonly expressionType: Output | undefined;
 
+  /** Aliases this expression for SELECT output and result mapping. */
   as<Alias extends string>(
     alias: Alias,
   ): AliasedSelectFunctionBuilder<Output, Alias>;
 
+  /** Returns the immutable operation node represented by this expression. */
   toOperationNode(): ConvertCurrencyFunctionNode;
 }
 
+/** Builder for Salesforce FORMAT() expressions. */
 export interface FormatFunctionBuilder<Output> {
+  /** Type-only output marker used for fluent-query inference; implementations do not expose a meaningful runtime value. */
   readonly expressionType: Output | undefined;
 
+  /** Aliases this expression for SELECT output and result mapping. */
   as<Alias extends string>(
     alias: Alias,
   ): AliasedSelectFunctionBuilder<Output, Alias>;
 
+  /** Returns the immutable operation node represented by this expression. */
   toOperationNode(): FormatFunctionNode;
 }
 
+/** Builder for FORMAT() applied to an aggregate expression. */
 export interface AggregateFormatFunctionBuilder<Output> {
+  /** Type-only output marker used for fluent-query inference; implementations do not expose a meaningful runtime value. */
   readonly expressionType: Output | undefined;
 
+  /** Aliases this expression for SELECT output and result mapping. */
   as<Alias extends string>(
     alias: Alias,
   ): AliasedAggregateFunctionBuilder<Output, Alias>;
 
+  /** Returns the immutable operation node represented by this expression. */
   toOperationNode(): FormatFunctionNode;
 }
 
+/** Aliased scalar SELECT-function expression. */
 export interface AliasedSelectFunctionBuilder<Output, Alias extends string> {
+  /** Type-only output marker used for fluent-query inference; implementations do not expose a meaningful runtime value. */
   readonly expressionType: Output | undefined;
+  /** Selection alias used as the mapped result property name. */
   readonly alias: Alias | undefined;
+  /** Type-only marker used to preserve this expression capability through TypeScript inference. */
   readonly [selectFunctionSelectionType]: true;
 
+  /** Returns the immutable operation node represented by this expression. */
   toOperationNode(): AliasNode;
 }
 
@@ -745,83 +830,103 @@ type DayOnlyFunctionBuilder<
   DateFunctionIdentity<"dayOnly", DateFunctionInputIdentity<Input>>
 >;
 
+/** Aggregate and date-function helpers exposed to expression callbacks. */
 export interface AggregateFunctionModule<
   DB,
   TB extends keyof DB,
   GroupingFields extends string = never,
 > {
+  /** Builds `CALENDAR_MONTH(...)` for a date or datetime field. */
   calendarMonth<Input extends DateFunctionInput>(
     field: Input & DateFunctionArgument<DB, TB, Input>,
   ): NumericDateFunctionBuilder<DB, TB, "calendarMonth", Input>;
 
+  /** Builds `CALENDAR_QUARTER(...)` for a date or datetime field. */
   calendarQuarter<Input extends DateFunctionInput>(
     field: Input & DateFunctionArgument<DB, TB, Input>,
   ): NumericDateFunctionBuilder<DB, TB, "calendarQuarter", Input>;
 
+  /** Builds `CALENDAR_YEAR(...)` for a date or datetime field. */
   calendarYear<Input extends DateFunctionInput>(
     field: Input & DateFunctionArgument<DB, TB, Input>,
   ): NumericDateFunctionBuilder<DB, TB, "calendarYear", Input>;
 
+  /** Builds `DAY_IN_MONTH(...)` for a date or datetime field. */
   dayInMonth<Input extends DateFunctionInput>(
     field: Input & DateFunctionArgument<DB, TB, Input>,
   ): NumericDateFunctionBuilder<DB, TB, "dayInMonth", Input>;
 
+  /** Builds `DAY_IN_WEEK(...)` for a date or datetime field. */
   dayInWeek<Input extends DateFunctionInput>(
     field: Input & DateFunctionArgument<DB, TB, Input>,
   ): NumericDateFunctionBuilder<DB, TB, "dayInWeek", Input>;
 
+  /** Builds `DAY_IN_YEAR(...)` for a date or datetime field. */
   dayInYear<Input extends DateFunctionInput>(
     field: Input & DateFunctionArgument<DB, TB, Input>,
   ): NumericDateFunctionBuilder<DB, TB, "dayInYear", Input>;
 
+  /** Builds `DAY_ONLY(...)` for a datetime field. */
   dayOnly<Input extends DateFunctionInput>(
     field: Input & DateFunctionArgument<DB, TB, Input, "datetime">,
   ): DayOnlyFunctionBuilder<DB, TB, Input>;
 
+  /** Builds `FISCAL_MONTH(...)` for a date or datetime field. */
   fiscalMonth<Input extends DateFunctionInput>(
     field: Input & DateFunctionArgument<DB, TB, Input>,
   ): NumericDateFunctionBuilder<DB, TB, "fiscalMonth", Input>;
 
+  /** Builds `FISCAL_QUARTER(...)` for a date or datetime field. */
   fiscalQuarter<Input extends DateFunctionInput>(
     field: Input & DateFunctionArgument<DB, TB, Input>,
   ): NumericDateFunctionBuilder<DB, TB, "fiscalQuarter", Input>;
 
+  /** Builds `FISCAL_YEAR(...)` for a date or datetime field. */
   fiscalYear<Input extends DateFunctionInput>(
     field: Input & DateFunctionArgument<DB, TB, Input>,
   ): NumericDateFunctionBuilder<DB, TB, "fiscalYear", Input>;
 
+  /** Builds `HOUR_IN_DAY(...)` for a datetime field. */
   hourInDay<Input extends DateFunctionInput>(
     field: Input & DateFunctionArgument<DB, TB, Input, "datetime">,
   ): NumericDateFunctionBuilder<DB, TB, "hourInDay", Input>;
 
+  /** Builds `WEEK_IN_MONTH(...)` for a date or datetime field. */
   weekInMonth<Input extends DateFunctionInput>(
     field: Input & DateFunctionArgument<DB, TB, Input>,
   ): NumericDateFunctionBuilder<DB, TB, "weekInMonth", Input>;
 
+  /** Builds `WEEK_IN_YEAR(...)` for a date or datetime field. */
   weekInYear<Input extends DateFunctionInput>(
     field: Input & DateFunctionArgument<DB, TB, Input>,
   ): NumericDateFunctionBuilder<DB, TB, "weekInYear", Input>;
 
+  /** Builds a Salesforce `convertTimezone(...)` expression. */
   convertTimezone<Reference extends string>(
     field: Reference &
       DateGroupableFieldReference<DB, TB, Reference, "datetime">,
   ): ConvertTimezoneFunctionBuilder<Reference>;
 
+  /** Builds a Salesforce `GROUPING(...)` aggregate expression. */
   grouping<Reference extends string>(
     field: Reference &
       GroupingFieldReference<DB, TB, GroupingFields, Reference>,
   ): GroupingFunctionBuilder;
 
+  /** Builds a Salesforce `COUNT` aggregate expression. */
   count(): CountAllFunctionBuilder;
 
+  /** Builds a Salesforce `COUNT` aggregate expression. */
   count<Reference extends string>(
     field: Reference & AggregatableFieldReference<DB, TB, Reference>,
   ): AggregateFunctionBuilder<number, number, NumericAggregateOperator>;
 
+  /** Builds a Salesforce `COUNT_DISTINCT(...)` expression. */
   countDistinct<Reference extends string>(
     field: Reference & AggregatableFieldReference<DB, TB, Reference>,
   ): AggregateFunctionBuilder<number, number, NumericAggregateOperator>;
 
+  /** Builds a Salesforce `AVG(...)` aggregate expression. */
   avg<Reference extends string>(
     field: Reference & NumericAggregatableFieldReference<DB, TB, Reference>,
   ): AggregateFunctionBuilder<
@@ -830,6 +935,7 @@ export interface AggregateFunctionModule<
     NumericAggregateOperator
   >;
 
+  /** Builds a Salesforce `MAX(...)` aggregate expression. */
   max<Reference extends string>(
     field: Reference & AggregatableFieldReference<DB, TB, Reference>,
   ): AggregateFunctionBuilder<
@@ -838,6 +944,7 @@ export interface AggregateFunctionModule<
     AggregateFieldComparisonOperator<DB, TB, Reference>
   >;
 
+  /** Builds a Salesforce `MIN(...)` aggregate expression. */
   min<Reference extends string>(
     field: Reference & AggregatableFieldReference<DB, TB, Reference>,
   ): AggregateFunctionBuilder<
@@ -846,6 +953,7 @@ export interface AggregateFunctionModule<
     AggregateFieldComparisonOperator<DB, TB, Reference>
   >;
 
+  /** Builds a Salesforce `SUM(...)` aggregate expression. */
   sum<Reference extends string>(
     field: Reference & NumericAggregatableFieldReference<DB, TB, Reference>,
   ): AggregateFunctionBuilder<
@@ -855,24 +963,32 @@ export interface AggregateFunctionModule<
   >;
 }
 
+/**
+ * Scalar, aggregate, date, and geolocation helpers exposed to SELECT
+ * callbacks.
+ */
 export interface SelectFunctionModule<
   DB,
   TB extends keyof DB,
   GroupingFields extends string = never,
 > extends AggregateFunctionModule<DB, TB, GroupingFields>,
     GeolocationFunctionModule<DB, TB> {
+  /** Builds a Salesforce `convertCurrency(...)` expression. */
   convertCurrency<Reference extends string>(
     field: Reference & CurrencyFieldReference<DB, TB, Reference>,
   ): ConvertCurrencyFunctionBuilder<ConvertCurrencyOutput<DB, TB, Reference>>;
 
+  /** Builds a Salesforce `FORMAT(...)` expression. */
   format<Reference extends string>(
     field: Reference & FormattableFieldReference<DB, TB, Reference>,
   ): FormatFunctionBuilder<FormatOutput<DB, TB, Reference>>;
 
+  /** Builds a Salesforce `FORMAT(...)` expression. */
   format<Output>(
     expression: ConvertCurrencyFunctionBuilder<Output>,
   ): FormatFunctionBuilder<NestedFormatOutput<Output>>;
 
+  /** Builds a Salesforce `FORMAT(...)` expression. */
   format<Output, ComparisonValue, Operator extends ComparisonOperator>(
     expression: FormattableAggregateFunctionBuilder<
       Output,
@@ -881,6 +997,7 @@ export interface SelectFunctionModule<
     >,
   ): AggregateFormatFunctionBuilder<NestedFormatOutput<Output>>;
 
+  /** Builds a Salesforce `toLabel(...)` expression. */
   toLabel<Reference extends string>(
     field: Reference & TranslatableFieldReference<DB, TB, Reference>,
   ): ToLabelFunctionBuilder<ToLabelOutput<DB, TB, Reference>>;
@@ -1210,11 +1327,13 @@ class AggregateFunctionModuleImpl<
   }
 }
 
+/** Expression helper passed to typed SELECT and grouping callbacks. */
 export interface SelectExpressionBuilder<
   DB,
   TB extends keyof DB,
   GroupingFields extends string = never,
 > {
+  /** Function helpers available in this expression context. */
   readonly fn: SelectFunctionModule<DB, TB, GroupingFields>;
 }
 

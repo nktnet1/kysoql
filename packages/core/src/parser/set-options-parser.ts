@@ -15,15 +15,21 @@ import type {
   SalesforceSetOptionsCapability,
 } from "#/schema";
 
+/** SET OPTIONS supported by Salesforce Data 360 data lake objects. */
 export interface Data360DloSetOptions {
+  /** Data 360 dataspace to query. */
   readonly dataspace: string;
+  /** Whether the query preserves empty strings instead of treating them as null. */
   readonly honorEmptyStrings?: boolean;
 }
 
+/** SET OPTIONS supported by Salesforce Data 360 data model objects. */
 export interface Data360DmoSetOptions {
+  /** Whether the query preserves empty strings instead of treating them as null. */
   readonly honorEmptyStrings: boolean;
 }
 
+/** SET OPTIONS shape selected from a Salesforce object capability. */
 export type Data360SetOptionsFor<ObjectType> =
   SalesforceObjectSetOptionsCapability<ObjectType> extends "data360-dlo"
     ? Data360DloSetOptions
@@ -31,6 +37,10 @@ export type Data360SetOptionsFor<ObjectType> =
       ? Data360DmoSetOptions
       : never;
 
+/**
+ * Aggregate-query SET OPTIONS shape selected from a Salesforce object
+ * capability.
+ */
 export type Data360AggregateSetOptionsFor<ObjectType> =
   SalesforceObjectSetOptionsCapability<ObjectType> extends "data360-dlo"
     ? Data360DloSetOptions

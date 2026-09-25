@@ -1,8 +1,11 @@
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import { freeze } from "#/util/object-utils";
 
+/** Immutable query AST node for a convertTimezone() expression. */
 export interface ConvertTimezoneFunctionNode {
+  /** Node discriminator used by Kysoql compilers and plugin visitors. */
   readonly kind: "ConvertTimezoneFunctionNode";
+  /** Field or relationship reference passed to the expression. */
   readonly reference: ReferenceNode;
 }
 

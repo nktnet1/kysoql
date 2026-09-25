@@ -20,9 +20,13 @@ const longitudeSchema = v.pipe(
   v.maxValue(180, LONGITUDE_ERROR),
 );
 
+/** Immutable query AST node for a GEOLOCATION() expression. */
 export interface GeolocationFunctionNode {
+  /** Node discriminator used by Kysoql compilers and plugin visitors. */
   readonly kind: "GeolocationFunctionNode";
+  /** Latitude argument passed to `GEOLOCATION()`. */
   readonly latitude: number;
+  /** Longitude argument passed to `GEOLOCATION()`. */
   readonly longitude: number;
 }
 

@@ -2,11 +2,16 @@ import type { DateFunctionNode } from "#/operation-node/date-function-node";
 import type { ReferenceNode } from "#/operation-node/reference-node";
 import { freeze } from "#/util/object-utils";
 
+/** Advanced Salesforce GROUP BY modes supported by Kysoql. */
 export type AdvancedGroupByMode = "rollup" | "cube";
 
+/** Immutable query AST node for a GROUP BY clause. */
 export interface GroupByNode {
+  /** Node discriminator used by Kysoql compilers and plugin visitors. */
   readonly kind: "GroupByNode";
+  /** Ordered child nodes contained by this clause. */
   readonly items: ReadonlyArray<DateFunctionNode | ReferenceNode>;
+  /** Clause mode represented by this node. */
   readonly mode?: AdvancedGroupByMode;
 }
 

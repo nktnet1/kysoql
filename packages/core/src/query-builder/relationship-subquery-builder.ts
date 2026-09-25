@@ -153,6 +153,9 @@ type RelationshipOperandValueExpression<
 type RelationshipApexBindLeftExpression<ApexMode extends boolean> =
   ApexMode extends true ? ApexBindExpression<string> : never;
 
+/**
+ * Pilot-only features available while building a relationship subquery.
+ */
 export interface RelationshipSubqueryPilotModule<
   DB,
   TB extends keyof DB,
@@ -170,6 +173,7 @@ export interface RelationshipSubqueryPilotModule<
     offset: number,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
 
+  /** Returns a builder with the `OFFSET` clause removed. */
   clearOffset(): RelationshipSubqueryBuilder<
     DB,
     TB,
@@ -180,6 +184,7 @@ export interface RelationshipSubqueryPilotModule<
   >;
 }
 
+/** Type-safe builder for a Salesforce child relationship subquery. */
 export interface RelationshipSubqueryBuilder<
   DB,
   TB extends keyof DB,
@@ -188,12 +193,15 @@ export interface RelationshipSubqueryBuilder<
   FunctionMode extends RelationshipSubqueryFunctionMode = "none",
   ApexMode extends boolean = false,
 > {
+  /** Passes this builder to `func` and returns the callback result. */
   $call<T>(func: (qb: this) => T): T;
 
+  /** Asserts at compile time that the current query output exactly matches `T`. */
   $assertType<T extends O>(): O extends T
     ? RelationshipSubqueryBuilder<DB, TB, T, Depth, FunctionMode, ApexMode>
     : KysoqlTypeError<"$assertType() call failed: The type passed in is not equal to the output type of the query.">;
 
+  /** Changes only the TypeScript output type; the generated SOQL is unchanged. */
   $castTo<C>(): RelationshipSubqueryBuilder<
     DB,
     TB,
@@ -203,6 +211,7 @@ export interface RelationshipSubqueryBuilder<
     ApexMode
   >;
 
+  /** Narrows selected output properties at the type level without changing SOQL. */
   $narrowType<T>(): RelationshipSubqueryBuilder<
     DB,
     TB,
@@ -224,6 +233,7 @@ export interface RelationshipSubqueryBuilder<
     ApexMode
   >;
 
+  /** Conditionally applies a builder callback; when false, the runtime query is unchanged. */
   $if<O2>(
     condition: boolean,
     func: (
@@ -245,6 +255,7 @@ export interface RelationshipSubqueryBuilder<
     ApexMode
   >;
 
+  /** Returns a builder with the `LIMIT` clause removed. */
   clearLimit(): RelationshipSubqueryBuilder<
     DB,
     TB,
@@ -254,6 +265,7 @@ export interface RelationshipSubqueryBuilder<
     ApexMode
   >;
 
+  /** Returns a builder with all `ORDER BY` items removed. */
   clearOrderBy(): RelationshipSubqueryBuilder<
     DB,
     TB,
@@ -263,6 +275,7 @@ export interface RelationshipSubqueryBuilder<
     ApexMode
   >;
 
+  /** Returns a builder with all current selections removed. */
   clearSelect(): RelationshipSubqueryBuilder<
     DB,
     TB,
@@ -272,6 +285,7 @@ export interface RelationshipSubqueryBuilder<
     ApexMode
   >;
 
+  /** Returns a builder with the `WHERE` predicate removed. */
   clearWhere(): RelationshipSubqueryBuilder<
     DB,
     TB,
@@ -281,42 +295,50 @@ export interface RelationshipSubqueryBuilder<
     ApexMode
   >;
 
+  /** Adds or replaces the SOQL `LIMIT` clause. */
   limit(
     limit: number,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
 
+  /** Adds a typed `ORDER BY` item. */
   orderBy(
     expression: SoqlRawBuilder,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
 
+  /** Adds a typed `ORDER BY` item. */
   orderBy(
     expression: DistanceOrderByFactory<DB, TB>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
 
+  /** Adds a typed `ORDER BY` item. */
   orderBy<OE extends string>(
     field: OE & SortableFieldName<DB, TB, OE>,
     direction?: OrderByDirection,
     nulls?: OrderByNullsForReference<DB, TB, OE>,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where(
     expression: SoqlRawBuilder,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where(
     expression: RelationshipWhereExpressionFactory<DB, TB, ApexMode>,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where(
     lhs: RelationshipApexBindLeftExpression<ApexMode>,
     op: "includes",
     rhs: readonly string[],
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where<
     RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
@@ -333,6 +355,7 @@ export interface RelationshipSubqueryBuilder<
     rhs: RHS,
   ): RelationshipSubqueryBuilder<DB, TB, O, Depth, FunctionMode, ApexMode>;
 
+  /** Adds one or more typed selections to the query output. */
   select<RawOutput>(
     selection: SoqlRawBuilder<RawOutput>,
   ): RelationshipSubqueryBuilder<
@@ -344,6 +367,7 @@ export interface RelationshipSubqueryBuilder<
     ApexMode
   >;
 
+  /** Adds one or more typed selections to the query output. */
   select<const Selections extends readonly string[]>(
     selections: Selections & CheckedSelectExpressionList<DB, TB, O, Selections>,
   ): RelationshipSubqueryBuilder<
@@ -355,6 +379,7 @@ export interface RelationshipSubqueryBuilder<
     ApexMode
   >;
 
+  /** Adds one or more typed selections to the query output. */
   select<FunctionSelection extends SelectFunctionSelectionArg>(
     selection: SelectFunctionForMode<
       FunctionMode,
@@ -369,6 +394,7 @@ export interface RelationshipSubqueryBuilder<
     ApexMode
   >;
 
+  /** Adds one or more typed selections to the query output. */
   select<SE extends string>(
     selection: SE &
       SelectExpression<DB, TB, SE> &
@@ -395,6 +421,7 @@ export interface RelationshipSubqueryBuilder<
     ApexMode
   >;
 
+  /** Adds a typed child-relationship subquery selection. */
   selectSubquery<
     Relationship extends string,
     SubqueryOutput,
@@ -432,6 +459,7 @@ export interface RelationshipSubqueryBuilder<
     ApexMode
   >;
 
+  /** Returns the immutable operation node represented by this builder. */
   toOperationNode(): RelationshipSubqueryNode;
 }
 

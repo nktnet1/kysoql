@@ -33,6 +33,9 @@ const HAVING_AGGREGATE_EXPRESSION_ERROR =
 
 declare const havingExpressionType: unique symbol;
 
+/**
+ * Field names that can be referenced directly in an aggregate HAVING clause.
+ */
 export type GroupedHavingFieldName<
   DB,
   TB extends keyof DB,
@@ -51,26 +54,34 @@ type AggregateOperandValue<
       ? readonly Value[]
       : Value;
 
+/** Typed wrapper around an aggregate HAVING expression node. */
 export interface HavingExpressionWrapper<
   DB,
   TB extends keyof DB,
   GroupedBy extends string,
 > {
+  /** Type-only marker used to preserve this expression capability through TypeScript inference. */
   readonly [havingExpressionType]: {
+    /** Schema type carried through HAVING-expression inference. */
     readonly db: DB;
+    /** Salesforce object type carried through HAVING-expression inference. */
     readonly table: TB;
+    /** Grouped field names available to this HAVING expression. */
     readonly groupedBy: GroupedBy;
   };
 
+  /** Returns the immutable operation node represented by this expression. */
   toOperationNode(): OperationNode;
 }
 
+/** Expression helper passed to typed HAVING callbacks. */
 export interface HavingExpressionBuilder<
   DB,
   TB extends keyof DB,
   GroupedBy extends string,
   GroupingFields extends string = never,
 > {
+  /** Builds a typed `HAVING` comparison from the supplied left operand, operator, and right operand. */
   <
     Reference extends string,
     Operator extends ComparisonOperatorExpression<DB, TB, Reference>,
@@ -88,6 +99,7 @@ export interface HavingExpressionBuilder<
     rhs: Right,
   ): HavingExpressionWrapper<DB, TB, GroupedBy>;
 
+  /** Builds a typed `HAVING` comparison from the supplied left operand, operator, and right operand. */
   <
     Output,
     Value,
@@ -100,6 +112,7 @@ export interface HavingExpressionBuilder<
     rhs: Right,
   ): HavingExpressionWrapper<DB, TB, GroupedBy>;
 
+  /** Builds a typed `HAVING` comparison from the supplied left operand, operator, and right operand. */
   <
     Output,
     Value,
@@ -113,8 +126,10 @@ export interface HavingExpressionBuilder<
     rhs: Right,
   ): HavingExpressionWrapper<DB, TB, GroupedBy>;
 
+  /** Function helpers available in this expression context. */
   readonly fn: AggregateFunctionModule<DB, TB, GroupingFields>;
 
+  /** Combines two or more expressions with boolean `AND`. */
   and(
     expressions: readonly [
       HavingExpressionWrapper<DB, TB, GroupedBy>,
@@ -123,10 +138,12 @@ export interface HavingExpressionBuilder<
     ],
   ): HavingExpressionWrapper<DB, TB, GroupedBy>;
 
+  /** Negates an expression with boolean `NOT`. */
   not(
     expression: HavingExpressionWrapper<DB, TB, GroupedBy>,
   ): HavingExpressionWrapper<DB, TB, GroupedBy>;
 
+  /** Combines two or more expressions with boolean `OR`. */
   or(
     expressions: readonly [
       HavingExpressionWrapper<DB, TB, GroupedBy>,
@@ -136,6 +153,7 @@ export interface HavingExpressionBuilder<
   ): HavingExpressionWrapper<DB, TB, GroupedBy>;
 }
 
+/** Callback that builds a typed HAVING expression. */
 export type HavingExpressionFactory<
   DB,
   TB extends keyof DB,

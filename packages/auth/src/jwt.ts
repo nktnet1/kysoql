@@ -9,22 +9,35 @@ import {
 const textBase64Url = (value: string): string =>
   encodeBase64Url(new TextEncoder().encode(value));
 
+/**
+ * Supported sources for the RSA private key used to sign Salesforce JWT
+ * assertions.
+ */
 export type PrivateKeyInput =
   | {
+      /** Selects an already-imported Web Crypto key. */
       readonly type: "crypto-key";
+      /** RSA private key used for RS256 signing. */
       readonly key: CryptoKey;
     }
   | {
+      /** Selects an in-memory PEM-encoded private key. */
       readonly type: "pem";
+      /** PEM-encoded PKCS#8 RSA private key. */
       readonly value: string;
     }
   | {
+      /** Selects a private key loaded from the filesystem. */
       readonly type: "file";
+      /** Path or file URL containing the private key. */
       readonly path: string | URL;
     };
 
+/** Options for creating a Salesforce JWT bearer assertion. */
 export interface JwtBearerAssertionOptions {
+  /** Connected App consumer key / OAuth client ID. */
   readonly clientId: string;
+  /** Salesforce username associated with the authorization flow. */
   readonly username: string;
   /** Salesforce login/My Domain origin used as the JWT audience. */
   readonly loginUrl: string;
@@ -39,7 +52,12 @@ export interface JwtBearerAssertionOptions {
   readonly now?: number;
 }
 
+/**
+ * Options for creating a private_key_jwt client assertion for Salesforce
+ * OAuth.
+ */
 export interface OAuthClientAssertionOptions {
+  /** Connected App consumer key / OAuth client ID. */
   readonly clientId: string;
   /**
    * Salesforce login/My Domain or Experience Cloud base URL whose token endpoint
@@ -188,6 +206,10 @@ const signAssertion = async (
   return `${signingInput}.${encodeBase64Url(new Uint8Array(signature))}`;
 };
 
+/**
+ * Creates an RS256 JWT bearer assertion for Salesforce server-to-server
+ * authentication.
+ */
 export const createJwtBearerAssertion = async (
   options: JwtBearerAssertionOptions,
 ): Promise<string> => {

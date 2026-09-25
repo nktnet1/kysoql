@@ -2,10 +2,15 @@ import type { ApexBindNode } from "#/operation-node/apex-bind-node";
 import { ValueNode } from "#/operation-node/value-node";
 import { freeze } from "#/util/object-utils";
 
+/** Immutable query AST node for a SET OPTIONS clause. */
 export interface SetOptionsNode {
+  /** Node discriminator used by Kysoql compilers and plugin visitors. */
   readonly kind: "SetOptionsNode";
+  /** Data 360 dataspace value. */
   readonly dataspace?: ValueNode;
+  /** Whether Data 360 queries should preserve empty strings. */
   readonly honorEmptyStrings?: boolean;
+  /** Apex database query options encoded in `SET OPTIONS`. */
   readonly apexQueryOptions?: ApexBindNode;
 }
 

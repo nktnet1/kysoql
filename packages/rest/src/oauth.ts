@@ -2,25 +2,40 @@ import { SalesforceOAuthError, SalesforceResponseError } from "#/errors";
 import { type HttpOptions, readJson, requestSignal } from "#/http";
 import { isRecord, nonEmptySecret, parseOrigin } from "#/validation";
 
+/**
+ * Access-token and instance metadata returned by the REST package OAuth
+ * helpers.
+ */
 export interface SalesforceOAuthSession {
+  /** Bearer access token returned by Salesforce. */
   readonly accessToken: string;
+  /** Salesforce instance origin associated with the access token. */
   readonly instanceUrl: string;
   /** Persist rotated refresh tokens securely; never assume the old one stays valid. */
   readonly refreshToken?: string;
 }
 
+/**
+ * Options for the Salesforce client-credentials grant in the REST package.
+ */
 export interface ClientCredentialsOptions extends HttpOptions {
   /** My Domain origin configured for the OAuth client-credentials flow. */
   readonly loginUrl: string;
+  /** Connected App consumer key / OAuth client ID. */
   readonly clientId: string;
+  /** Connected App client secret used by the client-credentials grant. */
   readonly clientSecret: string;
 }
 
+/** Options for the Salesforce refresh-token grant in the REST package. */
 export interface RefreshTokenOptions extends HttpOptions {
+  /** Salesforce login or My Domain base URL. */
   readonly loginUrl: string;
+  /** Connected App consumer key / OAuth client ID. */
   readonly clientId: string;
   /** Required when the application's OAuth policy requires a secret for refresh. */
   readonly clientSecret?: string;
+  /** Refresh token to exchange for a new access token. */
   readonly refreshToken: string;
 }
 

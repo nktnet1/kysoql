@@ -1,6 +1,7 @@
 import { SalesforceOAuthResponseError } from "#/errors";
 import { parseTimeout } from "#/validation";
 
+/** Shared transport options for Salesforce OAuth requests. */
 export interface OAuthRequestOptions {
   /** Cancels this request. */
   readonly signal?: AbortSignal;

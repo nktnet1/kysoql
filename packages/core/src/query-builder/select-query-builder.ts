@@ -203,6 +203,10 @@ type DateFunctionIdentityOf<Expression> =
     ? Identity
     : never;
 
+/**
+ * Tracks mutually exclusive SELECT-function and TYPEOF query modes at
+ * compile time.
+ */
 export type SelectQueryMode = "plain" | "function" | "typeof";
 
 type AfterSelectFunctionMode<Mode extends SelectQueryMode> =
@@ -243,43 +247,58 @@ type TypeOfValue<Targets extends string, Builder> =
         ? never
         : null);
 
+/** Type-safe fluent builder for Salesforce SELECT queries. */
 export interface SelectQueryBuilder<
   DB,
   TB extends keyof DB,
   O,
   Mode extends SelectQueryMode = SelectQueryMode,
 > {
+  /** Passes this builder to `func` and returns the callback result. */
   $call<T>(func: (qb: this) => T): T;
 
+  /** Asserts at compile time that the current query output exactly matches `T`. */
   $assertType<T extends O>(): O extends T
     ? SelectQueryBuilder<DB, TB, T, Mode>
     : KysoqlTypeError<"$assertType() call failed: The type passed in is not equal to the output type of the query.">;
 
+  /** Changes only the TypeScript output type; the generated SOQL is unchanged. */
   $castTo<C>(): SelectQueryBuilder<DB, TB, C, Mode>;
 
+  /** Narrows selected output properties at the type level without changing SOQL. */
   $narrowType<T>(): SelectQueryBuilder<DB, TB, NarrowPartial<O, T>, Mode>;
 
+  /** Conditionally applies a builder callback; when false, the runtime query is unchanged. */
   $if<O2>(
     condition: boolean,
     func: (qb: this) => SelectQueryBuilder<DB, TB, O & O2, Mode>,
   ): SelectQueryBuilder<DB, TB, ConditionalOutput<O, O2>, Mode>;
 
+  /** Returns a builder with the `LIMIT` clause removed. */
   clearLimit(): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  /** Returns a builder with the `OFFSET` clause removed. */
   clearOffset(): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  /** Returns a builder with all `ORDER BY` items removed. */
   clearOrderBy(): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  /** Returns a builder with all current selections removed. */
   clearSelect(): SelectQueryBuilder<DB, TB, unknown, "plain">;
 
+  /** Returns a builder with the `WHERE` predicate removed. */
   clearWhere(): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  /** Compiles the current operation tree into a `CompiledQuery`. */
   compile(): CompiledQuery<O>;
 
+  /** Compiles and executes the query with the configured executor. */
   execute(options?: AbortableQueryOptions): Promise<readonly O[]>;
 
+  /** Executes the query and returns the first row, or `undefined` when no rows match. */
   executeTakeFirst(options?: AbortableQueryOptions): Promise<O | undefined>;
 
+  /** Executes the query and returns the first row, throwing when no rows match. */
   executeTakeFirstOrThrow(
     options?:
       | ExecuteTakeFirstOrThrowOptions
@@ -287,20 +306,27 @@ export interface SelectQueryBuilder<
       | ((node: SelectQueryNode) => Error),
   ): Promise<O>;
 
+  /** Executes with the executor's Salesforce query-all semantics. */
   executeAll(options?: AbortableQueryOptions): Promise<readonly O[]>;
 
+  /** Switches to the static Apex builder for the current query. */
   apex(): ApexSelectQueryBuilder<DB, TB, O, Mode, "static">;
 
+  /** Switches to the dynamic Apex builder for the current query. */
   dynamicApex(): ApexSelectQueryBuilder<DB, TB, O, Mode, "dynamic">;
 
+  /** Adds or replaces the SOQL `LIMIT` clause. */
   limit(limit: number): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  /** Adds or replaces the SOQL `OFFSET` clause. */
   offset(offset: number): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  /** Adds a `GROUP BY` expression and enters aggregate-query mode. */
   groupBy<GE extends string>(
     field: UnselectedOnly<O, GE & GroupableFieldName<DB, TB, GE>>,
   ): AggregateSelectQueryBuilder<DB, TB, O, GE, "ordinary", 0>;
 
+  /** Adds a `GROUP BY` expression and enters aggregate-query mode. */
   groupBy<GE extends string>(
     fields: UnselectedOnly<
       O,
@@ -308,6 +334,7 @@ export interface SelectQueryBuilder<
     >,
   ): AggregateSelectQueryBuilder<DB, TB, O, GE, "ordinary", 0>;
 
+  /** Adds a `GROUP BY` expression and enters aggregate-query mode. */
   groupBy<
     Expression extends DateFunctionExpression<
       unknown,
@@ -329,71 +356,86 @@ export interface SelectQueryBuilder<
     0
   >;
 
+  /** Adds `FOR VIEW`; available only for MRU-enabled objects. */
   forView(
     ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
       ? readonly [mruDisabled: never]
       : readonly []
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  /** Adds `FOR REFERENCE`; available only for MRU-enabled objects. */
   forReference(
     ..._mruCheck: SalesforceObjectMruEnabled<DB[TB]> extends false
       ? readonly [mruDisabled: never]
       : readonly []
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  /** Adds the KnowledgeArticle `UPDATE TRACKING` clause. */
   updateTracking(
     ..._knowledgeArticleCheck: KnowledgeArticleUpdateCheck<TB>
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  /** Adds the KnowledgeArticle `UPDATE VIEWSTAT` clause. */
   updateViewstat(
     ..._knowledgeArticleCheck: KnowledgeArticleUpdateCheck<TB>
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  /** Adds a Salesforce `USING SCOPE` clause validated against schema metadata. */
   usingScope(
     scope: SalesforceObjectSupportedScope<DB[TB]>,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  /** Adds the UserProfileFeed `WITH USER_ID` clause. */
   withUserId(
     userId: string,
     ..._userProfileFeedCheck: UserProfileFeedWithUserIdCheck<TB>
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  /** Adds `WITH RECORD_VISIBILITY_CONTEXT` options. */
   withRecordVisibilityContext(
     parameters: RecordVisibilityContextOptions,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  /** Adds object-specific Salesforce `SET OPTIONS` values. */
   setOptions(
     options: Data360SetOptionsFor<DB[TB]>,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  /** Adds a typed `WITH DATA CATEGORY` filter. */
   withDataCategory<Group extends SalesforceObjectDataCategoryGroup<DB[TB]>>(
     group: Group,
     selector: DataCategorySelector,
     categories: DataCategoryInput<SalesforceObjectDataCategory<DB[TB], Group>>,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  /** Adds a typed `ORDER BY` item. */
   orderBy(
     expression: SoqlRawBuilder,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
+  /** Adds a typed `ORDER BY` item. */
   orderBy(
     expression: DistanceOrderByFactory<DB, TB>,
     direction?: OrderByDirection,
     nulls?: OrderByNulls,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  /** Adds a typed `ORDER BY` item. */
   orderBy<OE extends string>(
     field: OE & SortableFieldName<DB, TB, OE>,
     direction?: OrderByDirection,
     nulls?: OrderByNullsForReference<DB, TB, OE>,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where(expression: SoqlRawBuilder): SelectQueryBuilder<DB, TB, O, Mode>;
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where(
     expression: WhereExpressionFactory<DB, TB>,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  /** Adds a typed `WHERE` predicate and combines it with any existing predicate using `AND`. */
   where<
     RE extends string,
     OP extends ComparisonOperatorExpression<DB, TB, RE>,
@@ -404,13 +446,16 @@ export interface SelectQueryBuilder<
     rhs: RHS,
   ): SelectQueryBuilder<DB, TB, O, Mode>;
 
+  /** Adds one or more typed selections to the query output. */
   select<RawOutput>(
     selection: SoqlRawBuilder<RawOutput>,
   ): SelectQueryBuilder<DB, TB, O & RawOutput, Mode>;
+  /** Adds one or more typed selections to the query output. */
   select(
     selection: UnselectedOnly<O, CountSelectionFactory<DB, TB>>,
   ): CountQueryBuilder<DB, TB>;
 
+  /** Adds one or more typed selections to the query output. */
   select<FunctionSelection extends SelectFunctionSelectionArg>(
     selection: SelectFunctionFactoryForMode<
       Mode,
@@ -423,10 +468,12 @@ export interface SelectQueryBuilder<
     AfterSelectFunctionMode<Mode>
   >;
 
+  /** Adds one or more typed selections to the query output. */
   select<Aggregate extends AggregateSelectionArg>(
     selection: UnselectedOnly<O, AggregateSelectionFactory<DB, TB, Aggregate>>,
   ): AggregateSelectQueryBuilder<DB, TB, AggregateSelection<Aggregate>>;
 
+  /** Adds one or more typed selections to the query output. */
   select<const Selections extends readonly string[]>(
     selections: Selections & CheckedSelectExpressionList<DB, TB, O, Selections>,
   ): SelectQueryBuilder<
@@ -436,6 +483,7 @@ export interface SelectQueryBuilder<
     Mode
   >;
 
+  /** Adds one or more typed selections to the query output. */
   select<SE extends string>(
     selection: SE &
       SelectExpression<DB, TB, SE> &
@@ -448,6 +496,7 @@ export interface SelectQueryBuilder<
     ...check: FieldsSelectionCheck<DB, TB, O, Selector>
   ): SelectQueryBuilder<DB, TB, O & FieldsSelection<DB, TB, Selector>, Mode>;
 
+  /** Adds a typed `TYPEOF` selection for a polymorphic relationship. */
   selectTypeOf<
     Reference extends string,
     Builder extends CompletedTypeOfBuilder,
@@ -475,6 +524,7 @@ export interface SelectQueryBuilder<
     AfterTypeOfMode<Mode>
   >;
 
+  /** Adds a typed child-relationship subquery selection. */
   selectSubquery<
     Relationship extends string,
     SubqueryOutput,
@@ -508,6 +558,7 @@ export interface SelectQueryBuilder<
     AfterSubqueryMode<Mode, SubqueryFunctionMode>
   >;
 
+  /** Returns the immutable operation node represented by this builder. */
   toOperationNode(): SelectQueryNode;
 }
 
@@ -1265,11 +1316,20 @@ class SelectQueryBuilderImpl<
   }
 }
 
+/**
+ * Internal construction state exposed for advanced query-builder
+ * integrations.
+ */
 export interface SelectQueryBuilderProps {
+  /** Compiler used when `compile()` is called. */
   readonly queryCompiler: QueryCompiler;
+  /** Optional executor used by executable builder methods. */
   readonly queryExecutor: QueryExecutor | undefined;
+  /** Identifier propagated through compiler and plugin hooks. */
   readonly queryId: QueryId;
+  /** Current immutable SELECT operation tree. */
   readonly queryNode: SelectQueryNode;
+  /** Optional transformer applied before compiling or exposing the operation tree. */
   readonly queryNodeTransformer?: (query: SelectQueryNode) => SelectQueryNode;
 }
 

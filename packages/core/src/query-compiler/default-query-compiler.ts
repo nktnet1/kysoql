@@ -90,13 +90,18 @@ const numericLiteralSchema = v.pipe(
   v.finite(NUMERIC_LITERAL_ERROR),
 );
 
+/**
+ * Default compiler that validates a query AST and renders Salesforce SOQL.
+ */
 export class DefaultQueryCompiler implements QueryCompiler {
   readonly #schemaMetadata: SalesforceSchemaMetadata | undefined;
 
+  /** Creates a query compiler, optionally using generated schema metadata for validation. */
   constructor(schemaMetadata?: SalesforceSchemaMetadata) {
     this.#schemaMetadata = schemaMetadata;
   }
 
+  /** Compiles a Kysoql operation tree into SOQL. */
   compileQuery<O = unknown>(
     query: SelectQueryNode,
     context: QueryCompileContext = {},

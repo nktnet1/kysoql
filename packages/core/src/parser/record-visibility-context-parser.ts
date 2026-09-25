@@ -7,19 +7,26 @@ import {
 import type { SelectQueryNode } from "#/operation-node/select-query-node";
 
 interface RecordVisibilityContextShape {
+  /** Maximum visibility descriptors Salesforce may evaluate per record. */
   readonly maxDescriptorPerRecord?: number;
+  /** Whether Salesforce should include domain-based visibility. */
   readonly supportsDomains?: boolean;
+  /** Whether Salesforce should include delegated visibility. */
   readonly supportsDelegates?: boolean;
 }
 
+/** Options for Salesforce record-visibility context clauses. */
 export type RecordVisibilityContextOptions =
   | (RecordVisibilityContextShape & {
+      /** Maximum visibility descriptors Salesforce may evaluate per record. */
       readonly maxDescriptorPerRecord: number;
     })
   | (RecordVisibilityContextShape & {
+      /** Whether Salesforce should include domain-based visibility. */
       readonly supportsDomains: boolean;
     })
   | (RecordVisibilityContextShape & {
+      /** Whether Salesforce should include delegated visibility. */
       readonly supportsDelegates: boolean;
     });
 

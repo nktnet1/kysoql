@@ -32,25 +32,45 @@ import {
 } from "#/operation-node/with-data-category-node";
 import { freeze } from "#/util/object-utils";
 
+/** Immutable query AST node for a complete SELECT query. */
 export interface SelectQueryNode {
+  /** Node discriminator used by Kysoql compilers and plugin visitors. */
   readonly kind: "SelectQueryNode";
+  /** Salesforce object queried by this SELECT node. */
   readonly from: SObjectNode;
+  /** Selections emitted by this query or subquery. */
   readonly selections?: ReadonlyArray<SelectionNode>;
+  /** Optional `USING SCOPE` clause. */
   readonly usingScope?: UsingScopeNode;
+  /** Optional `WHERE` expression tree. */
   readonly where?: WhereNode;
+  /** Optional UserProfileFeed `WITH USER_ID` clause. */
   readonly userProfileFeedWith?: UserProfileFeedWithNode;
+  /** Optional `WITH RECORD_VISIBILITY_CONTEXT` clause. */
   readonly recordVisibilityContext?: RecordVisibilityContextNode;
+  /** Optional `WITH DATA CATEGORY` clause. */
   readonly withDataCategory?: WithDataCategoryNode;
+  /** Optional Apex user/system access-mode clause. */
   readonly apexAccessMode?: ApexAccessModeNode;
+  /** Optional `GROUP BY` clause. */
   readonly groupBy?: GroupByNode;
+  /** Optional `HAVING` clause. */
   readonly having?: HavingNode;
+  /** Optional `ORDER BY` clause. */
   readonly orderBy?: OrderByNode;
+  /** Optional `LIMIT` clause. */
   readonly limit?: LimitNode<number | ApexBindExpressionNode>;
+  /** Optional `OFFSET` clause. */
   readonly offset?: OffsetNode<number | ApexBindExpressionNode>;
+  /** Optional `FOR VIEW` or `FOR REFERENCE` clause. */
   readonly forViewReference?: ForViewReferenceNode;
+  /** Optional KnowledgeArticle update clause. */
   readonly knowledgeUpdate?: KnowledgeUpdateNode;
+  /** Optional Apex `ALL ROWS` marker. */
   readonly allRows?: AllRowsNode;
+  /** Optional Apex `FOR UPDATE` marker. */
   readonly forUpdate?: ForUpdateNode;
+  /** Optional Salesforce `SET OPTIONS` clause. */
   readonly setOptions?: SetOptionsNode;
 }
 

@@ -22,12 +22,17 @@ import {
   positiveInteger,
 } from "#/validation";
 
+/** Validated page returned by a Salesforce REST query request. */
 export interface RestQueryPage<O> {
+  /** Whether Salesforce has returned the final page. */
   readonly done: boolean;
+  /** Total number of root records matching the query. */
   readonly totalSize: number;
+  /** Records hydrated for this page, including selected relationship subqueries. */
   readonly records: readonly O[];
 }
 
+/** Safety limits applied while following Salesforce query pagination. */
 export interface RestPaginationOptions {
   /** Requested batch size (200-2000), not a guaranteed page size. */
   readonly batchSize?: number;
@@ -37,32 +42,40 @@ export interface RestPaginationOptions {
   readonly maxRecords?: number;
 }
 
+/** Execution options for a Salesforce REST query. */
 export interface RestQueryOptions extends RestRequestOptions {
   /** QueryAll includes qualifying deleted records; it is not a pagination switch. */
   readonly queryAll?: boolean;
 }
 
+/** Query executor backed by the Salesforce REST API. */
 export interface RestExecutor extends QueryExecutor {
+  /** Executes the query through `/query` and follows all result pages. */
   executeQuery<O>(
     query: CompiledQuery<O>,
     options?: RestRequestOptions,
   ): Promise<readonly O[]>;
+  /** Executes the query through `/queryAll` and follows all result pages. */
   executeAllQuery<O>(
     query: CompiledQuery<O>,
     options?: RestRequestOptions,
   ): Promise<readonly O[]>;
+  /** Executes `COUNT()` through `/query` and returns the count. */
   executeCountQuery(
     query: CompiledQuery<number>,
     options?: RestRequestOptions,
   ): Promise<number>;
+  /** Executes `COUNT()` through `/queryAll` and returns the count. */
   executeAllCountQuery(
     query: CompiledQuery<number>,
     options?: RestRequestOptions,
   ): Promise<number>;
+  /** Streams validated root query pages while hydrating relationship subquery continuations. */
   queryPages<O>(
     query: CompiledQuery<O>,
     options?: RestQueryOptions,
   ): AsyncIterableIterator<RestQueryPage<O>>;
+  /** Streams individual records from `queryPages()` without collecting the full result set. */
   iterateQuery<O>(
     query: CompiledQuery<O>,
     options?: RestQueryOptions,
@@ -364,6 +377,7 @@ class NativeRestExecutor implements RestExecutor {
   }
 }
 
+/** Creates a Kysoql query executor around a RestClient. */
 export const createRestExecutor = (
   client: RestClient | RestClientOptions,
   options: RestPaginationOptions = {},

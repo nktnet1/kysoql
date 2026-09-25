@@ -1,16 +1,25 @@
 import { freeze } from "#/util/object-utils";
 
+/** Selectors accepted by Salesforce WITH DATA CATEGORY. */
 export type DataCategorySelector = "at" | "above" | "below" | "above_or_below";
 
+/** Immutable query AST node for one WITH DATA CATEGORY selection. */
 export interface DataCategorySelectionNode {
+  /** Node discriminator used by Kysoql compilers and plugin visitors. */
   readonly kind: "DataCategorySelectionNode";
+  /** Data-category group API name. */
   readonly group: string;
+  /** Salesforce `FIELDS()` selector. */
   readonly selector: DataCategorySelector;
+  /** Data-category values matched by this selection. */
   readonly categories: readonly string[];
 }
 
+/** Immutable query AST node for a WITH DATA CATEGORY clause. */
 export interface WithDataCategoryNode {
+  /** Node discriminator used by Kysoql compilers and plugin visitors. */
   readonly kind: "WithDataCategoryNode";
+  /** Selections emitted by this query or subquery. */
   readonly selections: readonly DataCategorySelectionNode[];
 }
 

@@ -2,16 +2,25 @@ import type { ReferenceNode } from "#/operation-node/reference-node";
 import { parseSoqlIdentifier } from "#/soql-identifier";
 import { freeze } from "#/util/object-utils";
 
+/** Immutable query AST node for one TYPEOF WHEN branch. */
 export interface TypeOfWhenNode {
+  /** Node discriminator used by Kysoql compilers and plugin visitors. */
   readonly kind: "TypeOfWhenNode";
+  /** Salesforce object referenced by this branch or relationship. */
   readonly object: string;
+  /** Selections emitted by this query or subquery. */
   readonly selections: ReadonlyArray<ReferenceNode>;
 }
 
+/** Immutable query AST node for a TYPEOF selection. */
 export interface TypeOfNode {
+  /** Node discriminator used by Kysoql compilers and plugin visitors. */
   readonly kind: "TypeOfNode";
+  /** Field or relationship reference passed to the expression. */
   readonly reference: ReferenceNode;
+  /** `WHEN` branches in a `TYPEOF` expression. */
   readonly whens: ReadonlyArray<TypeOfWhenNode>;
+  /** Selections emitted by the optional `TYPEOF ELSE` branch. */
   readonly elseSelections?: ReadonlyArray<ReferenceNode>;
 }
 

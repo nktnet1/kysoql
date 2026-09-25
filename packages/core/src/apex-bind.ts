@@ -45,15 +45,24 @@ declare const apexDatabaseQueryOptionsType: unique symbol;
  * the generated dynamic SOQL.
  */
 export interface ApexDatabaseQueryOptions {
+  /** Type-only brand used by Kysoql to preserve compile-time information; it has no user-facing runtime meaning. */
   readonly [apexDatabaseQueryOptionsType]: true;
 }
 
+/**
+ * Typed Apex expression that can be embedded as a bind in generated dynamic
+ * SOQL.
+ */
 export interface ApexBindExpression<Value> {
+  /** Type-only brand used by Kysoql to preserve compile-time information; it has no user-facing runtime meaning. */
   readonly [apexBindValueType]: Value;
+  /** Returns the immutable operation node represented by this builder. */
   toOperationNode(): ApexBindExpressionNode;
 }
 
+/** Primitive value types supported by Apex addition expressions. */
 export type ApexAdditionValue = string | number;
+/** Literal or typed Apex bind expression accepted by apexAdd(). */
 export type ApexAdditionOperand<Value extends ApexAdditionValue> =
   | Value
   | ApexBindExpression<Value>;
@@ -72,6 +81,10 @@ class ApexBindExpressionImpl<Value> implements ApexBindExpression<Value> {
   }
 }
 
+/**
+ * Creates a typed Apex bind expression from an identifier or dotted member
+ * path.
+ */
 export function apexBind<Value>(expression: string): ApexBindExpression<Value> {
   const result = v.safeParse(apexBindExpressionSchema, expression);
 
@@ -96,6 +109,10 @@ function parseApexAdditionOperand(
   return ApexLiteralNode.create(operand);
 }
 
+/**
+ * Builds a typed Apex addition expression from compatible literal or bind
+ * operands.
+ */
 export function apexAdd(
   left: ApexAdditionOperand<string>,
   right: ApexAdditionOperand<string>,
@@ -144,6 +161,10 @@ function validateApexSubstringIndexes(
   }
 }
 
+/**
+ * Builds a typed Apex substring expression using validated zero-based
+ * indexes.
+ */
 export function apexSubstring(
   source: string | ApexBindExpression<string>,
   beginIndex: number,
@@ -160,6 +181,10 @@ export function apexSubstring(
   );
 }
 
+/**
+ * References a selected field from an Apex query result for use in another
+ * bind expression.
+ */
 export function apexQueryField<
   DB,
   TB extends keyof DB,

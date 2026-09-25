@@ -38,11 +38,20 @@ export type {
   SalesforceSupportedScopeDescription,
 } from "#/types";
 
+/**
+ * Options for generating a TypeScript Kysoql schema from Salesforce Describe
+ * metadata.
+ */
 export interface GenerateSchemaOptions {
+  /** Describe client used to load Salesforce metadata. */
   readonly client: SalesforceDescribeClient;
+  /** Destination path for the generated TypeScript schema file. */
   readonly output: string;
+  /** Optional object API names to generate; omit to generate every queryable object. */
   readonly objects?: readonly string[];
+  /** Optional per-object field include/exclude rules. */
   readonly fields?: ObjectFieldFilters;
+  /** Name of the generated TypeScript schema type. */
   readonly schemaName?: string;
 }
 
@@ -92,6 +101,10 @@ const selectObjectNames = async (
   );
 };
 
+/**
+ * Loads and validates Salesforce object metadata, then applies configured
+ * field filters.
+ */
 export const loadSchema = async (
   client: SalesforceDescribeClient,
   requestedObjects?: readonly string[],
@@ -132,6 +145,10 @@ export const loadSchema = async (
   return applyFieldFilters(objects, filters);
 };
 
+/**
+ * Loads Salesforce metadata and writes the rendered TypeScript schema to
+ * disk.
+ */
 export const generateSchema = async (
   options: GenerateSchemaOptions,
 ): Promise<void> => {
