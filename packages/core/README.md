@@ -50,9 +50,10 @@ const rows = await aliased.execute();
 // rows[0] is typed as { readonly id: string; readonly ownerName: string | null }
 ```
 
-Salesforce only supports native field aliases for grouped queries. Ordinary
-record queries request the source fields, then Kysoql projects the requested
-aliases onto returned JavaScript records.
+Salesforce does not support native aliases on ordinary record field references.
+Kysoql therefore requests the source fields and projects those aliases onto
+returned JavaScript records. Salesforce does support native aliases for grouped
+results and supported SELECT functions such as `FORMAT()` and `toLabel()`.
 
 Query builders expose Kysely-style `$call(...)` and `$if(...)` composition.
 `$call` passes the current specialised builder to a callback and returns the
