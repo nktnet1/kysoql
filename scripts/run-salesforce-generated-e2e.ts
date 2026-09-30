@@ -2,7 +2,7 @@ import { Command, Flags } from "@oclif/core";
 
 import {
   requireCommand,
-  requireNode26,
+  requireSupportedNode,
   run,
   succeeds,
 } from "./lib/command.ts";
@@ -31,7 +31,7 @@ class SalesforceGeneratedE2E extends Command {
     const environment = readSalesforceTargetEnvironment();
     const targetOrg = flags["target-org"] ?? environment.KYSOQL_TARGET_ORG;
 
-    requireNode26();
+    requireSupportedNode();
     requireCommand("pnpm");
     if (
       !succeeds(

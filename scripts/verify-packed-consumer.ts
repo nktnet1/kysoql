@@ -10,7 +10,12 @@ import {
 import { tmpdir } from "node:os";
 import { relative, resolve } from "node:path";
 
-import { parseJson, requireCommand, requireNode26, run } from "./lib/command.ts";
+import {
+  parseJson,
+  requireCommand,
+  requireSupportedNode,
+  run,
+} from "./lib/command.ts";
 
 const ROOT_DIR = resolve(import.meta.dirname, "..");
 const LICENSE_ID = "MIT";
@@ -520,7 +525,7 @@ void generated;
 };
 
 const main = async (): Promise<void> => {
-  requireNode26();
+  requireSupportedNode();
   requireCommand("pnpm");
 
   const rootManifest = await readJsonObject(

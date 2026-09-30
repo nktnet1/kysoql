@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <deploymentStatus>Deployed</deploymentStatus>
+  <fields>
+    <fullName>Tenant__c</fullName>
+    <label>Tenant</label>
+    <length>40</length>
+    <required>true</required>
+    <type>Text</type>
+  </fields>
+  <fields>
+    <fullName>OccurredAt__c</fullName>
+    <label>Occurred At</label>
+    <required>true</required>
+    <type>DateTime</type>
+  </fields>
+  <fields>
+    <fullName>Payload__c</fullName>
+    <label>Payload</label>
+    <length>255</length>
+    <required>false</required>
+    <type>Text</type>
+  </fields>
+  <indexes>
+    <fullName>KysoqlEventIndex</fullName>
+    <label>Kysoql Event Index</label>
+    <fields>
+      <name>Tenant__c</name>
+      <sortDirection>ASC</sortDirection>
+    </fields>
+    <fields>
+      <name>OccurredAt__c</name>
+      <sortDirection>DESC</sortDirection>
+    </fields>
+  </indexes>
+  <label>Kysoql Event</label>
+  <pluralLabel>Kysoql Events</pluralLabel>
+</CustomObject>

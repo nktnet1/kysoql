@@ -4,7 +4,7 @@
   "type": "module",
   "sideEffects": false,
   "engines": {
-    "node": ">=26.0.0 <27"
+    "node": ">=22.12.0"
   },
   "exports": {
     "./*": "./src/*.ts"
@@ -15,15 +15,15 @@
   "scripts": {
     "check": "biome check",
     "docs:gen": "pnpm docs:core && pnpm docs:rest && pnpm docs:auth && pnpm docs:codegen && pnpm docs:jsforce",
-    "docs:core": "typedoc --options ./src/configs/core.ts && node ./src/postprocess.ts core",
-    "docs:rest": "typedoc --options ./src/configs/rest.ts && node ./src/postprocess.ts rest",
-    "docs:auth": "typedoc --options ./src/configs/auth.ts && node ./src/postprocess.ts auth",
-    "docs:codegen": "typedoc --options ./src/configs/codegen.ts && node ./src/postprocess.ts codegen",
-    "docs:jsforce": "typedoc --options ./src/configs/jsforce.ts && node ./src/postprocess.ts jsforce",
+    "docs:core": "typedoc --options ./src/configs/core.ts && node --experimental-strip-types ./src/postprocess.ts core",
+    "docs:rest": "typedoc --options ./src/configs/rest.ts && node --experimental-strip-types ./src/postprocess.ts rest",
+    "docs:auth": "typedoc --options ./src/configs/auth.ts && node --experimental-strip-types ./src/postprocess.ts auth",
+    "docs:codegen": "typedoc --options ./src/configs/codegen.ts && node --experimental-strip-types ./src/postprocess.ts codegen",
+    "docs:jsforce": "typedoc --options ./src/configs/jsforce.ts && node --experimental-strip-types ./src/postprocess.ts jsforce",
     "typecheck:source": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^26.6.2",
+    "@types/node": "^22.0.0",
     "typedoc": "0.28.20",
     "typedoc-plugin-markdown": "4.13.1",
     "typescript": "6.0.3"

@@ -165,13 +165,31 @@ export const parseSalesforceDataCategoryGroupsResponse = (
     }));
 };
 
+const toolingBigObjectFieldSchema = v.object({
+  fullName: v.string(),
+  type: v.picklist([
+    "DateTime",
+    "Email",
+    "Lookup",
+    "Number",
+    "Phone",
+    "Text",
+    "LongTextArea",
+    "URL",
+  ]),
+  required: v.optional(v.boolean(), false),
+  referenceTo: v.optional(v.nullable(v.string())),
+  relationshipName: v.optional(v.nullable(v.string())),
+});
 const toolingBigObjectIndexFieldSchema = v.object({
   name: v.string(),
+  sortDirection: v.optional(v.picklist(["ASC", "DESC"])),
 });
 const toolingBigObjectIndexSchema = v.object({
   fields: v.array(toolingBigObjectIndexFieldSchema),
 });
 const toolingBigObjectMetadataSchema = v.object({
+  fields: v.array(toolingBigObjectFieldSchema),
   indexes: v.array(toolingBigObjectIndexSchema),
 });
 const toolingBigObjectRecordSchema = v.object({
@@ -181,10 +199,34 @@ const toolingBigObjectQuerySchema = v.object({
   records: v.array(toolingBigObjectRecordSchema),
 });
 
-export const parseSalesforceBigObjectIndex = (
+const describeTypeForBigObjectField = (
+  type: v.InferOutput<typeof toolingBigObjectFieldSchema>["type"],
+): string => {
+  switch (type) {
+    case "DateTime":
+      return "datetime";
+    case "Email":
+      return "email";
+    case "Lookup":
+      return "reference";
+    case "Number":
+      return "double";
+    case "Phone":
+      return "phone";
+    case "Text":
+      return "string";
+    case "LongTextArea":
+      return "textarea";
+    case "URL":
+      return "url";
+  }
+};
+
+/** Validate Tooling CustomObject metadata and normalise it to Describe shape. */
+export const parseSalesforceBigObjectMetadata = (
   input: unknown,
   objectName: string,
-): readonly string[] => {
+): SalesforceObjectDescription => {
   const result = v.safeParse(toolingBigObjectQuerySchema, input);
   if (!result.success) {
     throw new TypeError(
@@ -206,8 +248,48 @@ export const parseSalesforceBigObjectIndex = (
       `Expected exactly one non-empty index for Salesforce big object ${objectName}.`,
     );
   }
-  return index.fields.map((field) => field.name);
+
+  const bigObjectIndex = index.fields.map((field) => field.name);
+  const indexedFields = new Set(bigObjectIndex);
+  const fields = record.Metadata.fields.map((field) => ({
+    name: field.fullName,
+    type: describeTypeForBigObjectField(field.type),
+    nillable: !field.required,
+    // Synchronous SOQL filters on custom Big Objects are restricted to the
+    // composite index. Other capabilities are kept conservative because REST
+    // Describe is not supported for Big Objects.
+    filterable: indexedFields.has(field.fullName),
+    sortable: false,
+    groupable: false,
+    aggregatable: false,
+    custom: field.fullName.endsWith("__c"),
+    ...(field.referenceTo == null ? {} : { referenceTo: [field.referenceTo] }),
+    ...(field.relationshipName === undefined
+      ? {}
+      : { relationshipName: field.relationshipName }),
+  }));
+
+  if (fields.length === 0) {
+    throw new TypeError(
+      `Expected Salesforce big object ${objectName} to define at least one field.`,
+    );
+  }
+  for (const indexField of bigObjectIndex) {
+    if (!fields.some((field) => field.name === indexField)) {
+      throw new TypeError(
+        `Salesforce big object ${objectName} index references unknown field ${indexField}.`,
+      );
+    }
+  }
+
+  return { name: objectName, fields, bigObjectIndex };
 };
+
+export const parseSalesforceBigObjectIndex = (
+  input: unknown,
+  objectName: string,
+): readonly string[] =>
+  parseSalesforceBigObjectMetadata(input, objectName).bigObjectIndex ?? [];
 
 export const parseSchemaName = (input: unknown): string => {
   const result = v.safeParse(

@@ -6,7 +6,7 @@
   "type": "module",
   "packageManager": "pnpm@12.6.0",
   "engines": {
-    "node": ">=26.0.0 <27"
+    "node": ">=22.12.0"
   },
   "scripts": {
     "build": "turbo run build",
@@ -22,24 +22,26 @@
     "typecheck": "pnpm typecheck:source && pnpm typecheck:test",
     "typecheck:source": "pnpm test:tasks && tsc -p tsconfig.scripts.json && turbo run typecheck:source",
     "typecheck:test": "tsc -p tsconfig.json && tsc -p scripts/tsconfig.json && tsc -p test/tsconfig.json && turbo run typecheck:test",
-    "validate": "node scripts/validate.ts",
+    "validate": "node --experimental-strip-types scripts/validate.ts",
     "release:check": "pnpm validate && pnpm verify:release:publish && pnpm verify:packed-consumer",
     "clean": "turbo run clean && rm -rf node_modules",
-    "salesforce:setup": "node scripts/setup-salesforce-test-org.ts",
-    "salesforce:apex-binds": "node scripts/run-salesforce-apex-bind-smoke.ts",
-    "salesforce:aggregate-offset": "node scripts/run-salesforce-aggregate-offset-smoke.ts",
-    "salesforce:e2e": "node scripts/run-salesforce-generated-e2e.ts",
-    "salesforce:schema": "node scripts/generate-salesforce-schema.ts",
-    "verify:publish": "node scripts/verify-publish-shape.ts",
-    "verify:packed-consumer": "node scripts/verify-packed-consumer.ts",
-    "verify:release": "node scripts/verify-release-metadata.ts",
-    "verify:release:publish": "node scripts/verify-release-metadata.ts --publish-ready"
+    "salesforce:setup": "node --experimental-strip-types scripts/setup-salesforce-test-org.ts",
+    "salesforce:apex-binds": "node --experimental-strip-types scripts/run-salesforce-apex-bind-smoke.ts",
+    "salesforce:aggregate-offset": "node --experimental-strip-types scripts/run-salesforce-aggregate-offset-smoke.ts",
+    "salesforce:big-object": "node --experimental-strip-types scripts/run-salesforce-big-object-smoke.ts",
+    "salesforce:e2e": "node --experimental-strip-types scripts/run-salesforce-generated-e2e.ts",
+    "salesforce:schema": "node --experimental-strip-types scripts/generate-salesforce-schema.ts",
+    "verify:publish": "node --experimental-strip-types scripts/verify-publish-shape.ts",
+    "verify:packed-consumer": "node --experimental-strip-types scripts/verify-packed-consumer.ts",
+    "verify:release": "node --experimental-strip-types scripts/verify-release-metadata.ts",
+    "verify:release:publish": "node --experimental-strip-types scripts/verify-release-metadata.ts --publish-ready",
+    "ci": "node --experimental-strip-types scripts/ci.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
     "@oclif/core": "5.0.1",
     "@salesforce/cli": "^2.151.7",
-    "@types/node": "26.6.2",
+    "@types/node": "^22.0.0",
     "@vitest/coverage-v8": "5.0.1",
     "lefthook": "2.1.14",
     "tsdown": "0.23.0",

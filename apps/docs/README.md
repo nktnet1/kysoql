@@ -7,8 +7,8 @@ indexes. It does not connect to Salesforce or require Salesforce credentials.
 
 ## Run locally
 
-Use the repository's declared toolchain: Node.js `26.10.0` (`.node-version`) and
-pnpm `12.5.1` (`packageManager`). From the repository root:
+Use the repository toolchain declared by `.node-version`, the root `engines`,
+and `packageManager` fields. From the repository root:
 
 ```bash
 pnpm install --frozen-lockfile
@@ -120,10 +120,13 @@ separate. Never imply that `executeAll()` means ordinary pagination, that
 generated types enforce permissions, or that the adapter validates every selected
 field value.
 
-The assumed package scope is `@kysoql`, matching the manifests. Keep installation
-instructions honest about the repository's `0.0.0` versions and unpublished
-workspace use. Never claim registry availability or a minimum TypeScript
-version that the repository does not declare. Mark beta/pilot features and link
+The package scope is `@kysoql`, matching the manifests. Keep installation
+instructions aligned with the registry state: while the manifests use the
+development placeholder version, do not claim the packages are published. The
+real release version is set across the root and public package manifests as part
+of release preparation. Never
+claim registry availability or a minimum TypeScript version that the repository
+does not declare. Mark beta/pilot features and link
 to the relevant official Salesforce documentation instead of promising universal
 org support.
 
@@ -200,10 +203,9 @@ other typechecks read them. Keep the existing `^build` prerequisites and
 disabling cleaning, skipping declaration checks, or falling back to source
 aliases.
 
-The root `pnpm test:tasks` command checks these task-configuration invariants
-without installed dependencies (it can also be run as
-`node --test scripts/typecheck-tasks.test.ts`). The root source-typecheck
-command runs it before invoking Turbo. These are configuration regressions,
+The root `pnpm test:tasks` command checks these task-configuration invariants.
+The root source-typecheck command runs it before invoking Turbo. These are
+configuration regressions,
 not substitutes for a full typecheck with the pinned toolchain.
 
 The schema in `examples/` is a **synthetic test fixture**, not an org schema or

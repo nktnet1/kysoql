@@ -19,7 +19,7 @@ an access token or production record payload.
 
 | Symptom | Likely cause and action |
 | --- | --- |
-| Unsupported engine/version warning | Kysoql packages require Node.js `>=26.0.0 <27`; use a supported Node 26 release. |
+| Unsupported engine/version warning | Kysoql packages require Node.js `>=22.12.0`; use a supported Node release in that range. |
 | `kysoql: command not found` | Install `@kysoql/codegen` in the invoking application and run the locally installed `kysoql` binary through your package manager. |
 | Missing codegen authentication | Configure `auth` in `kysoql.config.*` or pass a trusted `--auth <module>` provider. |
 | Unknown or non-queryable object | Use an object API name visible/queryable to that token, not a label. Check the org and permissions. |

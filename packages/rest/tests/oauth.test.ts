@@ -35,7 +35,7 @@ describe("native OAuth token exchanges", () => {
     assert.equal(call.url.href, `${origin}/services/oauth2/token`);
     assert.equal(call.init.method, "POST");
     assert.equal(call.init.redirect, "error");
-    assert.equal(call.init.cache, "no-store");
+    assert.equal("cache" in call.init, false);
     assert.equal(
       new Headers(call.init.headers).get("Content-Type"),
       "application/x-www-form-urlencoded",

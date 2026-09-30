@@ -9,8 +9,8 @@
     "check": "biome check",
     "preview": "vite preview",
     "types:check": "tsc --noEmit",
-    "check:content": "pnpm docs:api && node --test scripts/content.test.ts && node scripts/check-content.ts",
-    "check:examples": "node scripts/check-examples.ts",
+    "check:content": "pnpm docs:api && node --experimental-strip-types --test scripts/content.test.ts && node --experimental-strip-types scripts/check-content.ts",
+    "check:examples": "node --experimental-strip-types scripts/check-examples.ts",
     "typecheck:source": "pnpm check:content && pnpm check:examples && pnpm types:check",
     "docs:api": "pnpm --filter @kysoql/typedoc docs:gen",
     "docs:api:core": "pnpm --filter @kysoql/typedoc docs:core",
@@ -41,7 +41,7 @@
     "@kysoql/typedoc": "workspace:*",
     "@tailwindcss/vite": "^4.3.3",
     "@types/mdx": "^2.0.14",
-    "@types/node": "^26.6.2",
+    "@types/node": "^22.0.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
@@ -49,5 +49,8 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "vite": "^8.3.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }

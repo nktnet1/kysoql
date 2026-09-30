@@ -79,7 +79,7 @@ it("repository-authored script entrypoints use TypeScript", async () => {
   const files = (await Promise.all(roots.map(walkFiles))).flat();
   const legacy = files
     .map((file) => file.pathname)
-    .filter((file) => /\.(?:mjs|cjs|sh)$/u.test(file));
+    .filter((file) => /\.(?:js|mjs|cjs|sh)$/u.test(file));
   expect(legacy).toEqual([]);
 });
 
@@ -244,6 +244,10 @@ it("repository Salesforce command scripts use oclif and validated environments",
     ],
     [
       "scripts/run-salesforce-aggregate-offset-smoke.ts",
+      "readSalesforceTargetEnvironment",
+    ],
+    [
+      "scripts/run-salesforce-big-object-smoke.ts",
       "readSalesforceTargetEnvironment",
     ],
     [

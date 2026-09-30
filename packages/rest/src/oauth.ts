@@ -49,7 +49,6 @@ const tokenRequest = async (
   const response = await fetch(`${origin}/services/oauth2/token`, {
     method: "POST",
     redirect: "error",
-    cache: "no-store",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/x-www-form-urlencoded",

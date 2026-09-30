@@ -24,10 +24,10 @@ not exposed just because Kysely has an equivalent concept.
 
 ## Requirements
 
-- Node.js 26 (`package.json` enforces the Node 26 range; `.node-version` pins 26.10.0 for version managers that support it).
-- pnpm 12.5.1.
+- Node.js matching the root `package.json` `engines` range; `.node-version` selects the repository default.
+- pnpm matching the root `packageManager` declaration.
 
-Activate Node 26 using whichever version manager you prefer, then install:
+Activate the repository Node.js version using whichever version manager you prefer, then install:
 
 ```bash
 node --version
@@ -55,9 +55,9 @@ Before publishing, run the stricter release gate:
 pnpm release:check
 ```
 
-It includes the full validation gate, rejects the workspace's `0.0.0`
-development placeholder, requires every publishable package to declare its
-license explicitly, and verifies the built npm tarballs from isolated
+It includes the full validation gate, rejects the workspace development
+placeholder version, requires every publishable package to declare its license
+explicitly, and verifies the built npm tarballs from isolated
 offline consumer projects. Individual checks remain available when needed:
 
 ```bash
@@ -84,7 +84,10 @@ the packages to be built first; `pnpm validate` handles that ordering
 automatically. `pnpm verify:release` can run independently because it checks
 manifest/documentation metadata rather than build artifacts.
 `pnpm verify:release:publish` adds the non-placeholder version requirement used
-by `pnpm release:check`. `pnpm verify:packed-consumer` expects built package
+by `pnpm release:check`. Package manifests intentionally keep a development
+placeholder version in source control; the release version is set across the root
+and public package manifests immediately before publishing.
+`pnpm verify:packed-consumer` expects built package
 artifacts and packs all five public workspaces, verifies each package imports in
 isolation with only its declared dependencies, then installs the tarballs into a
 combined temporary project using pnpm's offline store. It checks packed manifests
@@ -1084,9 +1087,10 @@ pnpm salesforce:setup
 ```
 
 The setup script installs from the lockfile, uses the workspace-local Salesforce
-CLI via `pnpm sf`, creates a scratch org, deploys metadata, assigns permissions,
-seeds deterministic data, and runs both the existing Salesforce smoke fixtures and
-a generated-query E2E suite. The E2E suite uses a dedicated Vitest configuration:
+CLI via `pnpm sf`, creates a scratch org, deploys ordinary and custom Big Object
+fixture metadata, assigns permissions, seeds deterministic data, and runs the
+Salesforce smoke fixtures (including Big Object codegen) plus a generated-query
+E2E suite. The E2E suite uses a dedicated Vitest configuration:
 it builds `@kysoql/core`, asserts exact SOQL compiled for representative record,
 relationship, pagination, grouping, and aggregate queries, sends that SOQL to the
 scratch org, and asserts deterministic returned values. It remains separate from

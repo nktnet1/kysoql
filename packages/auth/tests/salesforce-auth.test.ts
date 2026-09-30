@@ -7,7 +7,7 @@ import { mockFetch, origin, tokenResponse } from "./helpers.js";
 const form = (init: RequestInit | undefined): URLSearchParams =>
   new URLSearchParams(String(init?.body));
 
-const createPrivateKey = async (): Promise<CryptoKey> => {
+const createPrivateKey = async () => {
   const pair = await crypto.subtle.generateKey(
     {
       name: "RSASSA-PKCS1-v1_5",

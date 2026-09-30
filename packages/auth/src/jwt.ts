@@ -6,6 +6,8 @@ import {
   parseOrigin,
 } from "#/validation";
 
+type CryptoKey = Awaited<ReturnType<typeof globalThis.crypto.subtle.importKey>>;
+
 const textBase64Url = (value: string): string =>
   encodeBase64Url(new TextEncoder().encode(value));
 

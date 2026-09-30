@@ -1,4 +1,4 @@
-import { requireCommand, requireNode26, run } from "./lib/command.ts";
+import { requireCommand, requireSupportedNode, run } from "./lib/command.ts";
 
 function runStep(label: string, args: readonly string[]): void {
   console.log(`\n==> ${label}`);
@@ -6,7 +6,7 @@ function runStep(label: string, args: readonly string[]): void {
 }
 
 try {
-  requireNode26();
+  requireSupportedNode();
   requireCommand("pnpm");
 
   runStep("Biome", ["check"]);

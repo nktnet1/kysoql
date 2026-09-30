@@ -319,7 +319,6 @@ const postForm = async (
   const response = await fetch(`${baseUrl}${path}`, {
     method: "POST",
     redirect: "error",
-    cache: "no-store",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/x-www-form-urlencoded",

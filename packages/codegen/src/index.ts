@@ -69,6 +69,16 @@ const selectObjectNames = async (
       .map((object) => object.name),
   );
 
+  // Salesforce does not support REST Describe for custom Big Objects, and
+  // depending on org/API behaviour they can also be absent from REST global
+  // Describe. An explicitly requested __b object is validated by the backing
+  // client's metadata transport when describe() runs.
+  for (const objectName of requestedObjects ?? []) {
+    if (/^[A-Za-z_][A-Za-z0-9_]*__b$/i.test(objectName)) {
+      queryableObjects.add(objectName);
+    }
+  }
+
   const unknownRules = Object.keys(fields)
     .filter((objectName) => !queryableObjects.has(objectName))
     .sort();

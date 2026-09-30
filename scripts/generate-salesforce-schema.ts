@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 
 import { Command, Flags } from "@oclif/core";
 
-import { requireCommand, requireNode26, run } from "./lib/command.ts";
+import { requireCommand, requireSupportedNode, run } from "./lib/command.ts";
 import {
   repositoryCommandLoadOptions,
   repositoryRoot,
@@ -47,7 +47,7 @@ class GenerateSalesforceSchema extends Command {
 
   async run(): Promise<void> {
     const { flags } = await this.parse(GenerateSalesforceSchema);
-    requireNode26();
+    requireSupportedNode();
     requireCommand("pnpm");
     run(
       "pnpm",

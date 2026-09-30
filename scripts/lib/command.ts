@@ -62,10 +62,33 @@ export function requireCommand(command: string): void {
   }
 }
 
-export function requireNode26(): void {
-  const major = Number.parseInt(process.versions.node.split(".")[0] ?? "", 10);
-  if (major !== 26) {
-    throw new Error(`Node.js 26 is required; found ${process.version}`);
+const MINIMUM_NODE_VERSION = [22, 12, 0] as const;
+
+const compareVersion = (
+  left: readonly number[],
+  right: readonly number[],
+): number => {
+  for (let index = 0; index < Math.max(left.length, right.length); index += 1) {
+    const difference = (left[index] ?? 0) - (right[index] ?? 0);
+    if (difference !== 0) {
+      return difference;
+    }
+  }
+  return 0;
+};
+
+export function requireSupportedNode(): void {
+  const current = process.versions.node
+    .split(".")
+    .slice(0, 3)
+    .map((part) => Number.parseInt(part, 10));
+  if (
+    current.some(Number.isNaN) ||
+    compareVersion(current, MINIMUM_NODE_VERSION) < 0
+  ) {
+    throw new Error(
+      `Node.js >=${MINIMUM_NODE_VERSION.join(".")} is required; found ${process.version}`,
+    );
   }
 }
 

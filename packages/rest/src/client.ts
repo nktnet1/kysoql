@@ -158,7 +158,6 @@ class NativeRestClient implements RestClient {
       const response = await this.#fetch(url, {
         method: "GET",
         redirect: "error",
-        cache: "no-store",
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,

@@ -47,21 +47,34 @@ describe("native Describe client", () => {
     assert.equal(schema[0]?.fieldsComplete, false);
   });
 
-  it("loads ordered big-object index metadata through Tooling API", async () => {
-    const bigObject = { name: "EventLog__b", fields: [field("Account__c")] };
-    const bigGlobal = {
-      sobjects: [{ name: "EventLog__b", queryable: true }],
-    };
+  it("loads custom Big Object fields and indexes through Tooling API only", async () => {
+    const bigGlobal = { sobjects: [] };
     const tooling = {
       records: [
         {
           Metadata: {
+            fields: [
+              {
+                fullName: "Account__c",
+                type: "Lookup",
+                required: true,
+                referenceTo: "Account",
+                relationshipName: "Account",
+              },
+              { fullName: "Kind__c", type: "Text", required: true },
+              {
+                fullName: "CreatedAt__c",
+                type: "DateTime",
+                required: true,
+              },
+              { fullName: "Payload__c", type: "Text" },
+            ],
             indexes: [
               {
                 fields: [
-                  { name: "Account__c" },
-                  { name: "Kind__c" },
-                  { name: "CreatedAt__c" },
+                  { name: "Account__c", sortDirection: "ASC" },
+                  { name: "Kind__c", sortDirection: "ASC" },
+                  { name: "CreatedAt__c", sortDirection: "DESC" },
                 ],
               },
             ],
@@ -69,7 +82,7 @@ describe("native Describe client", () => {
         },
       ],
     };
-    const http = transport([bigGlobal, bigObject, tooling]);
+    const http = transport([bigGlobal, tooling]);
 
     const schema = await loadSchema(createRestDescribeClient(http.client), [
       "EventLog__b",
@@ -80,9 +93,53 @@ describe("native Describe client", () => {
       "Kind__c",
       "CreatedAt__c",
     ]);
+    assert.deepEqual(schema[0]?.fields, [
+      {
+        name: "Account__c",
+        type: "reference",
+        nillable: false,
+        filterable: true,
+        sortable: false,
+        groupable: false,
+        aggregatable: false,
+        custom: true,
+        referenceTo: ["Account"],
+        relationshipName: "Account",
+      },
+      {
+        name: "Kind__c",
+        type: "string",
+        nillable: false,
+        filterable: true,
+        sortable: false,
+        groupable: false,
+        aggregatable: false,
+        custom: true,
+      },
+      {
+        name: "CreatedAt__c",
+        type: "datetime",
+        nillable: false,
+        filterable: true,
+        sortable: false,
+        groupable: false,
+        aggregatable: false,
+        custom: true,
+      },
+      {
+        name: "Payload__c",
+        type: "string",
+        nillable: true,
+        filterable: false,
+        sortable: false,
+        groupable: false,
+        aggregatable: false,
+        custom: true,
+      },
+    ]);
     assert.equal(http.paths[0], "/sobjects/");
-    assert.equal(http.paths[1], "/sobjects/EventLog__b/describe");
-    assert.match(http.paths[2] ?? "", /^\/tooling\/query\/\?q=/);
+    assert.match(http.paths[1] ?? "", /^\/tooling\/query\/\?q=/);
+    assert.equal(http.paths.length, 2);
   });
 
   it("also accepts native connection options rather than a custom RestClient", async () => {

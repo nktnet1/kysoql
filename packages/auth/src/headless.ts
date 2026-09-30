@@ -162,7 +162,6 @@ export const createCodeCredentialsAuthorizationRequest = (
     init: {
       method: "POST",
       redirect: "manual",
-      cache: "no-store",
       headers: {
         Accept: "application/json",
         "Auth-Request-Type": "Named-User",
@@ -273,7 +272,6 @@ export const createHeadlessGuestAuthorizationRequest = (
     init: {
       method: "POST",
       redirect: "manual",
-      cache: "no-store",
       headers: {
         Accept: "application/json",
         "Auth-Request-Type": "guest",
@@ -383,7 +381,6 @@ export const requestFirstPartyAuthorizationChallenge = async (
     {
       method: "POST",
       redirect: "error",
-      cache: "no-store",
       headers: {
         Accept: "application/json",
         "Content-Type":

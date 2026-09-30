@@ -5,7 +5,7 @@ import { Command, Flags } from "@oclif/core";
 import {
   parseJson,
   requireCommand,
-  requireNode26,
+  requireSupportedNode,
   run,
   succeeds,
 } from "./lib/command.ts";
@@ -119,7 +119,7 @@ class SetupSalesforceTestOrg extends Command {
       );
 
     try {
-      requireNode26();
+      requireSupportedNode();
       requireCommand("pnpm");
 
       if (!options.skipInstall) {
@@ -189,6 +189,17 @@ class SetupSalesforceTestOrg extends Command {
         "force-app",
       ]);
 
+      this.log("Deploying custom Big Object fixture metadata...");
+      sf([
+        "project",
+        "deploy",
+        "start",
+        "--target-org",
+        options.scratchAlias,
+        "--metadata-dir",
+        "big-object-metadata",
+      ]);
+
       this.log("Assigning Kysoql_Test permission set...");
       sf([
         "org",
@@ -227,14 +238,33 @@ class SetupSalesforceTestOrg extends Command {
       this.log("Running grouped aggregate OFFSET smoke test...");
       run(
         process.execPath,
-        [path.join(import.meta.dirname, "run-salesforce-aggregate-offset-smoke.ts")],
+        [
+          "--experimental-strip-types",
+          path.join(
+            import.meta.dirname,
+            "run-salesforce-aggregate-offset-smoke.ts",
+          ),
+        ],
+        { cwd: repositoryRoot, env: targetEnv },
+      );
+
+      this.log("Running custom Big Object codegen smoke test...");
+      run(
+        process.execPath,
+        [
+          "--experimental-strip-types",
+          path.join(import.meta.dirname, "run-salesforce-big-object-smoke.ts"),
+        ],
         { cwd: repositoryRoot, env: targetEnv },
       );
 
       this.log("Running generated-query Salesforce E2E suite...");
       run(
         process.execPath,
-        [path.join(import.meta.dirname, "run-salesforce-generated-e2e.ts")],
+        [
+          "--experimental-strip-types",
+          path.join(import.meta.dirname, "run-salesforce-generated-e2e.ts"),
+        ],
         { cwd: repositoryRoot, env: targetEnv },
       );
 

@@ -97,8 +97,11 @@ Generated files have a `Do not edit manually` header. Empty metadata maps use
 
 ## Big object indexes
 
-For custom Big Objects (`__b`), the native REST client also reads the ordered
-composite index from Tooling API. Generated files export
+For custom Big Objects (`__b`), native codegen avoids REST Describe (which
+Salesforce does not support for Big Objects) and reads the field definitions plus
+ordered composite index from Tooling API `CustomObject.Metadata`. Explicitly list
+custom Big Objects in `objects`/`--object`; this also works when REST global
+Describe does not advertise the Big Object. Generated files export
 `salesforceSchemaMetadata`; pass it to `Kysoql` so the compiler can validate
 Big Object `WHERE` clauses against the same index order Salesforce enforces.
 

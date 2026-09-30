@@ -12,7 +12,7 @@ pnpm add @kysoql/auth @kysoql/core @kysoql/rest
 pnpm add -D @kysoql/codegen
 ```
 
-Requires Node 26 and ESM. Generate your schema first; see
+Requires a Node.js version allowed by the package `engines` field and ESM. Generate your schema first; see
 [codegen](https://github.com/nktnet1/kysoql/blob/main/packages/codegen/README.md).
 
 ```ts

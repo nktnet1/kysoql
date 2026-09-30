@@ -37,7 +37,7 @@ describe("native REST transport", () => {
     assert.equal(headers.get("Sforce-Query-Options"), "batchSize=500");
     assert.equal(call.init.method, "GET");
     assert.equal(call.init.redirect, "error");
-    assert.equal(call.init.cache, "no-store");
+    assert.equal("cache" in call.init, false);
     assert.ok(call.init.signal instanceof AbortSignal);
   });
 

@@ -7,9 +7,10 @@ import {
 import type {
   SalesforceDataCategoryGroupsResponse,
   SalesforceDescribeClient,
+  SalesforceObjectDescription,
 } from "#/types";
 import {
-  parseSalesforceBigObjectIndex,
+  parseSalesforceBigObjectMetadata,
   parseSalesforceDataCategoryGroups,
   parseSalesforceGlobalDescription,
   parseSalesforceObjectDescription,
@@ -23,6 +24,43 @@ export const createRestDescribeClient = (
   let knowledgeGroups:
     | Promise<SalesforceDataCategoryGroupsResponse>
     | undefined;
+  const bigObjects = new Map<string, Promise<SalesforceObjectDescription>>();
+
+  const loadBigObject = (
+    objectName: string,
+  ): Promise<SalesforceObjectDescription> => {
+    const cached = bigObjects.get(objectName);
+    if (cached) {
+      return cached;
+    }
+
+    const withoutSuffix = objectName.slice(0, -3);
+    const namespaceSeparator = withoutSuffix.indexOf("__");
+    const namespace =
+      namespaceSeparator < 0
+        ? undefined
+        : withoutSuffix.slice(0, namespaceSeparator);
+    const developerName =
+      namespaceSeparator < 0
+        ? withoutSuffix
+        : withoutSuffix.slice(namespaceSeparator + 2);
+    const where = [
+      `DeveloperName = '${developerName}'`,
+      namespace === undefined
+        ? "NamespacePrefix = null"
+        : `NamespacePrefix = '${namespace}'`,
+    ].join(" AND ");
+    const query = `SELECT Metadata FROM CustomObject WHERE ${where}`;
+    const pending = client
+      .request(`/tooling/query/?${new URLSearchParams({ q: query })}`)
+      .then((body) => parseSalesforceBigObjectMetadata(body, objectName))
+      .catch((error: unknown) => {
+        bigObjects.delete(objectName);
+        throw error;
+      });
+    bigObjects.set(objectName, pending);
+    return pending;
+  };
 
   return {
     describeGlobal: async () =>
@@ -31,31 +69,14 @@ export const createRestDescribeClient = (
       if (!/^[A-Za-z_][A-Za-z0-9_]*__b$/i.test(objectName)) {
         return undefined;
       }
-      const withoutSuffix = objectName.slice(0, -3);
-      const namespaceSeparator = withoutSuffix.indexOf("__");
-      const namespace =
-        namespaceSeparator < 0
-          ? undefined
-          : withoutSuffix.slice(0, namespaceSeparator);
-      const developerName =
-        namespaceSeparator < 0
-          ? withoutSuffix
-          : withoutSuffix.slice(namespaceSeparator + 2);
-      const where = [
-        `DeveloperName = '${developerName}'`,
-        namespace === undefined
-          ? "NamespacePrefix = null"
-          : `NamespacePrefix = '${namespace}'`,
-      ].join(" AND ");
-      const query = `SELECT Metadata FROM CustomObject WHERE ${where}`;
-      const body = await client.request(
-        `/tooling/query/?${new URLSearchParams({ q: query })}`,
-      );
-      return parseSalesforceBigObjectIndex(body, objectName);
+      return (await loadBigObject(objectName)).bigObjectIndex;
     },
     describe: async (objectName) => {
       if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(objectName)) {
         throw new TypeError("Expected a Salesforce object API name.");
+      }
+      if (/__b$/i.test(objectName)) {
+        return loadBigObject(objectName);
       }
       const result = parseSalesforceObjectDescription(
         await client.request(

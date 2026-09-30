@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     include: ["packages/**/tests/**/*.test.ts", "scripts/**/*.test.ts"],
     fsModuleCache: true,
+    isolate: false,
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],

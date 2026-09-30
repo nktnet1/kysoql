@@ -70,10 +70,13 @@ pnpm exec kysoql generate --config config/kysoql.sandbox.ts
 
 Explicit flags override config values, then built-in defaults apply. API version
 uses `--api-version`, then config `apiVersion`, then the pinned `65.0` default. Versions are strings without `v`, such as `"65.0"`. Keep
-runtime and generation versions aligned and check org support. The CLI now uses
-native REST Describe; JSforce is neither used nor installed by codegen. Repeated
+runtime and generation versions aligned and check org support. The CLI uses native Salesforce metadata APIs; JSforce is neither used nor
+installed by codegen. Ordinary objects use REST Describe. Custom Big Objects
+(`__b`) explicitly listed in `objects`/`--object` use Tooling API metadata instead,
+because Salesforce does not support REST Describe for Big Objects. Repeated
 `--object` flags replace the configured list. Without a list (or with `objects:
-[]`), generation includes every queryable object returned by Salesforce. When
+[]`), generation includes every queryable object returned by REST global Describe.
+When
 `output` is omitted, codegen writes `src/kysoql/salesforce.generated.ts` if the
 working directory has `src/`, otherwise `kysoql/salesforce.generated.ts`.
 The default interface name remains `SalesforceSchema`.
@@ -177,7 +180,7 @@ export async function generateForOrg(instanceUrl: string, accessToken: string) {
 
 The factory also accepts a shared `RestClient` from `@kysoql/rest`, with renewable
 token providers, fetch injection, cancellation, and timeout settings. It validates
-global/object Describe responses, verifies returned object identity, and loads
+global/object metadata responses, verifies returned object identity, and loads
 complete Knowledge category trees with `topCategoriesOnly=false`. Failed taxonomy
 requests can be retried by the caller. Existing custom `SalesforceDescribeClient`
 implementations and field filtering remain supported.
