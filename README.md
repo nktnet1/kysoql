@@ -93,7 +93,7 @@ it does not require an `NPM_TOKEN`.
 
 The stricter gate rejects the development placeholder version, requires every
 publishable package to declare its license explicitly, and verifies the built npm
-tarballs from isolated offline consumer projects. Individual checks remain
+tarballs from isolated consumer projects. Individual checks remain
 available when needed:
 
 ```bash
@@ -130,7 +130,7 @@ created.
 `pnpm verify:packed-consumer` expects built package
 artifacts and packs all five public workspaces, verifies each package imports in
 isolation with only its declared dependencies, then installs the tarballs into a
-combined temporary project using pnpm's offline store. It checks packed manifests
+combined temporary project. The consumer installs prefer pnpm's local store and fall back to the registry for third-party dependencies that are not cached. It checks packed manifests
 and declaration files, runs ESM/runtime imports, typechecks a generated schema,
 and executes the installed `kysoql --help` binary. `pnpm test:packed-consumer`
 performs the package build first when running that smoke test on its own.

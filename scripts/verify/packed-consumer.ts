@@ -347,7 +347,12 @@ const verifyIsolatedPackageImports = async (
     );
     run(
       "pnpm",
-      ["install", "--offline", "--ignore-scripts", "--frozen-lockfile=false"],
+      [
+        "install",
+        "--prefer-offline",
+        "--ignore-scripts",
+        "--frozen-lockfile=false",
+      ],
       {
         cwd: packageDir,
         env: { ...process.env, NODE_PATH: "" },
@@ -585,11 +590,16 @@ const main = async (): Promise<void> => {
     );
 
     console.log(
-      `${warning("INSTALL")} packed packages into isolated offline consumer`,
+      `${warning("INSTALL")} packed packages into isolated consumer`,
     );
     run(
       "pnpm",
-      ["install", "--offline", "--ignore-scripts", "--frozen-lockfile=false"],
+      [
+        "install",
+        "--prefer-offline",
+        "--ignore-scripts",
+        "--frozen-lockfile=false",
+      ],
       {
         cwd: consumerDir,
         env: { ...process.env, NODE_PATH: "" },
