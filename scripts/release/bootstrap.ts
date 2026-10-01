@@ -1,0 +1,198 @@
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { parseArgs } from "node:util";
+
+import { requireCommand, run } from "../lib/command.ts";
+import { RELEASE_PACKAGES } from "./policy.ts";
+
+const BOOTSTRAP_VERSION = "0.0.0-bootstrap.0";
+const BOOTSTRAP_TAG = "bootstrap";
+const DEFAULT_REGISTRY = "https://registry.npmjs.org/";
+const ROOT_DIR = resolve(import.meta.dirname, "../..");
+
+interface RootManifest {
+  readonly license?: unknown;
+  readonly repository?: unknown;
+  readonly engines?: unknown;
+}
+
+const { values } = parseArgs({
+  options: {
+    publish: { type: "boolean", default: false },
+    registry: { type: "string", default: DEFAULT_REGISTRY },
+    help: { type: "boolean", short: "h", default: false },
+  },
+});
+
+const registry = values.registry ?? DEFAULT_REGISTRY;
+
+const packageExists = (packageName: string): boolean => {
+  try {
+    run(
+      "npm",
+      ["view", packageName, "versions", "--json", `--registry=${registry}`],
+      { cwd: ROOT_DIR, capture: true },
+    );
+    return true;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (/\bE404\b|\b404\b/u.test(message) && /not found/i.test(message)) {
+      return false;
+    }
+    throw new Error(
+      `Unable to determine whether ${packageName} exists in ${registry}`,
+      { cause: error },
+    );
+  }
+};
+
+const createBootstrapManifest = (
+  packageName: string,
+  rootManifest: RootManifest,
+): Readonly<Record<string, unknown>> => ({
+  name: packageName,
+  version: BOOTSTRAP_VERSION,
+  description:
+    `Bootstrap placeholder for ${packageName}. ` +
+    "Use a normal KySOQL release version for consumers.",
+  ...(rootManifest.repository === undefined
+    ? {}
+    : { repository: rootManifest.repository }),
+  ...(rootManifest.license === undefined ? {} : { license: rootManifest.license }),
+  ...(rootManifest.engines === undefined ? {} : { engines: rootManifest.engines }),
+  files: ["README.md"],
+  publishConfig: { access: "public" },
+});
+
+const publishBootstrapPackage = async (
+  packageName: string,
+  rootManifest: RootManifest,
+): Promise<void> => {
+  const directory = await mkdtemp(join(tmpdir(), "kysoql-bootstrap-"));
+  try {
+    await writeFile(
+      join(directory, "package.json"),
+      `${JSON.stringify(createBootstrapManifest(packageName, rootManifest), null, 2)}\n`,
+      "utf8",
+    );
+    await writeFile(
+      join(directory, "README.md"),
+      `# ${packageName}\n\n` +
+        `Bootstrap placeholder for \`${packageName}\`. ` +
+        "Use a normal KySOQL release version for consumers.\n",
+      "utf8",
+    );
+
+    const args = [
+      "publish",
+      ".",
+      "--access",
+      "public",
+      "--tag",
+      BOOTSTRAP_TAG,
+      `--registry=${registry}`,
+      "--ignore-scripts",
+    ];
+    if (!values.publish) {
+      args.push("--dry-run");
+    }
+    run("npm", args, { cwd: directory });
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+};
+
+const ensurePublisherAuthentication = (): void => {
+  if (!values.publish) {
+    return;
+  }
+  try {
+    const username = run(
+      "npm",
+      ["whoami", `--registry=${registry}`],
+      { cwd: ROOT_DIR, capture: true },
+    ).trim();
+    console.log(`Publishing bootstrap packages as ${username}`);
+  } catch (error) {
+    throw new Error(
+      `npm authentication is required. Run npm login --registry=${registry}`,
+      { cause: error },
+    );
+  }
+};
+
+const printHelp = (): void => {
+  console.log(`Usage:
+  pnpm bootstrap:packages
+  pnpm bootstrap:packages -- --publish [--registry <url>]
+
+Creates only missing @kysoql package names so npm Trusted Publishing can be
+configured before the first real release.
+
+Default behaviour is a registry scan plus npm publish --dry-run for every
+missing package. --publish creates missing names for real using npm credentials.
+
+Bootstrap packages use ${BOOTSTRAP_VERSION} under the non-default
+"${BOOTSTRAP_TAG}" dist-tag, so they do not create or move npm "latest".
+Existing package names are always skipped regardless of version.
+
+After publishing the placeholders, run:
+  pnpm npm:trust
+
+Then use the normal GitHub release flow for real beta/stable releases.`);
+};
+
+const main = async (): Promise<void> => {
+  if (values.help) {
+    printHelp();
+    return;
+  }
+
+  requireCommand("npm");
+  const rootManifest = JSON.parse(
+    await readFile(resolve(ROOT_DIR, "package.json"), "utf8"),
+  ) as RootManifest;
+
+  const missing: string[] = [];
+  for (const definition of RELEASE_PACKAGES) {
+    if (packageExists(definition.name)) {
+      console.log(`SKIP ${definition.name} already exists`);
+    } else {
+      missing.push(definition.name);
+      console.log(`CREATE ${definition.name} does not exist`);
+    }
+  }
+
+  if (missing.length === 0) {
+    console.log("All @kysoql release package names already exist.");
+    console.log("Next step: pnpm npm:trust");
+    return;
+  }
+
+  ensurePublisherAuthentication();
+  let published = 0;
+  for (const packageName of missing) {
+    if (values.publish && packageExists(packageName)) {
+      console.log(`SKIP ${packageName} now exists`);
+      continue;
+    }
+    await publishBootstrapPackage(packageName, rootManifest);
+    published += 1;
+    console.log(
+      values.publish
+        ? `PUBLISHED ${packageName}@${BOOTSTRAP_VERSION}`
+        : `DRY-RUN ${packageName}@${BOOTSTRAP_VERSION}`,
+    );
+  }
+
+  if (values.publish) {
+    console.log(`Bootstrapped ${published} package name(s).`);
+    console.log("Next step: pnpm npm:trust");
+  } else {
+    console.log(`Validated ${published} missing package name(s).`);
+    console.log("Publish them with: pnpm bootstrap:packages -- --publish");
+  }
+};
+
+await main();

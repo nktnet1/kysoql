@@ -58,8 +58,24 @@ pnpm release -- --version <version>
 This updates the root and all five public `@kysoql` package manifests together,
 runs `pnpm release:check`, and leaves only those version changes in the worktree
 for review. Stable `x.y.z` releases use the npm `latest` dist-tag.
-`x.y.z-beta.n` releases use `beta`. To commit, create the annotated Git tag, and
-atomically push the branch and tag after validation:
+`x.y.z-beta.n` releases use `beta`. Beta versions can also be selected
+automatically from npm plus local/remote Git tags. For the first beta in a new
+line, provide its stable base once:
+
+```bash
+pnpm release:beta -- --base <next-stable-version> --dry-run
+pnpm release:beta -- --base <next-stable-version> --publish
+```
+
+After that beta is recorded in the manifests, the same line can advance without
+repeating `--base`:
+
+```bash
+pnpm release:beta -- --publish
+```
+
+To commit a specifically chosen stable or beta version, create the annotated Git
+tag, and atomically push the branch and tag after validation:
 
 ```bash
 pnpm release -- --version <version> --publish
@@ -127,19 +143,35 @@ The public packages are owned by the npm `@kysoql` organisation scope:
 - `@kysoql/codegen`
 
 Create the `Production` GitHub environment used by `.github/workflows/publish.yml`.
-After each package exists on npm and your npm account has write access to the
-`@kysoql` organisation, configure the same trusted publisher for all five:
+For a brand-new npm organisation, bootstrap the five package names before
+configuring OIDC. The default command scans npm and dry-runs only missing names:
+
+```bash
+pnpm bootstrap:packages
+```
+
+After authenticating to npm with an account that can publish to the `@kysoql`
+organisation, create the missing package names for real:
+
+```bash
+pnpm bootstrap:packages -- --publish
+```
+
+The bootstrap publishes minimal placeholder prereleases under the non-default
+`bootstrap` dist-tag. It does not create or move `latest`, and it skips any
+package name that already exists. These placeholders exist only so npm
+can attach Trusted Publishing before the first real release.
+
+Once all five names exist, configure the same trusted publisher for all five:
 
 ```bash
 pnpm npm:trust
 ```
 
 The configuration targets repository `nktnet1/kysoql`, workflow `publish.yml`,
-and GitHub environment `Production`, with direct `npm publish` permission. npm
-requires a package to exist before trusted publishing can be configured, so a
-brand-new scope needs a one-time first-publication bootstrap using npm owner
-credentials. After trusted publishing is configured, normal releases are
-tokenless and are driven only by annotated release tags plus GitHub Actions.
+and GitHub environment `Production`, with direct `npm publish` permission. After
+trusted publishing is configured, real beta and stable releases are tokenless
+and are driven only by annotated release tags plus GitHub Actions.
 
 `pnpm typecheck:source` first runs the dependency-free task-configuration
 regressions (`pnpm test:tasks`). Turbo then owns the dependency builds: package

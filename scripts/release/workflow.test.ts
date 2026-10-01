@@ -51,6 +51,23 @@ it(
   },
 );
 
+it("exposes bootstrap and beta release entrypoints", async () => {
+  const manifest = await readJson("package.json");
+  const scripts = manifest.scripts;
+  if (
+    typeof scripts !== "object" ||
+    scripts === null ||
+    Array.isArray(scripts)
+  ) {
+    throw new Error("root scripts must be an object");
+  }
+  const commands = scripts as Readonly<Record<string, unknown>>;
+  expect(commands["bootstrap:packages"]).toContain(
+    "scripts/release/bootstrap.ts",
+  );
+  expect(commands["release:beta"]).toContain("scripts/release/beta.ts");
+});
+
 it(
   "keeps every public package in the @kysoql scope and blocks direct publish",
   async () => {

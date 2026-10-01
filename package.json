@@ -36,7 +36,9 @@
     "verify:release": "node --experimental-strip-types scripts/release/verify-metadata.ts",
     "verify:release:publish": "node --experimental-strip-types scripts/release/verify-metadata.ts --publish-ready",
     "ci": "node --experimental-strip-types scripts/ci/run.ts",
+    "bootstrap:packages": "node --experimental-strip-types scripts/release/bootstrap.ts",
     "release": "node --experimental-strip-types scripts/release/run.ts",
+    "release:beta": "node --experimental-strip-types scripts/release/beta.ts",
     "release:pack": "node --experimental-strip-types scripts/release/pack.ts",
     "npm:trust": "node --experimental-strip-types scripts/release/configure-npm-trust.ts"
   },
