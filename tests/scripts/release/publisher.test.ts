@@ -10,13 +10,22 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 import { RELEASE_PACKAGES } from "#scripts/release/policy";
-import { publishReleasePackages } from "#scripts/release/publisher";
+type PublishReleasePackages =
+  (typeof import("#scripts/release/publisher"))["publishReleasePackages"];
+
+let publishReleasePackages: PublishReleasePackages;
 
 const mocks = vi.hoisted(() => ({ spawn: vi.fn() }));
 vi.mock("node:child_process", () => ({ spawnSync: mocks.spawn }));
+
+beforeEach(async () => {
+  mocks.spawn.mockReset();
+  vi.resetModules();
+  ({ publishReleasePackages } = await import("#scripts/release/publisher"));
+});
 
 const writeTarball = (file: string, manifest: object): void => {
   const payload = Buffer.from(JSON.stringify(manifest));
