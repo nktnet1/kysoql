@@ -3,11 +3,15 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { Command } from "@oclif/core";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import { COMMANDS } from "#/commands";
-import Generate from "#/commands/generate";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 import { field } from "./fixtures/field-filtering.js";
 
@@ -39,6 +43,18 @@ vi.mock("@kysoql/rest", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@kysoql/rest")>()),
   createRestClient: mocks.createRestClient,
 }));
+
+let Command: typeof import("@oclif/core").Command;
+let Generate: typeof import("#/commands/generate").default;
+let COMMANDS: typeof import("#/commands").COMMANDS;
+
+beforeAll(async () => {
+  vi.resetModules();
+  ({ Command } = await import("@oclif/core"));
+  const commands = await import("#/commands");
+  COMMANDS = commands.COMMANDS;
+  Generate = commands.COMMANDS.generate;
+});
 
 const codegenRoot = fileURLToPath(new URL("..", import.meta.url));
 const commandLoadOptions = {
