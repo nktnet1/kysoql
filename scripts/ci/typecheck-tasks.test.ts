@@ -3,7 +3,7 @@ import * as ts from "typescript";
 import * as v from "valibot";
 import { expect, it } from "vitest";
 
-const root = new URL("../", import.meta.url);
+const root = new URL("../../", import.meta.url);
 
 const stringRecordSchema = v.record(v.string(), v.string());
 const packageManifestSchema = v.looseObject({
@@ -252,7 +252,7 @@ it("Salesforce generated-query E2E uses the generated schema type", async () => 
 
 it("schema-generation helper builds codegen dependencies through Turbo", async () => {
   const script = await readFile(
-    new URL("scripts/generate-salesforce-schema.ts", root),
+    new URL("scripts/salesforce/generate-schema.ts", root),
     "utf8",
   );
   expect(script).toMatch(
@@ -265,21 +265,21 @@ it("schema-generation helper builds codegen dependencies through Turbo", async (
 
 it("repository Salesforce command scripts use oclif and validated environments", async () => {
   const commands = new Map([
-    ["scripts/setup-salesforce-test-org.ts", "readSalesforceSetupEnvironment"],
+    ["scripts/salesforce/setup-test-org.ts", "readSalesforceSetupEnvironment"],
     [
-      "scripts/run-salesforce-apex-bind-smoke.ts",
+      "scripts/salesforce/apex-bind-smoke.ts",
       "readSalesforceTargetEnvironment",
     ],
     [
-      "scripts/run-salesforce-aggregate-offset-smoke.ts",
+      "scripts/salesforce/aggregate-offset-smoke.ts",
       "readSalesforceTargetEnvironment",
     ],
     [
-      "scripts/run-salesforce-big-object-smoke.ts",
+      "scripts/salesforce/big-object-smoke.ts",
       "readSalesforceTargetEnvironment",
     ],
     [
-      "scripts/run-salesforce-generated-e2e.ts",
+      "scripts/salesforce/generated-e2e.ts",
       "readSalesforceTargetEnvironment",
     ],
   ]);
@@ -293,7 +293,7 @@ it("repository Salesforce command scripts use oclif and validated environments",
   }
 
   const generate = await readFile(
-    new URL("scripts/generate-salesforce-schema.ts", root),
+    new URL("scripts/salesforce/generate-schema.ts", root),
     "utf8",
   );
   expect(generate).toContain('from "@oclif/core"');

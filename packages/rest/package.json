@@ -38,7 +38,8 @@
     "typecheck": "pnpm typecheck:source && pnpm typecheck:test",
     "typecheck:source": "tsc -p tsconfig.json --noEmit",
     "typecheck:test": "tsc -p tests/tsconfig.json",
-    "clean": "rm -rf dist coverage"
+    "clean": "rm -rf dist coverage",
+    "prepublishOnly": "node --experimental-strip-types ../../scripts/release/prevent-direct-publish.ts"
   },
   "dependencies": {
     "@kysoql/core": "workspace:*"

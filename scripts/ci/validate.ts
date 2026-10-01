@@ -1,4 +1,4 @@
-import { requireCommand, requireSupportedNode, run } from "./lib/command.ts";
+import { requireCommand, requireSupportedNode, run } from "../lib/command.ts";
 
 function runStep(label: string, args: readonly string[]): void {
   console.log(`\n==> ${label}`);

@@ -2,12 +2,12 @@ import path from "node:path";
 
 import { Command, Flags } from "@oclif/core";
 
-import { requireCommand, run } from "./lib/command.ts";
-import { readSalesforceTargetEnvironment } from "./lib/environment.ts";
+import { requireCommand, run } from "../lib/command.ts";
+import { readSalesforceTargetEnvironment } from "../lib/environment.ts";
 import {
   repositoryCommandLoadOptions,
   repositoryRoot,
-} from "./lib/oclif.ts";
+} from "../lib/oclif.ts";
 
 const salesforceDir = path.join(repositoryRoot, "test", "salesforce");
 

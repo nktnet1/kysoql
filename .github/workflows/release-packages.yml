@@ -1,0 +1,72 @@
+name: Release packages
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-packages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout release commit
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run release gate
+        run: pnpm release:check
+
+      - name: Pack release packages
+        run: >-
+          node --experimental-strip-types scripts/release/pack.ts
+          --tag=${{ github.ref_name }}
+
+      - name: Validate release tarballs
+        run: >-
+          node --experimental-strip-types scripts/release/publish.ts
+          --registry=https://registry.npmjs.org
+          --tag=${{ github.ref_name }} --dry-run
+
+      - name: Write release metadata
+        run: >-
+          node --experimental-strip-types scripts/release/write-metadata.ts
+          --tag=${{ github.ref_name }} --sha=${{ github.sha }}
+
+      - name: Upload release packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-packages
+          path: release-packages/*.tgz
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+      - name: Upload release metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-metadata
+          path: release-metadata
+          if-no-files-found: error
+          retention-days: 7

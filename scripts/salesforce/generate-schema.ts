@@ -2,11 +2,11 @@ import { fileURLToPath } from "node:url";
 
 import { Command, Flags } from "@oclif/core";
 
-import { requireCommand, requireSupportedNode, run } from "./lib/command.ts";
+import { requireCommand, requireSupportedNode, run } from "../lib/command.ts";
 import {
   repositoryCommandLoadOptions,
   repositoryRoot,
-} from "./lib/oclif.ts";
+} from "../lib/oclif.ts";
 
 class GenerateSalesforceSchema extends Command {
   static description =
@@ -55,7 +55,7 @@ class GenerateSalesforceSchema extends Command {
       { cwd: repositoryRoot },
     );
 
-    const authFile = new URL("./lib/salesforce-cli-auth.ts", import.meta.url);
+    const authFile = new URL("../lib/salesforce-cli-auth.ts", import.meta.url);
     const forwardedArgs: string[] = [
       "generate",
       "--auth",

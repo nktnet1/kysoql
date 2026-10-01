@@ -8,15 +8,15 @@ import {
   requireSupportedNode,
   run,
   succeeds,
-} from "./lib/command.ts";
+} from "../lib/command.ts";
 import {
   parseScratchDurationDays,
   readSalesforceSetupEnvironment,
-} from "./lib/environment.ts";
+} from "../lib/environment.ts";
 import {
   repositoryCommandLoadOptions,
   repositoryRoot,
-} from "./lib/oclif.ts";
+} from "../lib/oclif.ts";
 
 const salesforceDir = path.join(repositoryRoot, "test", "salesforce");
 

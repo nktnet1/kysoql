@@ -15,9 +15,9 @@ import {
   requireCommand,
   requireSupportedNode,
   run,
-} from "./lib/command.ts";
+} from "../lib/command.ts";
 
-const ROOT_DIR = resolve(import.meta.dirname, "..");
+const ROOT_DIR = resolve(import.meta.dirname, "../..");
 const LICENSE_ID = "MIT";
 const PUBLISHABLE_PACKAGES = [
   { name: "@kysoql/auth", workspacePath: "packages/auth" },

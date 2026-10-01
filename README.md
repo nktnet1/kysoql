@@ -49,16 +49,36 @@ and CLI binary exists in the built output. The validation gate also verifies
 release metadata, repository links, package-specific README files, and version
 alignment.
 
-Before publishing, run the stricter release gate:
+Before publishing, the release command runs the stricter release gate:
 
 ```bash
-pnpm release:check
+pnpm release -- --version <version>
 ```
 
-It includes the full validation gate, rejects the workspace development
-placeholder version, requires every publishable package to declare its license
-explicitly, and verifies the built npm tarballs from isolated
-offline consumer projects. Individual checks remain available when needed:
+This updates the root and all five public `@kysoql` package manifests together,
+runs `pnpm release:check`, and leaves only those version changes in the worktree
+for review. Stable `x.y.z` releases use the npm `latest` dist-tag.
+`x.y.z-beta.n` releases use `beta`. To commit, create the annotated Git tag, and
+atomically push the branch and tag after validation:
+
+```bash
+pnpm release -- --version <version> --publish
+```
+
+The pushed `v<version>` tag starts the `Release packages` GitHub workflow. That
+workflow installs from the frozen lockfile, runs the complete release gate, packs
+the five public packages, validates the tarballs, and uploads the tarballs plus
+the tag/commit metadata as GitHub Actions artifacts. A separate `Publish`
+workflow runs only after that build succeeds. It checks out trusted release
+tooling from the workflow revision, validates the build SHA, tag, package names,
+versions, dependency graph, and tarball integrity, then publishes the exact
+artifacts to npm. The publish job uses npm trusted publishing through GitHub OIDC;
+it does not require an `NPM_TOKEN`.
+
+The stricter gate rejects the development placeholder version, requires every
+publishable package to declare its license explicitly, and verifies the built npm
+tarballs from isolated offline consumer projects. Individual checks remain
+available when needed:
 
 ```bash
 pnpm check
@@ -84,9 +104,10 @@ the packages to be built first; `pnpm validate` handles that ordering
 automatically. `pnpm verify:release` can run independently because it checks
 manifest/documentation metadata rather than build artifacts.
 `pnpm verify:release:publish` adds the non-placeholder version requirement used
-by `pnpm release:check`. Package manifests intentionally keep a development
-placeholder version in source control; the release version is set across the root
-and public package manifests immediately before publishing.
+by `pnpm release:check`. Before the first release, package manifests may use the
+development placeholder. `pnpm release` replaces it, and every later release
+bumps the root and all public package manifests together before the tag is
+created.
 `pnpm verify:packed-consumer` expects built package
 artifacts and packs all five public workspaces, verifies each package imports in
 isolation with only its declared dependencies, then installs the tarballs into a
@@ -94,6 +115,31 @@ combined temporary project using pnpm's offline store. It checks packed manifest
 and declaration files, runs ESM/runtime imports, typechecks a generated schema,
 and executes the installed `kysoql --help` binary. `pnpm test:packed-consumer`
 performs the package build first when running that smoke test on its own.
+
+### npm organisation and trusted publishing
+
+The public packages are owned by the npm `@kysoql` organisation scope:
+
+- `@kysoql/core`
+- `@kysoql/rest`
+- `@kysoql/auth`
+- `@kysoql/jsforce`
+- `@kysoql/codegen`
+
+Create the `Production` GitHub environment used by `.github/workflows/publish.yml`.
+After each package exists on npm and your npm account has write access to the
+`@kysoql` organisation, configure the same trusted publisher for all five:
+
+```bash
+pnpm npm:trust
+```
+
+The configuration targets repository `nktnet1/kysoql`, workflow `publish.yml`,
+and GitHub environment `Production`, with direct `npm publish` permission. npm
+requires a package to exist before trusted publishing can be configured, so a
+brand-new scope needs a one-time first-publication bootstrap using npm owner
+credentials. After trusted publishing is configured, normal releases are
+tokenless and are driven only by annotated release tags plus GitHub Actions.
 
 `pnpm typecheck:source` first runs the dependency-free task-configuration
 regressions (`pnpm test:tasks`). Turbo then owns the dependency builds: package

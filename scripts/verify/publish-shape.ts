@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 
 import { collectPublicExports } from "./public-export-shape.ts";
 
-const ROOT_DIR = resolve(import.meta.dirname, "..");
+const ROOT_DIR = resolve(import.meta.dirname, "../..");
 const PUBLISHABLE_PACKAGES: readonly string[] = [
   "packages/auth",
   "packages/core",

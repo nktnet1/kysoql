@@ -18,3 +18,7 @@ coverage/
 
 # Generated documentation typecheck fixtures
 apps/docs/.generated/
+
+# Local release artifacts
+release-packages/
+release-metadata/
