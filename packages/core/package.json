@@ -1,6 +1,6 @@
 {
   "name": "@kysoql/core",
-  "version": "0.1.0-beta.2",
+  "version": "0.1.0-beta.3",
   "description": "Kysely-inspired, type-safe Salesforce SOQL query builder and compiler",
   "license": "MIT",
   "keywords": [
