@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 
 import {
+  forwardedArgs,
   parseJson,
   requireCommand,
   requireSupportedNode,
@@ -32,6 +33,7 @@ const readWorkspaceVersion = async (): Promise<string> => {
 };
 
 const { values } = parseArgs({
+  args: forwardedArgs(),
   options: {
     output: { type: "string", default: "release-packages" },
     tag: { type: "string" },

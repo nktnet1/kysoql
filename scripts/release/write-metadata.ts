@@ -2,10 +2,12 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 
+import { forwardedArgs } from "../lib/command.ts";
 import { versionFromReleaseTag } from "./policy.ts";
 
 const ROOT_DIR = resolve(import.meta.dirname, "../..");
 const { values } = parseArgs({
+  args: forwardedArgs(),
   options: {
     output: { type: "string", default: "release-metadata" },
     sha: { type: "string" },

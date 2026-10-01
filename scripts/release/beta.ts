@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 
 import {
+  forwardedArgs,
   parseJson,
   requireCommand,
   requireSupportedNode,
@@ -19,6 +20,7 @@ interface RootManifest {
 }
 
 const { values } = parseArgs({
+  args: forwardedArgs(),
   options: {
     base: { type: "string" },
     publish: { type: "boolean", default: false },
@@ -76,9 +78,9 @@ const chooseBase = (
 
 const printHelp = (): void => {
   console.log(`Usage:
-  pnpm release:beta -- --base <x.y.z> --dry-run
-  pnpm release:beta -- --base <x.y.z> --publish
-  pnpm release:beta -- --publish
+  pnpm release:beta --base <x.y.z> --dry-run
+  pnpm release:beta --base <x.y.z> --publish
+  pnpm release:beta --publish
 
 Selects the next unused numbered beta from registry versions plus local/remote Git
 tags, then delegates to the normal release command.

@@ -2,9 +2,11 @@ import { realpathSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 
+import { forwardedArgs } from "../lib/command.ts";
 import { publishReleasePackages } from "./publisher.ts";
 
 const { values } = parseArgs({
+  args: forwardedArgs(),
   options: {
     registry: { type: "string" },
     tag: { type: "string" },

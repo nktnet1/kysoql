@@ -52,7 +52,7 @@ alignment.
 Before publishing, the release command runs the stricter release gate:
 
 ```bash
-pnpm release -- --version <version>
+pnpm release --version <version>
 ```
 
 This updates the root and all five public `@kysoql` package manifests together,
@@ -63,22 +63,22 @@ automatically from the registry plus local/remote Git tags. For the first beta i
 line, provide its stable base once:
 
 ```bash
-pnpm release:beta -- --base <next-stable-version> --dry-run
-pnpm release:beta -- --base <next-stable-version> --publish
+pnpm release:beta --base <next-stable-version> --dry-run
+pnpm release:beta --base <next-stable-version> --publish
 ```
 
 After that beta is recorded in the manifests, the same line can advance without
 repeating `--base`:
 
 ```bash
-pnpm release:beta -- --publish
+pnpm release:beta --publish
 ```
 
 To commit a specifically chosen stable or beta version, create the annotated Git
 tag, and atomically push the branch and tag after validation:
 
 ```bash
-pnpm release -- --version <version> --publish
+pnpm release --version <version> --publish
 ```
 
 The pushed `v<version>` tag starts the `Release packages` GitHub workflow. That
@@ -154,7 +154,7 @@ After authenticating to the registry with `pnpm login` using an account that can
 organisation, create the missing package names for real:
 
 ```bash
-pnpm bootstrap:packages -- --publish
+pnpm bootstrap:packages --publish
 ```
 
 The bootstrap publishes minimal placeholder prereleases under the non-default

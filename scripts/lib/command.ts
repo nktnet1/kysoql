@@ -39,9 +39,17 @@ export function run(
     });
   }
   if (result.status !== 0) {
-    const stderr = typeof result.stderr === "string" ? result.stderr.trim() : "";
+    const output = options.capture
+      ? [result.stderr, result.stdout]
+          .filter((value): value is string =>
+            typeof value === "string" && value.trim().length > 0,
+          )
+          .map((value) => value.trim())
+          .join("\n")
+      : "";
     throw new Error(
-      `${command} exited with status ${result.status ?? "unknown"}${stderr ? `\n${stderr}` : ""}`,
+      `${command} ${args.join(" ")} exited with status ${result.status ?? "unknown"}` +
+        (output ? `\n${output}` : ""),
     );
   }
   return typeof result.stdout === "string" ? result.stdout : "";
@@ -98,4 +106,10 @@ export function parseJson<T>(text: string, label: string): T {
   } catch (error) {
     throw new Error(`${label} returned invalid JSON.`, { cause: error });
   }
+}
+
+export function forwardedArgs(
+  argv: readonly string[] = process.argv.slice(2),
+): string[] {
+  return argv[0] === "--" ? [...argv.slice(1)] : [...argv];
 }

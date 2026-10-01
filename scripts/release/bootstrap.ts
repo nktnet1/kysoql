@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 
-import { requireCommand, run } from "../lib/command.ts";
+import { forwardedArgs, requireCommand, run } from "../lib/command.ts";
 import { RELEASE_PACKAGES } from "./policy.ts";
 
 const BOOTSTRAP_VERSION = "0.0.0-bootstrap.0";
@@ -18,6 +18,7 @@ interface RootManifest {
 }
 
 const { values } = parseArgs({
+  args: forwardedArgs(),
   options: {
     publish: { type: "boolean", default: false },
     registry: { type: "string", default: DEFAULT_REGISTRY },
@@ -37,7 +38,10 @@ const packageExists = (packageName: string): boolean => {
     return true;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    if (/\bE404\b|\b404\b/u.test(message) && /not found/i.test(message)) {
+    const isNotFound =
+      /E404|FETCH_404|\b404\b/u.test(message) &&
+      /(not found|not in the .*registry|failed to fetch metadata)/iu.test(message);
+    if (isNotFound) {
       return false;
     }
     throw new Error(
@@ -125,7 +129,7 @@ const ensurePublisherAuthentication = (): void => {
 const printHelp = (): void => {
   console.log(`Usage:
   pnpm bootstrap:packages
-  pnpm bootstrap:packages -- --publish [--registry <url>]
+  pnpm bootstrap:packages --publish [--registry <url>]
 
 Creates only missing @kysoql package names so Trusted Publishing can be
 configured before the first real release.
@@ -191,7 +195,7 @@ const main = async (): Promise<void> => {
     console.log("Next step: pnpm oidc:trust");
   } else {
     console.log(`Validated ${published} missing package name(s).`);
-    console.log("Publish them with: pnpm bootstrap:packages -- --publish");
+    console.log("Publish them with: pnpm bootstrap:packages --publish");
   }
 };
 

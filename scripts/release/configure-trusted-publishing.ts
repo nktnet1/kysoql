@@ -1,7 +1,12 @@
 import { createInterface } from "node:readline/promises";
 import { parseArgs } from "node:util";
 
-import { parseJson, requireCommand, run } from "../lib/command.ts";
+import {
+  forwardedArgs,
+  parseJson,
+  requireCommand,
+  run,
+} from "../lib/command.ts";
 import { RELEASE_PACKAGES } from "./policy.ts";
 
 const DEFAULT_REGISTRY = "https://registry.npmjs.org/";
@@ -23,6 +28,7 @@ interface StructuredAuth {
 }
 
 const { values } = parseArgs({
+  args: forwardedArgs(),
   options: {
     registry: { type: "string", default: DEFAULT_REGISTRY },
     help: { type: "boolean", short: "h", default: false },

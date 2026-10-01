@@ -2,7 +2,12 @@ import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 
-import { requireCommand, requireSupportedNode, run } from "../lib/command.ts";
+import {
+  forwardedArgs,
+  requireCommand,
+  requireSupportedNode,
+  run,
+} from "../lib/command.ts";
 import {
   parseReleaseVersion,
   RELEASE_PACKAGES,
@@ -91,6 +96,7 @@ const verifyPreparedManifests = async (
 };
 
 const { values } = parseArgs({
+  args: forwardedArgs(),
   options: {
     version: { type: "string" },
     publish: { type: "boolean", default: false },
@@ -102,7 +108,7 @@ const { values } = parseArgs({
 const main = async (): Promise<void> => {
   if (values.help) {
     console.log(`Usage:
-  pnpm release -- --version <semver> [--dry-run | --publish]
+  pnpm release --version <semver> [--dry-run | --publish]
 
 Updates the root and five public @kysoql package versions together, runs the
 full release gate, and leaves the version changes ready to commit.
