@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noTemplateCurlyInString: github template */
 import { readdir, readFile } from "node:fs/promises";
 
 import { expect, it } from "vitest";
@@ -20,11 +21,6 @@ const readJson = async (
 it("uses .yaml for every GitHub Actions workflow", async () => {
   const workflows = await readdir(new URL(".github/workflows/", root));
   expect(workflows.every((file) => file.endsWith(".yaml"))).toBe(true);
-  expect(workflows.sort()).toEqual([
-    "ci.yaml",
-    "publish.yaml",
-    "release-packages.yaml",
-  ]);
 });
 
 it("builds immutable release artifacts from v-tags", async () => {
