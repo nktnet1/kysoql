@@ -4,11 +4,16 @@
   "description": "Salesforce OAuth authentication and refresh-token storage for kysoql",
   "license": "MIT",
   "keywords": [
+    "authentication",
+    "builder",
+    "kysely",
+    "oauth",
+    "query",
+    "query builder",
     "salesforce",
     "soql",
-    "typescript",
-    "oauth",
-    "authentication"
+    "sql",
+    "typescript"
   ],
   "sideEffects": false,
   "engines": {
@@ -29,7 +34,9 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "README.md"
   ],
   "scripts": {
     "build": "tsdown",

@@ -4,6 +4,7 @@ import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 
 import { forwardedArgs, requireCommand, run } from "../lib/command.ts";
+import { accent, strong, success, warning } from "../lib/output.ts";
 import { RELEASE_PACKAGES } from "./policy.ts";
 
 const BOOTSTRAP_VERSION = "0.0.0-bootstrap.0";
@@ -117,7 +118,7 @@ const ensurePublisherAuthentication = (): void => {
       ["whoami", `--registry=${registry}`],
       { cwd: ROOT_DIR, capture: true },
     ).trim();
-    console.log(`Publishing bootstrap packages as ${username}`);
+    console.log(`Publishing bootstrap packages as ${accent(username)}`);
   } catch (error) {
     throw new Error(
       `pnpm authentication is required. Run pnpm login --registry=${registry}`,
@@ -127,9 +128,9 @@ const ensurePublisherAuthentication = (): void => {
 };
 
 const printHelp = (): void => {
-  console.log(`Usage:
-  pnpm bootstrap:packages
-  pnpm bootstrap:packages --publish [--registry <url>]
+  console.log(`${strong("Usage:")}
+  ${accent("pnpm bootstrap:packages")}
+  ${accent("pnpm bootstrap:packages")} --publish [--registry <url>]
 
 Creates only missing @kysoql package names so Trusted Publishing can be
 configured before the first real release.
@@ -161,16 +162,22 @@ const main = async (): Promise<void> => {
   const missing: string[] = [];
   for (const definition of RELEASE_PACKAGES) {
     if (packageExists(definition.name)) {
-      console.log(`SKIP ${definition.name} already exists`);
+      console.log(
+        `${success("SKIP")} ${accent(definition.name)} already exists`,
+      );
     } else {
       missing.push(definition.name);
-      console.log(`CREATE ${definition.name} does not exist`);
+      console.log(
+        `${warning("CREATE")} ${accent(definition.name)} does not exist`,
+      );
     }
   }
 
   if (missing.length === 0) {
-    console.log("All @kysoql release package names already exist.");
-    console.log("Next step: pnpm oidc:trust");
+    console.log(
+      `${success("READY")} All ${accent("@kysoql")} release package names already exist.`,
+    );
+    console.log(`Next step: ${accent("pnpm oidc:trust")}`);
     return;
   }
 
@@ -178,7 +185,7 @@ const main = async (): Promise<void> => {
   let published = 0;
   for (const packageName of missing) {
     if (values.publish && packageExists(packageName)) {
-      console.log(`SKIP ${packageName} now exists`);
+      console.log(`${success("SKIP")} ${accent(packageName)} now exists`);
       continue;
     }
     await publishBootstrapPackage(packageName, rootManifest);
@@ -191,11 +198,17 @@ const main = async (): Promise<void> => {
   }
 
   if (values.publish) {
-    console.log(`Bootstrapped ${published} package name(s).`);
-    console.log("Next step: pnpm oidc:trust");
+    console.log(
+      `${success("DONE")} Bootstrapped ${accent(String(published))} package name(s).`,
+    );
+    console.log(`Next step: ${accent("pnpm oidc:trust")}`);
   } else {
-    console.log(`Validated ${published} missing package name(s).`);
-    console.log("Publish them with: pnpm bootstrap:packages --publish");
+    console.log(
+      `${success("VALID")} ${accent(String(published))} missing package name(s).`,
+    );
+    console.log(
+      `Publish them with: ${accent("pnpm bootstrap:packages")} --publish`,
+    );
   }
 };
 

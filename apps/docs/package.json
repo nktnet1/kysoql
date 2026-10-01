@@ -9,7 +9,7 @@
     "check": "biome check",
     "preview": "vite preview",
     "types:check": "tsc --noEmit",
-    "check:content": "pnpm docs:api && node --experimental-strip-types --test scripts/content.test.ts && node --experimental-strip-types scripts/check-content.ts",
+    "check:content": "pnpm docs:api && node --experimental-strip-types --test tests/content.test.ts && node --experimental-strip-types scripts/check-content.ts",
     "check:examples": "node --experimental-strip-types scripts/check-examples.ts",
     "typecheck:source": "pnpm check:content && pnpm check:examples && pnpm types:check",
     "docs:api": "pnpm --filter @kysoql/typedoc docs:gen",

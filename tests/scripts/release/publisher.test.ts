@@ -12,8 +12,8 @@ import { gzipSync } from "node:zlib";
 
 import { afterEach, expect, it, vi } from "vitest";
 
-import { RELEASE_PACKAGES } from "./policy.ts";
-import { publishReleasePackages } from "./publisher.ts";
+import { RELEASE_PACKAGES } from "../../../scripts/release/policy.ts";
+import { publishReleasePackages } from "../../../scripts/release/publisher.ts";
 
 const mocks = vi.hoisted(() => ({ spawn: vi.fn() }));
 vi.mock("node:child_process", () => ({ spawnSync: mocks.spawn }));

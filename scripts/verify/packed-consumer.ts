@@ -16,6 +16,7 @@ import {
   requireSupportedNode,
   run,
 } from "../lib/command.ts";
+import { accent, danger, success, warning } from "../lib/output.ts";
 
 const ROOT_DIR = resolve(import.meta.dirname, "../..");
 const LICENSE_ID = "MIT";
@@ -253,10 +254,19 @@ const assertPackageShape = async (
     access(resolve(packageDir, "dist/index.mjs")),
     access(resolve(packageDir, "dist/index.d.mts")),
   ]);
-  const packedLicense = await readFile(resolve(packageDir, "LICENSE"), "utf8");
+  const [packedLicense, packedReadme, workspaceReadme] = await Promise.all([
+    readFile(resolve(packageDir, "LICENSE"), "utf8"),
+    readFile(resolve(packageDir, "README.md"), "utf8"),
+    readFile(resolve(ROOT_DIR, packedPackage.workspacePath, "README.md"), "utf8"),
+  ]);
   if (packedLicense !== rootLicense) {
     fail(
       `${packedPackage.name} packed LICENSE must match the workspace LICENSE.`,
+    );
+  }
+  if (packedReadme !== workspaceReadme) {
+    fail(
+      `${packedPackage.name} packed README.md must match the validated workspace README.md.`,
     );
   }
 
@@ -332,7 +342,9 @@ const verifyIsolatedPackageImports = async (
     );
     await writeWorkspaceOverrides(packageDir, tarballs);
 
-    console.log(`installing isolated ${packedPackage.name} consumer`);
+    console.log(
+      `${warning("INSTALL")} isolated ${accent(packedPackage.name)} consumer`,
+    );
     run(
       "pnpm",
       ["install", "--offline", "--ignore-scripts", "--frozen-lockfile=false"],
@@ -559,7 +571,7 @@ const main = async (): Promise<void> => {
   try {
     const packedPackages: PackedPackage[] = [];
     for (const packageInfo of PUBLISHABLE_PACKAGES) {
-      console.log(`packing ${packageInfo.name}`);
+      console.log(`${warning("PACK")} ${accent(packageInfo.name)}`);
       packedPackages.push(await packPackage(packageInfo, tarballDir));
     }
 
@@ -572,7 +584,9 @@ const main = async (): Promise<void> => {
       nodeTypesVersion,
     );
 
-    console.log("installing packed packages into isolated offline consumer");
+    console.log(
+      `${warning("INSTALL")} packed packages into isolated offline consumer`,
+    );
     run(
       "pnpm",
       ["install", "--offline", "--ignore-scripts", "--frozen-lockfile=false"],
@@ -591,19 +605,21 @@ const main = async (): Promise<void> => {
       );
     }
 
-    console.log("running packed ESM/runtime smoke test");
+    console.log(`${warning("RUN")} packed ESM/runtime smoke test`);
     run("node", ["runtime-smoke.mjs"], {
       cwd: consumerDir,
       env: { ...process.env, NODE_PATH: "" },
     });
 
-    console.log("typechecking generated schema and public declarations");
+    console.log(
+      `${warning("TYPECHECK")} generated schema and public declarations`,
+    );
     run("pnpm", ["exec", "tsc", "-p", "tsconfig.json"], {
       cwd: consumerDir,
       env: { ...process.env, NODE_PATH: "" },
     });
 
-    console.log("running installed CLI binary");
+    console.log(`${warning("RUN")} installed CLI binary`);
     const cliHelp = run("pnpm", ["exec", "kysoql", "--help"], {
       cwd: consumerDir,
       capture: true,
@@ -616,13 +632,13 @@ const main = async (): Promise<void> => {
     }
 
     succeeded = true;
-    console.log("packed-consumer verification passed");
+    console.log(`${success("PASS")} packed-consumer verification`);
   } finally {
     if (succeeded) {
       await rm(tempRoot, { recursive: true, force: true });
     } else {
       console.error(
-        `packed-consumer fixture retained for debugging: ${tempRoot}`,
+        `${danger("RETAINED")} packed-consumer fixture for debugging: ${accent(tempRoot)}`,
       );
     }
   }

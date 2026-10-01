@@ -4,6 +4,7 @@ import { lstatSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { requireCommand, run } from "../lib/command.ts";
+import { accent, success, warning } from "../lib/output.ts";
 import {
   parseReleaseVersion,
   planRelease,
@@ -135,7 +136,8 @@ export const publishReleasePackages = ({
   if (dryRun) {
     for (const { manifest } of plan) {
       console.log(
-        `Would publish ${String(manifest.name)}@${version} --tag ${distTag}`,
+        `${warning("WOULD PUBLISH")} ` +
+          `${accent(`${String(manifest.name)}@${version}`)} --tag ${accent(distTag)}`,
       );
     }
     return;
@@ -194,7 +196,9 @@ export const publishReleasePackages = ({
     if (!isAlreadyPublished(name, file)) {
       return true;
     }
-    console.log(`Identical ${name}@${version} already published; skipping`);
+    console.log(
+      `${success("SKIP")} Identical ${accent(`${name}@${version}`)} already published`,
+    );
     return false;
   });
 
@@ -213,7 +217,8 @@ export const publishReleasePackages = ({
   }
 
   console.log(
-    `Release ${version} complete (${distTag}); ${pending.length} packages ` +
+    `${success("DONE")} Release ${accent(version)} complete (${accent(distTag)}); ` +
+      `${accent(String(pending.length))} packages ` +
       "published",
   );
 };

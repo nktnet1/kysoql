@@ -1,6 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { basename, resolve } from "node:path";
 
+import { accent, success } from "../lib/output.ts";
+
 const ROOT_DIR = resolve(import.meta.dirname, "../..");
 const PUBLISHABLE_PACKAGES: readonly string[] = [
   "packages/auth",
@@ -10,8 +12,13 @@ const PUBLISHABLE_PACKAGES: readonly string[] = [
   "packages/rest",
 ];
 const REQUIRED_KEYWORDS: readonly string[] = [
+  "builder",
+  "kysely",
+  "query",
+  "query builder",
   "salesforce",
   "soql",
+  "sql",
   "typescript",
 ];
 const REPOSITORY_TYPE = "git";
@@ -201,6 +208,13 @@ const verifyPackage = async (
     fail(`${packageName}.keywords must not contain duplicates.`);
   }
 
+  const sortedKeywords = [...keywords].sort((left, right) =>
+    left.localeCompare(right, "en"),
+  );
+  if (keywords.some((keyword, index) => keyword !== sortedKeywords[index])) {
+    fail(`${packageName}.keywords must be sorted alphabetically.`);
+  }
+
   for (const keyword of REQUIRED_KEYWORDS) {
     if (!uniqueKeywords.has(keyword)) {
       fail(`${packageName}.keywords must include ${keyword}.`);
@@ -224,13 +238,36 @@ const verifyPackage = async (
   if (!readme.startsWith(`# ${packageName}\n`)) {
     fail(`${packageName}/README.md must start with "# ${packageName}".`);
   }
+  if (readme.trim().length < 500) {
+    fail(
+      `${packageName}/README.md must contain meaningful package documentation.`,
+    );
+  }
+  if (!readme.includes("## Install")) {
+    fail(`${packageName}/README.md must contain an Install section.`);
+  }
+  const escapedPackageName = packageName.replace(
+    /[.*+?^${}()|[\]\\]/gu,
+    "\\$&",
+  );
+  const installPattern = new RegExp(
+    String.raw`pnpm add(?: -D)? [^\n]*${escapedPackageName}(?:\s|$)`,
+    "u",
+  );
+  if (!installPattern.test(readme)) {
+    fail(
+      `${packageName}/README.md must show how to install ${packageName} with pnpm.`,
+    );
+  }
   if (/\]\(\.\.\//u.test(readme)) {
     fail(
       `${packageName}/README.md must not contain repository-relative parent links that break on npm.`,
     );
   }
 
-  console.log(`verified release metadata for ${packageName}`);
+  console.log(
+    `${success("VERIFIED")} release metadata for ${accent(packageName)}`,
+  );
 };
 
 const rootManifest = await readManifest(resolve(ROOT_DIR, "package.json"));

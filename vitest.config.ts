@@ -2,7 +2,7 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    include: ["packages/**/tests/**/*.test.ts", "scripts/**/*.test.ts"],
+    include: ["packages/**/tests/**/*.test.ts", "tests/scripts/**/*.test.ts"],
     fsModuleCache: true,
     isolate: false,
     coverage: {

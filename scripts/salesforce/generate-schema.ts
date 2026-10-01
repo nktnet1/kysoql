@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { Command, Flags } from "@oclif/core";
 
 import { requireCommand, requireSupportedNode, run } from "../lib/command.ts";
+import { errorLine } from "../lib/output.ts";
 import {
   repositoryCommandLoadOptions,
   repositoryRoot,
@@ -94,6 +95,8 @@ if (argv[0] === "--") {
 try {
   await GenerateSalesforceSchema.run(argv, repositoryCommandLoadOptions);
 } catch (error) {
-  console.error(`error: ${error instanceof Error ? error.message : String(error)}`);
+  console.error(
+    errorLine(error instanceof Error ? error.message : String(error)),
+  );
   process.exitCode = 1;
 }

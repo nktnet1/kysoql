@@ -4,11 +4,15 @@
   "description": "Kysely-inspired, type-safe Salesforce SOQL query builder and compiler",
   "license": "MIT",
   "keywords": [
+    "builder",
+    "kysely",
+    "query",
+    "query builder",
     "salesforce",
     "soql",
-    "typescript",
-    "query-builder",
-    "type-safe"
+    "sql",
+    "type-safe",
+    "typescript"
   ],
   "sideEffects": false,
   "engines": {
@@ -29,7 +33,9 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "README.md"
   ],
   "scripts": {
     "build": "tsdown",

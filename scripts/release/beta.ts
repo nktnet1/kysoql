@@ -9,6 +9,7 @@ import {
   requireSupportedNode,
   run,
 } from "../lib/command.ts";
+import { accent, strong } from "../lib/output.ts";
 import { nextBetaVersion } from "./beta-version.ts";
 import { parseReleaseVersion, RELEASE_PACKAGES } from "./policy.ts";
 
@@ -77,10 +78,10 @@ const chooseBase = (
 };
 
 const printHelp = (): void => {
-  console.log(`Usage:
-  pnpm release:beta --base <x.y.z> --dry-run
-  pnpm release:beta --base <x.y.z> --publish
-  pnpm release:beta --publish
+  console.log(`${strong("Usage:")}
+  ${accent("pnpm release:beta")} --base <x.y.z> --dry-run
+  ${accent("pnpm release:beta")} --base <x.y.z> --publish
+  ${accent("pnpm release:beta")} --publish
 
 Selects the next unused numbered beta from registry versions plus local/remote Git
 tags, then delegates to the normal release command.
@@ -139,7 +140,10 @@ const main = async (): Promise<void> => {
     ...localTags,
     ...remoteTags,
   ]);
-  console.log(`${manifest.version} -> ${version} (registry dist-tag: beta)`);
+  console.log(
+    `${accent(manifest.version)} -> ${accent(version)} ` +
+      `(registry dist-tag: ${accent("beta")})`,
+  );
 
   const args = [
     "--experimental-strip-types",

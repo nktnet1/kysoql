@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 
-import { forwardedArgs, run } from "./command.ts";
+import { forwardedArgs, run } from "../../../scripts/lib/command.ts";
 
 it("normalizes a package-manager argument separator", () => {
   expect(forwardedArgs(["--", "--publish"])).toEqual(["--publish"]);

@@ -4,12 +4,17 @@
   "description": "Schema generation CLI for kysoql",
   "license": "MIT",
   "keywords": [
-    "salesforce",
-    "soql",
-    "typescript",
-    "schema",
+    "builder",
+    "cli",
     "codegen",
-    "cli"
+    "kysely",
+    "query",
+    "query builder",
+    "salesforce",
+    "schema",
+    "soql",
+    "sql",
+    "typescript"
   ],
   "sideEffects": false,
   "engines": {
@@ -30,7 +35,9 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "README.md"
   ],
   "scripts": {
     "build": "tsdown",

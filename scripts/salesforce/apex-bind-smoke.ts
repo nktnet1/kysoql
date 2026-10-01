@@ -4,6 +4,7 @@ import { Command, Flags } from "@oclif/core";
 
 import { requireCommand, run } from "../lib/command.ts";
 import { readSalesforceTargetEnvironment } from "../lib/environment.ts";
+import { errorLine } from "../lib/output.ts";
 import {
   repositoryCommandLoadOptions,
   repositoryRoot,
@@ -53,6 +54,8 @@ try {
     repositoryCommandLoadOptions,
   );
 } catch (error) {
-  console.error(`error: ${error instanceof Error ? error.message : String(error)}`);
+  console.error(
+    errorLine(error instanceof Error ? error.message : String(error)),
+  );
   process.exitCode = 1;
 }

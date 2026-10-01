@@ -3,7 +3,7 @@ import * as ts from "typescript";
 import * as v from "valibot";
 import { expect, it } from "vitest";
 
-const root = new URL("../../", import.meta.url);
+const root = new URL("../../../", import.meta.url);
 
 const stringRecordSchema = v.record(v.string(), v.string());
 const packageManifestSchema = v.looseObject({
@@ -111,12 +111,23 @@ it("repository-authored script entrypoints use TypeScript", async () => {
   expect(legacy).toEqual([]);
 });
 
+it("keeps tests out of script directories", async () => {
+  const roots = [new URL("scripts/", root), new URL("apps/docs/scripts/", root)];
+  const files = (await Promise.all(roots.map(walkFiles))).flat();
+  const misplacedTests = files
+    .map((file) => file.pathname)
+    .filter((file) => /\.test\.[cm]?[jt]sx?$/u.test(file));
+  expect(misplacedTests).toEqual([]);
+});
+
 it("authored TypeScript avoids explicit any", async () => {
   const roots = [
     new URL("packages/", root),
     new URL("scripts/", root),
+    new URL("tests/", root),
     new URL("test/salesforce-e2e/", root),
     new URL("apps/docs/scripts/", root),
+    new URL("apps/docs/tests/", root),
     new URL("apps/docs/src/", root),
   ];
   const files = (await Promise.all(roots.map(walkFiles)))

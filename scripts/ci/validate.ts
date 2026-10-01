@@ -1,7 +1,8 @@
 import { requireCommand, requireSupportedNode, run } from "../lib/command.ts";
+import { errorLine, step, success } from "../lib/output.ts";
 
 function runStep(label: string, args: readonly string[]): void {
-  console.log(`\n==> ${label}`);
+  console.log(`\n${step(label)}`);
   run("pnpm", args);
 }
 
@@ -17,8 +18,8 @@ try {
   runStep("Publish shape", ["verify:publish"]);
   runStep("Release metadata", ["verify:release"]);
 
-  console.log("\nAll local validation checks passed.");
+  console.log(`\n${success("PASS")} All local validation checks passed.`);
 } catch (error) {
-  console.error(`error: ${error instanceof Error ? error.message : String(error)}`);
+  console.error(errorLine(error instanceof Error ? error.message : String(error)));
   process.exitCode = 1;
 }

@@ -3,6 +3,7 @@ import { access, readFile } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { accent, success } from "../lib/output.ts";
 import { collectPublicExports } from "./public-export-shape.ts";
 
 const ROOT_DIR = resolve(import.meta.dirname, "../..");
@@ -274,8 +275,10 @@ const verifyPackage = async (workspacePath: string): Promise<void> => {
   }
 
   const files = requireStringArray(manifest, "files", packageName);
-  if (!files.includes("dist")) {
-    fail(`${packageName}.files must include dist.`);
+  for (const requiredFile of ["dist", "LICENSE", "README.md"] as const) {
+    if (!files.includes(requiredFile)) {
+      fail(`${packageName}.files must include ${requiredFile}.`);
+    }
   }
 
   const publishConfig = requireObject(manifest, "publishConfig", packageName);
@@ -326,7 +329,7 @@ const verifyPackage = async (workspacePath: string): Promise<void> => {
 
   await verifyBinTargets(packageName, packageDir, manifest.bin);
 
-  console.log(`verified ${packageName}`);
+  console.log(`${success("VERIFIED")} ${accent(packageName)}`);
 };
 
 for (const workspacePath of PUBLISHABLE_PACKAGES) {

@@ -42,3 +42,10 @@ The adapter intentionally stays small; authentication and connection lifecycle
 remain the application's responsibility. Abort signals stop waiting for the
 current JSforce promise and prevent additional `queryMore` calls, but do not
 cancel the underlying in-flight JSforce request.
+
+## Documentation
+
+Package guides live in the
+[jsforce documentation](https://github.com/nktnet1/kysoql/tree/main/apps/docs/content/docs/jsforce).
+The API reference is generated from this package's public `src/index.ts` entry
+point with TypeDoc as part of repository documentation validation.

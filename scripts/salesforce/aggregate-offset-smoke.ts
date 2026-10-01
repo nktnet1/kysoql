@@ -4,6 +4,7 @@ import { Command, Flags } from "@oclif/core";
 
 import { parseJson, requireCommand, run } from "../lib/command.ts";
 import { readSalesforceTargetEnvironment } from "../lib/environment.ts";
+import { accent, errorLine, success } from "../lib/output.ts";
 import {
   repositoryCommandLoadOptions,
   repositoryRoot,
@@ -76,7 +77,9 @@ class SalesforceAggregateOffsetSmoke extends Command {
         `Unexpected grouped aggregate OFFSET result: ${JSON.stringify(actual)}`,
       );
     }
-    this.log(`Grouped aggregate OFFSET smoke test passed for ${targetOrg}.`);
+    this.log(
+      `${success("PASS")} Grouped aggregate OFFSET smoke test for ${accent(targetOrg)}`,
+    );
   }
 }
 
@@ -86,6 +89,8 @@ try {
     repositoryCommandLoadOptions,
   );
 } catch (error) {
-  console.error(`error: ${error instanceof Error ? error.message : String(error)}`);
+  console.error(
+    errorLine(error instanceof Error ? error.message : String(error)),
+  );
   process.exitCode = 1;
 }

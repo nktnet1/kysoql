@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { collectPublicExports } from "./public-export-shape.ts";
+import { collectPublicExports } from "../../../scripts/verify/public-export-shape.ts";
 
 describe("collectPublicExports", () => {
   it("separates named runtime and type-only exports", () => {

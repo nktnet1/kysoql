@@ -194,3 +194,10 @@ Its relative output paths continue to use the process working directory.
 pass them to `loadSchema(client, objects, fields)` and then call `renderSchema`.
 `loadSchema` annotates filtered descriptions with `fieldsComplete: false`, and
 `renderSchema` preserves that annotation in the generated object type.
+
+## Documentation
+
+Package guides live in the
+[codegen documentation](https://github.com/nktnet1/kysoql/tree/main/apps/docs/content/docs/codegen).
+The API reference is generated from this package's public `src/index.ts` entry
+point with TypeDoc as part of repository documentation validation.

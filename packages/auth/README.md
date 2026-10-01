@@ -133,3 +133,10 @@ Salesforce reference: [OAuth Authorization Flows](https://help.salesforce.com/s/
 Salesforce's retiring username-password, user-agent, and hybrid user-agent flows
 are intentionally not implemented. Asset tokens are device identity tokens, not
 general bearer sessions for SOQL REST calls.
+
+## Documentation
+
+Package guides live in the
+[auth documentation](https://github.com/nktnet1/kysoql/tree/main/apps/docs/content/docs/auth).
+The API reference is generated from this package's public `src/index.ts` entry
+point with TypeDoc as part of repository documentation validation.

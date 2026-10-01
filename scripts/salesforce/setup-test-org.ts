@@ -13,6 +13,7 @@ import {
   parseScratchDurationDays,
   readSalesforceSetupEnvironment,
 } from "../lib/environment.ts";
+import { accent, errorLine, success, warning } from "../lib/output.ts";
 import {
   repositoryCommandLoadOptions,
   repositoryRoot,
@@ -95,13 +96,16 @@ class SetupSalesforceTestOrg extends Command {
         return;
       }
       console.error(
-        "\nThe scratch org was created but setup did not complete. It was not deleted automatically.",
+        `\n${warning("WARNING")} The scratch org was created but setup did ` +
+          "not complete. It was not deleted automatically.",
       );
       console.error(
-        `Inspect it with: pnpm sf org open --target-org ${JSON.stringify(options.scratchAlias)}`,
+        `Inspect it with: ${accent("pnpm sf")} org open --target-org ` +
+          JSON.stringify(options.scratchAlias),
       );
       console.error(
-        `Delete it with:  pnpm sf org delete scratch --target-org ${JSON.stringify(options.scratchAlias)} --no-prompt`,
+        `Delete it with:  ${accent("pnpm sf")} org delete scratch --target-org ` +
+          `${JSON.stringify(options.scratchAlias)} --no-prompt`,
       );
     };
 
@@ -123,7 +127,7 @@ class SetupSalesforceTestOrg extends Command {
       requireCommand("pnpm");
 
       if (!options.skipInstall) {
-        this.log("Installing workspace dependencies from the lockfile...");
+        this.log(`${warning("INSTALL")} workspace dependencies from the lockfile`);
         run("pnpm", ["install", "--frozen-lockfile"], { cwd: repositoryRoot });
       }
 
@@ -136,7 +140,8 @@ class SetupSalesforceTestOrg extends Command {
           );
         }
         this.log(
-          `Dev Hub '${options.devHubAlias}' is not authenticated; opening Salesforce web login...`,
+          `${warning("LOGIN")} Dev Hub ${accent(options.devHubAlias)} is not ` +
+            "authenticated; opening Salesforce web login",
         );
         sf(["org", "login", "web", "--alias", options.devHubAlias]);
       }
@@ -148,7 +153,8 @@ class SetupSalesforceTestOrg extends Command {
           );
         }
         this.log(
-          `Deleting existing scratch org '${options.scratchAlias}' because --recreate was requested...`,
+          `${warning("DELETE")} scratch org ${accent(options.scratchAlias)} ` +
+            `because ${accent("--recreate")} was requested`,
         );
         sf([
           "org",
@@ -161,7 +167,8 @@ class SetupSalesforceTestOrg extends Command {
       }
 
       this.log(
-        `Creating scratch org '${options.scratchAlias}' from Dev Hub '${options.devHubAlias}'...`,
+        `${warning("CREATE")} scratch org ${accent(options.scratchAlias)} ` +
+          `from Dev Hub ${accent(options.devHubAlias)}`,
       );
       sf([
         "org",
@@ -178,7 +185,7 @@ class SetupSalesforceTestOrg extends Command {
       ]);
       createdScratch = true;
 
-      this.log("Deploying fixture metadata...");
+      this.log(`${warning("DEPLOY")} fixture metadata`);
       sf([
         "project",
         "deploy",
@@ -189,7 +196,7 @@ class SetupSalesforceTestOrg extends Command {
         "force-app",
       ]);
 
-      this.log("Deploying custom Big Object fixture metadata...");
+      this.log(`${warning("DEPLOY")} custom Big Object fixture metadata`);
       sf([
         "project",
         "deploy",
@@ -200,7 +207,7 @@ class SetupSalesforceTestOrg extends Command {
         "big-object-metadata",
       ]);
 
-      this.log("Assigning Kysoql_Test permission set...");
+      this.log(`${warning("ASSIGN")} ${accent("Kysoql_Test")} permission set`);
       sf([
         "org",
         "assign",
@@ -211,7 +218,7 @@ class SetupSalesforceTestOrg extends Command {
         "Kysoql_Test",
       ]);
 
-      this.log("Seeding deterministic fixture data...");
+      this.log(`${warning("SEED")} deterministic fixture data`);
       sf([
         "apex",
         "run",
@@ -221,7 +228,7 @@ class SetupSalesforceTestOrg extends Command {
         "scripts/apex/seed.apex",
       ]);
 
-      this.log("Running static Apex bind smoke test...");
+      this.log(`${warning("RUN")} static Apex bind smoke test`);
       sf([
         "apex",
         "run",
@@ -235,40 +242,37 @@ class SetupSalesforceTestOrg extends Command {
         ...process.env,
         KYSOQL_TARGET_ORG: options.scratchAlias,
       };
-      this.log("Running grouped aggregate OFFSET smoke test...");
+      this.log(`${warning("RUN")} grouped aggregate OFFSET smoke test`);
       run(
         process.execPath,
         [
           "--experimental-strip-types",
-          path.join(
-            import.meta.dirname,
-            "run-salesforce-aggregate-offset-smoke.ts",
-          ),
+          path.join(import.meta.dirname, "aggregate-offset-smoke.ts"),
         ],
         { cwd: repositoryRoot, env: targetEnv },
       );
 
-      this.log("Running custom Big Object codegen smoke test...");
+      this.log(`${warning("RUN")} custom Big Object codegen smoke test`);
       run(
         process.execPath,
         [
           "--experimental-strip-types",
-          path.join(import.meta.dirname, "run-salesforce-big-object-smoke.ts"),
+          path.join(import.meta.dirname, "big-object-smoke.ts"),
         ],
         { cwd: repositoryRoot, env: targetEnv },
       );
 
-      this.log("Running generated-query Salesforce E2E suite...");
+      this.log(`${warning("RUN")} generated-query Salesforce E2E suite`);
       run(
         process.execPath,
         [
           "--experimental-strip-types",
-          path.join(import.meta.dirname, "run-salesforce-generated-e2e.ts"),
+          path.join(import.meta.dirname, "generated-e2e.ts"),
         ],
         { cwd: repositoryRoot, env: targetEnv },
       );
 
-      this.log("Running fixture smoke test...");
+      this.log(`${warning("RUN")} fixture smoke test`);
       const smokeOutput = sf(
         [
           "data",
@@ -294,7 +298,22 @@ class SetupSalesforceTestOrg extends Command {
 
       createdScratch = false;
       this.log(
-        `\nSalesforce test org is ready.\n\n  Dev Hub:     ${options.devHubAlias}\n  Scratch org: ${options.scratchAlias}\n  Seed rows:   ${smokeCount}\n\nUseful commands:\n  pnpm sf org open --target-org ${options.scratchAlias}\n  pnpm sf data query --target-org ${options.scratchAlias} --query "SELECT Id, Name, External_Id__c FROM Kysoql_Record__c ORDER BY External_Id__c"\n  pnpm sf org delete scratch --target-org ${options.scratchAlias} --no-prompt`,
+        [
+          "",
+          `${success("READY")} Salesforce test org`,
+          "",
+          `  Dev Hub:     ${accent(options.devHubAlias)}`,
+          `  Scratch org: ${accent(options.scratchAlias)}`,
+          `  Seed rows:   ${accent(String(smokeCount))}`,
+          "",
+          "Useful commands:",
+          `  ${accent("pnpm sf")} org open --target-org ${options.scratchAlias}`,
+          `  ${accent("pnpm sf")} data query --target-org ${options.scratchAlias} ` +
+            '--query "SELECT Id, Name, External_Id__c FROM ' +
+            'Kysoql_Record__c ORDER BY External_Id__c"',
+          `  ${accent("pnpm sf")} org delete scratch --target-org ` +
+            `${options.scratchAlias} --no-prompt`,
+        ].join("\n"),
       );
     } catch (error) {
       cleanupHint();
@@ -309,6 +328,8 @@ try {
     repositoryCommandLoadOptions,
   );
 } catch (error) {
-  console.error(`error: ${error instanceof Error ? error.message : String(error)}`);
+  console.error(
+    errorLine(error instanceof Error ? error.message : String(error)),
+  );
   process.exitCode = 1;
 }

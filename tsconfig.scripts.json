@@ -6,6 +6,5 @@
     "rootDir": ".",
     "types": ["node"]
   },
-  "include": ["scripts/**/*.ts", "packages/*/tsdown.config.ts"],
-  "exclude": ["scripts/**/*.test.ts"]
+  "include": ["scripts/**/*.ts", "packages/*/tsdown.config.ts"]
 }

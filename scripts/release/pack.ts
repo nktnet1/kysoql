@@ -9,6 +9,7 @@ import {
   requireSupportedNode,
   run,
 } from "../lib/command.ts";
+import { accent, success, warning } from "../lib/output.ts";
 import {
   RELEASE_PACKAGES,
   versionFromReleaseTag,
@@ -59,7 +60,9 @@ await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 
 for (const definition of RELEASE_PACKAGES) {
-  console.log(`Packing ${definition.name}@${workspaceVersion}`);
+  console.log(
+    `${warning("PACK")} ${accent(`${definition.name}@${workspaceVersion}`)}`,
+  );
   run(
     "pnpm",
     ["pack", "--pack-destination", output],
@@ -77,4 +80,6 @@ if (tarballs.length !== RELEASE_PACKAGES.length) {
   );
 }
 
-console.log(`Packed ${tarballs.length} release packages into ${output}`);
+console.log(
+  `${success("PACKED")} ${accent(String(tarballs.length))} release packages into ${accent(output)}`,
+);

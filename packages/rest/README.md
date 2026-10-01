@@ -150,3 +150,10 @@ variables automatically.
 Full guides: [execution](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/rest/execution.mdx),
 [authentication](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/rest/authentication.mdx), and
 [security](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/core/reference/security.mdx).
+
+## Documentation
+
+Package guides live in the
+[rest documentation](https://github.com/nktnet1/kysoql/tree/main/apps/docs/content/docs/rest).
+The API reference is generated from this package's public `src/index.ts` entry
+point with TypeDoc as part of repository documentation validation.

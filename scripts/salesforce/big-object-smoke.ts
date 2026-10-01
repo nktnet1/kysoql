@@ -11,6 +11,7 @@ import {
   succeeds,
 } from "../lib/command.ts";
 import { readSalesforceTargetEnvironment } from "../lib/environment.ts";
+import { accent, errorLine, success } from "../lib/output.ts";
 import {
   repositoryCommandLoadOptions,
   repositoryRoot,
@@ -60,7 +61,7 @@ class SalesforceBigObjectSmoke extends Command {
         process.execPath,
         [
           "--experimental-strip-types",
-          path.join(import.meta.dirname, "generate-salesforce-schema.ts"),
+          path.join(import.meta.dirname, "generate-schema.ts"),
           "--no-config",
           "--object",
           "Kysoql_Event__b",
@@ -91,7 +92,9 @@ class SalesforceBigObjectSmoke extends Command {
       await rm(directory, { recursive: true, force: true });
     }
 
-    this.log(`Custom Big Object codegen passed for '${targetOrg}'.`);
+    this.log(
+      `${success("PASS")} Custom Big Object codegen for ${accent(targetOrg)}`,
+    );
   }
 }
 
@@ -101,6 +104,8 @@ try {
     repositoryCommandLoadOptions,
   );
 } catch (error) {
-  console.error(`error: ${error instanceof Error ? error.message : String(error)}`);
+  console.error(
+    errorLine(error instanceof Error ? error.message : String(error)),
+  );
   process.exitCode = 1;
 }

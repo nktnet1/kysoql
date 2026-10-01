@@ -380,3 +380,10 @@ and `executeAllCountQuery()`.
 `@kysoql/rest` provides the default native adapter with both execution modes,
 root pagination, iteration, and cancellation. `@kysoql/jsforce` remains an optional
 adapter for existing JSforce connections.
+
+## Documentation
+
+Package guides live in the
+[core documentation](https://github.com/nktnet1/kysoql/tree/main/apps/docs/content/docs/core).
+The API reference is generated from this package's public `src/index.ts` entry
+point with TypeDoc as part of repository documentation validation.

@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 
 import { forwardedArgs } from "../lib/command.ts";
+import { accent, success } from "../lib/output.ts";
 import { versionFromReleaseTag } from "./policy.ts";
 
 const ROOT_DIR = resolve(import.meta.dirname, "../..");
@@ -31,4 +32,4 @@ await Promise.all([
   writeFile(resolve(output, "tag"), `${tag}\n`, "utf8"),
   writeFile(resolve(output, "sha"), `${sha}\n`, "utf8"),
 ]);
-console.log(`Wrote release metadata for ${tag} (${sha})`);
+console.log(`${success("WROTE")} release metadata for ${accent(tag)} (${accent(sha)})`);

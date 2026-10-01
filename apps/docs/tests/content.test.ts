@@ -5,7 +5,7 @@ import {
   codeBlocks,
   linkTargetIds,
   stripCodeBlocks,
-} from "./content.ts";
+} from "../scripts/content.ts";
 
 const block = (info: string, code = "const answer: number = 42;") =>
   `\`\`\`${info}\n${code}\n\`\`\`\n`;

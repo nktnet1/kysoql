@@ -4,11 +4,15 @@
   "description": "Native Salesforce REST query executor for kysoql",
   "license": "MIT",
   "keywords": [
+    "builder",
+    "kysely",
+    "query",
+    "query builder",
+    "rest",
     "salesforce",
     "soql",
-    "typescript",
-    "rest",
-    "query-builder"
+    "sql",
+    "typescript"
   ],
   "sideEffects": false,
   "engines": {
@@ -29,7 +33,9 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "README.md"
   ],
   "scripts": {
     "build": "tsdown",

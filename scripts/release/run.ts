@@ -8,6 +8,7 @@ import {
   requireSupportedNode,
   run,
 } from "../lib/command.ts";
+import { accent, success, strong } from "../lib/output.ts";
 import {
   parseReleaseVersion,
   RELEASE_PACKAGES,
@@ -107,8 +108,8 @@ const { values } = parseArgs({
 
 const main = async (): Promise<void> => {
   if (values.help) {
-    console.log(`Usage:
-  pnpm release --version <semver> [--dry-run | --publish]
+    console.log(`${strong("Usage:")}
+  ${accent("pnpm release")} --version <semver> [--dry-run | --publish]
 
 Updates the root and five public @kysoql package versions together, runs the
 full release gate, and leaves the version changes ready to commit.
@@ -132,9 +133,11 @@ Supported versions are stable x.y.z and beta x.y.z-beta.n releases.`);
   const parsedVersion = parseReleaseVersion(version);
   const tag = releaseTag(version);
   if (values["dry-run"]) {
-    console.log(`${tag} -> registry dist-tag ${parsedVersion.distTag}`);
+    console.log(
+      `${accent(tag)} -> registry dist-tag ${accent(parsedVersion.distTag)}`,
+    );
     for (const definition of RELEASE_PACKAGES) {
-      console.log(`${definition.name}@${version}`);
+      console.log(accent(`${definition.name}@${version}`));
     }
     return;
   }
@@ -165,7 +168,8 @@ Supported versions are stable x.y.z and beta x.y.z-beta.n releases.`);
     ),
   );
   console.log(
-    `Prepared ${RELEASE_PACKAGES.length} @kysoql packages for ${tag}`,
+    `${success("PREPARED")} ${RELEASE_PACKAGES.length} ` +
+      `${accent("@kysoql")} packages for ${accent(tag)}`,
   );
 
   run("pnpm", ["release:check"], { cwd: ROOT_DIR });
@@ -174,8 +178,9 @@ Supported versions are stable x.y.z and beta x.y.z-beta.n releases.`);
 
   if (!values.publish) {
     console.log(
-      `Release ${tag} passed validation. Commit the version manifests and ` +
-        `tag that commit as ${tag}.`,
+      `${success("PASS")} Release ${accent(tag)} passed validation. ` +
+        "Commit the version manifests and " +
+        `tag that commit as ${accent(tag)}.`,
     );
     return;
   }
@@ -209,7 +214,7 @@ Supported versions are stable x.y.z and beta x.y.z-beta.n releases.`);
   );
 
   console.log(
-    `Pushed ${tag}. GitHub Actions will build, validate, and publish the ` +
+    `${success("PUSHED")} ${accent(tag)}. GitHub Actions will build, validate, and publish the ` +
       "release packages.",
   );
 };

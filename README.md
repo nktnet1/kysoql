@@ -118,7 +118,10 @@ each package's Biome task, so `pnpm check --write` applies safe formatter, lint,
 and import-organization fixes across the workspace. `pnpm verify:publish` expects
 the packages to be built first; `pnpm validate` handles that ordering
 automatically. `pnpm verify:release` can run independently because it checks
-manifest/documentation metadata rather than build artifacts.
+manifest/documentation metadata rather than build artifacts. Every public package
+must ship `README.md` and `LICENSE`, have a package-specific install section, and
+keep its discovery keywords sorted. The release gate also runs the docs workspace,
+which regenerates the TypeDoc API reference for all five public packages.
 `pnpm verify:release:publish` adds the non-placeholder version requirement used
 by `pnpm release:check`. Before the first release, package manifests may use the
 development placeholder. `pnpm release` replaces it, and every later release
@@ -142,7 +145,7 @@ The public packages are owned by the npm `@kysoql` organisation scope:
 - `@kysoql/jsforce`
 - `@kysoql/codegen`
 
-Create the `Production` GitHub environment used by `.github/workflows/publish.yml`.
+Create the `Production` GitHub environment used by `.github/workflows/publish.yaml`.
 For a brand-new npm organisation, bootstrap the five package names before
 configuring OIDC. The default command scans the registry and dry-runs only missing names:
 
@@ -168,10 +171,15 @@ Once all five names exist, configure the same trusted publisher for all five:
 pnpm oidc:trust
 ```
 
-The configuration targets repository `nktnet1/kysoql`, workflow `publish.yml`,
-and GitHub environment `Production`, with direct publish permission. After
-trusted publishing is configured, real beta and stable releases are tokenless
-and are driven only by annotated release tags plus GitHub Actions.
+The configuration targets repository `nktnet1/kysoql`, workflow `publish.yaml`,
+and GitHub environment `Production`, with direct publish permission. This is the
+one package-governance step that intentionally uses npm's official `npm trust`
+command because pnpm does not expose an equivalent trusted-publisher management
+command. Normal bootstrap, build, pack, beta, release, and publish automation
+remains pnpm-based. The first trust change can require npm's interactive 2FA or
+browser authorization. After trusted publishing is configured, real beta and
+stable releases are tokenless and are driven only by annotated release tags plus
+GitHub Actions.
 
 `pnpm typecheck:source` first runs the dependency-free task-configuration
 regressions (`pnpm test:tasks`). Turbo then owns the dependency builds: package
@@ -186,11 +194,12 @@ pnpm exec turbo run typecheck:source --filter=docs
 ```
 
 Vitest is configured at the workspace root and discovers tests under
-`packages/**/tests/**/*.test.ts` plus `scripts/**/*.test.ts`. `pnpm test:conformance`
+`packages/**/tests/**/*.test.ts` plus `tests/scripts/**/*.test.ts`. `pnpm test:conformance`
 runs the focused SOQL semantic conformance matrix, which asserts exact rendered
 SOQL plus representative Salesforce-invalid combinations. `pnpm typecheck:test`
 checks those test files with their package-specific TypeScript configs and also
-checks root test tooling plus the generated Salesforce fixture under `test/`.
+checks root script tests under `tests/` plus the generated Salesforce fixture
+under `test/`.
 V8 coverage output is written to `coverage/`.
 
 The workspace pins TypeScript in `devDependencies`, and `.vscode/settings.json`
