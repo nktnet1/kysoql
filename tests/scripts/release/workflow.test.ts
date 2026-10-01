@@ -39,30 +39,27 @@ it("builds immutable release artifacts from v-tags", async () => {
   expect(workflow).not.toContain("run: |");
 });
 
-it(
-  "publishes only after a successful same-repository release build",
-  async () => {
-    const workflow = await readText(".github/workflows/publish.yaml");
-    expect(workflow).toContain("workflow_run:");
-    expect(workflow).toContain("      - Release packages");
-    expect(workflow).toContain(
-      "github.event.workflow_run.head_repository.full_name == " +
-        "github.repository",
-    );
-    expect(workflow).toContain("ref: ${{ github.workflow_sha }}");
-    expect(workflow).toContain(
-      "BUILD_SHA: ${{ github.event.workflow_run.head_sha }}",
-    );
-    expect(workflow).toContain("id-token: write");
-    expect(workflow).toContain("environment: Production");
-    expect(workflow).toContain("package-manager-cache: false");
-    expect(workflow).toContain("uses: pnpm/action-setup@v6");
-    expect(workflow).not.toContain("NPM_TOKEN");
-    expect(workflow).not.toContain("NODE_AUTH_TOKEN");
-    expect(workflow).not.toContain("registry-url:");
-    expect(workflow).not.toContain("run: |");
-  },
-);
+it("publishes only after a successful same-repository release build", async () => {
+  const workflow = await readText(".github/workflows/publish.yaml");
+  expect(workflow).toContain("workflow_run:");
+  expect(workflow).toContain("      - Release packages");
+  expect(workflow).toContain(
+    "github.event.workflow_run.head_repository.full_name == " +
+      "github.repository",
+  );
+  expect(workflow).toContain("ref: ${{ github.workflow_sha }}");
+  expect(workflow).toContain(
+    "BUILD_SHA: ${{ github.event.workflow_run.head_sha }}",
+  );
+  expect(workflow).toContain("id-token: write");
+  expect(workflow).toContain("environment: Production");
+  expect(workflow).toContain("package-manager-cache: false");
+  expect(workflow).not.toContain("pnpm/action-setup");
+  expect(workflow).toContain("registry-url: https://registry.npmjs.org");
+  expect(workflow).not.toContain("NPM_TOKEN");
+  expect(workflow).not.toContain("NODE_AUTH_TOKEN");
+  expect(workflow).not.toContain("run: |");
+});
 
 it("exposes bootstrap and beta release entrypoints", async () => {
   const manifest = await readJson("package.json");
@@ -98,52 +95,52 @@ it("uses the official npm trust command for trusted-publisher governance", async
   expect(source).not.toContain("pollWebChallenge");
 });
 
-it("uses pnpm exclusively except for trusted-publisher governance", async () => {
+it("uses bundled npm only for registry publication", async () => {
   for (const file of [
     "scripts/release/bootstrap.ts",
     "scripts/release/beta.ts",
-    "scripts/release/publisher.ts",
   ]) {
     const source = await readText(file);
     expect(source).not.toMatch(/(?:run|requireCommand)\("npm"/u);
     expect(source).not.toMatch(/spawnSync\(\s*"npm"/u);
     expect(source).not.toContain("npm-cli.js");
   }
+
+  const publisher = await readText("scripts/release/publisher.ts");
+  expect(publisher).toContain("npm-cli.js");
+  expect(publisher).toContain("process.execPath");
+  expect(publisher).not.toContain('requireCommand("pnpm")');
+  expect(publisher).not.toMatch(/(?:run|spawnSync)\(\s*"pnpm"/u);
 });
 
-it(
-  "keeps every public package in the @kysoql scope and blocks direct publish",
-  async () => {
-    for (const definition of RELEASE_PACKAGES) {
-      const manifest = await readJson(
-        `${definition.workspacePath}/package.json`,
-      );
-      expect(manifest.name).toBe(definition.name);
-      const publishConfig = manifest.publishConfig;
-      if (
-        typeof publishConfig !== "object" ||
-        publishConfig === null ||
-        Array.isArray(publishConfig)
-      ) {
-        throw new Error(`${definition.name} publishConfig must be an object`);
-      }
-      expect((publishConfig as Readonly<Record<string, unknown>>).access).toBe(
-        "public",
-      );
-      const scripts = manifest.scripts;
-      if (
-        typeof scripts !== "object" ||
-        scripts === null ||
-        Array.isArray(scripts)
-      ) {
-        throw new Error(`${definition.name} scripts must be an object`);
-      }
-      expect(
-        (scripts as Readonly<Record<string, unknown>>).prepublishOnly,
-      ).toContain("prevent-direct-publish.ts");
+it("keeps every public package in the @kysoql scope and blocks direct publish", async () => {
+  for (const definition of RELEASE_PACKAGES) {
+    const manifest = await readJson(`${definition.workspacePath}/package.json`);
+    expect(manifest.name).toBe(definition.name);
+    const publishConfig = manifest.publishConfig;
+    if (
+      typeof publishConfig !== "object" ||
+      publishConfig === null ||
+      Array.isArray(publishConfig)
+    ) {
+      throw new Error(`${definition.name} publishConfig must be an object`);
     }
-  },
-);
+    expect((publishConfig as Readonly<Record<string, unknown>>).access).toBe(
+      "public",
+    );
+    const scripts = manifest.scripts;
+    if (
+      typeof scripts !== "object" ||
+      scripts === null ||
+      Array.isArray(scripts)
+    ) {
+      throw new Error(`${definition.name} scripts must be an object`);
+    }
+    expect(
+      (scripts as Readonly<Record<string, unknown>>).prepublishOnly,
+    ).toContain("prevent-direct-publish.ts");
+  }
+});
 
 it("uses node:util styleText for script output tokens", async () => {
   const source = await readText("scripts/lib/output.ts");

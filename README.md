@@ -88,8 +88,9 @@ the tag/commit metadata as GitHub Actions artifacts. A separate `Publish`
 workflow runs only after that build succeeds. It checks out trusted release
 tooling from the workflow revision, validates the build SHA, tag, package names,
 versions, dependency graph, and tarball integrity, then publishes the exact
-artifacts to the registry. The publish job uses trusted publishing through GitHub OIDC;
-it does not require an `NPM_TOKEN`.
+artifacts to the registry. The publish job invokes the npm CLI bundled with the
+selected Node.js runtime so npm trusted publishing can exchange the GitHub OIDC
+identity directly; it does not require an `NPM_TOKEN`.
 
 The stricter gate rejects the development placeholder version, requires every
 publishable package to declare its license explicitly, and verifies the built npm
@@ -175,8 +176,9 @@ The configuration targets repository `nktnet1/kysoql`, workflow `publish.yaml`,
 and GitHub environment `Production`, with direct publish permission. This is the
 one package-governance step that intentionally uses npm's official `npm trust`
 command because pnpm does not expose an equivalent trusted-publisher management
-command. Normal bootstrap, build, pack, beta, release, and publish automation
-remains pnpm-based. The first trust change can require npm's interactive 2FA or
+command. Normal bootstrap, build, pack, beta, and release orchestration remains
+pnpm-based. Registry publication intentionally uses the npm CLI bundled with the
+GitHub Actions Node.js runtime because npm owns the trusted-publishing OIDC flow. The first trust change can require npm's interactive 2FA or
 browser authorization. After trusted publishing is configured, real beta and
 stable releases are tokenless and are driven only by annotated release tags plus
 GitHub Actions.

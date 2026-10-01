@@ -13,8 +13,9 @@ import { gzipSync } from "node:zlib";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 import { RELEASE_PACKAGES } from "#scripts/release/policy";
+
 type PublishReleasePackages =
-  (typeof import("#scripts/release/publisher"))["publishReleasePackages"];
+  typeof import("#scripts/release/publisher")["publishReleasePackages"];
 
 let publishReleasePackages: PublishReleasePackages;
 
@@ -56,10 +57,7 @@ afterEach(() => {
 
 const createRelease = (
   version: string,
-  mutate?: (
-    packageName: string,
-    manifest: Record<string, unknown>,
-  ) => void,
+  mutate?: (packageName: string, manifest: Record<string, unknown>) => void,
 ): Map<string, string> => {
   rootDirectory = mkdtempSync(join(tmpdir(), "kysoql-release-test-"));
   const directory = join(rootDirectory, "release-packages");
@@ -90,19 +88,17 @@ it.each([
   createRelease(version);
   const calls: string[][] = [];
   mocks.spawn.mockImplementation((command: string, args: string[]) => {
-    expect(command).toBe("pnpm");
+    expect(command).toBe(process.execPath);
+    expect(args[0]).toMatch(/[\\/]npm[\\/]bin[\\/]npm-cli\.js$/u);
     calls.push(args);
-    if (args[0] === "--version") {
-      return { status: 0, stdout: "12.6.0\n", stderr: "" };
-    }
-    if (args[0] === "view") {
+    if (args[1] === "view") {
       return {
         status: 1,
         stdout: "",
         stderr: '[WARN] registry config warning\n{"error":{"code":"E404"}}',
       };
     }
-    expect(args[0]).toBe("publish");
+    expect(args[1]).toBe("publish");
     return { status: 0, stdout: "", stderr: "" };
   });
 
@@ -112,7 +108,7 @@ it.each([
     tag: `v${version}`,
   });
 
-  const publishes = calls.filter((args) => args[0] === "publish");
+  const publishes = calls.filter((args) => args[1] === "publish");
   expect(publishes).toHaveLength(RELEASE_PACKAGES.length);
   for (const command of publishes) {
     expect(command).toContain("--access");
@@ -136,12 +132,10 @@ it("skips an identical package version during a safe retry", () => {
 
   const publishes: string[][] = [];
   mocks.spawn.mockImplementation((command: string, args: string[]) => {
-    expect(command).toBe("pnpm");
-    if (args[0] === "--version") {
-      return { status: 0, stdout: "12.6.0\n", stderr: "" };
-    }
-    if (args[0] === "view") {
-      if (args[1] === `${alreadyPublished.name}@${version}`) {
+    expect(command).toBe(process.execPath);
+    expect(args[0]).toMatch(/[\\/]npm[\\/]bin[\\/]npm-cli\.js$/u);
+    if (args[1] === "view") {
+      if (args[2] === `${alreadyPublished.name}@${version}`) {
         return {
           status: 0,
           stdout: JSON.stringify(integrity),
@@ -154,11 +148,11 @@ it("skips an identical package version during a safe retry", () => {
         stderr: "",
       };
     }
-    if (args[0] === "publish") {
+    if (args[1] === "publish") {
       publishes.push(args);
       return { status: 0, stdout: "", stderr: "" };
     }
-    throw new Error(`Unexpected pnpm action: ${String(args[0])}`);
+    throw new Error(`Unexpected npm action: ${String(args[1])}`);
   });
 
   publishReleasePackages({
@@ -196,11 +190,9 @@ it.each(["conflict", "network", "bad-sha"] as const)(
 
     let publishCalls = 0;
     mocks.spawn.mockImplementation((command: string, args: string[]) => {
-      expect(command).toBe("pnpm");
-      if (args[0] === "--version") {
-        return { status: 0, stdout: "12.6.0\n", stderr: "" };
-      }
-      if (args[0] === "view") {
+      expect(command).toBe(process.execPath);
+      expect(args[0]).toMatch(/[\\/]npm[\\/]bin[\\/]npm-cli\.js$/u);
+      if (args[1] === "view") {
         if (mode === "network") {
           return {
             status: 1,
@@ -214,11 +206,11 @@ it.each(["conflict", "network", "bad-sha"] as const)(
           stderr: "",
         };
       }
-      if (args[0] === "publish") {
+      if (args[1] === "publish") {
         publishCalls += 1;
         return { status: 0, stdout: "", stderr: "" };
       }
-      throw new Error(`Unexpected pnpm action: ${String(args[0])}`);
+      throw new Error(`Unexpected npm action: ${String(args[1])}`);
     });
 
     expect(() =>

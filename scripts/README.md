@@ -15,9 +15,10 @@ should not be mixed into `scripts/` directories.
 
 Package scripts in the root `package.json` are the supported entrypoints. Prefer
 those over invoking files directly unless a GitHub workflow specifically needs the
-lower-level release step. Registry operations use pnpm except `oidc:trust`, whose
-TypeScript wrapper intentionally calls the official `npm trust` command because
-pnpm does not expose trusted-publisher governance.
+lower-level release step. Registry bootstrap and release planning use pnpm. `oidc:trust` intentionally calls
+the official `npm trust` command because pnpm does not expose trusted-publisher
+governance, and the final GitHub OIDC publication step invokes the npm CLI bundled
+with the selected Node.js runtime.
 
 Terminal output uses Node's `styleText()` through `lib/output.ts`. Style only
 status words, package/version identifiers, commands, and other key tokens; keep

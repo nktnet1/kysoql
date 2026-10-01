@@ -83,7 +83,9 @@ const collectStrings = (value: unknown, output: Set<string>): void => {
     return;
   }
   if (typeof value === "object" && value !== null) {
-    for (const item of Object.values(value as Readonly<Record<string, unknown>>)) {
+    for (const item of Object.values(
+      value as Readonly<Record<string, unknown>>,
+    )) {
       collectStrings(item, output);
     }
   }
@@ -93,9 +95,7 @@ const hasDesiredTrust = (value: unknown): boolean => {
   const strings = new Set<string>();
   collectStrings(value, strings);
   return (
-    strings.has(REPOSITORY) &&
-    strings.has(WORKFLOW) &&
-    strings.has(ENVIRONMENT)
+    strings.has(REPOSITORY) && strings.has(WORKFLOW) && strings.has(ENVIRONMENT)
   );
 };
 
@@ -106,7 +106,9 @@ const listTrust = (packageName: string): unknown | undefined => {
       ["trust", "list", packageName, "--json", "--registry", registry],
       { capture: true },
     ).trim();
-    return raw.length === 0 ? undefined : parseJson<unknown>(raw, "npm trust list");
+    return raw.length === 0
+      ? undefined
+      : parseJson<unknown>(raw, "npm trust list");
   } catch {
     // The create command below owns the supported interactive authentication flow.
     return undefined;
@@ -150,8 +152,9 @@ const printHelp = (): void => {
 Configures the GitHub Actions trusted publisher for every @kysoql package.
 This wrapper intentionally uses the official npm trust command because pnpm does
 not expose the package-governance API required to create trusted publishers.
-All normal install, build, pack, beta, release, and publish automation remains
-pnpm-based.
+Normal install, build, pack, beta, and release orchestration remains pnpm-based.
+The GitHub Actions publish job uses npm itself for the trusted-publishing OIDC
+exchange.
 
 Publisher:
   repository:  ${REPOSITORY}

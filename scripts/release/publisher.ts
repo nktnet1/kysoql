@@ -1,9 +1,9 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { lstatSync, readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { lstatSync, readdirSync, readFileSync, realpathSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 
-import { requireCommand, run } from "#scripts/lib/command";
+import { run } from "#scripts/lib/command";
 import { accent, success, warning } from "#scripts/lib/output";
 import {
   parseReleaseVersion,
@@ -11,6 +11,36 @@ import {
   versionFromReleaseTag,
 } from "#scripts/release/policy";
 import { readPackageManifestFromTarball } from "#scripts/release/tarball";
+
+const resolveNpmCli = (): string => {
+  const nodeDirectory = dirname(realpathSync(process.execPath));
+  const candidates = [
+    resolve(
+      nodeDirectory,
+      "..",
+      "lib",
+      "node_modules",
+      "npm",
+      "bin",
+      "npm-cli.js",
+    ),
+    resolve(nodeDirectory, "node_modules", "npm", "bin", "npm-cli.js"),
+    resolve(nodeDirectory, "..", "node_modules", "npm", "bin", "npm-cli.js"),
+  ];
+  for (const candidate of candidates) {
+    try {
+      const canonical = realpathSync(candidate);
+      if (lstatSync(canonical).isFile()) {
+        return canonical;
+      }
+    } catch {
+      // Try the next layout used by supported Node installations.
+    }
+  }
+  throw new Error(
+    `Unable to locate npm-cli.js next to the current Node.js executable: ${process.execPath}`,
+  );
+};
 
 export interface PublishReleasePackagesOptions {
   readonly root: string;
@@ -147,19 +177,20 @@ export const publishReleasePackages = ({
     return;
   }
 
-  requireCommand("pnpm");
+  const npmCli = resolveNpmCli();
+  const npmArgs = (args: readonly string[]): string[] => [npmCli, ...args];
   const isAlreadyPublished = (name: string, file: string): boolean => {
     const result = spawnSync(
-      "pnpm",
-      [
+      process.execPath,
+      npmArgs([
         "view",
         `${name}@${version}`,
         "dist.integrity",
         "--json",
         "--registry",
         registry,
-      ],
-      { encoding: "utf8", shell: process.platform === "win32" },
+      ]),
+      { encoding: "utf8" },
     );
 
     if (result.error) {
@@ -173,9 +204,18 @@ export const publishReleasePackages = ({
       if (result.status !== null && errorCode === "E404") {
         return false;
       }
+      const details = [result.stderr, result.stdout]
+        .filter(
+          (value): value is string =>
+            typeof value === "string" && value.trim().length > 0,
+        )
+        .map((value) => value.trim())
+        .join("\n");
       throw new Error(
-        `Registry lookup failed for ${name}@${version}: ` +
-          (result.stderr ?? result.stdout),
+        `Registry lookup failed for ${name}@${version}` +
+          (details.length > 0
+            ? `: ${details}`
+            : ` (npm exited with status ${result.status ?? "unknown"})`),
       );
     }
 
@@ -207,17 +247,20 @@ export const publishReleasePackages = ({
   });
 
   for (const { file } of pending) {
-    run("pnpm", [
-      "publish",
-      file,
-      "--registry",
-      registry,
-      "--access",
-      "public",
-      "--ignore-scripts",
-      "--tag",
-      distTag,
-    ]);
+    run(
+      process.execPath,
+      npmArgs([
+        "publish",
+        file,
+        "--registry",
+        registry,
+        "--access",
+        "public",
+        "--ignore-scripts",
+        "--tag",
+        distTag,
+      ]),
+    );
   }
 
   console.log(
