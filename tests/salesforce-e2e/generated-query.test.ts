@@ -8,7 +8,7 @@ import type { SalesforceSchema } from "../salesforce/salesforce.generated.ts";
 
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(testDir, "..", "..");
-const salesforceDir = path.join(repoRoot, "test", "salesforce");
+const salesforceDir = path.join(repoRoot, "tests", "salesforce");
 const salesforceE2eEnvironmentSchema = v.object({
   KYSOQL_TARGET_ORG: v.optional(
     v.pipe(

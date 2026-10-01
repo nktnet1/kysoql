@@ -10,7 +10,7 @@ import {
   repositoryRoot,
 } from "#scripts/lib/oclif";
 
-const salesforceDir = path.join(repositoryRoot, "test", "salesforce");
+const salesforceDir = path.join(repositoryRoot, "tests", "salesforce");
 
 class SalesforceApexBindSmoke extends Command {
   static description =

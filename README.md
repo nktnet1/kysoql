@@ -200,8 +200,7 @@ Vitest is configured at the workspace root and discovers tests under
 runs the focused SOQL semantic conformance matrix, which asserts exact rendered
 SOQL plus representative Salesforce-invalid combinations. `pnpm typecheck:test`
 checks those test files with their package-specific TypeScript configs and also
-checks root script tests under `tests/` plus the generated Salesforce fixture
-under `test/`.
+checks root script tests plus the generated Salesforce fixture under `tests/`.
 V8 coverage output is written to `coverage/`.
 
 The workspace pins TypeScript in `devDependencies`, and `.vscode/settings.json`
@@ -1165,7 +1164,7 @@ queries and bare `COUNT()` queries.
 
 ## Salesforce test org
 
-A reproducible scratch-org fixture is included under `test/salesforce`. It
+A reproducible scratch-org fixture is included under `tests/salesforce`. It
 contains standard Account/Contact data plus a `Kysoql_Record__c` custom object
 with representative scalar, picklist, external-ID, and relationship fields.
 

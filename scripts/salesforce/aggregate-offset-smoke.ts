@@ -10,7 +10,7 @@ import {
   repositoryRoot,
 } from "#scripts/lib/oclif";
 
-const salesforceDir = path.join(repositoryRoot, "test", "salesforce");
+const salesforceDir = path.join(repositoryRoot, "tests", "salesforce");
 
 interface QueryResponse {
   readonly status: number;

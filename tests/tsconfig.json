@@ -4,7 +4,11 @@
     "noEmit": true,
     "allowImportingTsExtensions": true,
     "rootDir": "..",
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "@kysoql/core": ["../packages/core/src/index.ts"],
+      "#/*": ["../packages/core/src/*.ts"]
+    }
   },
   "include": ["./**/*.ts"]
 }

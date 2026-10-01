@@ -102,7 +102,7 @@ it("repository-authored script entrypoints use TypeScript", async () => {
   const roots = [
     new URL("scripts/", root),
     new URL("apps/docs/scripts/", root),
-    new URL("test/salesforce-e2e/", root),
+    new URL("tests/salesforce-e2e/", root),
   ];
   const files = (await Promise.all(roots.map(walkFiles))).flat();
   const legacy = files
@@ -125,7 +125,6 @@ it("authored TypeScript avoids explicit any", async () => {
     new URL("packages/", root),
     new URL("scripts/", root),
     new URL("tests/", root),
-    new URL("test/salesforce-e2e/", root),
     new URL("apps/docs/scripts/", root),
     new URL("apps/docs/tests/", root),
     new URL("apps/docs/src/", root),
@@ -251,7 +250,7 @@ for (const [consumer, dependency] of [
 
 it("Salesforce generated-query E2E uses the generated schema type", async () => {
   const source = await readFile(
-    new URL("test/salesforce-e2e/generated-query.test.ts", root),
+    new URL("tests/salesforce-e2e/generated-query.test.ts", root),
     "utf8",
   );
   expect(source).toContain(
