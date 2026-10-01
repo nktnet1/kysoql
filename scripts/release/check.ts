@@ -1,5 +1,5 @@
-import { requireCommand, requireSupportedNode, run } from "../lib/command.ts";
-import { step, success } from "../lib/output.ts";
+import { requireCommand, requireSupportedNode, run } from "#scripts/lib/command";
+import { step, success } from "#scripts/lib/output";
 
 const runStep = (label: string, script: string): void => {
   console.log(`\n${step(label)}`);

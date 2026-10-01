@@ -1,6 +1,6 @@
-import { AliasNode } from "#/operation-node/alias-node";
-import { ReferenceNode } from "#/operation-node/reference-node";
-import { SelectionNode } from "#/operation-node/selection-node";
+import { AliasNode } from "#src/operation-node/alias-node";
+import { ReferenceNode } from "#src/operation-node/reference-node";
+import { SelectionNode } from "#src/operation-node/selection-node";
 import type {
   FieldDefinition,
   FieldName,
@@ -11,10 +11,10 @@ import type {
   ParentRelationshipName,
   ParentRelationshipNullable,
   PolymorphicRelationshipTypeTargets,
-} from "#/parser/reference-parser";
-import { parseSelectionAlias } from "#/parser/selection-alias-parser";
-import type { SalesforceFieldValue } from "#/schema";
-import type { Simplify } from "#/util/type-utils";
+} from "#src/parser/reference-parser";
+import { parseSelectionAlias } from "#src/parser/selection-alias-parser";
+import type { SalesforceFieldValue } from "#src/schema";
+import type { Simplify } from "#src/util/type-utils";
 
 export type SelectionReference<Selection extends string> =
   Selection extends `${infer Reference} as ${string}` ? Reference : Selection;

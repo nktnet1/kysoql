@@ -1,10 +1,10 @@
-import { encodeBase64Url } from "#/pkce";
+import { encodeBase64Url } from "#src/pkce";
 import {
   isRecord,
   nonEmptySecret,
   parseOAuthBaseUrl,
   parseOrigin,
-} from "#/validation";
+} from "#src/validation";
 
 type CryptoKey = Awaited<ReturnType<typeof globalThis.crypto.subtle.importKey>>;
 

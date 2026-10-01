@@ -5,7 +5,7 @@ import {
   createLocalStorageRefreshTokenStore,
   createMemoryRefreshTokenStore,
   createRedisRefreshTokenStore,
-} from "#/index";
+} from "#src/index";
 
 describe("refresh-token stores", () => {
   it("stores tokens in memory", async () => {

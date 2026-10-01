@@ -1,4 +1,7 @@
-export { SalesforceOAuthError, SalesforceOAuthResponseError } from "#/errors";
+export {
+  SalesforceOAuthError,
+  SalesforceOAuthResponseError,
+} from "#src/errors";
 export {
   type CodeCredentialsAuthorizationOptions,
   type CodeCredentialsNamedUserOptions,
@@ -11,15 +14,15 @@ export {
   type HeadlessAuthorizationRequest,
   type HeadlessGuestAuthorizationOptions,
   requestFirstPartyAuthorizationChallenge,
-} from "#/headless";
-export type { OAuthRequestOptions } from "#/http";
+} from "#src/headless";
+export type { OAuthRequestOptions } from "#src/http";
 export {
   createJwtBearerAssertion,
   createOAuthClientAssertion,
   type JwtBearerAssertionOptions,
   type OAuthClientAssertionOptions,
   type PrivateKeyInput,
-} from "#/jwt";
+} from "#src/jwt";
 export {
   type AccessTokenProvider,
   type AccessTokenRequest,
@@ -27,7 +30,7 @@ export {
   createStoredRefreshTokenAuth,
   type StoredRefreshTokenAuth,
   type StoredRefreshTokenAuthOptions,
-} from "#/manager";
+} from "#src/manager";
 export {
   type AuthorizationCodeOptions,
   type AuthorizationUrlOptions,
@@ -54,14 +57,18 @@ export {
   type SamlBearerOptions,
   type TokenExchangeOptions,
   type TokenExchangeSubjectTokenType,
-} from "#/oauth";
-export { createPkceChallenge, generatePkcePair, type PkcePair } from "#/pkce";
+} from "#src/oauth";
+export {
+  createPkceChallenge,
+  generatePkcePair,
+  type PkcePair,
+} from "#src/pkce";
 export {
   SalesforceAuth,
   type SalesforceAuthOptions,
   type SalesforceClientAssertionOptions,
   type SalesforceJwtBearerOptions,
-} from "#/salesforce-auth";
+} from "#src/salesforce-auth";
 export {
   createLocalStorageRefreshTokenStore,
   createMemoryRefreshTokenStore,
@@ -71,4 +78,4 @@ export {
   type RedisRefreshTokenStoreOptions,
   type RefreshTokenStore,
   type StorageLike,
-} from "#/storage";
+} from "#src/storage";

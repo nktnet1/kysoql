@@ -3,9 +3,9 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 
-import { forwardedArgs, requireCommand, run } from "../lib/command.ts";
-import { accent, strong, success, warning } from "../lib/output.ts";
-import { RELEASE_PACKAGES } from "./policy.ts";
+import { forwardedArgs, requireCommand, run } from "#scripts/lib/command";
+import { accent, strong, success, warning } from "#scripts/lib/output";
+import { RELEASE_PACKAGES } from "#scripts/release/policy";
 
 const BOOTSTRAP_VERSION = "0.0.0-bootstrap.0";
 const BOOTSTRAP_TAG = "bootstrap";

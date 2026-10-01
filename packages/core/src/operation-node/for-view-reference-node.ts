@@ -1,4 +1,4 @@
-import { freeze } from "#/util/object-utils";
+import { freeze } from "#src/util/object-utils";
 
 /** Salesforce FOR VIEW and FOR REFERENCE query modes. */
 export type ForViewReferenceMode = "view" | "reference";

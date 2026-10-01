@@ -1,15 +1,15 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { Kysoql } from "#/kysoql";
-import type { SelectQueryNode } from "#/operation-node/select-query-node";
-import { NoResultError } from "#/query-builder/no-result-error";
-import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import { Kysoql } from "#src/kysoql";
+import type { SelectQueryNode } from "#src/operation-node/select-query-node";
+import { NoResultError } from "#src/query-builder/no-result-error";
+import type { CompiledQuery } from "#src/query-compiler/compiled-query";
 import type {
   AbortableQueryOptions,
   QueryAbortSignal,
   QueryExecutor,
-} from "#/query-executor";
-import type { SalesforceField, SalesforceObject } from "#/schema";
-import type { Simplify } from "#/util/type-utils";
+} from "#src/query-executor";
+import type { SalesforceField, SalesforceObject } from "#src/schema";
+import type { Simplify } from "#src/util/type-utils";
 
 interface FixtureSchema {
   readonly Account: SalesforceObject<{

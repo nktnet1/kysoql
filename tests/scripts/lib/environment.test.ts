@@ -5,7 +5,7 @@ import {
   readSalesforceSetupEnvironment,
   readSalesforceTargetEnvironment,
   readSchemaGenerationEnvironment,
-} from "../../../scripts/lib/environment.ts";
+} from "#scripts/lib/environment";
 
 describe("script environment validation", () => {
   it("provides deterministic Salesforce defaults", () => {

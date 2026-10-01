@@ -1,7 +1,7 @@
-import type { AliasNode } from "#/operation-node/alias-node";
-import type { ReferenceNode } from "#/operation-node/reference-node";
-import type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
-import type { SelectQueryNode } from "#/operation-node/select-query-node";
+import type { AliasNode } from "#src/operation-node/alias-node";
+import type { ReferenceNode } from "#src/operation-node/reference-node";
+import type { RelationshipSubqueryNode } from "#src/operation-node/relationship-subquery-node";
+import type { SelectQueryNode } from "#src/operation-node/select-query-node";
 
 type QueryResultRecord = Record<string, unknown>;
 type SelectionContainer = SelectQueryNode | RelationshipSubqueryNode;

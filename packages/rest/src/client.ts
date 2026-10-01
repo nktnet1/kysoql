@@ -1,11 +1,11 @@
-import { SalesforceRestError } from "#/errors";
+import { SalesforceRestError } from "#src/errors";
 import {
   type HttpOptions,
   type RestRequestOptions,
   readJson,
   requestSignal,
   waitFor,
-} from "#/http";
+} from "#src/http";
 import {
   nonEmptySecret,
   parseApiVersion,
@@ -13,7 +13,7 @@ import {
   parseErrorDetails,
   parseOrigin,
   parseTimeout,
-} from "#/validation";
+} from "#src/validation";
 
 /** Deliberately pinned, not auto-upgraded when Salesforce publishes a release. */
 export const DEFAULT_API_VERSION = "65.0";

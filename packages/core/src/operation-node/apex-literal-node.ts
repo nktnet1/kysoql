@@ -1,4 +1,4 @@
-import { freeze } from "#/util/object-utils";
+import { freeze } from "#src/util/object-utils";
 
 /** Primitive literal values supported inside Apex bind expressions. */
 export type ApexLiteralValue = string | number;

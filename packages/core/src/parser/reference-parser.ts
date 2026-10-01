@@ -2,8 +2,8 @@ import type {
   SalesforceChildRelationship,
   SalesforceField,
   SalesforceParentRelationship,
-} from "#/schema";
-import type { NonNeverStringKey } from "#/util/type-utils";
+} from "#src/schema";
+import type { NonNeverStringKey } from "#src/util/type-utils";
 
 export type FieldsOf<DB, TB extends keyof DB> = DB[TB] extends {
   readonly fields: infer Fields;

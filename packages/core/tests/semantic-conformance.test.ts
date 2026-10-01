@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { Kysoql } from "#/kysoql";
+import { Kysoql } from "#src/kysoql";
 import type {
   SalesforceChildRelationship,
   SalesforceField,
   SalesforceObject,
   SalesforceParentRelationship,
-} from "#/schema";
-import { soqlRelativeDate } from "#/soql-relative-date-literal";
-import { soqlDate, soqlDateTime, soqlTime } from "#/soql-temporal-literal";
+} from "#src/schema";
+import { soqlRelativeDate } from "#src/soql-relative-date-literal";
+import { soqlDate, soqlDateTime, soqlTime } from "#src/soql-temporal-literal";
 
 /**
  * Representative semantic conformance matrix for the SOQL surface Kysoql exposes.

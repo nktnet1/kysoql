@@ -1,4 +1,4 @@
-import { freeze } from "#/util/object-utils";
+import { freeze } from "#src/util/object-utils";
 
 /** Immutable query AST node for a trusted raw SOQL fragment. */
 export interface RawNode {

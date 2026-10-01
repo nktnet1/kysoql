@@ -1,18 +1,18 @@
-import type { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
-import type { AliasNode } from "#/operation-node/alias-node";
-import type { AndNode } from "#/operation-node/and-node";
-import type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
-import type { FormatFunctionNode } from "#/operation-node/format-function-node";
-import type { NotNode } from "#/operation-node/not-node";
-import type { OperationNode } from "#/operation-node/operation-node";
-import type { OperatorNode } from "#/operation-node/operator-node";
-import type { OrNode } from "#/operation-node/or-node";
-import type { ReferenceNode } from "#/operation-node/reference-node";
-import type { SelectQueryNode } from "#/operation-node/select-query-node";
-import type { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
-import type { ValueListNode } from "#/operation-node/value-list-node";
-import type { ValueNode } from "#/operation-node/value-node";
-import type { SalesforceSchemaMetadata } from "#/schema";
+import type { AggregateFunctionNode } from "#src/operation-node/aggregate-function-node";
+import type { AliasNode } from "#src/operation-node/alias-node";
+import type { AndNode } from "#src/operation-node/and-node";
+import type { BinaryOperationNode } from "#src/operation-node/binary-operation-node";
+import type { FormatFunctionNode } from "#src/operation-node/format-function-node";
+import type { NotNode } from "#src/operation-node/not-node";
+import type { OperationNode } from "#src/operation-node/operation-node";
+import type { OperatorNode } from "#src/operation-node/operator-node";
+import type { OrNode } from "#src/operation-node/or-node";
+import type { ReferenceNode } from "#src/operation-node/reference-node";
+import type { SelectQueryNode } from "#src/operation-node/select-query-node";
+import type { ToLabelFunctionNode } from "#src/operation-node/to-label-function-node";
+import type { ValueListNode } from "#src/operation-node/value-list-node";
+import type { ValueNode } from "#src/operation-node/value-node";
+import type { SalesforceSchemaMetadata } from "#src/schema";
 
 interface RequiredRootFilterRule {
   readonly fields: ReadonlySet<string>;

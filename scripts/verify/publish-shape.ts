@@ -3,8 +3,8 @@ import { access, readFile } from "node:fs/promises";
 import { isAbsolute, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { accent, success } from "../lib/output.ts";
-import { collectPublicExports } from "./public-export-shape.ts";
+import { accent, success } from "#scripts/lib/output";
+import { collectPublicExports } from "#scripts/verify/public-export-shape";
 
 const ROOT_DIR = resolve(import.meta.dirname, "../..");
 const PUBLISHABLE_PACKAGES: readonly string[] = [

@@ -1,6 +1,6 @@
-import type { ReferenceNode } from "#/operation-node/reference-node";
-import { parseSoqlIdentifier } from "#/soql-identifier";
-import { freeze } from "#/util/object-utils";
+import type { ReferenceNode } from "#src/operation-node/reference-node";
+import { parseSoqlIdentifier } from "#src/soql-identifier";
+import { freeze } from "#src/util/object-utils";
 
 /** Immutable query AST node for one TYPEOF WHEN branch. */
 export interface TypeOfWhenNode {

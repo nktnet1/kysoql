@@ -1,6 +1,6 @@
-import type { ApexBindNode } from "#/operation-node/apex-bind-node";
-import { ValueNode } from "#/operation-node/value-node";
-import { freeze } from "#/util/object-utils";
+import type { ApexBindNode } from "#src/operation-node/apex-bind-node";
+import { ValueNode } from "#src/operation-node/value-node";
+import { freeze } from "#src/util/object-utils";
 
 /** Immutable query AST node for a SET OPTIONS clause. */
 export interface SetOptionsNode {

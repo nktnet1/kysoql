@@ -1,5 +1,5 @@
-import type { ApexBindExpressionNode } from "#/operation-node/apex-expression-node";
-import { freeze } from "#/util/object-utils";
+import type { ApexBindExpressionNode } from "#src/operation-node/apex-expression-node";
+import { freeze } from "#src/util/object-utils";
 
 type LimitValue = number | ApexBindExpressionNode;
 

@@ -1,16 +1,16 @@
-import { AliasNode } from "#/operation-node/alias-node";
+import { AliasNode } from "#src/operation-node/alias-node";
 import {
   DistanceFunctionNode,
   type DistanceUnit,
-} from "#/operation-node/distance-function-node";
-import { GeolocationFunctionNode } from "#/operation-node/geolocation-function-node";
-import { ReferenceNode } from "#/operation-node/reference-node";
+} from "#src/operation-node/distance-function-node";
+import { GeolocationFunctionNode } from "#src/operation-node/geolocation-function-node";
+import { ReferenceNode } from "#src/operation-node/reference-node";
 import type {
   FieldReferenceDefinition,
   FieldReferenceNullable,
-} from "#/parser/reference-parser";
-import { parseSelectionAlias } from "#/parser/selection-alias-parser";
-import { freeze } from "#/util/object-utils";
+} from "#src/parser/reference-parser";
+import { parseSelectionAlias } from "#src/parser/selection-alias-parser";
+import { freeze } from "#src/util/object-utils";
 
 declare const distanceFunctionCapabilitiesType: unique symbol;
 declare const distanceFunctionSelectionType: unique symbol;

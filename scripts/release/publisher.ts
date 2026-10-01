@@ -3,14 +3,14 @@ import { createHash } from "node:crypto";
 import { lstatSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { requireCommand, run } from "../lib/command.ts";
-import { accent, success, warning } from "../lib/output.ts";
+import { requireCommand, run } from "#scripts/lib/command";
+import { accent, success, warning } from "#scripts/lib/output";
 import {
   parseReleaseVersion,
   planRelease,
   versionFromReleaseTag,
-} from "./policy.ts";
-import { readPackageManifestFromTarball } from "./tarball.ts";
+} from "#scripts/release/policy";
+import { readPackageManifestFromTarball } from "#scripts/release/tarball";
 
 export interface PublishReleasePackagesOptions {
   readonly root: string;

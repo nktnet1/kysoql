@@ -1,7 +1,10 @@
-import { SalesforceOAuthError, SalesforceOAuthResponseError } from "#/errors";
-import { type OAuthRequestOptions, readJson, requestSignal } from "#/http";
-import { encodeBase64Url } from "#/pkce";
-import type { RefreshTokenStore } from "#/storage";
+import {
+  SalesforceOAuthError,
+  SalesforceOAuthResponseError,
+} from "#src/errors";
+import { type OAuthRequestOptions, readJson, requestSignal } from "#src/http";
+import { encodeBase64Url } from "#src/pkce";
+import type { RefreshTokenStore } from "#src/storage";
 import {
   isRecord,
   nonEmptySecret,
@@ -10,7 +13,7 @@ import {
   parseOAuthBaseUrl,
   parseOrigin,
   parseScope,
-} from "#/validation";
+} from "#src/validation";
 
 /**
  * Tokens and instance metadata returned by a Salesforce OAuth exchange.

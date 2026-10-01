@@ -5,14 +5,14 @@ import {
   type ApexDatabaseQueryOptions,
   apexAdd,
   apexBind,
-} from "#/apex-bind";
-import { Kysoql } from "#/kysoql";
-import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
+} from "#src/apex-bind";
+import { Kysoql } from "#src/kysoql";
+import { DefaultQueryCompiler } from "#src/query-compiler/default-query-compiler";
 import type {
   SalesforceField,
   SalesforceFieldMetadata,
   SalesforceObject,
-} from "#/schema";
+} from "#src/schema";
 
 type Field<Value = string, Type extends string = "string"> = SalesforceField<
   Value,

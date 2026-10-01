@@ -1,5 +1,5 @@
-import type { ReferenceNode } from "#/operation-node/reference-node";
-import { freeze } from "#/util/object-utils";
+import type { ReferenceNode } from "#src/operation-node/reference-node";
+import { freeze } from "#src/util/object-utils";
 
 /** Salesforce aggregate function names represented in the query AST. */
 export type AggregateFunction =

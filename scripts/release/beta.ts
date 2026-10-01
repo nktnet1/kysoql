@@ -8,10 +8,10 @@ import {
   requireCommand,
   requireSupportedNode,
   run,
-} from "../lib/command.ts";
-import { accent, strong } from "../lib/output.ts";
-import { nextBetaVersion } from "./beta-version.ts";
-import { parseReleaseVersion, RELEASE_PACKAGES } from "./policy.ts";
+} from "#scripts/lib/command";
+import { accent, strong } from "#scripts/lib/output";
+import { nextBetaVersion } from "#scripts/release/beta-version";
+import { parseReleaseVersion, RELEASE_PACKAGES } from "#scripts/release/policy";
 
 const ROOT_DIR = resolve(import.meta.dirname, "../..");
 const DEFAULT_REGISTRY = "https://registry.npmjs.org/";

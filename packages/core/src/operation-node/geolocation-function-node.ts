@@ -1,6 +1,6 @@
 import * as v from "valibot";
 
-import { freeze } from "#/util/object-utils";
+import { freeze } from "#src/util/object-utils";
 
 const LATITUDE_ERROR =
   "SOQL GEOLOCATION() latitude must be a finite number between -90 and 90.";

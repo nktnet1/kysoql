@@ -1,82 +1,82 @@
-import type { ApexBindExpression } from "#/apex-bind";
+import type { ApexBindExpression } from "#src/apex-bind";
 import {
   createSelectExpressionBuilder,
   type SelectExpressionBuilder,
-} from "#/expression/aggregate-function-builder";
+} from "#src/expression/aggregate-function-builder";
 import {
   type ApexWhereExpressionFactory,
   createApexExpressionBuilder,
-} from "#/expression/apex-expression-builder";
+} from "#src/expression/apex-expression-builder";
 import {
   createExpressionBuilder,
   type WhereExpressionFactory,
-} from "#/expression/expression-builder";
+} from "#src/expression/expression-builder";
 import {
   createGeolocationExpressionBuilder,
   type DistanceFunctionExpression,
   type GeolocationExpressionBuilder,
-} from "#/expression/geolocation-function-builder";
-import type { FieldsSelector } from "#/operation-node/fields-function-node";
-import type { ComparisonOperator } from "#/operation-node/operator-node";
+} from "#src/expression/geolocation-function-builder";
+import type { FieldsSelector } from "#src/operation-node/fields-function-node";
+import type { ComparisonOperator } from "#src/operation-node/operator-node";
 import {
   type OrderByDirection,
   OrderByItemNode,
   type OrderByNulls,
-} from "#/operation-node/order-by-item-node";
-import { QueryNode } from "#/operation-node/query-node";
-import { ReferenceNode } from "#/operation-node/reference-node";
-import { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
-import { SelectionNode } from "#/operation-node/selection-node";
+} from "#src/operation-node/order-by-item-node";
+import { QueryNode } from "#src/operation-node/query-node";
+import { ReferenceNode } from "#src/operation-node/reference-node";
+import { RelationshipSubqueryNode } from "#src/operation-node/relationship-subquery-node";
+import { SelectionNode } from "#src/operation-node/selection-node";
 import {
   type ApexOperandValueExpression,
   parseApexFilterBinaryOperation,
-} from "#/parser/apex-bind-parser";
+} from "#src/parser/apex-bind-parser";
 import {
   type ComparisonOperatorExpression,
   type FilterableFieldName,
   type OperandValueExpression,
   parseValueBinaryOperation,
-} from "#/parser/binary-operation-parser";
+} from "#src/parser/binary-operation-parser";
 import {
   type AvailableSelectExpression,
   type CheckedSelectExpressionList,
   type FieldsSelection,
   type FieldsSelectionCheck,
   parseFieldsSelection,
-} from "#/parser/fields-selection-parser";
-import { parseLimit } from "#/parser/limit-parser";
-import { parseOffset } from "#/parser/offset-parser";
+} from "#src/parser/fields-selection-parser";
+import { parseLimit } from "#src/parser/limit-parser";
+import { parseOffset } from "#src/parser/offset-parser";
 import {
   type OrderByNullsForReference,
   parseDistanceOrderBy,
   parseOrderBy,
   type SortableFieldName,
-} from "#/parser/order-by-parser";
+} from "#src/parser/order-by-parser";
 import type {
   ChildObjectName,
   ChildRelationshipName,
   ChildRelationshipReference,
-} from "#/parser/reference-parser";
+} from "#src/parser/reference-parser";
 import {
   parseSelectFunctionSelectArg,
   type SelectFunctionSelection,
   type SelectFunctionSelectionArg,
   validateUniqueSelectionAliases,
-} from "#/parser/select-function-parser";
+} from "#src/parser/select-function-parser";
 import {
   parseSelectArg,
   type SelectExpression,
   type Selection,
-} from "#/parser/select-parser";
-import type { SalesforceQueryResult } from "#/schema";
-import { isSoqlRawBuilder, type SoqlRawBuilder } from "#/soql";
-import { freeze } from "#/util/object-utils";
-import type { KysoqlTypeError } from "#/util/type-error";
+} from "#src/parser/select-parser";
+import type { SalesforceQueryResult } from "#src/schema";
+import { isSoqlRawBuilder, type SoqlRawBuilder } from "#src/soql";
+import { freeze } from "#src/util/object-utils";
+import type { KysoqlTypeError } from "#src/util/type-error";
 import type {
   ConditionalOutput,
   NarrowPartial,
   Simplify,
-} from "#/util/type-utils";
+} from "#src/util/type-utils";
 
 type ParentToChildDepth = readonly unknown[];
 

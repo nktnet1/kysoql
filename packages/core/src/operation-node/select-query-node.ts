@@ -1,36 +1,36 @@
-import type { AllRowsNode } from "#/operation-node/all-rows-node";
-import type { ApexAccessModeNode } from "#/operation-node/apex-access-mode-node";
-import type { ApexBindExpressionNode } from "#/operation-node/apex-expression-node";
-import type { DateFunctionNode } from "#/operation-node/date-function-node";
-import type { ForUpdateNode } from "#/operation-node/for-update-node";
-import type { ForViewReferenceNode } from "#/operation-node/for-view-reference-node";
+import type { AllRowsNode } from "#src/operation-node/all-rows-node";
+import type { ApexAccessModeNode } from "#src/operation-node/apex-access-mode-node";
+import type { ApexBindExpressionNode } from "#src/operation-node/apex-expression-node";
+import type { DateFunctionNode } from "#src/operation-node/date-function-node";
+import type { ForUpdateNode } from "#src/operation-node/for-update-node";
+import type { ForViewReferenceNode } from "#src/operation-node/for-view-reference-node";
 import {
   type AdvancedGroupByMode,
   GroupByNode,
-} from "#/operation-node/group-by-node";
-import { HavingNode } from "#/operation-node/having-node";
+} from "#src/operation-node/group-by-node";
+import { HavingNode } from "#src/operation-node/having-node";
 import {
   type KnowledgeUpdateMode,
   KnowledgeUpdateNode,
-} from "#/operation-node/knowledge-update-node";
-import type { LimitNode } from "#/operation-node/limit-node";
-import type { OffsetNode } from "#/operation-node/offset-node";
-import type { OperationNode } from "#/operation-node/operation-node";
-import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
-import { OrderByNode } from "#/operation-node/order-by-node";
-import type { RecordVisibilityContextNode } from "#/operation-node/record-visibility-context-node";
-import type { ReferenceNode } from "#/operation-node/reference-node";
-import type { SelectionNode } from "#/operation-node/selection-node";
-import type { SetOptionsNode } from "#/operation-node/set-options-node";
-import type { SObjectNode } from "#/operation-node/sobject-node";
-import type { UserProfileFeedWithNode } from "#/operation-node/user-profile-feed-with-node";
-import type { UsingScopeNode } from "#/operation-node/using-scope-node";
-import type { WhereNode } from "#/operation-node/where-node";
+} from "#src/operation-node/knowledge-update-node";
+import type { LimitNode } from "#src/operation-node/limit-node";
+import type { OffsetNode } from "#src/operation-node/offset-node";
+import type { OperationNode } from "#src/operation-node/operation-node";
+import type { OrderByItemNode } from "#src/operation-node/order-by-item-node";
+import { OrderByNode } from "#src/operation-node/order-by-node";
+import type { RecordVisibilityContextNode } from "#src/operation-node/record-visibility-context-node";
+import type { ReferenceNode } from "#src/operation-node/reference-node";
+import type { SelectionNode } from "#src/operation-node/selection-node";
+import type { SetOptionsNode } from "#src/operation-node/set-options-node";
+import type { SObjectNode } from "#src/operation-node/sobject-node";
+import type { UserProfileFeedWithNode } from "#src/operation-node/user-profile-feed-with-node";
+import type { UsingScopeNode } from "#src/operation-node/using-scope-node";
+import type { WhereNode } from "#src/operation-node/where-node";
 import {
   type DataCategorySelectionNode,
   WithDataCategoryNode,
-} from "#/operation-node/with-data-category-node";
-import { freeze } from "#/util/object-utils";
+} from "#src/operation-node/with-data-category-node";
+import { freeze } from "#src/util/object-utils";
 
 /** Immutable query AST node for a complete SELECT query. */
 export interface SelectQueryNode {

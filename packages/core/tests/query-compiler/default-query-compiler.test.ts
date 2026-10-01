@@ -1,13 +1,13 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import { Kysoql } from "#/kysoql";
-import type { CompiledQuery } from "#/query-compiler/compiled-query";
-import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
-import type { SalesforceField, SalesforceObject } from "#/schema";
-import { soql } from "#/soql";
-import { soqlRelativeDate } from "#/soql-relative-date-literal";
-import { soqlDate, soqlDateTime, soqlTime } from "#/soql-temporal-literal";
-import type { Simplify } from "#/util/type-utils";
+import { Kysoql } from "#src/kysoql";
+import type { CompiledQuery } from "#src/query-compiler/compiled-query";
+import { DefaultQueryCompiler } from "#src/query-compiler/default-query-compiler";
+import type { SalesforceField, SalesforceObject } from "#src/schema";
+import { soql } from "#src/soql";
+import { soqlRelativeDate } from "#src/soql-relative-date-literal";
+import { soqlDate, soqlDateTime, soqlTime } from "#src/soql-temporal-literal";
+import type { Simplify } from "#src/util/type-utils";
 
 interface FixtureSchema {
   readonly Account: SalesforceObject<{

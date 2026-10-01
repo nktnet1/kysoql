@@ -1,4 +1,4 @@
-import type { KysoqlTypeError } from "#/util/type-error";
+import type { KysoqlTypeError } from "#src/util/type-error";
 
 /**
  * Utility to reduce depth of TypeScript's internal type instantiation stack.

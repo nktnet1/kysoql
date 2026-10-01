@@ -1,5 +1,5 @@
-import type { ObjectFieldFilter, ObjectFieldFilters } from "#/config";
-import type { SalesforceObjectDescription } from "#/types";
+import type { ObjectFieldFilter, ObjectFieldFilters } from "#src/config";
+import type { SalesforceObjectDescription } from "#src/types";
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   value !== null &&

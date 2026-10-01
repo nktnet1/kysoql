@@ -15,8 +15,8 @@ import {
   requireCommand,
   requireSupportedNode,
   run,
-} from "../lib/command.ts";
-import { accent, danger, success, warning } from "../lib/output.ts";
+} from "#scripts/lib/command";
+import { accent, danger, success, warning } from "#scripts/lib/output";
 
 const ROOT_DIR = resolve(import.meta.dirname, "../..");
 const LICENSE_ID = "MIT";

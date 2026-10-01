@@ -1,5 +1,5 @@
-import { parseSoqlReference } from "#/soql-identifier";
-import { freeze } from "#/util/object-utils";
+import { parseSoqlReference } from "#src/soql-identifier";
+import { freeze } from "#src/util/object-utils";
 
 /** Immutable query AST node for an Apex bind reference. */
 export interface ApexBindNode {

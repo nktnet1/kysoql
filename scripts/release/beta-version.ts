@@ -1,4 +1,4 @@
-import { parseReleaseVersion } from "./policy.ts";
+import { parseReleaseVersion } from "#scripts/release/policy";
 
 /** Select a beta above the manifest, registry versions, and existing Git tags. */
 export const nextBetaVersion = (

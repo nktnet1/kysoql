@@ -1,12 +1,12 @@
-import type { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
-import type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
-import type { OperationNode } from "#/operation-node/operation-node";
-import type { OperatorNode } from "#/operation-node/operator-node";
-import type { ReferenceNode } from "#/operation-node/reference-node";
-import type { SelectQueryNode } from "#/operation-node/select-query-node";
-import type { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
-import type { ValueNode } from "#/operation-node/value-node";
-import type { SalesforceSchemaMetadata } from "#/schema";
+import type { AggregateFunctionNode } from "#src/operation-node/aggregate-function-node";
+import type { BinaryOperationNode } from "#src/operation-node/binary-operation-node";
+import type { OperationNode } from "#src/operation-node/operation-node";
+import type { OperatorNode } from "#src/operation-node/operator-node";
+import type { ReferenceNode } from "#src/operation-node/reference-node";
+import type { SelectQueryNode } from "#src/operation-node/select-query-node";
+import type { SemiJoinSubqueryNode } from "#src/operation-node/semi-join-subquery-node";
+import type { ValueNode } from "#src/operation-node/value-node";
+import type { SalesforceSchemaMetadata } from "#src/schema";
 
 const DATA360_GROUP_BY_ID_ERROR = "SOQL Data 360 queries cannot GROUP BY Id.";
 const DATA360_HAVING_ERROR =

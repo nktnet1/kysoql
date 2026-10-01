@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { Kysoql } from "#/kysoql";
-import { ReferenceNode } from "#/operation-node/reference-node";
-import { SelectQueryNode } from "#/operation-node/select-query-node";
-import { SelectionNode } from "#/operation-node/selection-node";
-import { SObjectNode } from "#/operation-node/sobject-node";
-import type { KnowledgeArticleUpdateCheck } from "#/parser/knowledge-update-parser";
-import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
+import { Kysoql } from "#src/kysoql";
+import { ReferenceNode } from "#src/operation-node/reference-node";
+import { SelectQueryNode } from "#src/operation-node/select-query-node";
+import { SelectionNode } from "#src/operation-node/selection-node";
+import { SObjectNode } from "#src/operation-node/sobject-node";
+import type { KnowledgeArticleUpdateCheck } from "#src/parser/knowledge-update-parser";
+import { DefaultQueryCompiler } from "#src/query-compiler/default-query-compiler";
 import type {
   SalesforceChildRelationship,
   SalesforceField,
   SalesforceObject,
-} from "#/schema";
+} from "#src/schema";
 
 type Field<Value = string, Type extends string = "string"> = SalesforceField<
   Value,

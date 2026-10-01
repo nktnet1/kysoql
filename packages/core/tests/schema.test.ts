@@ -4,7 +4,7 @@ import type {
   ChildRelationshipName,
   FieldName,
   ParentRelationshipName,
-} from "#/parser/reference-parser";
+} from "#src/parser/reference-parser";
 import type {
   SalesforceChildRelationship,
   SalesforceField,
@@ -19,13 +19,13 @@ import type {
   SalesforceObjectSupportedScope,
   SalesforceParentRelationship,
   SalesforceRow,
-} from "#/schema";
-import type { SoqlRelativeDateLiteral } from "#/soql-relative-date-literal";
+} from "#src/schema";
+import type { SoqlRelativeDateLiteral } from "#src/soql-relative-date-literal";
 import type {
   SoqlDateLiteral,
   SoqlDateTimeLiteral,
   SoqlTimeLiteral,
-} from "#/soql-temporal-literal";
+} from "#src/soql-temporal-literal";
 
 type FixtureObject = SalesforceObject<{
   readonly Id: SalesforceField<string, "id", false, true, true, true>;

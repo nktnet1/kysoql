@@ -1,6 +1,6 @@
 import type { Command } from "@oclif/core";
 
-import Generate from "#/commands/generate";
+import Generate from "#src/commands/generate";
 
 export const COMMANDS = {
   generate: Generate,

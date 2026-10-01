@@ -1,7 +1,7 @@
 import type { AbortableQueryOptions } from "@kysoql/core";
 
-import { SalesforceResponseError } from "#/errors";
-import { parseTimeout } from "#/validation";
+import { SalesforceResponseError } from "#src/errors";
+import { parseTimeout } from "#src/validation";
 
 /** Abort and timeout options shared by Salesforce REST operations. */
 export interface RestRequestOptions extends AbortableQueryOptions {

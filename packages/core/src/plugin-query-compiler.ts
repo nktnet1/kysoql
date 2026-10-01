@@ -1,13 +1,13 @@
-import type { SelectQueryNode } from "#/operation-node/select-query-node";
-import type { KysoqlPlugin } from "#/plugin";
-import { setCompiledQueryId } from "#/plugin-query-correlation";
-import { transformQueryWithPlugins } from "#/plugin-query-transformer";
-import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import type { SelectQueryNode } from "#src/operation-node/select-query-node";
+import type { KysoqlPlugin } from "#src/plugin";
+import { setCompiledQueryId } from "#src/plugin-query-correlation";
+import { transformQueryWithPlugins } from "#src/plugin-query-transformer";
+import type { CompiledQuery } from "#src/query-compiler/compiled-query";
 import type {
   QueryCompileContext,
   QueryCompiler,
-} from "#/query-compiler/query-compiler";
-import { createQueryId } from "#/query-id";
+} from "#src/query-compiler/query-compiler";
+import { createQueryId } from "#src/query-id";
 
 export class PluginQueryCompiler implements QueryCompiler {
   readonly #compiler: QueryCompiler;

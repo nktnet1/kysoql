@@ -1,11 +1,11 @@
-import type { OAuthRequestOptions } from "#/http";
+import type { OAuthRequestOptions } from "#src/http";
 import {
   refreshAccessToken,
   refreshHybridAccessToken,
   type SalesforceOAuthSession,
-} from "#/oauth";
-import type { RefreshTokenStore } from "#/storage";
-import { nonEmptySecret, parseOAuthBaseUrl } from "#/validation";
+} from "#src/oauth";
+import type { RefreshTokenStore } from "#src/storage";
+import { nonEmptySecret, parseOAuthBaseUrl } from "#src/validation";
 
 /**
  * Describes whether an access-token provider should force a token refresh.

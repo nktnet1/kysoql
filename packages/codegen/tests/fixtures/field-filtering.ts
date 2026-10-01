@@ -1,8 +1,8 @@
-import type { ObjectFieldFilters } from "#/config";
+import type { ObjectFieldFilters } from "#src/config";
 import type {
   SalesforceFieldDescription,
   SalesforceObjectDescription,
-} from "#/types";
+} from "#src/types";
 
 export const field = (
   name: string,

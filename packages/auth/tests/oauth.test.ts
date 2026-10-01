@@ -16,7 +16,7 @@ import {
   requestDeviceAuthorization,
   SalesforceOAuthError,
   SalesforceOAuthResponseError,
-} from "#/index";
+} from "#src/index";
 import { mockFetch, origin, tokenResponse } from "./helpers.js";
 
 const form = (init: RequestInit | undefined): URLSearchParams =>

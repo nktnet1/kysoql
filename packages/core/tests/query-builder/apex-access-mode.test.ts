@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { Kysoql } from "#/kysoql";
-import type { SalesforceField, SalesforceObject } from "#/schema";
+import { Kysoql } from "#src/kysoql";
+import type { SalesforceField, SalesforceObject } from "#src/schema";
 
 type Field<Value = string, Type extends string = "string"> = SalesforceField<
   Value,

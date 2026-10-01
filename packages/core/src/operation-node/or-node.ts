@@ -1,5 +1,5 @@
-import type { OperationNode } from "#/operation-node/operation-node";
-import { freeze } from "#/util/object-utils";
+import type { OperationNode } from "#src/operation-node/operation-node";
+import { freeze } from "#src/util/object-utils";
 
 /** Immutable query AST node for logical OR. */
 export interface OrNode {

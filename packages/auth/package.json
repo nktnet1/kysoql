@@ -21,7 +21,7 @@
   },
   "type": "module",
   "imports": {
-    "#/*": {
+    "#src/*": {
       "development": "./src/*.ts",
       "default": "./dist/*.js"
     }

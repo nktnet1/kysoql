@@ -5,7 +5,7 @@ import {
   type SoqlRelativeDateFamily,
   type SoqlRelativeDateValue,
   soqlRelativeDate,
-} from "#/soql-relative-date-literal";
+} from "#src/soql-relative-date-literal";
 
 type ExpectedRelativeDateFamily =
   | "LAST_N_DAYS"

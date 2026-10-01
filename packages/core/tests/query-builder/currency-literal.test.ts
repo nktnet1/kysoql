@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { Kysoql } from "#/kysoql";
-import type { SalesforceField, SalesforceObject } from "#/schema";
-import { isSoqlCurrencyLiteral, soqlCurrency } from "#/soql-currency-literal";
+import { Kysoql } from "#src/kysoql";
+import type { SalesforceField, SalesforceObject } from "#src/schema";
+import {
+  isSoqlCurrencyLiteral,
+  soqlCurrency,
+} from "#src/soql-currency-literal";
 
 type Field<
   Value,

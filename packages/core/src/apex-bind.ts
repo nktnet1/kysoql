@@ -1,15 +1,15 @@
 import * as v from "valibot";
 
-import { ApexBindNode } from "#/operation-node/apex-bind-node";
+import { ApexBindNode } from "#src/operation-node/apex-bind-node";
 import {
   ApexAdditionNode,
   type ApexBindExpressionNode,
   type ApexExpressionOperandNode,
   ApexQueryResultNode,
   ApexSubstringNode,
-} from "#/operation-node/apex-expression-node";
-import { ApexLiteralNode } from "#/operation-node/apex-literal-node";
-import type { ApexSelectQueryBuilder } from "#/query-builder/apex-select-query-builder";
+} from "#src/operation-node/apex-expression-node";
+import { ApexLiteralNode } from "#src/operation-node/apex-literal-node";
+import type { ApexSelectQueryBuilder } from "#src/query-builder/apex-select-query-builder";
 
 const APEX_BIND_EXPRESSION_ERROR =
   "Apex bind expressions must be identifiers or dotted member paths containing only letters, numbers, and underscores, and no path segment can start with a number.";

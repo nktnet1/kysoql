@@ -5,13 +5,13 @@ import {
   requireSupportedNode,
   run,
   succeeds,
-} from "../lib/command.ts";
-import { readSalesforceTargetEnvironment } from "../lib/environment.ts";
-import { errorLine } from "../lib/output.ts";
+} from "#scripts/lib/command";
+import { readSalesforceTargetEnvironment } from "#scripts/lib/environment";
+import { errorLine } from "#scripts/lib/output";
 import {
   repositoryCommandLoadOptions,
   repositoryRoot,
-} from "../lib/oclif.ts";
+} from "#scripts/lib/oclif";
 
 class SalesforceGeneratedE2E extends Command {
   static description =

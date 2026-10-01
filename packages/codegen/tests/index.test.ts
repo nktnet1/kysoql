@@ -10,7 +10,7 @@ import {
   renderSchema,
   type SalesforceDescribeClient,
   type SalesforceObjectDescription,
-} from "#/index";
+} from "#src/index";
 
 const account: SalesforceObjectDescription = {
   name: "Account",

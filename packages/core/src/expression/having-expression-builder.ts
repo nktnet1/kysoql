@@ -3,28 +3,28 @@ import {
   type AggregateFunctionModule,
   createSelectExpressionBuilder,
   type DateFunctionExpression,
-} from "#/expression/aggregate-function-builder";
-import { AndNode } from "#/operation-node/and-node";
-import { NotNode } from "#/operation-node/not-node";
-import type { OperationNode } from "#/operation-node/operation-node";
+} from "#src/expression/aggregate-function-builder";
+import { AndNode } from "#src/operation-node/and-node";
+import { NotNode } from "#src/operation-node/not-node";
+import type { OperationNode } from "#src/operation-node/operation-node";
 import type {
   ComparisonOperator,
   LikeComparisonOperator,
   MultiSelectComparisonOperator,
   OrderedComparisonOperator,
   SetComparisonOperator,
-} from "#/operation-node/operator-node";
-import { OrNode } from "#/operation-node/or-node";
+} from "#src/operation-node/operator-node";
+import { OrNode } from "#src/operation-node/or-node";
 import {
   type ComparisonOperatorExpression,
   type OperandValueExpression,
   parseOperationValueBinaryOperation,
-} from "#/parser/binary-operation-parser";
-import { validateGroupedDateFunctionNode } from "#/parser/date-function-parser";
-import { parseFilterBinaryOperation } from "#/parser/filter-parser";
-import type { GroupableFieldName } from "#/parser/group-by-parser";
-import { validateGroupingFunctionNode } from "#/parser/grouping-expression-parser";
-import type { SoqlLikeLiteral } from "#/soql-like-literal";
+} from "#src/parser/binary-operation-parser";
+import { validateGroupedDateFunctionNode } from "#src/parser/date-function-parser";
+import { parseFilterBinaryOperation } from "#src/parser/filter-parser";
+import type { GroupableFieldName } from "#src/parser/group-by-parser";
+import { validateGroupingFunctionNode } from "#src/parser/grouping-expression-parser";
+import type { SoqlLikeLiteral } from "#src/soql-like-literal";
 
 const HAVING_FIELD_GROUP_ERROR =
   "SOQL HAVING field references must also appear in GROUP BY.";

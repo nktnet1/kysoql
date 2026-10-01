@@ -1,57 +1,57 @@
 import {
   createExpressionBuilder,
   type WhereExpressionFactory,
-} from "#/expression/expression-builder";
-import { ForViewReferenceNode } from "#/operation-node/for-view-reference-node";
-import type { ComparisonOperator } from "#/operation-node/operator-node";
-import { QueryNode } from "#/operation-node/query-node";
-import { SelectQueryNode } from "#/operation-node/select-query-node";
-import { UsingScopeNode } from "#/operation-node/using-scope-node";
+} from "#src/expression/expression-builder";
+import { ForViewReferenceNode } from "#src/operation-node/for-view-reference-node";
+import type { ComparisonOperator } from "#src/operation-node/operator-node";
+import { QueryNode } from "#src/operation-node/query-node";
+import { SelectQueryNode } from "#src/operation-node/select-query-node";
+import { UsingScopeNode } from "#src/operation-node/using-scope-node";
 import type {
   ComparisonOperatorExpression,
   FilterableFieldName,
   OperandValueExpression,
-} from "#/parser/binary-operation-parser";
+} from "#src/parser/binary-operation-parser";
 import {
   type DataCategoryInput,
   type DataCategorySelector,
   parseDataCategorySelection,
-} from "#/parser/data-category-parser";
+} from "#src/parser/data-category-parser";
 import {
   parseFilterBinaryOperation,
   validateSemiJoinWhere,
-} from "#/parser/filter-parser";
-import type { KnowledgeArticleUpdateCheck } from "#/parser/knowledge-update-parser";
-import { parseLimit } from "#/parser/limit-parser";
+} from "#src/parser/filter-parser";
+import type { KnowledgeArticleUpdateCheck } from "#src/parser/knowledge-update-parser";
+import { parseLimit } from "#src/parser/limit-parser";
 import {
   parseRecordVisibilityContext,
   type RecordVisibilityContextOptions,
-} from "#/parser/record-visibility-context-parser";
+} from "#src/parser/record-visibility-context-parser";
 import {
   type Data360AggregateSetOptionsFor,
   parseSetOptions,
-} from "#/parser/set-options-parser";
+} from "#src/parser/set-options-parser";
 import {
   parseUserProfileFeedWithUserId,
   type UserProfileFeedWithUserIdCheck,
-} from "#/parser/user-profile-feed-parser";
+} from "#src/parser/user-profile-feed-parser";
 import {
   type ApexCountQueryBuilder,
   createApexCountQueryBuilder,
   createDynamicApexCountQueryBuilder,
-} from "#/query-builder/apex-count-query-builder";
-import type { CompiledQuery } from "#/query-compiler/compiled-query";
-import type { QueryCompiler } from "#/query-compiler/query-compiler";
-import type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
-import type { QueryId } from "#/query-id";
+} from "#src/query-builder/apex-count-query-builder";
+import type { CompiledQuery } from "#src/query-compiler/compiled-query";
+import type { QueryCompiler } from "#src/query-compiler/query-compiler";
+import type { AbortableQueryOptions, QueryExecutor } from "#src/query-executor";
+import type { QueryId } from "#src/query-id";
 import type {
   SalesforceObjectDataCategory,
   SalesforceObjectDataCategoryGroup,
   SalesforceObjectMruEnabled,
   SalesforceObjectSupportedScope,
-} from "#/schema";
-import { isSoqlRawBuilder, type SoqlRawBuilder } from "#/soql";
-import { freeze } from "#/util/object-utils";
+} from "#src/schema";
+import { isSoqlRawBuilder, type SoqlRawBuilder } from "#src/soql";
+import { freeze } from "#src/util/object-utils";
 
 /** Type-safe builder for Salesforce COUNT() queries. */
 export interface CountQueryBuilder<DB, TB extends keyof DB> {

@@ -1,9 +1,9 @@
-import type { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
-import type { FormatFunctionNode } from "#/operation-node/format-function-node";
-import type { AdvancedGroupByMode } from "#/operation-node/group-by-node";
-import { ReferenceNode } from "#/operation-node/reference-node";
-import type { SelectQueryNode } from "#/operation-node/select-query-node";
-import type { FieldReferenceDefinition } from "#/parser/reference-parser";
+import type { AggregateFunctionNode } from "#src/operation-node/aggregate-function-node";
+import type { FormatFunctionNode } from "#src/operation-node/format-function-node";
+import type { AdvancedGroupByMode } from "#src/operation-node/group-by-node";
+import { ReferenceNode } from "#src/operation-node/reference-node";
+import type { SelectQueryNode } from "#src/operation-node/select-query-node";
+import type { FieldReferenceDefinition } from "#src/parser/reference-parser";
 
 type HasCustomRelationshipSegment<Reference extends string> =
   Lowercase<Reference> extends `${string}__r.${string}` ? true : false;

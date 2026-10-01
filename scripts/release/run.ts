@@ -7,13 +7,13 @@ import {
   requireCommand,
   requireSupportedNode,
   run,
-} from "../lib/command.ts";
-import { accent, success, strong } from "../lib/output.ts";
+} from "#scripts/lib/command";
+import { accent, success, strong } from "#scripts/lib/output";
 import {
   parseReleaseVersion,
   RELEASE_PACKAGES,
   releaseTag,
-} from "./policy.ts";
+} from "#scripts/release/policy";
 
 const ROOT_DIR = resolve(import.meta.dirname, "../..");
 const VERSIONED_MANIFESTS = [
@@ -50,8 +50,9 @@ const writeVersion = async (
   return source;
 };
 
+// Preserve leading porcelain status columns. Only trailing whitespace is safe to trim.
 const git = (args: readonly string[]): string =>
-  run("git", args, { cwd: ROOT_DIR, capture: true }).trim();
+  run("git", args, { cwd: ROOT_DIR, capture: true }).trimEnd();
 
 const assertCleanWorktree = (): void => {
   if (git(["status", "--porcelain"]).length !== 0) {

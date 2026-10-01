@@ -12,7 +12,7 @@ import {
   type JsforceCountQueryResult,
   type JsforceExecutor,
   type JsforceQueryResult,
-} from "#/index";
+} from "#src/index";
 
 const referenceNode = (name: string): ReferenceNode => ({
   kind: "ReferenceNode",

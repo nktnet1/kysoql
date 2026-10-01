@@ -8,13 +8,13 @@ import type {
   SalesforceDataCategoryGroupsResponse,
   SalesforceDescribeClient,
   SalesforceObjectDescription,
-} from "#/types";
+} from "#src/types";
 import {
   parseSalesforceBigObjectMetadata,
   parseSalesforceDataCategoryGroups,
   parseSalesforceGlobalDescription,
   parseSalesforceObjectDescription,
-} from "#/validation";
+} from "#src/validation";
 
 /** Native metadata transport. No JSforce import or dependency is needed. */
 export const createRestDescribeClient = (

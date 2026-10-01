@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 
-import { nextBetaVersion } from "../../../scripts/release/beta-version.ts";
+import { nextBetaVersion } from "#scripts/release/beta-version";
 
 it("selects beta.1 when the release line has no beta yet", () => {
   expect(

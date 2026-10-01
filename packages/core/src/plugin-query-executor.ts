@@ -1,7 +1,7 @@
-import type { KysoqlPlugin } from "#/plugin";
-import { getOrCreateCompiledQueryId } from "#/plugin-query-correlation";
-import type { CompiledQuery } from "#/query-compiler/compiled-query";
-import type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
+import type { KysoqlPlugin } from "#src/plugin";
+import { getOrCreateCompiledQueryId } from "#src/plugin-query-correlation";
+import type { CompiledQuery } from "#src/query-compiler/compiled-query";
+import type { AbortableQueryOptions, QueryExecutor } from "#src/query-executor";
 
 const transformResult = async <Result>(
   plugins: readonly KysoqlPlugin[],

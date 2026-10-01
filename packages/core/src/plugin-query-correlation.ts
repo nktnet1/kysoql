@@ -1,5 +1,5 @@
-import type { CompiledQuery } from "#/query-compiler/compiled-query";
-import { createQueryId, type QueryId } from "#/query-id";
+import type { CompiledQuery } from "#src/query-compiler/compiled-query";
+import { createQueryId, type QueryId } from "#src/query-id";
 
 const queryIds = new WeakMap<CompiledQuery<unknown>, QueryId>();
 

@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { Kysoql } from "#/kysoql";
-import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
+import { Kysoql } from "#src/kysoql";
+import { DefaultQueryCompiler } from "#src/query-compiler/default-query-compiler";
 import type {
   SalesforceChildRelationship,
   SalesforceField,
   SalesforceObject,
-} from "#/schema";
+} from "#src/schema";
 
 type Field<Value = string, Type extends string = "string"> = SalesforceField<
   Value,

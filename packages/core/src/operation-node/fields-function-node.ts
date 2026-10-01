@@ -1,4 +1,4 @@
-import { freeze } from "#/util/object-utils";
+import { freeze } from "#src/util/object-utils";
 
 /** Selectors accepted by Salesforce FIELDS(). */
 export type FieldsSelector = "all" | "custom" | "standard";

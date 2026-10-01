@@ -8,12 +8,12 @@ import {
   requireCommand,
   requireSupportedNode,
   run,
-} from "../lib/command.ts";
-import { accent, success, warning } from "../lib/output.ts";
+} from "#scripts/lib/command";
+import { accent, success, warning } from "#scripts/lib/output";
 import {
   RELEASE_PACKAGES,
   versionFromReleaseTag,
-} from "./policy.ts";
+} from "#scripts/release/policy";
 
 const ROOT_DIR = resolve(import.meta.dirname, "../..");
 

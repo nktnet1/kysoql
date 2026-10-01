@@ -2,13 +2,13 @@ import path from "node:path";
 
 import { Command, Flags } from "@oclif/core";
 
-import { parseJson, requireCommand, run } from "../lib/command.ts";
-import { readSalesforceTargetEnvironment } from "../lib/environment.ts";
-import { accent, errorLine, success } from "../lib/output.ts";
+import { parseJson, requireCommand, run } from "#scripts/lib/command";
+import { readSalesforceTargetEnvironment } from "#scripts/lib/environment";
+import { accent, errorLine, success } from "#scripts/lib/output";
 import {
   repositoryCommandLoadOptions,
   repositoryRoot,
-} from "../lib/oclif.ts";
+} from "#scripts/lib/oclif";
 
 const salesforceDir = path.join(repositoryRoot, "test", "salesforce");
 

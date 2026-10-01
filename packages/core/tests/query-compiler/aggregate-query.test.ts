@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { Kysoql } from "#/kysoql";
+import { Kysoql } from "#src/kysoql";
 import type {
   SalesforceField,
   SalesforceObject,
   SalesforceParentRelationship,
-} from "#/schema";
-import { soqlDate } from "#/soql-temporal-literal";
+} from "#src/schema";
+import { soqlDate } from "#src/soql-temporal-literal";
 
 type AggregatableField<
   Value,

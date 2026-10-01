@@ -1,15 +1,15 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import { Kysoql } from "#/kysoql";
-import { LimitNode } from "#/operation-node/limit-node";
-import { SelectQueryNode } from "#/operation-node/select-query-node";
-import type { KysoqlPlugin, PluginTransformResultArgs } from "#/plugin";
-import type { CompiledQuery } from "#/query-compiler/compiled-query";
-import type { QueryCompiler } from "#/query-compiler/query-compiler";
-import { QueryCreator } from "#/query-creator";
-import type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
-import type { QueryId } from "#/query-id";
-import type { SalesforceField, SalesforceObject } from "#/schema";
+import { Kysoql } from "#src/kysoql";
+import { LimitNode } from "#src/operation-node/limit-node";
+import { SelectQueryNode } from "#src/operation-node/select-query-node";
+import type { KysoqlPlugin, PluginTransformResultArgs } from "#src/plugin";
+import type { CompiledQuery } from "#src/query-compiler/compiled-query";
+import type { QueryCompiler } from "#src/query-compiler/query-compiler";
+import { QueryCreator } from "#src/query-creator";
+import type { AbortableQueryOptions, QueryExecutor } from "#src/query-executor";
+import type { QueryId } from "#src/query-id";
+import type { SalesforceField, SalesforceObject } from "#src/schema";
 
 interface FixtureSchema {
   readonly Account: SalesforceObject<{

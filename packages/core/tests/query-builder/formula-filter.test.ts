@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { apexBind } from "#/apex-bind";
-import { Kysoql } from "#/kysoql";
-import type { SalesforceField, SalesforceObject } from "#/schema";
-import { soqlDate, soqlDateTime } from "#/soql-temporal-literal";
+import { apexBind } from "#src/apex-bind";
+import { Kysoql } from "#src/kysoql";
+import type { SalesforceField, SalesforceObject } from "#src/schema";
+import { soqlDate, soqlDateTime } from "#src/soql-temporal-literal";
 
 type Field<
   Value,

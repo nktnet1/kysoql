@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { basename, resolve } from "node:path";
 
-import { accent, success } from "../lib/output.ts";
+import { accent, success } from "#scripts/lib/output";
 
 const ROOT_DIR = resolve(import.meta.dirname, "../..");
 const PUBLISHABLE_PACKAGES: readonly string[] = [

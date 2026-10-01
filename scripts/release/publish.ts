@@ -2,8 +2,8 @@ import { realpathSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 
-import { forwardedArgs } from "../lib/command.ts";
-import { publishReleasePackages } from "./publisher.ts";
+import { forwardedArgs } from "#scripts/lib/command";
+import { publishReleasePackages } from "#scripts/release/publisher";
 
 const { values } = parseArgs({
   args: forwardedArgs(),

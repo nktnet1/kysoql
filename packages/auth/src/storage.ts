@@ -1,4 +1,4 @@
-import { nonEmptySecret, nonEmptyText } from "#/validation";
+import { nonEmptySecret, nonEmptyText } from "#src/validation";
 
 /**
  * Minimal async store used to load and persist Salesforce refresh tokens.

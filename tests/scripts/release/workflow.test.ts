@@ -2,7 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 
 import { expect, it } from "vitest";
 
-import { RELEASE_PACKAGES } from "../../../scripts/release/policy.ts";
+import { RELEASE_PACKAGES } from "#scripts/release/policy";
 
 const root = new URL("../../../", import.meta.url);
 const readText = (relativePath: string): Promise<string> =>

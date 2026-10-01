@@ -3,163 +3,163 @@ import {
   createSelectExpressionBuilder,
   type DateFunctionExpression,
   type SelectExpressionBuilder,
-} from "#/expression/aggregate-function-builder";
+} from "#src/expression/aggregate-function-builder";
 import {
   createExpressionBuilder,
   type WhereExpressionFactory,
-} from "#/expression/expression-builder";
+} from "#src/expression/expression-builder";
 import {
   createGeolocationExpressionBuilder,
   type DistanceFunctionExpression,
   type GeolocationExpressionBuilder,
-} from "#/expression/geolocation-function-builder";
-import type { FieldsSelector } from "#/operation-node/fields-function-node";
-import { ForViewReferenceNode } from "#/operation-node/for-view-reference-node";
-import type { ComparisonOperator } from "#/operation-node/operator-node";
+} from "#src/expression/geolocation-function-builder";
+import type { FieldsSelector } from "#src/operation-node/fields-function-node";
+import { ForViewReferenceNode } from "#src/operation-node/for-view-reference-node";
+import type { ComparisonOperator } from "#src/operation-node/operator-node";
 import {
   type OrderByDirection,
   OrderByItemNode,
   type OrderByNulls,
-} from "#/operation-node/order-by-item-node";
-import { QueryNode } from "#/operation-node/query-node";
-import { ReferenceNode } from "#/operation-node/reference-node";
-import { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
-import { SelectQueryNode } from "#/operation-node/select-query-node";
-import { SelectionNode } from "#/operation-node/selection-node";
-import type { TypeOfNode } from "#/operation-node/type-of-node";
-import { UsingScopeNode } from "#/operation-node/using-scope-node";
+} from "#src/operation-node/order-by-item-node";
+import { QueryNode } from "#src/operation-node/query-node";
+import { ReferenceNode } from "#src/operation-node/reference-node";
+import { RelationshipSubqueryNode } from "#src/operation-node/relationship-subquery-node";
+import { SelectQueryNode } from "#src/operation-node/select-query-node";
+import { SelectionNode } from "#src/operation-node/selection-node";
+import type { TypeOfNode } from "#src/operation-node/type-of-node";
+import { UsingScopeNode } from "#src/operation-node/using-scope-node";
 import {
   type AggregateSelection,
   type AggregateSelectionArg,
   parseAggregateSelectArg,
   parseCountSelectArg,
-} from "#/parser/aggregate-selection-parser";
+} from "#src/parser/aggregate-selection-parser";
 import type {
   ComparisonOperatorExpression,
   FilterableFieldName,
   OperandValueExpression,
-} from "#/parser/binary-operation-parser";
+} from "#src/parser/binary-operation-parser";
 import {
   type DataCategoryInput,
   type DataCategorySelector,
   parseDataCategorySelection,
-} from "#/parser/data-category-parser";
+} from "#src/parser/data-category-parser";
 import {
   parseDateGroupByExpression,
   validateDateFunctionSelections,
-} from "#/parser/date-function-parser";
+} from "#src/parser/date-function-parser";
 import {
   type AvailableSelectExpression,
   type CheckedSelectExpressionList,
   type FieldsSelection,
   type FieldsSelectionCheck,
   parseFieldsSelection,
-} from "#/parser/fields-selection-parser";
+} from "#src/parser/fields-selection-parser";
 import {
   parseFilterBinaryOperation,
   validateSemiJoinWhere,
-} from "#/parser/filter-parser";
+} from "#src/parser/filter-parser";
 import {
   type GroupableFieldName,
   parseGroupBy,
-} from "#/parser/group-by-parser";
-import { validateGroupingSelections } from "#/parser/grouping-expression-parser";
-import type { KnowledgeArticleUpdateCheck } from "#/parser/knowledge-update-parser";
-import { parseLimit } from "#/parser/limit-parser";
-import { parseOffset } from "#/parser/offset-parser";
+} from "#src/parser/group-by-parser";
+import { validateGroupingSelections } from "#src/parser/grouping-expression-parser";
+import type { KnowledgeArticleUpdateCheck } from "#src/parser/knowledge-update-parser";
+import { parseLimit } from "#src/parser/limit-parser";
+import { parseOffset } from "#src/parser/offset-parser";
 import {
   type OrderByNullsForReference,
   parseDistanceOrderBy,
   parseOrderBy,
   type SortableFieldName,
-} from "#/parser/order-by-parser";
+} from "#src/parser/order-by-parser";
 import {
   parseRecordVisibilityContext,
   type RecordVisibilityContextOptions,
-} from "#/parser/record-visibility-context-parser";
+} from "#src/parser/record-visibility-context-parser";
 import type {
   ChildObjectName,
   ChildRelationshipName,
   ChildRelationshipReference,
-} from "#/parser/reference-parser";
+} from "#src/parser/reference-parser";
 import {
   isSelectFunctionSelectionArg,
   parseSelectFunctionSelectArg,
   type SelectFunctionSelection,
   type SelectFunctionSelectionArg,
   validateUniqueSelectionAliases,
-} from "#/parser/select-function-parser";
+} from "#src/parser/select-function-parser";
 import {
   parseSelectArg,
   type SelectExpression,
   type Selection,
-} from "#/parser/select-parser";
+} from "#src/parser/select-parser";
 import {
   type Data360SetOptionsFor,
   parseSetOptions,
-} from "#/parser/set-options-parser";
+} from "#src/parser/set-options-parser";
 import {
   type AvailableTypeOfReference,
   type PolymorphicRelationshipReference,
   type PolymorphicRelationshipTargets,
   type TypeOfSelection,
   validateTypeOfSelections,
-} from "#/parser/type-of-parser";
+} from "#src/parser/type-of-parser";
 import {
   parseUserProfileFeedWithUserId,
   type UserProfileFeedWithUserIdCheck,
-} from "#/parser/user-profile-feed-parser";
+} from "#src/parser/user-profile-feed-parser";
 import {
   type AggregateSelectQueryBuilder,
   createAggregateSelectQueryBuilder,
   createGroupedSelectQueryBuilder,
-} from "#/query-builder/aggregate-select-query-builder";
+} from "#src/query-builder/aggregate-select-query-builder";
 import {
   type ApexSelectQueryBuilder,
   createApexSelectQueryBuilder,
   createDynamicApexSelectQueryBuilder,
-} from "#/query-builder/apex-select-query-builder";
+} from "#src/query-builder/apex-select-query-builder";
 import {
   type CountQueryBuilder,
   createCountQueryBuilder,
-} from "#/query-builder/count-query-builder";
+} from "#src/query-builder/count-query-builder";
 import {
   type ExecuteTakeFirstOrThrowOptions,
   isNoResultErrorConstructor,
   NoResultError,
   type NoResultErrorConstructor,
-} from "#/query-builder/no-result-error";
+} from "#src/query-builder/no-result-error";
 import {
   createRelationshipSubqueryBuilder,
   type RelationshipSubqueryBuilder,
-} from "#/query-builder/relationship-subquery-builder";
+} from "#src/query-builder/relationship-subquery-builder";
 import {
   createTypeOfBuilder,
   type TypeOfBuilder,
   type TypeOfBuilderHandled,
   type TypeOfBuilderHasElse,
   type TypeOfBuilderOutput,
-} from "#/query-builder/type-of-builder";
-import type { CompiledQuery } from "#/query-compiler/compiled-query";
-import type { QueryCompiler } from "#/query-compiler/query-compiler";
-import type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
-import type { QueryId } from "#/query-id";
-import { applyQueryResultAliases } from "#/query-result-mapper";
+} from "#src/query-builder/type-of-builder";
+import type { CompiledQuery } from "#src/query-compiler/compiled-query";
+import type { QueryCompiler } from "#src/query-compiler/query-compiler";
+import type { AbortableQueryOptions, QueryExecutor } from "#src/query-executor";
+import type { QueryId } from "#src/query-id";
+import { applyQueryResultAliases } from "#src/query-result-mapper";
 import type {
   SalesforceObjectDataCategory,
   SalesforceObjectDataCategoryGroup,
   SalesforceObjectMruEnabled,
   SalesforceObjectSupportedScope,
   SalesforceQueryResult,
-} from "#/schema";
-import { isSoqlRawBuilder, type SoqlRawBuilder } from "#/soql";
-import { freeze } from "#/util/object-utils";
-import type { KysoqlTypeError } from "#/util/type-error";
+} from "#src/schema";
+import { isSoqlRawBuilder, type SoqlRawBuilder } from "#src/soql";
+import { freeze } from "#src/util/object-utils";
+import type { KysoqlTypeError } from "#src/util/type-error";
 import type {
   ConditionalOutput,
   NarrowPartial,
   Simplify,
-} from "#/util/type-utils";
+} from "#src/util/type-utils";
 
 type ChildObjectForRelationship<
   DB,

@@ -2,12 +2,12 @@ import { fileURLToPath } from "node:url";
 
 import { Command, Flags } from "@oclif/core";
 
-import { requireCommand, requireSupportedNode, run } from "../lib/command.ts";
-import { errorLine } from "../lib/output.ts";
+import { requireCommand, requireSupportedNode, run } from "#scripts/lib/command";
+import { errorLine } from "#scripts/lib/output";
 import {
   repositoryCommandLoadOptions,
   repositoryRoot,
-} from "../lib/oclif.ts";
+} from "#scripts/lib/oclif";
 
 class GenerateSalesforceSchema extends Command {
   static description =

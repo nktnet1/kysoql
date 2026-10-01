@@ -5,26 +5,26 @@ export {
   type RestClient,
   type RestClientOptions,
   type RestGetOptions,
-} from "#/client";
+} from "#src/client";
 export {
   SalesforceOAuthError,
   SalesforceQueryLimitError,
   SalesforceResponseError,
   SalesforceRestError,
   type SalesforceRestErrorDetail,
-} from "#/errors";
+} from "#src/errors";
 export {
   createRestExecutor,
   type RestExecutor,
   type RestPaginationOptions,
   type RestQueryOptions,
   type RestQueryPage,
-} from "#/executor";
-export type { HttpOptions, RestRequestOptions } from "#/http";
+} from "#src/executor";
+export type { HttpOptions, RestRequestOptions } from "#src/http";
 export {
   authenticateClientCredentials,
   type ClientCredentialsOptions,
   type RefreshTokenOptions,
   refreshAccessToken,
   type SalesforceOAuthSession,
-} from "#/oauth";
+} from "#src/oauth";

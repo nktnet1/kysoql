@@ -1,4 +1,5 @@
 pre-commit:
+  follow: true
   commands:
     validate:
       glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc,css}"

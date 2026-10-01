@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { apexAdd, apexBind } from "#/apex-bind";
-import { Kysoql } from "#/kysoql";
-import type { SalesforceField, SalesforceObject } from "#/schema";
+import { apexAdd, apexBind } from "#src/apex-bind";
+import { Kysoql } from "#src/kysoql";
+import type { SalesforceField, SalesforceObject } from "#src/schema";
 
 type Field<
   Value = string,

@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { collectPublicExports } from "../../../scripts/verify/public-export-shape.ts";
+import { collectPublicExports } from "#scripts/verify/public-export-shape";
 
 describe("collectPublicExports", () => {
   it("separates named runtime and type-only exports", () => {
     const exports = collectPublicExports(
       `
-        export { runtimeValue, sourceName as alias, type InlineType } from "./module";
-        export type { TypeOnly, OtherType as RenamedType } from "./types";
-        export * as namespaceValue from "./namespace";
-        export type * as namespaceType from "./namespace-types";
+        export { runtimeValue, sourceName as alias, type InlineType } from "#tests/scripts/verify/module";
+        export type { TypeOnly, OtherType as RenamedType } from "#tests/scripts/verify/types";
+        export * as namespaceValue from "#tests/scripts/verify/namespace";
+        export type * as namespaceType from "#tests/scripts/verify/namespace-types";
       `,
       "fixture",
     );
@@ -92,7 +92,7 @@ describe("collectPublicExports", () => {
 
   it("rejects wildcard and export-equals surfaces that cannot be verified exactly", () => {
     expect(() =>
-      collectPublicExports('export * from "./module";', "fixture"),
+      collectPublicExports('export * from "#tests/scripts/verify/module";', "fixture"),
     ).toThrow(/wildcard export/u);
     expect(() => collectPublicExports("export = value;", "fixture")).toThrow(
       /export-equals/u,

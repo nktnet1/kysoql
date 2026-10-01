@@ -5,7 +5,7 @@ import {
   soqlDate,
   soqlDateTime,
   soqlTime,
-} from "#/soql-temporal-literal";
+} from "#src/soql-temporal-literal";
 
 describe("SOQL temporal literals", () => {
   it("creates frozen date, dateTime, and time literals", () => {

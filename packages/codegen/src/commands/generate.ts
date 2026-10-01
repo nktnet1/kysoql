@@ -1,14 +1,14 @@
 import { DEFAULT_API_VERSION } from "@kysoql/rest";
 import { Command, Flags } from "@oclif/core";
 
-import { loadAuthProvider } from "#/auth-loader";
+import { loadAuthProvider } from "#src/auth-loader";
 import {
   loadConfig,
   parseKysoqlConfig,
   resolveGenerateOptions,
-} from "#/config-loader";
-import { generateSchema } from "#/index";
-import { createRestDescribeClient } from "#/rest-client";
+} from "#src/config-loader";
+import { generateSchema } from "#src/index";
+import { createRestDescribeClient } from "#src/rest-client";
 
 export default class Generate extends Command {
   static description =

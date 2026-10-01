@@ -1,6 +1,6 @@
-import type { ConvertTimezoneFunctionNode } from "#/operation-node/convert-timezone-function-node";
-import type { ReferenceNode } from "#/operation-node/reference-node";
-import { freeze } from "#/util/object-utils";
+import type { ConvertTimezoneFunctionNode } from "#src/operation-node/convert-timezone-function-node";
+import type { ReferenceNode } from "#src/operation-node/reference-node";
+import { freeze } from "#src/util/object-utils";
 
 /** Salesforce date and fiscal date function names supported by Kysoql. */
 export type DateFunction =

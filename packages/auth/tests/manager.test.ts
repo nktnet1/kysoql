@@ -4,7 +4,7 @@ import { describe, it } from "vitest";
 import {
   createMemoryRefreshTokenStore,
   createStoredRefreshTokenAuth,
-} from "#/index";
+} from "#src/index";
 import { mockFetch, origin, tokenResponse } from "./helpers.js";
 
 describe("stored refresh-token auth", () => {

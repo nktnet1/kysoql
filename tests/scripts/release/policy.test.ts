@@ -7,7 +7,7 @@ import {
   releaseTag,
   versionFromReleaseTag,
   type ReleaseArtifact,
-} from "../../../scripts/release/policy.ts";
+} from "#scripts/release/policy";
 
 const VERSION = "1.2.3-beta.4";
 

@@ -1,4 +1,4 @@
-import { freeze } from "#/util/object-utils";
+import { freeze } from "#src/util/object-utils";
 
 /** Salesforce Knowledge UPDATE TRACKING and UPDATE VIEWSTAT modes. */
 export type KnowledgeUpdateMode = "tracking" | "viewstat";

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { Kysoql } from "#/kysoql";
-import type { SalesforceField, SalesforceObject } from "#/schema";
-import { soqlMultiSelectAnd } from "#/soql-multi-select-literal";
+import { Kysoql } from "#src/kysoql";
+import type { SalesforceField, SalesforceObject } from "#src/schema";
+import { soqlMultiSelectAnd } from "#src/soql-multi-select-literal";
 
 type MultiPicklistField = SalesforceField<
   string,

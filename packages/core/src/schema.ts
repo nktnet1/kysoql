@@ -1,10 +1,10 @@
-import type { SoqlRelativeDateLiteral } from "#/soql-relative-date-literal";
+import type { SoqlRelativeDateLiteral } from "#src/soql-relative-date-literal";
 import type {
   SoqlDateLiteral,
   SoqlDateTimeLiteral,
   SoqlTimeLiteral,
-} from "#/soql-temporal-literal";
-import type { NonNeverStringKey } from "#/util/type-utils";
+} from "#src/soql-temporal-literal";
+import type { NonNeverStringKey } from "#src/util/type-utils";
 
 /**
  * Metadata that describes Salesforce field capabilities in a Kysoql schema.

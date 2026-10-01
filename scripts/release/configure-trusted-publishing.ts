@@ -6,9 +6,9 @@ import {
   parseJson,
   requireCommand,
   run,
-} from "../lib/command.ts";
-import { accent, strong, success, warning } from "../lib/output.ts";
-import { RELEASE_PACKAGES } from "./policy.ts";
+} from "#scripts/lib/command";
+import { accent, strong, success, warning } from "#scripts/lib/output";
+import { RELEASE_PACKAGES } from "#scripts/release/policy";
 
 const DEFAULT_REGISTRY = "https://registry.npmjs.org/";
 const REPOSITORY = "nktnet1/kysoql";

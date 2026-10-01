@@ -1,4 +1,4 @@
-import { freeze } from "#/util/object-utils";
+import { freeze } from "#src/util/object-utils";
 
 /** Immutable query AST node for the FOR UPDATE clause. */
 export interface ForUpdateNode {

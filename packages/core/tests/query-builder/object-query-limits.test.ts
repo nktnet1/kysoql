@@ -1,20 +1,20 @@
 import { describe, expect, it } from "vitest";
 
-import { Kysoql } from "#/kysoql";
-import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
-import { OperatorNode } from "#/operation-node/operator-node";
-import { QueryNode } from "#/operation-node/query-node";
-import { ReferenceNode } from "#/operation-node/reference-node";
-import { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
-import { SObjectNode } from "#/operation-node/sobject-node";
-import { ValueNode } from "#/operation-node/value-node";
-import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
+import { Kysoql } from "#src/kysoql";
+import { BinaryOperationNode } from "#src/operation-node/binary-operation-node";
+import { OperatorNode } from "#src/operation-node/operator-node";
+import { QueryNode } from "#src/operation-node/query-node";
+import { ReferenceNode } from "#src/operation-node/reference-node";
+import { SemiJoinSubqueryNode } from "#src/operation-node/semi-join-subquery-node";
+import { SObjectNode } from "#src/operation-node/sobject-node";
+import { ValueNode } from "#src/operation-node/value-node";
+import { DefaultQueryCompiler } from "#src/query-compiler/default-query-compiler";
 import type {
   SalesforceField,
   SalesforceObject,
   SalesforceParentRelationship,
-} from "#/schema";
-import { soqlDateTime } from "#/soql-temporal-literal";
+} from "#src/schema";
+import { soqlDateTime } from "#src/soql-temporal-literal";
 
 type Field<Value = string, Type extends string = "string"> = SalesforceField<
   Value,

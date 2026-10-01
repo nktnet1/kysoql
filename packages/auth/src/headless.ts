@@ -1,6 +1,9 @@
-import { SalesforceOAuthError, SalesforceOAuthResponseError } from "#/errors";
-import { type OAuthRequestOptions, readJson, requestSignal } from "#/http";
-import { encodeBase64Url } from "#/pkce";
+import {
+  SalesforceOAuthError,
+  SalesforceOAuthResponseError,
+} from "#src/errors";
+import { type OAuthRequestOptions, readJson, requestSignal } from "#src/http";
+import { encodeBase64Url } from "#src/pkce";
 import {
   isRecord,
   nonEmptySecret,
@@ -8,7 +11,7 @@ import {
   parseAbsoluteRedirectUri,
   parseOAuthBaseUrl,
   parseScope,
-} from "#/validation";
+} from "#src/validation";
 
 /**
  * Fetch-compatible request data for a Salesforce Headless Identity

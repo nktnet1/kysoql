@@ -2,9 +2,9 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 
-import { forwardedArgs } from "../lib/command.ts";
-import { accent, success } from "../lib/output.ts";
-import { versionFromReleaseTag } from "./policy.ts";
+import { forwardedArgs } from "#scripts/lib/command";
+import { accent, success } from "#scripts/lib/output";
+import { versionFromReleaseTag } from "#scripts/release/policy";
 
 const ROOT_DIR = resolve(import.meta.dirname, "../..");
 const { values } = parseArgs({

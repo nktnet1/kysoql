@@ -10,9 +10,12 @@ import {
   type RestClient,
   type RestClientOptions,
   resolveRestClient,
-} from "#/client";
-import { SalesforceQueryLimitError, SalesforceResponseError } from "#/errors";
-import type { RestRequestOptions } from "#/http";
+} from "#src/client";
+import {
+  SalesforceQueryLimitError,
+  SalesforceResponseError,
+} from "#src/errors";
+import type { RestRequestOptions } from "#src/http";
 import {
   type ParsedQueryPage,
   parseBatchSize,
@@ -20,7 +23,7 @@ import {
   parseQueryLocator,
   parseQueryPage,
   positiveInteger,
-} from "#/validation";
+} from "#src/validation";
 
 /** Validated page returned by a Salesforce REST query request. */
 export interface RestQueryPage<O> {

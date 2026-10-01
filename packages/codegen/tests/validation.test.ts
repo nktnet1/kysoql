@@ -4,7 +4,7 @@ import {
   parseSalesforceDataCategoryGroupsResponse,
   parseSalesforceObjectDescription,
   parseSchemaName,
-} from "#/validation";
+} from "#src/validation";
 
 describe("codegen validation", () => {
   it.each(["Schema", "_Schema", "$Schema", "Schema9"])(

@@ -1,11 +1,11 @@
-import type { LimitNode } from "#/operation-node/limit-node";
-import type { OffsetNode } from "#/operation-node/offset-node";
-import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
-import { OrderByNode } from "#/operation-node/order-by-node";
-import type { ReferenceNode } from "#/operation-node/reference-node";
-import type { SelectionNode } from "#/operation-node/selection-node";
-import type { WhereNode } from "#/operation-node/where-node";
-import { freeze } from "#/util/object-utils";
+import type { LimitNode } from "#src/operation-node/limit-node";
+import type { OffsetNode } from "#src/operation-node/offset-node";
+import type { OrderByItemNode } from "#src/operation-node/order-by-item-node";
+import { OrderByNode } from "#src/operation-node/order-by-node";
+import type { ReferenceNode } from "#src/operation-node/reference-node";
+import type { SelectionNode } from "#src/operation-node/selection-node";
+import type { WhereNode } from "#src/operation-node/where-node";
+import { freeze } from "#src/util/object-utils";
 
 /** Immutable query AST node for a child relationship subquery. */
 export interface RelationshipSubqueryNode {

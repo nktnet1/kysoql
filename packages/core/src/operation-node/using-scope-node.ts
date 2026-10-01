@@ -1,5 +1,5 @@
-import { parseSoqlIdentifier } from "#/soql-identifier";
-import { freeze } from "#/util/object-utils";
+import { parseSoqlIdentifier } from "#src/soql-identifier";
+import { freeze } from "#src/util/object-utils";
 
 /** Immutable query AST node for a USING SCOPE clause. */
 export interface UsingScopeNode {

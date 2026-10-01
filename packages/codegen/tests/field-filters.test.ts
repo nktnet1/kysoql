@@ -3,9 +3,9 @@ import { readFile } from "node:fs/promises";
 
 import { describe, it } from "vitest";
 
-import { applyFieldFilters, parseFieldFilters } from "#/field-filters";
-import { renderSchema } from "#/render";
-import type { SalesforceObjectDescription } from "#/types";
+import { applyFieldFilters, parseFieldFilters } from "#src/field-filters";
+import { renderSchema } from "#src/render";
+import type { SalesforceObjectDescription } from "#src/types";
 
 import {
   field,

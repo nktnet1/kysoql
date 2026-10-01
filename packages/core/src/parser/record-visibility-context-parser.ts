@@ -3,8 +3,8 @@ import * as v from "valibot";
 import {
   RecordVisibilityContextNode,
   type RecordVisibilityContextNode as RecordVisibilityContextNodeType,
-} from "#/operation-node/record-visibility-context-node";
-import type { SelectQueryNode } from "#/operation-node/select-query-node";
+} from "#src/operation-node/record-visibility-context-node";
+import type { SelectQueryNode } from "#src/operation-node/select-query-node";
 
 interface RecordVisibilityContextShape {
   /** Maximum visibility descriptors Salesforce may evaluate per record. */

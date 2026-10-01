@@ -1,6 +1,6 @@
-import { parseJson, run } from "./command.ts";
-import { readSchemaGenerationEnvironment } from "./environment.ts";
-import { repositoryRoot } from "./oclif.ts";
+import { parseJson, run } from "#scripts/lib/command";
+import { readSchemaGenerationEnvironment } from "#scripts/lib/environment";
+import { repositoryRoot } from "#scripts/lib/oclif";
 
 interface OrgDisplayResponse {
   readonly status: number;

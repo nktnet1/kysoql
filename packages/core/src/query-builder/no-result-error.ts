@@ -1,5 +1,5 @@
-import type { SelectQueryNode } from "#/operation-node/select-query-node";
-import type { AbortableQueryOptions } from "#/query-executor";
+import type { SelectQueryNode } from "#src/operation-node/select-query-node";
+import type { AbortableQueryOptions } from "#src/query-executor";
 
 /**
  * Error constructor accepted by executeTakeFirstOrThrow() when no row is

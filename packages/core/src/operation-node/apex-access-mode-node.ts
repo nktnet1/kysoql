@@ -1,4 +1,4 @@
-import { freeze } from "#/util/object-utils";
+import { freeze } from "#src/util/object-utils";
 
 /**
  * Apex query access modes supported by Salesforce Database query methods.

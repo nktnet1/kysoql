@@ -1,16 +1,16 @@
-import type { ReferenceNode } from "#/operation-node/reference-node";
-import type { SelectQueryNode } from "#/operation-node/select-query-node";
-import type { SelectionNode } from "#/operation-node/selection-node";
+import type { ReferenceNode } from "#src/operation-node/reference-node";
+import type { SelectQueryNode } from "#src/operation-node/select-query-node";
+import type { SelectionNode } from "#src/operation-node/selection-node";
 import type {
   FieldReference,
   ParentObjectName,
   ParentRelationshipName,
   ParentRelationshipNullable,
   PolymorphicRelationshipTypeTargets,
-} from "#/parser/reference-parser";
-import type { Selection } from "#/parser/select-parser";
-import type { SalesforceRecordAttributes } from "#/schema";
-import type { Simplify } from "#/util/type-utils";
+} from "#src/parser/reference-parser";
+import type { Selection } from "#src/parser/select-parser";
+import type { SalesforceRecordAttributes } from "#src/schema";
+import type { Simplify } from "#src/util/type-utils";
 
 type NextRelationshipDepth<Depth extends readonly unknown[]> = readonly [
   ...Depth,

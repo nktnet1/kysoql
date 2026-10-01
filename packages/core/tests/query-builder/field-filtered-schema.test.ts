@@ -1,13 +1,13 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import { Kysoql } from "#/kysoql";
-import type { FieldsSelectionCheck } from "#/parser/fields-selection-parser";
+import { Kysoql } from "#src/kysoql";
+import type { FieldsSelectionCheck } from "#src/parser/fields-selection-parser";
 import type {
   SalesforceObjectFieldsComplete,
   SalesforceRow,
   SalesforceSchema,
-} from "#/schema";
-import type { Simplify } from "#/util/type-utils";
+} from "#src/schema";
+import type { Simplify } from "#src/util/type-utils";
 
 import type { FilteredSchema } from "../fixtures/field-filtered.generated.js";
 
