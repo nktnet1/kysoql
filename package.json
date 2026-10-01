@@ -40,7 +40,7 @@
     "release": "node --experimental-strip-types scripts/release/run.ts",
     "release:beta": "node --experimental-strip-types scripts/release/beta.ts",
     "release:pack": "node --experimental-strip-types scripts/release/pack.ts",
-    "npm:trust": "node --experimental-strip-types scripts/release/configure-npm-trust.ts"
+    "oidc:trust": "node --experimental-strip-types scripts/release/configure-trusted-publishing.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

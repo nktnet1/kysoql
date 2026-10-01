@@ -57,9 +57,9 @@ pnpm release -- --version <version>
 
 This updates the root and all five public `@kysoql` package manifests together,
 runs `pnpm release:check`, and leaves only those version changes in the worktree
-for review. Stable `x.y.z` releases use the npm `latest` dist-tag.
+for review. Stable `x.y.z` releases use the registry `latest` dist-tag.
 `x.y.z-beta.n` releases use `beta`. Beta versions can also be selected
-automatically from npm plus local/remote Git tags. For the first beta in a new
+automatically from the registry plus local/remote Git tags. For the first beta in a new
 line, provide its stable base once:
 
 ```bash
@@ -88,7 +88,7 @@ the tag/commit metadata as GitHub Actions artifacts. A separate `Publish`
 workflow runs only after that build succeeds. It checks out trusted release
 tooling from the workflow revision, validates the build SHA, tag, package names,
 versions, dependency graph, and tarball integrity, then publishes the exact
-artifacts to npm. The publish job uses npm trusted publishing through GitHub OIDC;
+artifacts to the registry. The publish job uses trusted publishing through GitHub OIDC;
 it does not require an `NPM_TOKEN`.
 
 The stricter gate rejects the development placeholder version, requires every
@@ -144,13 +144,13 @@ The public packages are owned by the npm `@kysoql` organisation scope:
 
 Create the `Production` GitHub environment used by `.github/workflows/publish.yml`.
 For a brand-new npm organisation, bootstrap the five package names before
-configuring OIDC. The default command scans npm and dry-runs only missing names:
+configuring OIDC. The default command scans the registry and dry-runs only missing names:
 
 ```bash
 pnpm bootstrap:packages
 ```
 
-After authenticating to npm with an account that can publish to the `@kysoql`
+After authenticating to the registry with `pnpm login` using an account that can publish to the `@kysoql`
 organisation, create the missing package names for real:
 
 ```bash
@@ -159,17 +159,17 @@ pnpm bootstrap:packages -- --publish
 
 The bootstrap publishes minimal placeholder prereleases under the non-default
 `bootstrap` dist-tag. It does not create or move `latest`, and it skips any
-package name that already exists. These placeholders exist only so npm
+package name that already exists. These placeholders exist only so the registry
 can attach Trusted Publishing before the first real release.
 
 Once all five names exist, configure the same trusted publisher for all five:
 
 ```bash
-pnpm npm:trust
+pnpm oidc:trust
 ```
 
 The configuration targets repository `nktnet1/kysoql`, workflow `publish.yml`,
-and GitHub environment `Production`, with direct `npm publish` permission. After
+and GitHub environment `Production`, with direct publish permission. After
 trusted publishing is configured, real beta and stable releases are tokenless
 and are driven only by annotated release tags plus GitHub Actions.
 

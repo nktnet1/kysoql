@@ -1,14 +1,9 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import {
-  lstatSync,
-  readdirSync,
-  readFileSync,
-  realpathSync,
-} from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { lstatSync, readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
-import { run } from "../lib/command.ts";
+import { requireCommand, run } from "../lib/command.ts";
 import {
   parseReleaseVersion,
   planRelease,
@@ -23,54 +18,6 @@ export interface PublishReleasePackagesOptions {
   readonly expectedSha?: string;
   readonly dryRun?: boolean;
 }
-
-const MINIMUM_TRUSTED_PUBLISH_NPM = [11, 5, 1] as const;
-
-const compareVersion = (
-  left: readonly number[],
-  right: readonly number[],
-): number => {
-  for (let index = 0; index < Math.max(left.length, right.length); index += 1) {
-    const difference = (left[index] ?? 0) - (right[index] ?? 0);
-    if (difference !== 0) {
-      return difference;
-    }
-  }
-  return 0;
-};
-
-const resolveNpmCli = (): string => {
-  const nodeDirectory = dirname(realpathSync(process.execPath));
-  const candidates = [
-    resolve(
-      nodeDirectory,
-      "..",
-      "lib",
-      "node_modules",
-      "npm",
-      "bin",
-      "npm-cli.js",
-    ),
-    resolve(nodeDirectory, "node_modules", "npm", "bin", "npm-cli.js"),
-    resolve(nodeDirectory, "..", "node_modules", "npm", "bin", "npm-cli.js"),
-  ];
-
-  for (const candidate of candidates) {
-    try {
-      const canonical = realpathSync(candidate);
-      if (lstatSync(canonical).isFile()) {
-        return canonical;
-      }
-    } catch {
-      // Try the next layout used by supported Node installations.
-    }
-  }
-
-  throw new Error(
-    "Unable to locate npm-cli.js next to the current Node.js executable: " +
-      process.execPath,
-  );
-};
 
 const requireDirectory = (directory: string, label: string): void => {
   try {
@@ -194,50 +141,19 @@ export const publishReleasePackages = ({
     return;
   }
 
-  const npmCli = resolveNpmCli();
-  const npmArgs = (args: readonly string[]): readonly string[] => [
-    npmCli,
-    ...args,
-  ];
-  const npmVersionResult = spawnSync(
-    process.execPath,
-    npmArgs(["--version"]),
-    { encoding: "utf8" },
-  );
-  if (npmVersionResult.error) {
-    throw npmVersionResult.error;
-  }
-  if (npmVersionResult.status !== 0) {
-    throw new Error(
-      `Unable to determine npm version: ${npmVersionResult.stderr}`,
-    );
-  }
-  const npmVersion = npmVersionResult.stdout
-    .trim()
-    .split(".")
-    .slice(0, 3)
-    .map((part) => Number.parseInt(part, 10));
-  if (
-    npmVersion.some(Number.isNaN) ||
-    compareVersion(npmVersion, MINIMUM_TRUSTED_PUBLISH_NPM) < 0
-  ) {
-    throw new Error(
-      `npm >=${MINIMUM_TRUSTED_PUBLISH_NPM.join(".")} is required for ` +
-        "trusted publishing",
-    );
-  }
+  requireCommand("pnpm");
   const isAlreadyPublished = (name: string, file: string): boolean => {
     const result = spawnSync(
-      process.execPath,
-      npmArgs([
+      "pnpm",
+      [
         "view",
         `${name}@${version}`,
         "dist.integrity",
         "--json",
         "--registry",
         registry,
-      ]),
-      { encoding: "utf8" },
+      ],
+      { encoding: "utf8", shell: process.platform === "win32" },
     );
 
     if (result.error) {
@@ -283,20 +199,17 @@ export const publishReleasePackages = ({
   });
 
   for (const { file } of pending) {
-    run(
-      process.execPath,
-      npmArgs([
-        "publish",
-        file,
-        "--registry",
-        registry,
-        "--access",
-        "public",
-        "--ignore-scripts",
-        "--tag",
-        distTag,
-      ]),
-    );
+    run("pnpm", [
+      "publish",
+      file,
+      "--registry",
+      registry,
+      "--access",
+      "public",
+      "--ignore-scripts",
+      "--tag",
+      distTag,
+    ]);
   }
 
   console.log(

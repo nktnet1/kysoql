@@ -3,7 +3,7 @@
 Scripts are grouped by responsibility:
 
 - `ci/` — repository-wide validation and CI orchestration.
-- `release/` — npm package bootstrap, stable/beta versioning, release checks, package tarballs, publishing, trusted-publisher setup, and release metadata.
+- `release/` — registry package bootstrap, stable/beta versioning, release checks, package tarballs, publishing, trusted-publisher setup, and release metadata.
 - `salesforce/` — scratch-org setup, schema generation, and live Salesforce smoke tests.
 - `verify/` — package/public API shape and packed-consumer verification.
 - `lib/` — shared script utilities.

@@ -46,6 +46,7 @@ it(
     expect(workflow).toContain("id-token: write");
     expect(workflow).toContain("environment: Production");
     expect(workflow).toContain("package-manager-cache: false");
+    expect(workflow).toContain("uses: pnpm/action-setup@v6");
     expect(workflow).not.toContain("NPM_TOKEN");
     expect(workflow).not.toContain("run: |");
   },
@@ -66,6 +67,24 @@ it("exposes bootstrap and beta release entrypoints", async () => {
     "scripts/release/bootstrap.ts",
   );
   expect(commands["release:beta"]).toContain("scripts/release/beta.ts");
+  expect(commands["oidc:trust"]).toContain(
+    "scripts/release/configure-trusted-publishing.ts",
+  );
+  expect(commands).not.toHaveProperty("npm:trust");
+});
+
+it("uses pnpm exclusively for registry CLI operations", async () => {
+  for (const file of [
+    "scripts/release/bootstrap.ts",
+    "scripts/release/beta.ts",
+    "scripts/release/publisher.ts",
+    "scripts/release/configure-trusted-publishing.ts",
+  ]) {
+    const source = await readText(file);
+    expect(source).not.toMatch(/(?:run|requireCommand)\("npm"/u);
+    expect(source).not.toMatch(/spawnSync\(\s*"npm"/u);
+    expect(source).not.toContain("npm-cli.js");
+  }
 });
 
 it(

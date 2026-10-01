@@ -81,19 +81,19 @@ it.each([
   createRelease(version);
   const calls: string[][] = [];
   mocks.spawn.mockImplementation((command: string, args: string[]) => {
-    expect(command).toBe(process.execPath);
+    expect(command).toBe("pnpm");
     calls.push(args);
-    if (args[1] === "--version") {
-      return { status: 0, stdout: "11.5.1\n", stderr: "" };
+    if (args[0] === "--version") {
+      return { status: 0, stdout: "12.6.0\n", stderr: "" };
     }
-    if (args[1] === "view") {
+    if (args[0] === "view") {
       return {
         status: 1,
         stdout: '{"error":{"code":"E404"}}',
         stderr: "",
       };
     }
-    expect(args[1]).toBe("publish");
+    expect(args[0]).toBe("publish");
     return { status: 0, stdout: "", stderr: "" };
   });
 
@@ -103,7 +103,7 @@ it.each([
     tag: `v${version}`,
   });
 
-  const publishes = calls.filter((args) => args[1] === "publish");
+  const publishes = calls.filter((args) => args[0] === "publish");
   expect(publishes).toHaveLength(RELEASE_PACKAGES.length);
   for (const command of publishes) {
     expect(command).toContain("--access");
@@ -127,12 +127,12 @@ it("skips an identical package version during a safe retry", () => {
 
   const publishes: string[][] = [];
   mocks.spawn.mockImplementation((command: string, args: string[]) => {
-    expect(command).toBe(process.execPath);
-    if (args[1] === "--version") {
-      return { status: 0, stdout: "11.5.1\n", stderr: "" };
+    expect(command).toBe("pnpm");
+    if (args[0] === "--version") {
+      return { status: 0, stdout: "12.6.0\n", stderr: "" };
     }
-    if (args[1] === "view") {
-      if (args[2] === `${alreadyPublished.name}@${version}`) {
+    if (args[0] === "view") {
+      if (args[1] === `${alreadyPublished.name}@${version}`) {
         return {
           status: 0,
           stdout: JSON.stringify(integrity),
@@ -145,11 +145,11 @@ it("skips an identical package version during a safe retry", () => {
         stderr: "",
       };
     }
-    if (args[1] === "publish") {
+    if (args[0] === "publish") {
       publishes.push(args);
       return { status: 0, stdout: "", stderr: "" };
     }
-    throw new Error(`Unexpected npm action: ${String(args[1])}`);
+    throw new Error(`Unexpected pnpm action: ${String(args[0])}`);
   });
 
   publishReleasePackages({
@@ -187,11 +187,11 @@ it.each(["conflict", "network", "bad-sha"] as const)(
 
     let publishCalls = 0;
     mocks.spawn.mockImplementation((command: string, args: string[]) => {
-      expect(command).toBe(process.execPath);
-      if (args[1] === "--version") {
-        return { status: 0, stdout: "11.5.1\n", stderr: "" };
+      expect(command).toBe("pnpm");
+      if (args[0] === "--version") {
+        return { status: 0, stdout: "12.6.0\n", stderr: "" };
       }
-      if (args[1] === "view") {
+      if (args[0] === "view") {
         if (mode === "network") {
           return {
             status: 1,
@@ -205,11 +205,11 @@ it.each(["conflict", "network", "bad-sha"] as const)(
           stderr: "",
         };
       }
-      if (args[1] === "publish") {
+      if (args[0] === "publish") {
         publishCalls += 1;
         return { status: 0, stdout: "", stderr: "" };
       }
-      throw new Error(`Unexpected npm action: ${String(args[1])}`);
+      throw new Error(`Unexpected pnpm action: ${String(args[0])}`);
     });
 
     expect(() =>
@@ -226,7 +226,7 @@ it.each(["conflict", "network", "bad-sha"] as const)(
   },
 );
 
-it("validates tarballs without contacting npm in dry-run mode", () => {
+it("validates tarballs without contacting the registry in dry-run mode", () => {
   const version = "1.2.3-beta.1";
   createRelease(version);
   vi.spyOn(console, "log").mockImplementation(() => undefined);

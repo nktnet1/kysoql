@@ -42,7 +42,7 @@ it.each([
   ["1.2.3", "latest"],
   ["1.2.3-beta.0", "beta"],
   ["1.2.3-beta.12", "beta"],
-] as const)("maps %s to npm dist-tag %s", (version, distTag) => {
+] as const)("maps %s to registry dist-tag %s", (version, distTag) => {
   expect(parseReleaseVersion(version).distTag).toBe(distTag);
   expect(releaseTag(version)).toBe(`v${version}`);
   expect(versionFromReleaseTag(`v${version}`)).toBe(version);

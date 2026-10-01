@@ -107,7 +107,7 @@ const main = async (): Promise<void> => {
 Updates the root and five public @kysoql package versions together, runs the
 full release gate, and leaves the version changes ready to commit.
 
---dry-run  Validate and print the tag/npm dist-tag without changing files.
+--dry-run  Validate and print the tag/registry dist-tag without changing files.
 --publish  Commit the validated manifests, create an annotated v<version> tag,
            and atomically push the current branch and tag to origin.
 
@@ -126,7 +126,7 @@ Supported versions are stable x.y.z and beta x.y.z-beta.n releases.`);
   const parsedVersion = parseReleaseVersion(version);
   const tag = releaseTag(version);
   if (values["dry-run"]) {
-    console.log(`${tag} -> npm dist-tag ${parsedVersion.distTag}`);
+    console.log(`${tag} -> registry dist-tag ${parsedVersion.distTag}`);
     for (const definition of RELEASE_PACKAGES) {
       console.log(`${definition.name}@${version}`);
     }

@@ -28,19 +28,19 @@ const { values } = parseArgs({
   },
 });
 
-const npmVersions = (packageName: string, registry: string): string[] => {
+const registryVersions = (packageName: string, registry: string): string[] => {
   const output = run(
-    "npm",
+    "pnpm",
     ["view", packageName, "versions", "--json", `--registry=${registry}`],
     { cwd: ROOT_DIR, capture: true },
   );
-  const parsed = parseJson<unknown>(output, `npm view ${packageName}`);
+  const parsed = parseJson<unknown>(output, `pnpm view ${packageName}`);
   const versions = typeof parsed === "string" ? [parsed] : parsed;
   if (
     !Array.isArray(versions) ||
     !versions.every((version) => typeof version === "string")
   ) {
-    throw new Error(`Invalid npm version list for ${packageName}`);
+    throw new Error(`Invalid registry version list for ${packageName}`);
   }
   return versions;
 };
@@ -80,7 +80,7 @@ const printHelp = (): void => {
   pnpm release:beta -- --base <x.y.z> --publish
   pnpm release:beta -- --publish
 
-Selects the next unused numbered beta from npm versions plus local/remote Git
+Selects the next unused numbered beta from registry versions plus local/remote Git
 tags, then delegates to the normal release command.
 
 For the first beta of a new release line, pass --base once, for example 0.2.0.
@@ -92,7 +92,7 @@ x.y.z-beta.n manifest version.
            v<version> tag, and atomically push the branch and tag to origin.
 
 Registry/network errors abort beta selection rather than being treated as an
-empty version list. Bootstrap the @kysoql package names and configure npm trusted
+empty version list. Bootstrap the @kysoql package names and configure trusted
 publishing before the first real beta release.`);
 };
 
@@ -107,7 +107,7 @@ const main = async (): Promise<void> => {
 
   requireSupportedNode();
   requireCommand("git");
-  requireCommand("npm");
+  requireCommand("pnpm");
 
   const manifest = JSON.parse(
     await readFile(resolve(ROOT_DIR, "package.json"), "utf8"),
@@ -119,7 +119,7 @@ const main = async (): Promise<void> => {
   const registry = values.registry ?? DEFAULT_REGISTRY;
   const published = new Set<string>();
   for (const definition of RELEASE_PACKAGES) {
-    for (const version of npmVersions(definition.name, registry)) {
+    for (const version of registryVersions(definition.name, registry)) {
       published.add(version);
     }
   }
@@ -137,7 +137,7 @@ const main = async (): Promise<void> => {
     ...localTags,
     ...remoteTags,
   ]);
-  console.log(`${manifest.version} -> ${version} (npm dist-tag: beta)`);
+  console.log(`${manifest.version} -> ${version} (registry dist-tag: beta)`);
 
   const args = [
     "--experimental-strip-types",

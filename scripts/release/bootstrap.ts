@@ -30,7 +30,7 @@ const registry = values.registry ?? DEFAULT_REGISTRY;
 const packageExists = (packageName: string): boolean => {
   try {
     run(
-      "npm",
+      "pnpm",
       ["view", packageName, "versions", "--json", `--registry=${registry}`],
       { cwd: ROOT_DIR, capture: true },
     );
@@ -97,7 +97,7 @@ const publishBootstrapPackage = async (
     if (!values.publish) {
       args.push("--dry-run");
     }
-    run("npm", args, { cwd: directory });
+    run("pnpm", args, { cwd: directory });
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
@@ -109,14 +109,14 @@ const ensurePublisherAuthentication = (): void => {
   }
   try {
     const username = run(
-      "npm",
+      "pnpm",
       ["whoami", `--registry=${registry}`],
       { cwd: ROOT_DIR, capture: true },
     ).trim();
     console.log(`Publishing bootstrap packages as ${username}`);
   } catch (error) {
     throw new Error(
-      `npm authentication is required. Run npm login --registry=${registry}`,
+      `pnpm authentication is required. Run pnpm login --registry=${registry}`,
       { cause: error },
     );
   }
@@ -127,18 +127,18 @@ const printHelp = (): void => {
   pnpm bootstrap:packages
   pnpm bootstrap:packages -- --publish [--registry <url>]
 
-Creates only missing @kysoql package names so npm Trusted Publishing can be
+Creates only missing @kysoql package names so Trusted Publishing can be
 configured before the first real release.
 
-Default behaviour is a registry scan plus npm publish --dry-run for every
-missing package. --publish creates missing names for real using npm credentials.
+Default behaviour is a registry scan plus pnpm publish --dry-run for every
+missing package. --publish creates missing names for real using pnpm credentials.
 
 Bootstrap packages use ${BOOTSTRAP_VERSION} under the non-default
-"${BOOTSTRAP_TAG}" dist-tag, so they do not create or move npm "latest".
+"${BOOTSTRAP_TAG}" dist-tag, so they do not create or move the registry "latest" tag.
 Existing package names are always skipped regardless of version.
 
 After publishing the placeholders, run:
-  pnpm npm:trust
+  pnpm oidc:trust
 
 Then use the normal GitHub release flow for real beta/stable releases.`);
 };
@@ -149,7 +149,7 @@ const main = async (): Promise<void> => {
     return;
   }
 
-  requireCommand("npm");
+  requireCommand("pnpm");
   const rootManifest = JSON.parse(
     await readFile(resolve(ROOT_DIR, "package.json"), "utf8"),
   ) as RootManifest;
@@ -166,7 +166,7 @@ const main = async (): Promise<void> => {
 
   if (missing.length === 0) {
     console.log("All @kysoql release package names already exist.");
-    console.log("Next step: pnpm npm:trust");
+    console.log("Next step: pnpm oidc:trust");
     return;
   }
 
@@ -188,7 +188,7 @@ const main = async (): Promise<void> => {
 
   if (values.publish) {
     console.log(`Bootstrapped ${published} package name(s).`);
-    console.log("Next step: pnpm npm:trust");
+    console.log("Next step: pnpm oidc:trust");
   } else {
     console.log(`Validated ${published} missing package name(s).`);
     console.log("Publish them with: pnpm bootstrap:packages -- --publish");
