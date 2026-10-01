@@ -70,6 +70,10 @@ const parseRegistryErrorCode = (stdout: string, stderr: string): unknown => {
         }
       }
     } catch {
+      const errorCode = source.match(/\bE\d{3}\b/u)?.[0];
+      if (errorCode !== undefined) {
+        return errorCode;
+      }
       // An unstructured failure is not proof that a package is absent.
     }
   }

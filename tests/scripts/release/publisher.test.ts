@@ -98,8 +98,8 @@ it.each([
     if (args[0] === "view") {
       return {
         status: 1,
-        stdout: '{"error":{"code":"E404"}}',
-        stderr: "",
+        stdout: "",
+        stderr: '[WARN] registry config warning\n{"error":{"code":"E404"}}',
       };
     }
     expect(args[0]).toBe("publish");

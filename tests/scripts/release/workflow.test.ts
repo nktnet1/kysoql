@@ -58,6 +58,8 @@ it(
     expect(workflow).toContain("package-manager-cache: false");
     expect(workflow).toContain("uses: pnpm/action-setup@v6");
     expect(workflow).not.toContain("NPM_TOKEN");
+    expect(workflow).not.toContain("NODE_AUTH_TOKEN");
+    expect(workflow).not.toContain("registry-url:");
     expect(workflow).not.toContain("run: |");
   },
 );
