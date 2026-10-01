@@ -1,6 +1,6 @@
 {
   "name": "@kysoql/jsforce",
-  "version": "0.1.0-beta.1",
+  "version": "0.1.0-beta.2",
   "description": "JSforce adapter for kysoql",
   "license": "MIT",
   "keywords": [
