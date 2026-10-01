@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { Kysoql } from "#src/kysoql";
+import { Kysoql } from "#/kysoql";
 import type {
   SalesforceField,
   SalesforceGeolocation,
   SalesforceObject,
   SalesforceParentRelationship,
-} from "#src/schema";
+} from "#/schema";
 
 type LocationField<Nullable extends boolean> = SalesforceField<
   SalesforceGeolocation,

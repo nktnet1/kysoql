@@ -1,32 +1,32 @@
-import type { AndNode } from "#src/operation-node/and-node";
-import type { ApexBindExpressionNode } from "#src/operation-node/apex-expression-node";
-import type { BinaryOperationNode } from "#src/operation-node/binary-operation-node";
+import type { AndNode } from "#/operation-node/and-node";
+import type { ApexBindExpressionNode } from "#/operation-node/apex-expression-node";
+import type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
 import {
   FieldsFunctionNode,
   type FieldsSelector,
-} from "#src/operation-node/fields-function-node";
-import type { LimitNode } from "#src/operation-node/limit-node";
-import type { NotNode } from "#src/operation-node/not-node";
-import type { OperationNode } from "#src/operation-node/operation-node";
-import type { OperatorNode } from "#src/operation-node/operator-node";
-import type { OrNode } from "#src/operation-node/or-node";
-import type { ReferenceNode } from "#src/operation-node/reference-node";
-import { SelectionNode } from "#src/operation-node/selection-node";
-import type { ValueListNode } from "#src/operation-node/value-list-node";
-import type { WhereNode } from "#src/operation-node/where-node";
+} from "#/operation-node/fields-function-node";
+import type { LimitNode } from "#/operation-node/limit-node";
+import type { NotNode } from "#/operation-node/not-node";
+import type { OperationNode } from "#/operation-node/operation-node";
+import type { OperatorNode } from "#/operation-node/operator-node";
+import type { OrNode } from "#/operation-node/or-node";
+import type { ReferenceNode } from "#/operation-node/reference-node";
+import { SelectionNode } from "#/operation-node/selection-node";
+import type { ValueListNode } from "#/operation-node/value-list-node";
+import type { WhereNode } from "#/operation-node/where-node";
 import type {
   FieldDefinition,
   FieldName,
   FieldsOf,
-} from "#src/parser/reference-parser";
-import type { SelectExpression } from "#src/parser/select-parser";
-import type { TraversesTypeOfRelationship } from "#src/parser/type-of-parser";
+} from "#/parser/reference-parser";
+import type { SelectExpression } from "#/parser/select-parser";
+import type { TraversesTypeOfRelationship } from "#/parser/type-of-parser";
 import type {
   SalesforceFieldCustom,
   SalesforceFieldValue,
   SalesforceObjectFieldsComplete,
-} from "#src/schema";
-import type { Simplify } from "#src/util/type-utils";
+} from "#/schema";
+import type { Simplify } from "#/util/type-utils";
 
 type FieldMatchesSelector<
   Field,

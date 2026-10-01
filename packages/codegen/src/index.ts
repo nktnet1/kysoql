@@ -1,18 +1,18 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
-import type { ObjectFieldFilters } from "#src/config";
-import { applyFieldFilters, parseFieldFilters } from "#src/field-filters";
-import { renderSchema } from "#src/render";
+import type { ObjectFieldFilters } from "#/config";
+import { applyFieldFilters, parseFieldFilters } from "#/field-filters";
+import { renderSchema } from "#/render";
 import type {
   SalesforceDescribeClient,
   SalesforceObjectDescription,
-} from "#src/types";
+} from "#/types";
 import {
   parseSalesforceDataCategoryGroupsResponse,
   parseSalesforceGlobalDescription,
   parseSalesforceObjectDescription,
-} from "#src/validation";
+} from "#/validation";
 
 export {
   defineConfig,
@@ -20,9 +20,9 @@ export {
   type ObjectFieldFilter,
   type ObjectFieldFilters,
   type SalesforceAuthProvider,
-} from "#src/config";
-export { renderSchema } from "#src/render";
-export { createRestDescribeClient } from "#src/rest-client";
+} from "#/config";
+export { renderSchema } from "#/render";
+export { createRestDescribeClient } from "#/rest-client";
 export type {
   SalesforceChildRelationshipDescription,
   SalesforceDataCategoryGroupDescription,
@@ -36,7 +36,7 @@ export type {
   SalesforceObjectDescription,
   SalesforcePicklistValue,
   SalesforceSupportedScopeDescription,
-} from "#src/types";
+} from "#/types";
 
 /**
  * Options for generating a TypeScript Kysoql schema from Salesforce Describe

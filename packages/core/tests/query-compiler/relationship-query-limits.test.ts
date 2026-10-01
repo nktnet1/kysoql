@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { BinaryOperationNode } from "#src/operation-node/binary-operation-node";
-import { OperatorNode } from "#src/operation-node/operator-node";
-import { OrderByItemNode } from "#src/operation-node/order-by-item-node";
-import { QueryNode } from "#src/operation-node/query-node";
-import { ReferenceNode } from "#src/operation-node/reference-node";
-import { RelationshipSubqueryNode } from "#src/operation-node/relationship-subquery-node";
-import { SelectQueryNode } from "#src/operation-node/select-query-node";
-import { SelectionNode } from "#src/operation-node/selection-node";
-import { SObjectNode } from "#src/operation-node/sobject-node";
-import { TypeOfNode } from "#src/operation-node/type-of-node";
-import { ValueNode } from "#src/operation-node/value-node";
-import { DefaultQueryCompiler } from "#src/query-compiler/default-query-compiler";
+import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
+import { OperatorNode } from "#/operation-node/operator-node";
+import { OrderByItemNode } from "#/operation-node/order-by-item-node";
+import { QueryNode } from "#/operation-node/query-node";
+import { ReferenceNode } from "#/operation-node/reference-node";
+import { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
+import { SelectQueryNode } from "#/operation-node/select-query-node";
+import { SelectionNode } from "#/operation-node/selection-node";
+import { SObjectNode } from "#/operation-node/sobject-node";
+import { TypeOfNode } from "#/operation-node/type-of-node";
+import { ValueNode } from "#/operation-node/value-node";
+import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
 
 const compiler = new DefaultQueryCompiler();
 

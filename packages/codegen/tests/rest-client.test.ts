@@ -5,11 +5,7 @@ import { join } from "node:path";
 import { type RestClient, SalesforceRestError } from "@kysoql/rest";
 import { describe, it } from "vitest";
 
-import {
-  createRestDescribeClient,
-  generateSchema,
-  loadSchema,
-} from "#src/index";
+import { createRestDescribeClient, generateSchema, loadSchema } from "#/index";
 import { field } from "./fixtures/field-filtering.js";
 
 const object = { name: "Account", fields: [field("Id"), field("Name")] };

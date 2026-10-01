@@ -3,46 +3,46 @@ import {
   createSelectExpressionBuilder,
   type DateFunctionExpression,
   type TranslatableFieldReference,
-} from "#src/expression/aggregate-function-builder";
+} from "#/expression/aggregate-function-builder";
 import {
   type BetaExpressionModule,
   createBetaExpressionModule,
   type FormulaFilterComparisonOperator,
   type FormulaFilterFunctionExpression,
-} from "#src/expression/formula-filter-function-builder";
+} from "#/expression/formula-filter-function-builder";
 import type {
   DistanceFunctionExpression,
   GeolocationFilterFunctionModule,
-} from "#src/expression/geolocation-function-builder";
-import { AndNode } from "#src/operation-node/and-node";
-import { NotNode } from "#src/operation-node/not-node";
-import type { OperationNode } from "#src/operation-node/operation-node";
+} from "#/expression/geolocation-function-builder";
+import { AndNode } from "#/operation-node/and-node";
+import { NotNode } from "#/operation-node/not-node";
+import type { OperationNode } from "#/operation-node/operation-node";
 import type {
   ComparisonOperator,
   EqualityComparisonOperator,
   LikeComparisonOperator,
   OrderedComparisonOperator,
   SetComparisonOperator,
-} from "#src/operation-node/operator-node";
-import { OrNode } from "#src/operation-node/or-node";
-import type { ToLabelFunctionNode } from "#src/operation-node/to-label-function-node";
+} from "#/operation-node/operator-node";
+import { OrNode } from "#/operation-node/or-node";
+import type { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
 import {
   type ComparisonOperatorExpression,
   type FilterableFieldName,
   type OperandValueExpression,
   parseOperationValueBinaryOperation,
-} from "#src/parser/binary-operation-parser";
-import { parseFilterBinaryOperation } from "#src/parser/filter-parser";
+} from "#/parser/binary-operation-parser";
+import { parseFilterBinaryOperation } from "#/parser/filter-parser";
 import {
   type DistanceComparisonOperator,
   parseDistanceFilterBinaryOperation,
-} from "#src/parser/geolocation-expression-parser";
+} from "#/parser/geolocation-expression-parser";
 import type {
   FieldReferenceDefinition,
   FieldReferenceNullable,
-} from "#src/parser/reference-parser";
-import type { SoqlLikeLiteral } from "#src/soql-like-literal";
-import type { SoqlDateLiteral } from "#src/soql-temporal-literal";
+} from "#/parser/reference-parser";
+import type { SoqlLikeLiteral } from "#/soql-like-literal";
+import type { SoqlDateLiteral } from "#/soql-temporal-literal";
 
 declare const expressionType: unique symbol;
 declare const toLabelFilterExpressionType: unique symbol;

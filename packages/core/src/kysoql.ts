@@ -1,4 +1,4 @@
-import { QueryCreator } from "#src/query-creator";
+import { QueryCreator } from "#/query-creator";
 
 /**
  * Configured query creator for building, compiling, and optionally executing

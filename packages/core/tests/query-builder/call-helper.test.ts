@@ -1,11 +1,11 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import { Kysoql } from "#src/kysoql";
+import { Kysoql } from "#/kysoql";
 import type {
   SalesforceChildRelationship,
   SalesforceField,
   SalesforceObject,
-} from "#src/schema";
+} from "#/schema";
 
 type Field<
   Value,

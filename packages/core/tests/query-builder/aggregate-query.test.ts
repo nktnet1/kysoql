@@ -1,15 +1,15 @@
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 
-import { Kysoql } from "#src/kysoql";
-import type { AggregateSelectQueryBuilder } from "#src/query-builder/aggregate-select-query-builder";
-import type { CompiledQuery } from "#src/query-compiler/compiled-query";
-import type { QueryExecutor } from "#src/query-executor";
+import { Kysoql } from "#/kysoql";
+import type { AggregateSelectQueryBuilder } from "#/query-builder/aggregate-select-query-builder";
+import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import type { QueryExecutor } from "#/query-executor";
 import type {
   SalesforceField,
   SalesforceObject,
   SalesforceParentRelationship,
-} from "#src/schema";
-import type { Simplify } from "#src/util/type-utils";
+} from "#/schema";
+import type { Simplify } from "#/util/type-utils";
 
 type AggregatableField<
   Value,

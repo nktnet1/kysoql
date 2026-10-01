@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { Kysoql } from "#src/kysoql";
-import type { SalesforceField, SalesforceObject } from "#src/schema";
-import { soqlDate } from "#src/soql-temporal-literal";
+import { Kysoql } from "#/kysoql";
+import type { SalesforceField, SalesforceObject } from "#/schema";
+import { soqlDate } from "#/soql-temporal-literal";
 
 interface FixtureSchema {
   readonly Account: SalesforceObject<{

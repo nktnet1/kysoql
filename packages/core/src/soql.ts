@@ -1,7 +1,7 @@
-import type { RawNode } from "#src/operation-node/raw-node";
-import { RawNode as RawNodeFactory } from "#src/operation-node/raw-node";
-import { type SoqlLikeLiteral, soqlLikeLiteral } from "#src/soql-like-literal";
-import { freeze } from "#src/util/object-utils";
+import type { RawNode } from "#/operation-node/raw-node";
+import { RawNode as RawNodeFactory } from "#/operation-node/raw-node";
+import { type SoqlLikeLiteral, soqlLikeLiteral } from "#/soql-like-literal";
+import { freeze } from "#/util/object-utils";
 
 declare const soqlRawBuilderType: unique symbol;
 

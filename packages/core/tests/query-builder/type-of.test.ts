@@ -1,19 +1,19 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import { Kysoql } from "#src/kysoql";
-import { ReferenceNode } from "#src/operation-node/reference-node";
-import { SelectQueryNode } from "#src/operation-node/select-query-node";
-import type { TypeOfNode } from "#src/operation-node/type-of-node";
-import type { SelectQueryBuilder } from "#src/query-builder/select-query-builder";
-import { DefaultQueryCompiler } from "#src/query-compiler/default-query-compiler";
+import { Kysoql } from "#/kysoql";
+import { ReferenceNode } from "#/operation-node/reference-node";
+import { SelectQueryNode } from "#/operation-node/select-query-node";
+import type { TypeOfNode } from "#/operation-node/type-of-node";
+import type { SelectQueryBuilder } from "#/query-builder/select-query-builder";
+import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
 import type {
   SalesforceChildRelationship,
   SalesforceField,
   SalesforceObject,
   SalesforceParentRelationship,
   SalesforceRecordAttributes,
-} from "#src/schema";
-import type { Simplify } from "#src/util/type-utils";
+} from "#/schema";
+import type { Simplify } from "#/util/type-utils";
 
 type PolymorphicReferenceField<
   Targets extends string,

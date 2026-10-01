@@ -1,6 +1,6 @@
 import * as v from "valibot";
 
-import { OffsetNode } from "#src/operation-node/offset-node";
+import { OffsetNode } from "#/operation-node/offset-node";
 
 const OFFSET_ERROR = "SOQL OFFSET must be a safe integer between 0 and 2000.";
 const offsetSchema = v.pipe(

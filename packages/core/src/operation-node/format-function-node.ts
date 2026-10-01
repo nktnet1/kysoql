@@ -1,7 +1,7 @@
-import type { AggregateFunctionNode } from "#src/operation-node/aggregate-function-node";
-import type { ConvertCurrencyFunctionNode } from "#src/operation-node/convert-currency-function-node";
-import type { ReferenceNode } from "#src/operation-node/reference-node";
-import { freeze } from "#src/util/object-utils";
+import type { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
+import type { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
+import type { ReferenceNode } from "#/operation-node/reference-node";
+import { freeze } from "#/util/object-utils";
 
 /** Immutable query AST node for a FORMAT() expression. */
 export interface FormatFunctionNode {

@@ -2,11 +2,11 @@ import type {
   AliasedAggregateFunctionBuilder,
   AliasedDateFunctionBuilder,
   CountAllFunctionBuilder,
-} from "#src/expression/aggregate-function-builder";
-import type { AggregateFunctionNode } from "#src/operation-node/aggregate-function-node";
-import type { AliasNode } from "#src/operation-node/alias-node";
-import type { FormatFunctionNode } from "#src/operation-node/format-function-node";
-import { SelectionNode } from "#src/operation-node/selection-node";
+} from "#/expression/aggregate-function-builder";
+import type { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
+import type { AliasNode } from "#/operation-node/alias-node";
+import type { FormatFunctionNode } from "#/operation-node/format-function-node";
+import { SelectionNode } from "#/operation-node/selection-node";
 
 export type AggregateSelectionExpression = AliasedAggregateFunctionBuilder<
   unknown,

@@ -6,115 +6,115 @@ import {
   type DateFunctionExpression,
   type GroupingFunctionBuilder,
   type SelectExpressionBuilder,
-} from "#src/expression/aggregate-function-builder";
+} from "#/expression/aggregate-function-builder";
 import {
   createExpressionBuilder,
   type WhereExpressionFactory,
-} from "#src/expression/expression-builder";
+} from "#/expression/expression-builder";
 import {
   createHavingExpressionBuilder,
   type GroupedHavingFieldName,
   type HavingExpressionFactory,
-} from "#src/expression/having-expression-builder";
-import { ForViewReferenceNode } from "#src/operation-node/for-view-reference-node";
-import type { AdvancedGroupByMode } from "#src/operation-node/group-by-node";
-import type { ComparisonOperator } from "#src/operation-node/operator-node";
+} from "#/expression/having-expression-builder";
+import { ForViewReferenceNode } from "#/operation-node/for-view-reference-node";
+import type { AdvancedGroupByMode } from "#/operation-node/group-by-node";
+import type { ComparisonOperator } from "#/operation-node/operator-node";
 import type {
   OrderByDirection,
   OrderByNulls,
-} from "#src/operation-node/order-by-item-node";
-import { OrderByItemNode } from "#src/operation-node/order-by-item-node";
-import { QueryNode } from "#src/operation-node/query-node";
-import { SelectQueryNode } from "#src/operation-node/select-query-node";
-import { SelectionNode } from "#src/operation-node/selection-node";
-import { UsingScopeNode } from "#src/operation-node/using-scope-node";
+} from "#/operation-node/order-by-item-node";
+import { OrderByItemNode } from "#/operation-node/order-by-item-node";
+import { QueryNode } from "#/operation-node/query-node";
+import { SelectQueryNode } from "#/operation-node/select-query-node";
+import { SelectionNode } from "#/operation-node/selection-node";
+import { UsingScopeNode } from "#/operation-node/using-scope-node";
 import {
   type AggregateSelection,
   type AggregateSelectionArg,
   type GroupedSelectionArg,
   parseAggregateSelectArg,
-} from "#src/parser/aggregate-selection-parser";
+} from "#/parser/aggregate-selection-parser";
 import type {
   ComparisonOperatorExpression,
   FilterableFieldName,
   OperandValueExpression,
-} from "#src/parser/binary-operation-parser";
+} from "#/parser/binary-operation-parser";
 import {
   type DataCategoryInput,
   type DataCategorySelector,
   parseDataCategorySelection,
-} from "#src/parser/data-category-parser";
+} from "#/parser/data-category-parser";
 import {
   dateFunctionIdentity,
   parseDateGroupByExpression,
   validateDateFunctionSelections,
   validateGroupedDateFunctionNode,
-} from "#src/parser/date-function-parser";
+} from "#/parser/date-function-parser";
 import {
   parseFilterBinaryOperation,
   validateSemiJoinWhere,
-} from "#src/parser/filter-parser";
+} from "#/parser/filter-parser";
 import {
   assertCanClearGroupBy,
   type GroupableFieldName,
   parseAdvancedGroupBy,
   parseGroupBy,
-} from "#src/parser/group-by-parser";
-import { validateGroupingSelections } from "#src/parser/grouping-expression-parser";
-import type { KnowledgeArticleUpdateCheck } from "#src/parser/knowledge-update-parser";
-import { parseLimit } from "#src/parser/limit-parser";
-import { parseOffset } from "#src/parser/offset-parser";
+} from "#/parser/group-by-parser";
+import { validateGroupingSelections } from "#/parser/grouping-expression-parser";
+import type { KnowledgeArticleUpdateCheck } from "#/parser/knowledge-update-parser";
+import { parseLimit } from "#/parser/limit-parser";
+import { parseOffset } from "#/parser/offset-parser";
 import {
   type OrderByNullsForReference,
   parseAggregateOrderBy,
   parseGroupingOrderBy,
   parseOrderBy,
   type SortableFieldName,
-} from "#src/parser/order-by-parser";
+} from "#/parser/order-by-parser";
 import {
   parseRecordVisibilityContext,
   type RecordVisibilityContextOptions,
-} from "#src/parser/record-visibility-context-parser";
-import type { FieldReferenceDefinition } from "#src/parser/reference-parser";
+} from "#/parser/record-visibility-context-parser";
+import type { FieldReferenceDefinition } from "#/parser/reference-parser";
 import {
   parseSelectArg,
   type SelectExpression,
   type Selection,
   type SelectionReference,
-} from "#src/parser/select-parser";
+} from "#/parser/select-parser";
 import {
   type Data360AggregateSetOptionsFor,
   parseSetOptions,
-} from "#src/parser/set-options-parser";
+} from "#/parser/set-options-parser";
 import {
   parseUserProfileFeedWithUserId,
   type UserProfileFeedWithUserIdCheck,
-} from "#src/parser/user-profile-feed-parser";
+} from "#/parser/user-profile-feed-parser";
 import {
   type ApexAggregateSelectQueryBuilder,
   createApexAggregateSelectQueryBuilder,
   createDynamicApexAggregateSelectQueryBuilder,
-} from "#src/query-builder/apex-aggregate-select-query-builder";
+} from "#/query-builder/apex-aggregate-select-query-builder";
 import {
   type ExecuteTakeFirstOrThrowOptions,
   isNoResultErrorConstructor,
   NoResultError,
   type NoResultErrorConstructor,
-} from "#src/query-builder/no-result-error";
-import type { CompiledQuery } from "#src/query-compiler/compiled-query";
-import type { QueryCompiler } from "#src/query-compiler/query-compiler";
-import type { AbortableQueryOptions, QueryExecutor } from "#src/query-executor";
-import type { QueryId } from "#src/query-id";
+} from "#/query-builder/no-result-error";
+import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import type { QueryCompiler } from "#/query-compiler/query-compiler";
+import type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
+import type { QueryId } from "#/query-id";
 import type {
   SalesforceObjectDataCategory,
   SalesforceObjectDataCategoryGroup,
   SalesforceObjectMruEnabled,
   SalesforceObjectSupportedScope,
-} from "#src/schema";
-import { isSoqlRawBuilder, type SoqlRawBuilder } from "#src/soql";
-import { freeze } from "#src/util/object-utils";
-import type { KysoqlTypeError } from "#src/util/type-error";
-import type { ConditionalOutput, NarrowPartial } from "#src/util/type-utils";
+} from "#/schema";
+import { isSoqlRawBuilder, type SoqlRawBuilder } from "#/soql";
+import { freeze } from "#/util/object-utils";
+import type { KysoqlTypeError } from "#/util/type-error";
+import type { ConditionalOutput, NarrowPartial } from "#/util/type-utils";
 
 type AggregateGroupMode = "none" | "ordinary" | AdvancedGroupByMode;
 type AdvancedGroupFieldCount = 0 | 1 | 2 | 3;

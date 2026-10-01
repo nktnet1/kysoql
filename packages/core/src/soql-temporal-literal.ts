@@ -1,6 +1,6 @@
 import * as v from "valibot";
 
-import { freeze } from "#src/util/object-utils";
+import { freeze } from "#/util/object-utils";
 
 declare const soqlDateLiteralBrand: unique symbol;
 declare const soqlDateTimeLiteralBrand: unique symbol;

@@ -7,7 +7,7 @@ import {
 } from "@kysoql/core";
 import { it } from "vitest";
 
-import { createRestExecutor } from "#src/index";
+import { createRestExecutor } from "#/index";
 import { mockFetch, origin, page } from "./helpers.js";
 
 type TextField<Type extends string> = SalesforceField<

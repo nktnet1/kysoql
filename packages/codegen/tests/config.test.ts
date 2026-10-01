@@ -9,12 +9,12 @@ import {
   defineConfig,
   type KysoqlConfig,
   type ObjectFieldFilters,
-} from "#src/config";
+} from "#/config";
 import {
   loadConfig,
   parseKysoqlConfig,
   resolveGenerateOptions,
-} from "#src/config-loader";
+} from "#/config-loader";
 
 const directories: string[] = [];
 const temporaryDirectory = async (): Promise<string> => {

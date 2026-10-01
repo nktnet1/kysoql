@@ -1,11 +1,11 @@
 import { it } from "vitest";
 
-import { Kysoql } from "#src/kysoql";
-import type { SalesforceField, SalesforceObject } from "#src/schema";
-import { soql } from "#src/soql";
-import { soqlLikeLiteral } from "#src/soql-like-literal";
-import { soqlRelativeDate } from "#src/soql-relative-date-literal";
-import { soqlDate, soqlDateTime, soqlTime } from "#src/soql-temporal-literal";
+import { Kysoql } from "#/kysoql";
+import type { SalesforceField, SalesforceObject } from "#/schema";
+import { soql } from "#/soql";
+import { soqlLikeLiteral } from "#/soql-like-literal";
+import { soqlRelativeDate } from "#/soql-relative-date-literal";
+import { soqlDate, soqlDateTime, soqlTime } from "#/soql-temporal-literal";
 
 type Field<
   Value,

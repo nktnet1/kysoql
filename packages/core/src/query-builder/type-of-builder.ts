@@ -1,13 +1,13 @@
-import { ReferenceNode } from "#src/operation-node/reference-node";
-import { TypeOfNode } from "#src/operation-node/type-of-node";
-import type { FieldReference } from "#src/parser/reference-parser";
+import { ReferenceNode } from "#/operation-node/reference-node";
+import { TypeOfNode } from "#/operation-node/type-of-node";
+import type { FieldReference } from "#/parser/reference-parser";
 import type {
   KnownPolymorphicTarget,
   TypeOfBranchSelection,
   TypeOfElseSelectExpression,
   TypeOfElseSelection,
-} from "#src/parser/type-of-parser";
-import { freeze } from "#src/util/object-utils";
+} from "#/parser/type-of-parser";
+import { freeze } from "#/util/object-utils";
 
 declare const typeOfBuilderType: unique symbol;
 

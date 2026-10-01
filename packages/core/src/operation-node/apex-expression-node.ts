@@ -1,7 +1,7 @@
-import type { ApexBindNode } from "#src/operation-node/apex-bind-node";
-import type { ApexLiteralNode } from "#src/operation-node/apex-literal-node";
-import type { SelectQueryNode } from "#src/operation-node/select-query-node";
-import { freeze } from "#src/util/object-utils";
+import type { ApexBindNode } from "#/operation-node/apex-bind-node";
+import type { ApexLiteralNode } from "#/operation-node/apex-literal-node";
+import type { SelectQueryNode } from "#/operation-node/select-query-node";
+import { freeze } from "#/util/object-utils";
 
 /** Immutable query AST node for an Apex expression operand. */
 export type ApexExpressionOperandNode =

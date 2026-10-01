@@ -1,39 +1,39 @@
 import {
   type GeolocationFunctionModule,
   GeolocationFunctionModuleImpl,
-} from "#src/expression/geolocation-function-builder";
-import { AggregateFunctionNode } from "#src/operation-node/aggregate-function-node";
-import { AliasNode } from "#src/operation-node/alias-node";
-import { ConvertCurrencyFunctionNode } from "#src/operation-node/convert-currency-function-node";
-import { ConvertTimezoneFunctionNode } from "#src/operation-node/convert-timezone-function-node";
+} from "#/expression/geolocation-function-builder";
+import { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
+import { AliasNode } from "#/operation-node/alias-node";
+import { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
+import { ConvertTimezoneFunctionNode } from "#/operation-node/convert-timezone-function-node";
 import {
   type DateFunction,
   type DateFunctionArgumentNode,
   DateFunctionNode,
-} from "#src/operation-node/date-function-node";
-import { FormatFunctionNode } from "#src/operation-node/format-function-node";
+} from "#/operation-node/date-function-node";
+import { FormatFunctionNode } from "#/operation-node/format-function-node";
 import type {
   ComparisonOperator,
   EqualityComparisonOperator,
   OrderedComparisonOperator,
   SetComparisonOperator,
-} from "#src/operation-node/operator-node";
-import { ReferenceNode } from "#src/operation-node/reference-node";
-import { ToLabelFunctionNode } from "#src/operation-node/to-label-function-node";
-import type { ComparisonOperatorExpression } from "#src/parser/binary-operation-parser";
-import type { GroupableFieldName } from "#src/parser/group-by-parser";
-import { validateGroupingField } from "#src/parser/grouping-expression-parser";
+} from "#/operation-node/operator-node";
+import { ReferenceNode } from "#/operation-node/reference-node";
+import { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
+import type { ComparisonOperatorExpression } from "#/parser/binary-operation-parser";
+import type { GroupableFieldName } from "#/parser/group-by-parser";
+import { validateGroupingField } from "#/parser/grouping-expression-parser";
 import type {
   FieldReferenceDefinition,
   FieldReferenceNullable,
-} from "#src/parser/reference-parser";
-import { parseSelectionAlias } from "#src/parser/selection-alias-parser";
+} from "#/parser/reference-parser";
+import { parseSelectionAlias } from "#/parser/selection-alias-parser";
 import type {
   SalesforceFieldFilterValue,
   SalesforceFieldValue,
-} from "#src/schema";
-import type { SoqlDateLiteral } from "#src/soql-temporal-literal";
-import { freeze } from "#src/util/object-utils";
+} from "#/schema";
+import type { SoqlDateLiteral } from "#/soql-temporal-literal";
+import { freeze } from "#/util/object-utils";
 
 /**
  * Restricts a field reference to Salesforce fields that support aggregation.

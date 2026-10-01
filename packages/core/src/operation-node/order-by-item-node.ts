@@ -1,9 +1,9 @@
-import type { AggregateFunctionNode } from "#src/operation-node/aggregate-function-node";
-import type { DateFunctionNode } from "#src/operation-node/date-function-node";
-import type { DistanceFunctionNode } from "#src/operation-node/distance-function-node";
-import type { RawNode } from "#src/operation-node/raw-node";
-import type { ReferenceNode } from "#src/operation-node/reference-node";
-import { freeze } from "#src/util/object-utils";
+import type { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
+import type { DateFunctionNode } from "#/operation-node/date-function-node";
+import type { DistanceFunctionNode } from "#/operation-node/distance-function-node";
+import type { RawNode } from "#/operation-node/raw-node";
+import type { ReferenceNode } from "#/operation-node/reference-node";
+import { freeze } from "#/util/object-utils";
 
 /** Sort directions accepted by SOQL ORDER BY. */
 export type OrderByDirection = "asc" | "desc";

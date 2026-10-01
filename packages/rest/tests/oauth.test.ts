@@ -6,7 +6,7 @@ import {
   refreshAccessToken,
   SalesforceOAuthError,
   SalesforceResponseError,
-} from "#src/index";
+} from "#/index";
 import { mockFetch, origin } from "./helpers.js";
 
 const token = {

@@ -1,21 +1,16 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import {
-  apexAdd,
-  apexBind,
-  apexQueryField,
-  apexSubstring,
-} from "#src/apex-bind";
-import { Kysoql } from "#src/kysoql";
-import type { ApexSelectQueryBuilder } from "#src/query-builder/apex-select-query-builder";
+import { apexAdd, apexBind, apexQueryField, apexSubstring } from "#/apex-bind";
+import { Kysoql } from "#/kysoql";
+import type { ApexSelectQueryBuilder } from "#/query-builder/apex-select-query-builder";
 import type {
   SalesforceChildRelationship,
   SalesforceField,
   SalesforceObject,
   SalesforceParentRelationship,
   SalesforceQueryResult,
-} from "#src/schema";
-import type { Simplify } from "#src/util/type-utils";
+} from "#/schema";
+import type { Simplify } from "#/util/type-utils";
 
 type Field<
   Value = string,

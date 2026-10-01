@@ -1,7 +1,7 @@
-import type { GroupingFunctionBuilder } from "#src/expression/aggregate-function-builder";
-import type { AggregateFunctionNode } from "#src/operation-node/aggregate-function-node";
-import type { OperationNode } from "#src/operation-node/operation-node";
-import type { SelectionNode } from "#src/operation-node/selection-node";
+import type { GroupingFunctionBuilder } from "#/expression/aggregate-function-builder";
+import type { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
+import type { OperationNode } from "#/operation-node/operation-node";
+import type { SelectionNode } from "#/operation-node/selection-node";
 
 const GROUPING_FIELD_ERROR =
   "SOQL GROUPING() is available only for fields in GROUP BY ROLLUP or GROUP BY CUBE.";

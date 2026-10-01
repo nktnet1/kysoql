@@ -6,7 +6,7 @@ import type {
   SalesforceDataCategorySummaryResponse,
   SalesforceGlobalDescription,
   SalesforceObjectDescription,
-} from "#src/types";
+} from "#/types";
 
 const salesforceGlobalObjectDescriptionSchema = v.object({
   name: v.string(),

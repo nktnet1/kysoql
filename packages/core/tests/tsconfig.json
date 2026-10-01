@@ -4,7 +4,7 @@
     "noEmit": true,
     "rootDir": "..",
     "paths": {
-      "#src/*": ["../src/*.ts"],
+      "#/*": ["../src/*.ts"],
       "@kysoql/core": ["../src/index.ts"]
     }
   },

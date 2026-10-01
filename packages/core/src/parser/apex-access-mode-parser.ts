@@ -1,4 +1,4 @@
-import type { SelectQueryNode } from "#src/operation-node/select-query-node";
+import type { SelectQueryNode } from "#/operation-node/select-query-node";
 
 export function validateApexAccessModeQuery(query: SelectQueryNode): void {
   if (!query.apexAccessMode) {

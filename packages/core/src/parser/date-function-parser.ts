@@ -2,11 +2,11 @@ import type {
   AliasedDateFunctionBuilder,
   DateFunctionBuilder,
   DateFunctionExpression,
-} from "#src/expression/aggregate-function-builder";
-import type { DateFunctionNode } from "#src/operation-node/date-function-node";
-import type { OperationNode } from "#src/operation-node/operation-node";
-import type { ComparisonOperator } from "#src/operation-node/operator-node";
-import type { SelectionNode } from "#src/operation-node/selection-node";
+} from "#/expression/aggregate-function-builder";
+import type { DateFunctionNode } from "#/operation-node/date-function-node";
+import type { OperationNode } from "#/operation-node/operation-node";
+import type { ComparisonOperator } from "#/operation-node/operator-node";
+import type { SelectionNode } from "#/operation-node/selection-node";
 
 const DATE_GROUP_BY_EXPRESSION_ERROR =
   "SOQL date GROUP BY callbacks must return an unaliased date function expression.";

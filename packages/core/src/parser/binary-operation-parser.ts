@@ -1,7 +1,7 @@
 import * as v from "valibot";
 
-import { BinaryOperationNode } from "#src/operation-node/binary-operation-node";
-import type { OperationNode } from "#src/operation-node/operation-node";
+import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
+import type { OperationNode } from "#/operation-node/operation-node";
 import {
   type ComparisonOperator,
   type EqualityComparisonOperator,
@@ -10,26 +10,26 @@ import {
   OperatorNode,
   type OrderedComparisonOperator,
   type SetComparisonOperator,
-} from "#src/operation-node/operator-node";
-import { ReferenceNode } from "#src/operation-node/reference-node";
-import { ValueListNode } from "#src/operation-node/value-list-node";
-import { ValueNode } from "#src/operation-node/value-node";
-import type { FieldReferenceDefinition } from "#src/parser/reference-parser";
+} from "#/operation-node/operator-node";
+import { ReferenceNode } from "#/operation-node/reference-node";
+import { ValueListNode } from "#/operation-node/value-list-node";
+import { ValueNode } from "#/operation-node/value-node";
+import type { FieldReferenceDefinition } from "#/parser/reference-parser";
 import type {
   SemiJoinOperandFieldName,
   SemiJoinSubqueryFactory,
-} from "#src/query-builder/semi-join-subquery-builder";
-import type { SalesforceFieldFilterValue } from "#src/schema";
-import { isSoqlRawBuilder, type SoqlRawBuilder } from "#src/soql";
+} from "#/query-builder/semi-join-subquery-builder";
+import type { SalesforceFieldFilterValue } from "#/schema";
+import { isSoqlRawBuilder, type SoqlRawBuilder } from "#/soql";
 import {
   isSoqlCurrencyLiteral,
   type SoqlCurrencyLiteral,
-} from "#src/soql-currency-literal";
-import type { SoqlLikeLiteral } from "#src/soql-like-literal";
+} from "#/soql-currency-literal";
+import type { SoqlLikeLiteral } from "#/soql-like-literal";
 import {
   isSoqlMultiSelectAnd,
   type SoqlMultiSelectAnd,
-} from "#src/soql-multi-select-literal";
+} from "#/soql-multi-select-literal";
 
 export type FilterableFieldName<
   DB,

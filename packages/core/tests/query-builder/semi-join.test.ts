@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { Kysoql } from "#src/kysoql";
+import { Kysoql } from "#/kysoql";
 import type {
   SalesforceChildRelationship,
   SalesforceField,
   SalesforceObject,
   SalesforceParentRelationship,
-} from "#src/schema";
+} from "#/schema";
 
 interface SemiJoinSchema {
   readonly Account: SalesforceObject<

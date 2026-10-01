@@ -1,20 +1,20 @@
 import {
   createExpressionBuilder,
   type WhereExpressionFactory,
-} from "#src/expression/expression-builder";
-import type { ComparisonOperator } from "#src/operation-node/operator-node";
-import { QueryNode } from "#src/operation-node/query-node";
-import { ReferenceNode } from "#src/operation-node/reference-node";
-import { SemiJoinSubqueryNode } from "#src/operation-node/semi-join-subquery-node";
-import { SObjectNode } from "#src/operation-node/sobject-node";
+} from "#/expression/expression-builder";
+import type { ComparisonOperator } from "#/operation-node/operator-node";
+import { QueryNode } from "#/operation-node/query-node";
+import { ReferenceNode } from "#/operation-node/reference-node";
+import { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
+import { SObjectNode } from "#/operation-node/sobject-node";
 import {
   type ComparisonOperatorExpression,
   type FilterableFieldName,
   type OperandValueExpression,
   parseValueBinaryOperation,
-} from "#src/parser/binary-operation-parser";
-import type { FieldDefinition, FieldName } from "#src/parser/reference-parser";
-import { freeze } from "#src/util/object-utils";
+} from "#/parser/binary-operation-parser";
+import type { FieldDefinition, FieldName } from "#/parser/reference-parser";
+import { freeze } from "#/util/object-utils";
 
 declare const semiJoinSubqueryExpressionType: unique symbol;
 

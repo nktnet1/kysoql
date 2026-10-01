@@ -198,7 +198,7 @@ import {
   type WhereExpressionFactory,
   type WhereNode,
   type WithDataCategoryNode,
-} from "#src/index";
+} from "#/index";
 
 type PublicTypeSurface = {
   abortableQueryOptions: AbortableQueryOptions;

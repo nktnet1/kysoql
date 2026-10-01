@@ -1,8 +1,8 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import { Kysoql } from "#src/kysoql";
-import type { SalesforceField, SalesforceObject } from "#src/schema";
-import type { NotNull, Simplify } from "#src/util/type-utils";
+import { Kysoql } from "#/kysoql";
+import type { SalesforceField, SalesforceObject } from "#/schema";
+import type { NotNull, Simplify } from "#/util/type-utils";
 
 type AggregatableField<
   Value,

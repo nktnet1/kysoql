@@ -12,7 +12,7 @@ import {
   createPkceChallenge,
   generatePkcePair,
   type PrivateKeyInput,
-} from "#src/index";
+} from "#/index";
 
 const decodeBase64Url = (value: string): string => {
   const normalized = value.replaceAll("-", "+").replaceAll("_", "/");

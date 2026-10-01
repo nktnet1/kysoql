@@ -1,10 +1,10 @@
 import * as v from "valibot";
 
-import type { DistanceFunctionExpression } from "#src/expression/geolocation-function-builder";
-import { BinaryOperationNode } from "#src/operation-node/binary-operation-node";
-import type { ComparisonOperator } from "#src/operation-node/operator-node";
-import { OperatorNode } from "#src/operation-node/operator-node";
-import { ValueNode } from "#src/operation-node/value-node";
+import type { DistanceFunctionExpression } from "#/expression/geolocation-function-builder";
+import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
+import type { ComparisonOperator } from "#/operation-node/operator-node";
+import { OperatorNode } from "#/operation-node/operator-node";
+import { ValueNode } from "#/operation-node/value-node";
 
 /** Comparison operators accepted for Salesforce DISTANCE() predicates. */
 export type DistanceComparisonOperator = "<" | ">";

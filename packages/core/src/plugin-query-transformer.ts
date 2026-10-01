@@ -1,6 +1,6 @@
-import type { SelectQueryNode } from "#src/operation-node/select-query-node";
-import type { KysoqlPlugin } from "#src/plugin";
-import type { QueryId } from "#src/query-id";
+import type { SelectQueryNode } from "#/operation-node/select-query-node";
+import type { KysoqlPlugin } from "#/plugin";
+import type { QueryId } from "#/query-id";
 
 export function transformQueryWithPlugins(
   query: SelectQueryNode,

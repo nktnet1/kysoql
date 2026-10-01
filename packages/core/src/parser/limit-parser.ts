@@ -1,6 +1,6 @@
 import * as v from "valibot";
 
-import { LimitNode } from "#src/operation-node/limit-node";
+import { LimitNode } from "#/operation-node/limit-node";
 
 const LIMIT_ERROR = "SOQL LIMIT must be a non-negative safe integer.";
 const limitSchema = v.pipe(

@@ -7,20 +7,20 @@ import {
   type HeadlessAuthorizationRequest,
   type HeadlessGuestAuthorizationOptions,
   requestFirstPartyAuthorizationChallenge,
-} from "#src/headless";
-import type { OAuthRequestOptions } from "#src/http";
+} from "#/headless";
+import type { OAuthRequestOptions } from "#/http";
 import {
   createJwtBearerAssertion,
   createOAuthClientAssertion,
   type JwtBearerAssertionOptions,
   type OAuthClientAssertionOptions,
   type PrivateKeyInput,
-} from "#src/jwt";
+} from "#/jwt";
 import {
   createStoredRefreshTokenAuth,
   type StoredRefreshTokenAuth,
   type StoredRefreshTokenAuthOptions,
-} from "#src/manager";
+} from "#/manager";
 import {
   type AuthorizationCodeOptions,
   type AuthorizationUrlOptions,
@@ -45,9 +45,9 @@ import {
   type SamlAssertionOptions,
   type SamlBearerOptions,
   type TokenExchangeOptions,
-} from "#src/oauth";
-import { generatePkcePair, type PkcePair } from "#src/pkce";
-import { nonEmptySecret, parseOAuthBaseUrl } from "#src/validation";
+} from "#/oauth";
+import { generatePkcePair, type PkcePair } from "#/pkce";
+import { nonEmptySecret, parseOAuthBaseUrl } from "#/validation";
 
 /** Options for the high-level Salesforce authentication helper. */
 export interface SalesforceAuthOptions extends OAuthRequestOptions {

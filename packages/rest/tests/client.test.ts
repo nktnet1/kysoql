@@ -6,7 +6,7 @@ import {
   createRestClient,
   SalesforceResponseError,
   SalesforceRestError,
-} from "#src/index";
+} from "#/index";
 import { deferred, mockFetch, origin, page } from "./helpers.js";
 
 const expired = () =>

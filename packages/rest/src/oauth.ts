@@ -1,6 +1,6 @@
-import { SalesforceOAuthError, SalesforceResponseError } from "#src/errors";
-import { type HttpOptions, readJson, requestSignal } from "#src/http";
-import { isRecord, nonEmptySecret, parseOrigin } from "#src/validation";
+import { SalesforceOAuthError, SalesforceResponseError } from "#/errors";
+import { type HttpOptions, readJson, requestSignal } from "#/http";
+import { isRecord, nonEmptySecret, parseOrigin } from "#/validation";
 
 /**
  * Access-token and instance metadata returned by the REST package OAuth

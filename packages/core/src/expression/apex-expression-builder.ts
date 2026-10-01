@@ -1,38 +1,38 @@
-import { type ApexBindExpression, isApexBindExpression } from "#src/apex-bind";
+import { type ApexBindExpression, isApexBindExpression } from "#/apex-bind";
 import {
   type BetaExpressionModule,
   createBetaExpressionModule,
   type FormulaFilterComparisonOperator,
   type FormulaFilterFunctionExpression,
-} from "#src/expression/formula-filter-function-builder";
+} from "#/expression/formula-filter-function-builder";
 import {
   createGeolocationFilterExpressionBuilder,
   type DistanceFunctionExpression,
   type GeolocationFilterFunctionModule,
-} from "#src/expression/geolocation-function-builder";
-import { AndNode } from "#src/operation-node/and-node";
-import { NotNode } from "#src/operation-node/not-node";
-import type { OperationNode } from "#src/operation-node/operation-node";
-import type { ComparisonOperator } from "#src/operation-node/operator-node";
-import { OrNode } from "#src/operation-node/or-node";
+} from "#/expression/geolocation-function-builder";
+import { AndNode } from "#/operation-node/and-node";
+import { NotNode } from "#/operation-node/not-node";
+import type { OperationNode } from "#/operation-node/operation-node";
+import type { ComparisonOperator } from "#/operation-node/operator-node";
+import { OrNode } from "#/operation-node/or-node";
 import {
   type ApexOperandValueExpression,
   parseApexFilterBinaryOperation,
   parseApexOperationValueBinaryOperation,
-} from "#src/parser/apex-bind-parser";
+} from "#/parser/apex-bind-parser";
 import type {
   ComparisonOperatorExpression,
   FilterableFieldName,
-} from "#src/parser/binary-operation-parser";
-import type { FilterBinaryOperationOptions } from "#src/parser/filter-parser";
+} from "#/parser/binary-operation-parser";
+import type { FilterBinaryOperationOptions } from "#/parser/filter-parser";
 import {
   type DistanceComparisonOperator,
   parseDistanceFilterBinaryOperation,
-} from "#src/parser/geolocation-expression-parser";
+} from "#/parser/geolocation-expression-parser";
 import type {
   SoqlDateLiteral,
   SoqlDateTimeLiteral,
-} from "#src/soql-temporal-literal";
+} from "#/soql-temporal-literal";
 
 declare const apexExpressionType: unique symbol;
 

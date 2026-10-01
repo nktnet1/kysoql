@@ -1,5 +1,5 @@
-import { ValueNode } from "#src/operation-node/value-node";
-import { freeze } from "#src/util/object-utils";
+import { ValueNode } from "#/operation-node/value-node";
+import { freeze } from "#/util/object-utils";
 
 /** Immutable query AST node for a list of bound SOQL values. */
 export interface ValueListNode {

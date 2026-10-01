@@ -1,4 +1,4 @@
-import { freeze } from "#src/util/object-utils";
+import { freeze } from "#/util/object-utils";
 
 /** Immutable query AST node for a record-visibility context clause. */
 export interface RecordVisibilityContextNode {

@@ -1,6 +1,6 @@
-import type { SelectQueryNode } from "#src/operation-node/select-query-node";
-import type { CompiledQuery } from "#src/query-compiler/compiled-query";
-import type { QueryId } from "#src/query-id";
+import type { SelectQueryNode } from "#/operation-node/select-query-node";
+import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import type { QueryId } from "#/query-id";
 
 /** Arguments passed to a plugin before a query is compiled. */
 export interface PluginTransformQueryArgs {

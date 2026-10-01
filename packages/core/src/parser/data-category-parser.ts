@@ -1,17 +1,17 @@
-import type { AndNode } from "#src/operation-node/and-node";
-import type { BinaryOperationNode } from "#src/operation-node/binary-operation-node";
-import type { NotNode } from "#src/operation-node/not-node";
-import type { OperationNode } from "#src/operation-node/operation-node";
-import type { OrNode } from "#src/operation-node/or-node";
-import type { ReferenceNode } from "#src/operation-node/reference-node";
-import type { SelectQueryNode } from "#src/operation-node/select-query-node";
+import type { AndNode } from "#/operation-node/and-node";
+import type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
+import type { NotNode } from "#/operation-node/not-node";
+import type { OperationNode } from "#/operation-node/operation-node";
+import type { OrNode } from "#/operation-node/or-node";
+import type { ReferenceNode } from "#/operation-node/reference-node";
+import type { SelectQueryNode } from "#/operation-node/select-query-node";
 import {
   DataCategorySelectionNode,
   type DataCategorySelector,
   type WithDataCategoryNode,
-} from "#src/operation-node/with-data-category-node";
+} from "#/operation-node/with-data-category-node";
 
-export type { DataCategorySelector } from "#src/operation-node/with-data-category-node";
+export type { DataCategorySelector } from "#/operation-node/with-data-category-node";
 
 /** Input accepted when adding a Salesforce WITH DATA CATEGORY filter. */
 export type DataCategoryInput<Category extends string> =

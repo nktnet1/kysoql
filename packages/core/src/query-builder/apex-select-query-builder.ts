@@ -1,58 +1,55 @@
-import type {
-  ApexBindExpression,
-  ApexDatabaseQueryOptions,
-} from "#src/apex-bind";
+import type { ApexBindExpression, ApexDatabaseQueryOptions } from "#/apex-bind";
 import {
   type ApexWhereExpressionFactory,
   createApexExpressionBuilder,
-} from "#src/expression/apex-expression-builder";
-import { AllRowsNode } from "#src/operation-node/all-rows-node";
+} from "#/expression/apex-expression-builder";
+import { AllRowsNode } from "#/operation-node/all-rows-node";
 import {
   type ApexAccessMode,
   ApexAccessModeNode,
-} from "#src/operation-node/apex-access-mode-node";
-import { ForUpdateNode } from "#src/operation-node/for-update-node";
-import type { ComparisonOperator } from "#src/operation-node/operator-node";
-import { QueryNode } from "#src/operation-node/query-node";
-import { ReferenceNode } from "#src/operation-node/reference-node";
-import { RelationshipSubqueryNode } from "#src/operation-node/relationship-subquery-node";
-import { SelectQueryNode } from "#src/operation-node/select-query-node";
-import { SelectionNode } from "#src/operation-node/selection-node";
+} from "#/operation-node/apex-access-mode-node";
+import { ForUpdateNode } from "#/operation-node/for-update-node";
+import type { ComparisonOperator } from "#/operation-node/operator-node";
+import { QueryNode } from "#/operation-node/query-node";
+import { ReferenceNode } from "#/operation-node/reference-node";
+import { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
+import { SelectQueryNode } from "#/operation-node/select-query-node";
+import { SelectionNode } from "#/operation-node/selection-node";
 import {
   type ApexOperandValueExpression,
   parseApexFilterBinaryOperation,
   parseApexLimit,
   parseApexOffset,
-} from "#src/parser/apex-bind-parser";
+} from "#/parser/apex-bind-parser";
 import type {
   ComparisonOperatorExpression,
   FilterableFieldName,
-} from "#src/parser/binary-operation-parser";
-import { validateSemiJoinWhere } from "#src/parser/filter-parser";
+} from "#/parser/binary-operation-parser";
+import { validateSemiJoinWhere } from "#/parser/filter-parser";
 import type {
   ChildObjectName,
   ChildRelationshipName,
   ChildRelationshipReference,
-} from "#src/parser/reference-parser";
-import { parseDynamicApexSetOptions } from "#src/parser/set-options-parser";
-import { validateTypeOfSelections } from "#src/parser/type-of-parser";
+} from "#/parser/reference-parser";
+import { parseDynamicApexSetOptions } from "#/parser/set-options-parser";
+import { validateTypeOfSelections } from "#/parser/type-of-parser";
 import type {
   ApexQueryContext,
   DynamicApexOnly,
-} from "#src/query-builder/apex-query-context";
+} from "#/query-builder/apex-query-context";
 import {
   createRelationshipSubqueryBuilder,
   type RelationshipSubqueryBuilder,
-} from "#src/query-builder/relationship-subquery-builder";
+} from "#/query-builder/relationship-subquery-builder";
 import type {
   SelectQueryBuilderProps,
   SelectQueryMode,
-} from "#src/query-builder/select-query-builder";
-import type { CompiledQuery } from "#src/query-compiler/compiled-query";
-import type { SalesforceQueryResult } from "#src/schema";
-import { isSoqlRawBuilder, type SoqlRawBuilder } from "#src/soql";
-import { freeze } from "#src/util/object-utils";
-import type { ConditionalOutput, Simplify } from "#src/util/type-utils";
+} from "#/query-builder/select-query-builder";
+import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import type { SalesforceQueryResult } from "#/schema";
+import { isSoqlRawBuilder, type SoqlRawBuilder } from "#/soql";
+import { freeze } from "#/util/object-utils";
+import type { ConditionalOutput, Simplify } from "#/util/type-utils";
 
 type ChildObjectForRelationship<
   DB,

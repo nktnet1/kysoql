@@ -1,4 +1,4 @@
-import { freeze } from "#src/util/object-utils";
+import { freeze } from "#/util/object-utils";
 
 /** Selectors accepted by Salesforce WITH DATA CATEGORY. */
 export type DataCategorySelector = "at" | "above" | "below" | "above_or_below";

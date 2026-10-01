@@ -9,9 +9,9 @@ import type {
   KysoqlConfig,
   ObjectFieldFilters,
   SalesforceAuthProvider,
-} from "#src/config";
-import { parseFieldFilters } from "#src/field-filters";
-import { parseSchemaName } from "#src/validation";
+} from "#/config";
+import { parseFieldFilters } from "#/field-filters";
+import { parseSchemaName } from "#/validation";
 
 const extensions = [".ts", ".mts", ".cts", ".js", ".mjs", ".cjs"];
 const nonBlankString = v.pipe(

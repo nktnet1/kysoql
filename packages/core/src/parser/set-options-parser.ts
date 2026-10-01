@@ -4,16 +4,16 @@ import {
   type ApexBindExpression,
   type ApexDatabaseQueryOptions,
   isApexBindExpression,
-} from "#src/apex-bind";
-import type { SelectQueryNode } from "#src/operation-node/select-query-node";
+} from "#/apex-bind";
+import type { SelectQueryNode } from "#/operation-node/select-query-node";
 import {
   SetOptionsNode,
   type SetOptionsNode as SetOptionsNodeType,
-} from "#src/operation-node/set-options-node";
+} from "#/operation-node/set-options-node";
 import type {
   SalesforceObjectSetOptionsCapability,
   SalesforceSetOptionsCapability,
-} from "#src/schema";
+} from "#/schema";
 
 /** SET OPTIONS supported by Salesforce Data 360 data lake objects. */
 export interface Data360DloSetOptions {

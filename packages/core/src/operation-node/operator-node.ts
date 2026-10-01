@@ -1,4 +1,4 @@
-import { freeze } from "#src/util/object-utils";
+import { freeze } from "#/util/object-utils";
 
 /** SOQL equality comparison operators. */
 export type EqualityComparisonOperator = "=" | "!=";

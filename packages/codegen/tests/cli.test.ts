@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 import { Command } from "@oclif/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { COMMANDS } from "#src/commands";
-import Generate from "#src/commands/generate";
+import { COMMANDS } from "#/commands";
+import Generate from "#/commands/generate";
 
 import { field } from "./fixtures/field-filtering.js";
 
@@ -85,7 +85,7 @@ describe("kysoql oclif CLI", () => {
     mocks.execute.mockResolvedValue(undefined);
     vi.resetModules();
 
-    await import("#src/cli");
+    await import("#/cli");
 
     expect(mocks.execute).toHaveBeenCalledOnce();
     expect(mocks.execute).toHaveBeenCalledWith({

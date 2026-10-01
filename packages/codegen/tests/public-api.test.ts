@@ -17,14 +17,14 @@ import type {
   SalesforceObjectDescription,
   SalesforcePicklistValue,
   SalesforceSupportedScopeDescription,
-} from "#src/index";
+} from "#/index";
 import {
   createRestDescribeClient,
   defineConfig,
   generateSchema,
   loadSchema,
   renderSchema,
-} from "#src/index";
+} from "#/index";
 
 it("exports the complete codegen public API from the package entrypoint", () => {
   expectTypeOf(createRestDescribeClient).toBeFunction();

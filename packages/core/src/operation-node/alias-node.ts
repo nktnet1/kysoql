@@ -1,6 +1,6 @@
-import type { OperationNode } from "#src/operation-node/operation-node";
-import { parseSelectionAlias } from "#src/parser/selection-alias-parser";
-import { freeze } from "#src/util/object-utils";
+import type { OperationNode } from "#/operation-node/operation-node";
+import { parseSelectionAlias } from "#/parser/selection-alias-parser";
+import { freeze } from "#/util/object-utils";
 
 /** Immutable query AST node for a SELECT alias. */
 export interface AliasNode {

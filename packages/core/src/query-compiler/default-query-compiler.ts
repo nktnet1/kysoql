@@ -1,88 +1,88 @@
 import * as v from "valibot";
 
-import type { AggregateFunctionNode } from "#src/operation-node/aggregate-function-node";
-import type { AliasNode } from "#src/operation-node/alias-node";
-import type { AndNode } from "#src/operation-node/and-node";
-import type { ApexBindNode } from "#src/operation-node/apex-bind-node";
+import type { AggregateFunctionNode } from "#/operation-node/aggregate-function-node";
+import type { AliasNode } from "#/operation-node/alias-node";
+import type { AndNode } from "#/operation-node/and-node";
+import type { ApexBindNode } from "#/operation-node/apex-bind-node";
 import type {
   ApexAdditionNode,
   ApexBindExpressionNode,
   ApexExpressionOperandNode,
   ApexQueryResultNode,
   ApexSubstringNode,
-} from "#src/operation-node/apex-expression-node";
-import type { ApexLiteralNode } from "#src/operation-node/apex-literal-node";
-import type { BinaryOperationNode } from "#src/operation-node/binary-operation-node";
-import type { ConvertCurrencyFunctionNode } from "#src/operation-node/convert-currency-function-node";
-import type { ConvertTimezoneFunctionNode } from "#src/operation-node/convert-timezone-function-node";
-import type { DateFunctionNode } from "#src/operation-node/date-function-node";
-import type { DistanceFunctionNode } from "#src/operation-node/distance-function-node";
-import type { FieldsFunctionNode } from "#src/operation-node/fields-function-node";
-import type { ForViewReferenceNode } from "#src/operation-node/for-view-reference-node";
-import type { FormatFunctionNode } from "#src/operation-node/format-function-node";
-import type { FormulaFunctionNode } from "#src/operation-node/formula-function-node";
-import { GeolocationFunctionNode } from "#src/operation-node/geolocation-function-node";
-import type { GroupByNode } from "#src/operation-node/group-by-node";
-import type { HavingNode } from "#src/operation-node/having-node";
-import type { KnowledgeUpdateNode } from "#src/operation-node/knowledge-update-node";
-import type { LimitNode } from "#src/operation-node/limit-node";
-import type { NotNode } from "#src/operation-node/not-node";
-import type { OffsetNode } from "#src/operation-node/offset-node";
-import type { OperationNode } from "#src/operation-node/operation-node";
-import type { OperatorNode } from "#src/operation-node/operator-node";
-import type { OrNode } from "#src/operation-node/or-node";
-import type { OrderByItemNode } from "#src/operation-node/order-by-item-node";
-import type { OrderByNode } from "#src/operation-node/order-by-node";
-import { isRawNode, type RawNode } from "#src/operation-node/raw-node";
-import type { RecordVisibilityContextNode } from "#src/operation-node/record-visibility-context-node";
-import type { ReferenceNode } from "#src/operation-node/reference-node";
-import type { RelationshipSubqueryNode } from "#src/operation-node/relationship-subquery-node";
-import type { SelectQueryNode } from "#src/operation-node/select-query-node";
-import type { SelectionNode } from "#src/operation-node/selection-node";
-import type { SemiJoinSubqueryNode } from "#src/operation-node/semi-join-subquery-node";
-import type { SetOptionsNode } from "#src/operation-node/set-options-node";
-import type { ToLabelFunctionNode } from "#src/operation-node/to-label-function-node";
-import type { TypeOfNode } from "#src/operation-node/type-of-node";
-import type { UserProfileFeedWithNode } from "#src/operation-node/user-profile-feed-with-node";
-import type { UsingScopeNode } from "#src/operation-node/using-scope-node";
-import type { ValueListNode } from "#src/operation-node/value-list-node";
-import type { ValueNode } from "#src/operation-node/value-node";
-import type { WhereNode } from "#src/operation-node/where-node";
+} from "#/operation-node/apex-expression-node";
+import type { ApexLiteralNode } from "#/operation-node/apex-literal-node";
+import type { BinaryOperationNode } from "#/operation-node/binary-operation-node";
+import type { ConvertCurrencyFunctionNode } from "#/operation-node/convert-currency-function-node";
+import type { ConvertTimezoneFunctionNode } from "#/operation-node/convert-timezone-function-node";
+import type { DateFunctionNode } from "#/operation-node/date-function-node";
+import type { DistanceFunctionNode } from "#/operation-node/distance-function-node";
+import type { FieldsFunctionNode } from "#/operation-node/fields-function-node";
+import type { ForViewReferenceNode } from "#/operation-node/for-view-reference-node";
+import type { FormatFunctionNode } from "#/operation-node/format-function-node";
+import type { FormulaFunctionNode } from "#/operation-node/formula-function-node";
+import { GeolocationFunctionNode } from "#/operation-node/geolocation-function-node";
+import type { GroupByNode } from "#/operation-node/group-by-node";
+import type { HavingNode } from "#/operation-node/having-node";
+import type { KnowledgeUpdateNode } from "#/operation-node/knowledge-update-node";
+import type { LimitNode } from "#/operation-node/limit-node";
+import type { NotNode } from "#/operation-node/not-node";
+import type { OffsetNode } from "#/operation-node/offset-node";
+import type { OperationNode } from "#/operation-node/operation-node";
+import type { OperatorNode } from "#/operation-node/operator-node";
+import type { OrNode } from "#/operation-node/or-node";
+import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
+import type { OrderByNode } from "#/operation-node/order-by-node";
+import { isRawNode, type RawNode } from "#/operation-node/raw-node";
+import type { RecordVisibilityContextNode } from "#/operation-node/record-visibility-context-node";
+import type { ReferenceNode } from "#/operation-node/reference-node";
+import type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
+import type { SelectQueryNode } from "#/operation-node/select-query-node";
+import type { SelectionNode } from "#/operation-node/selection-node";
+import type { SemiJoinSubqueryNode } from "#/operation-node/semi-join-subquery-node";
+import type { SetOptionsNode } from "#/operation-node/set-options-node";
+import type { ToLabelFunctionNode } from "#/operation-node/to-label-function-node";
+import type { TypeOfNode } from "#/operation-node/type-of-node";
+import type { UserProfileFeedWithNode } from "#/operation-node/user-profile-feed-with-node";
+import type { UsingScopeNode } from "#/operation-node/using-scope-node";
+import type { ValueListNode } from "#/operation-node/value-list-node";
+import type { ValueNode } from "#/operation-node/value-node";
+import type { WhereNode } from "#/operation-node/where-node";
 import type {
   DataCategorySelectionNode,
   WithDataCategoryNode,
-} from "#src/operation-node/with-data-category-node";
-import { validateAllRowsQuery } from "#src/parser/all-rows-parser";
-import { validateApexAccessModeQuery } from "#src/parser/apex-access-mode-parser";
-import { validateApexBindQuery } from "#src/parser/apex-bind-parser";
-import { validateDataCategoryQuery } from "#src/parser/data-category-parser";
-import { validateData360QueryLimits } from "#src/parser/data360-query-limit-parser";
-import { validateFieldsSelections } from "#src/parser/fields-selection-parser";
-import { validateForUpdateQuery } from "#src/parser/for-update-parser";
-import { validateGroupByQuery } from "#src/parser/group-by-parser";
-import { validateKnowledgeUpdateQuery } from "#src/parser/knowledge-update-parser";
-import { validateObjectQueryLimits } from "#src/parser/object-query-limit-parser";
-import { validateRecordVisibilityContextQuery } from "#src/parser/record-visibility-context-parser";
+} from "#/operation-node/with-data-category-node";
+import { validateAllRowsQuery } from "#/parser/all-rows-parser";
+import { validateApexAccessModeQuery } from "#/parser/apex-access-mode-parser";
+import { validateApexBindQuery } from "#/parser/apex-bind-parser";
+import { validateDataCategoryQuery } from "#/parser/data-category-parser";
+import { validateData360QueryLimits } from "#/parser/data360-query-limit-parser";
+import { validateFieldsSelections } from "#/parser/fields-selection-parser";
+import { validateForUpdateQuery } from "#/parser/for-update-parser";
+import { validateGroupByQuery } from "#/parser/group-by-parser";
+import { validateKnowledgeUpdateQuery } from "#/parser/knowledge-update-parser";
+import { validateObjectQueryLimits } from "#/parser/object-query-limit-parser";
+import { validateRecordVisibilityContextQuery } from "#/parser/record-visibility-context-parser";
 import {
   validateRelationshipQueryLimits,
   validateRelationshipSubqueryOffsets,
-} from "#src/parser/relationship-query-limit-parser";
-import { parseSelectionAlias } from "#src/parser/selection-alias-parser";
-import { validateSetOptionsQuery } from "#src/parser/set-options-parser";
-import { validateTypeOfSelections } from "#src/parser/type-of-parser";
-import { validateUserProfileFeedQuery } from "#src/parser/user-profile-feed-parser";
-import type { CompiledQuery } from "#src/query-compiler/compiled-query";
+} from "#/parser/relationship-query-limit-parser";
+import { parseSelectionAlias } from "#/parser/selection-alias-parser";
+import { validateSetOptionsQuery } from "#/parser/set-options-parser";
+import { validateTypeOfSelections } from "#/parser/type-of-parser";
+import { validateUserProfileFeedQuery } from "#/parser/user-profile-feed-parser";
+import type { CompiledQuery } from "#/query-compiler/compiled-query";
 import type {
   QueryCompileContext,
   QueryCompiler,
-} from "#src/query-compiler/query-compiler";
-import type { SalesforceSchemaMetadata } from "#src/schema";
-import { isSoqlCurrencyLiteral } from "#src/soql-currency-literal";
-import { parseSoqlIdentifier, parseSoqlReference } from "#src/soql-identifier";
-import { isSoqlLikeLiteral } from "#src/soql-like-literal";
-import { isSoqlRelativeDateLiteral } from "#src/soql-relative-date-literal";
-import { isSoqlTemporalLiteral } from "#src/soql-temporal-literal";
-import { freeze } from "#src/util/object-utils";
+} from "#/query-compiler/query-compiler";
+import type { SalesforceSchemaMetadata } from "#/schema";
+import { isSoqlCurrencyLiteral } from "#/soql-currency-literal";
+import { parseSoqlIdentifier, parseSoqlReference } from "#/soql-identifier";
+import { isSoqlLikeLiteral } from "#/soql-like-literal";
+import { isSoqlRelativeDateLiteral } from "#/soql-relative-date-literal";
+import { isSoqlTemporalLiteral } from "#/soql-temporal-literal";
+import { freeze } from "#/util/object-utils";
 
 const NUMERIC_LITERAL_ERROR = "SOQL numeric literals must be finite numbers.";
 const numericLiteralSchema = v.pipe(

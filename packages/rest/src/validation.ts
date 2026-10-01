@@ -1,7 +1,7 @@
 import {
   SalesforceResponseError,
   type SalesforceRestErrorDetail,
-} from "#src/errors";
+} from "#/errors";
 
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);

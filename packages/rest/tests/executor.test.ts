@@ -7,7 +7,7 @@ import {
   SalesforceQueryLimitError,
   SalesforceResponseError,
   SalesforceRestError,
-} from "#src/index";
+} from "#/index";
 import { compiled, locator, mockFetch, origin, page } from "./helpers.js";
 
 const options = { instanceUrl: origin, accessToken: "token" };

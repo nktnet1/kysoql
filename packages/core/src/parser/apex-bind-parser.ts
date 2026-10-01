@@ -1,16 +1,16 @@
-import { type ApexBindExpression, isApexBindExpression } from "#src/apex-bind";
-import type { AndNode } from "#src/operation-node/and-node";
+import { type ApexBindExpression, isApexBindExpression } from "#/apex-bind";
+import type { AndNode } from "#/operation-node/and-node";
 import type {
   ApexAdditionNode,
   ApexBindExpressionNode,
   ApexQueryResultNode,
   ApexSubstringNode,
-} from "#src/operation-node/apex-expression-node";
-import { BinaryOperationNode } from "#src/operation-node/binary-operation-node";
-import { LimitNode } from "#src/operation-node/limit-node";
-import type { NotNode } from "#src/operation-node/not-node";
-import { OffsetNode } from "#src/operation-node/offset-node";
-import type { OperationNode } from "#src/operation-node/operation-node";
+} from "#/operation-node/apex-expression-node";
+import { BinaryOperationNode } from "#/operation-node/binary-operation-node";
+import { LimitNode } from "#/operation-node/limit-node";
+import type { NotNode } from "#/operation-node/not-node";
+import { OffsetNode } from "#/operation-node/offset-node";
+import type { OperationNode } from "#/operation-node/operation-node";
 import {
   type ComparisonOperator,
   type LikeComparisonOperator,
@@ -18,25 +18,25 @@ import {
   OperatorNode,
   type OrderedComparisonOperator,
   type SetComparisonOperator,
-} from "#src/operation-node/operator-node";
-import type { OrNode } from "#src/operation-node/or-node";
-import { ReferenceNode } from "#src/operation-node/reference-node";
-import type { RelationshipSubqueryNode } from "#src/operation-node/relationship-subquery-node";
-import type { SelectQueryNode } from "#src/operation-node/select-query-node";
-import type { SelectionNode } from "#src/operation-node/selection-node";
+} from "#/operation-node/operator-node";
+import type { OrNode } from "#/operation-node/or-node";
+import { ReferenceNode } from "#/operation-node/reference-node";
+import type { RelationshipSubqueryNode } from "#/operation-node/relationship-subquery-node";
+import type { SelectQueryNode } from "#/operation-node/select-query-node";
+import type { SelectionNode } from "#/operation-node/selection-node";
 import {
   type ComparisonOperatorExpression,
   type OperandValueExpression,
   parseOperationValueBinaryOperation,
-} from "#src/parser/binary-operation-parser";
+} from "#/parser/binary-operation-parser";
 import {
   type FilterBinaryOperationOptions,
   parseFilterBinaryOperation,
-} from "#src/parser/filter-parser";
-import { parseLimit } from "#src/parser/limit-parser";
-import { parseOffset } from "#src/parser/offset-parser";
-import type { FieldReferenceDefinition } from "#src/parser/reference-parser";
-import type { SalesforceFieldValue } from "#src/schema";
+} from "#/parser/filter-parser";
+import { parseLimit } from "#/parser/limit-parser";
+import { parseOffset } from "#/parser/offset-parser";
+import type { FieldReferenceDefinition } from "#/parser/reference-parser";
+import type { SalesforceFieldValue } from "#/schema";
 
 const KNOWLEDGE_APEX_BIND_ERROR =
   "Apex SOQL bind expressions are not supported for KnowledgeArticleVersion objects.";

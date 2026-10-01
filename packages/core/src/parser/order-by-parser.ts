@@ -1,16 +1,16 @@
 import type {
   AggregateFunctionExpression,
   GroupingFunctionBuilder,
-} from "#src/expression/aggregate-function-builder";
-import type { DistanceFunctionExpression } from "#src/expression/geolocation-function-builder";
+} from "#/expression/aggregate-function-builder";
+import type { DistanceFunctionExpression } from "#/expression/geolocation-function-builder";
 import {
   type OrderByDirection,
   OrderByItemNode,
   type OrderByNulls,
-} from "#src/operation-node/order-by-item-node";
-import { ReferenceNode } from "#src/operation-node/reference-node";
-import { parseGroupingFunctionExpression } from "#src/parser/grouping-expression-parser";
-import type { FieldReferenceDefinition } from "#src/parser/reference-parser";
+} from "#/operation-node/order-by-item-node";
+import { ReferenceNode } from "#/operation-node/reference-node";
+import { parseGroupingFunctionExpression } from "#/parser/grouping-expression-parser";
+import type { FieldReferenceDefinition } from "#/parser/reference-parser";
 
 type IsNullableReferenceField<
   DB,

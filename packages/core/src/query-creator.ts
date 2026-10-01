@@ -1,20 +1,20 @@
-import { SelectQueryNode } from "#src/operation-node/select-query-node";
-import { SObjectNode } from "#src/operation-node/sobject-node";
-import type { KysoqlPlugin } from "#src/plugin";
-import { PluginQueryCompiler } from "#src/plugin-query-compiler";
-import { createPluginQueryExecutor } from "#src/plugin-query-executor";
-import { transformQueryWithPlugins } from "#src/plugin-query-transformer";
+import { SelectQueryNode } from "#/operation-node/select-query-node";
+import { SObjectNode } from "#/operation-node/sobject-node";
+import type { KysoqlPlugin } from "#/plugin";
+import { PluginQueryCompiler } from "#/plugin-query-compiler";
+import { createPluginQueryExecutor } from "#/plugin-query-executor";
+import { transformQueryWithPlugins } from "#/plugin-query-transformer";
 import {
   createSelectQueryBuilder,
   type SelectQueryBuilder,
-} from "#src/query-builder/select-query-builder";
-import type { CompiledQuery } from "#src/query-compiler/compiled-query";
-import { DefaultQueryCompiler } from "#src/query-compiler/default-query-compiler";
-import type { QueryCompiler } from "#src/query-compiler/query-compiler";
-import type { AbortableQueryOptions, QueryExecutor } from "#src/query-executor";
-import { createQueryId } from "#src/query-id";
-import { applyQueryResultAliases } from "#src/query-result-mapper";
-import type { SalesforceSchemaMetadata } from "#src/schema";
+} from "#/query-builder/select-query-builder";
+import type { CompiledQuery } from "#/query-compiler/compiled-query";
+import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
+import type { QueryCompiler } from "#/query-compiler/query-compiler";
+import type { AbortableQueryOptions, QueryExecutor } from "#/query-executor";
+import { createQueryId } from "#/query-id";
+import { applyQueryResultAliases } from "#/query-result-mapper";
+import type { SalesforceSchemaMetadata } from "#/schema";
 
 /** Compiler, executor, and plugin configuration for QueryCreator. */
 export interface QueryCreatorConfig {

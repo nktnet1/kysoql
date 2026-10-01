@@ -1,19 +1,19 @@
 import {
   type FormulaArithmeticOperator,
   FormulaFunctionNode,
-} from "#src/operation-node/formula-function-node";
+} from "#/operation-node/formula-function-node";
 import type {
   EqualityComparisonOperator,
   OrderedComparisonOperator,
-} from "#src/operation-node/operator-node";
-import { ReferenceNode } from "#src/operation-node/reference-node";
-import type { FilterableFieldName } from "#src/parser/binary-operation-parser";
-import type { FieldReferenceDefinition } from "#src/parser/reference-parser";
+} from "#/operation-node/operator-node";
+import { ReferenceNode } from "#/operation-node/reference-node";
+import type { FilterableFieldName } from "#/parser/binary-operation-parser";
+import type { FieldReferenceDefinition } from "#/parser/reference-parser";
 import type {
   SoqlDateLiteral,
   SoqlDateTimeLiteral,
-} from "#src/soql-temporal-literal";
-import { freeze } from "#src/util/object-utils";
+} from "#/soql-temporal-literal";
+import { freeze } from "#/util/object-utils";
 
 declare const formulaFilterExpressionType: unique symbol;
 

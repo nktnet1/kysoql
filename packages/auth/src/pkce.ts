@@ -1,4 +1,4 @@
-import { nonEmptySecret } from "#src/validation";
+import { nonEmptySecret } from "#/validation";
 
 const BASE64URL =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";

@@ -1,5 +1,5 @@
-import { SalesforceOAuthResponseError } from "#src/errors";
-import { parseTimeout } from "#src/validation";
+import { SalesforceOAuthResponseError } from "#/errors";
+import { parseTimeout } from "#/validation";
 
 /** Shared transport options for Salesforce OAuth requests. */
 export interface OAuthRequestOptions {

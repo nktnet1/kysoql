@@ -1,5 +1,5 @@
-import type { OrderByItemNode } from "#src/operation-node/order-by-item-node";
-import { freeze } from "#src/util/object-utils";
+import type { OrderByItemNode } from "#/operation-node/order-by-item-node";
+import { freeze } from "#/util/object-utils";
 
 /** Immutable query AST node for an ORDER BY clause. */
 export interface OrderByNode {

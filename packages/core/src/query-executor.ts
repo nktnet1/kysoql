@@ -1,4 +1,4 @@
-import type { CompiledQuery } from "#src/query-compiler/compiled-query";
+import type { CompiledQuery } from "#/query-compiler/compiled-query";
 
 /**
  * Minimal structural contract used for query cancellation.

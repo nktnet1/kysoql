@@ -1,6 +1,6 @@
-import { AndNode } from "#src/operation-node/and-node";
-import type { OperationNode } from "#src/operation-node/operation-node";
-import { freeze } from "#src/util/object-utils";
+import { AndNode } from "#/operation-node/and-node";
+import type { OperationNode } from "#/operation-node/operation-node";
+import { freeze } from "#/util/object-utils";
 
 /** Immutable query AST node for a HAVING clause. */
 export interface HavingNode {

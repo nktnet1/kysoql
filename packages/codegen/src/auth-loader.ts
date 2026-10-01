@@ -3,7 +3,7 @@ import { extname, resolve } from "node:path";
 
 import { createJiti } from "jiti";
 
-import type { SalesforceAuthProvider } from "#src/config";
+import type { SalesforceAuthProvider } from "#/config";
 
 const extensions = [".ts", ".mts", ".cts", ".js", ".mjs", ".cjs"];
 

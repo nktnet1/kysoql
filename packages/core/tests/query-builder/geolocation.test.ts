@@ -1,15 +1,15 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import { Kysoql } from "#src/kysoql";
-import type { SelectQueryBuilder } from "#src/query-builder/select-query-builder";
+import { Kysoql } from "#/kysoql";
+import type { SelectQueryBuilder } from "#/query-builder/select-query-builder";
 import type {
   SalesforceChildRelationship,
   SalesforceField,
   SalesforceGeolocation,
   SalesforceObject,
   SalesforceParentRelationship,
-} from "#src/schema";
-import type { Simplify } from "#src/util/type-utils";
+} from "#/schema";
+import type { Simplify } from "#/util/type-utils";
 
 type LocationField<
   Nullable extends boolean,

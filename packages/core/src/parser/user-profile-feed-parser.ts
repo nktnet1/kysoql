@@ -1,10 +1,10 @@
 import * as v from "valibot";
 
-import type { SelectQueryNode } from "#src/operation-node/select-query-node";
+import type { SelectQueryNode } from "#/operation-node/select-query-node";
 import {
   UserProfileFeedWithNode,
   type UserProfileFeedWithNode as UserProfileFeedWithNodeType,
-} from "#src/operation-node/user-profile-feed-with-node";
+} from "#/operation-node/user-profile-feed-with-node";
 
 export type UserProfileFeedWithUserIdCheck<ObjectName> = [
   Exclude<ObjectName, "UserProfileFeed">,

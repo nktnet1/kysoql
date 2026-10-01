@@ -1,8 +1,8 @@
 import * as v from "valibot";
 
-import type { GeolocationFunctionNode } from "#src/operation-node/geolocation-function-node";
-import type { ReferenceNode } from "#src/operation-node/reference-node";
-import { freeze } from "#src/util/object-utils";
+import type { GeolocationFunctionNode } from "#/operation-node/geolocation-function-node";
+import type { ReferenceNode } from "#/operation-node/reference-node";
+import { freeze } from "#/util/object-utils";
 
 /** Units accepted by Salesforce DISTANCE() expressions. */
 export type DistanceUnit = "km" | "mi";

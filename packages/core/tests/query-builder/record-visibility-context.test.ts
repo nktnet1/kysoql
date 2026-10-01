@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 
-import { Kysoql } from "#src/kysoql";
-import { RecordVisibilityContextNode } from "#src/operation-node/record-visibility-context-node";
-import { ReferenceNode } from "#src/operation-node/reference-node";
-import { SelectQueryNode } from "#src/operation-node/select-query-node";
-import { SelectionNode } from "#src/operation-node/selection-node";
-import { SObjectNode } from "#src/operation-node/sobject-node";
-import { DataCategorySelectionNode } from "#src/operation-node/with-data-category-node";
-import { DefaultQueryCompiler } from "#src/query-compiler/default-query-compiler";
+import { Kysoql } from "#/kysoql";
+import { RecordVisibilityContextNode } from "#/operation-node/record-visibility-context-node";
+import { ReferenceNode } from "#/operation-node/reference-node";
+import { SelectQueryNode } from "#/operation-node/select-query-node";
+import { SelectionNode } from "#/operation-node/selection-node";
+import { SObjectNode } from "#/operation-node/sobject-node";
+import { DataCategorySelectionNode } from "#/operation-node/with-data-category-node";
+import { DefaultQueryCompiler } from "#/query-compiler/default-query-compiler";
 import type {
   SalesforceChildRelationship,
   SalesforceField,
   SalesforceObject,
-} from "#src/schema";
+} from "#/schema";
 
 type Field<Value = string, Type extends string = "string"> = SalesforceField<
   Value,

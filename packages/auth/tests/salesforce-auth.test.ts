@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 
-import { SalesforceAuth } from "#src/index";
+import { SalesforceAuth } from "#/index";
 import { mockFetch, origin, tokenResponse } from "./helpers.js";
 
 const form = (init: RequestInit | undefined): URLSearchParams =>

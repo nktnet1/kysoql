@@ -5,7 +5,7 @@ import {
   createCodeCredentialsAuthorizationRequest,
   createHeadlessGuestAuthorizationRequest,
   requestFirstPartyAuthorizationChallenge,
-} from "#src/index";
+} from "#/index";
 import { mockFetch } from "./helpers.js";
 
 const siteUrl = "https://customers.example.my.site.com";

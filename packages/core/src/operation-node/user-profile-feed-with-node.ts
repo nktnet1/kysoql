@@ -1,5 +1,5 @@
-import { ValueNode } from "#src/operation-node/value-node";
-import { freeze } from "#src/util/object-utils";
+import { ValueNode } from "#/operation-node/value-node";
+import { freeze } from "#/util/object-utils";
 
 /** Immutable query AST node for a UserProfileFeed WITH clause. */
 export interface UserProfileFeedWithNode {
