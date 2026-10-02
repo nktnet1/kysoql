@@ -132,6 +132,10 @@ pnpm verify:publish
 
 Salesforce-backed E2E tests live under `tests/salesforce-e2e` and are separate from the normal test run because they require a configured Salesforce org. See [`scripts/README.md`](scripts/README.md) for repository automation and maintainer workflows.
 
+## AI-assisted development
+
+AI tools are used as part of developing the Kysoql packages, including code, tests, documentation, and review. AI-assisted changes are still reviewed and validated through the same repository checks before they are merged or released.
+
 ## Releases
 
 Public packages are released together under the `@kysoql` npm scope. The release tooling validates package versions, tarballs, metadata, and consumer installs before publishing through npm trusted publishing.
