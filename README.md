@@ -44,7 +44,7 @@ console.log(query.compile().soql);
 // SELECT Id, Name FROM Account WHERE Name LIKE 'Acme%' ORDER BY Name LIMIT 25
 ```
 
-Add an executor when you want to run the query against Salesforce. The [quickstart](https://nktnet1.github.io/kysoql/docs/framework/getting-started/quickstart) walks through authentication, schema generation, and REST execution end to end.
+Add an executor when you want to run the query against Salesforce. The [getting started guide](https://nktnet1.github.io/kysoql/docs/framework/getting-started) walks through authentication, schema generation, and REST execution end to end.
 
 ## Why generate a schema?
 
@@ -100,7 +100,7 @@ The full documentation is available at [nktnet1.github.io/kysoql](https://nktnet
 
 Good places to start:
 
-- [Quickstart](https://nktnet1.github.io/kysoql/docs/framework/getting-started/quickstart)
+- [Getting started](https://nktnet1.github.io/kysoql/docs/framework/getting-started)
 - [Mental model](https://nktnet1.github.io/kysoql/docs/framework/guides/mental-model)
 - [Selecting fields](https://nktnet1.github.io/kysoql/docs/framework/guides/selecting)
 - [Filtering records](https://nktnet1.github.io/kysoql/docs/framework/guides/filtering)

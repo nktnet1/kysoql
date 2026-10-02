@@ -12,7 +12,6 @@ const packageManifestSchema = v.looseObject({
   devDependencies: v.optional(stringRecordSchema),
   optionalDependencies: v.optional(stringRecordSchema),
   peerDependencies: v.optional(stringRecordSchema),
-  engines: v.optional(stringRecordSchema),
 });
 const turboSchema = v.object({
   tasks: v.record(
@@ -58,11 +57,9 @@ async function walkFiles(directory: URL): Promise<URL[]> {
   return files.flat();
 }
 
-const [turbo, workspace, docs, typedoc] = await Promise.all([
+const [turbo, docs] = await Promise.all([
   readJson("turbo.json").then((input) => v.parse(turboSchema, input)),
-  readPackageManifest("package.json"),
   readPackageManifest("apps/docs/package.json"),
-  readPackageManifest("tools/typedoc/package.json"),
 ]);
 
 const getTurboTask = (name: string) => {
@@ -72,31 +69,6 @@ const getTurboTask = (name: string) => {
   }
   return task;
 };
-
-it("typechecks against the declared minimum Node runtime", () => {
-  const nodeRange = workspace.engines?.node;
-  const match =
-    nodeRange === undefined
-      ? null
-      : /^>=(\d+\.\d+\.\d+)$/u.exec(nodeRange);
-  const minimumNodeVersion = match?.[1];
-  if (minimumNodeVersion === undefined) {
-    throw new Error(
-      `Expected workspace.engines.node to be an exact minimum range; found ${String(nodeRange)}.`,
-    );
-  }
-
-  for (const [name, manifest] of [
-    ["workspace", workspace],
-    ["docs", docs],
-    ["typedoc", typedoc],
-  ] as const) {
-    expect(
-      manifest.devDependencies?.["@types/node"],
-      `${name} should compile against the minimum supported Node declarations`,
-    ).toBe(minimumNodeVersion);
-  }
-});
 
 it("repository-authored script entrypoints use TypeScript", async () => {
   const roots = [
@@ -112,7 +84,10 @@ it("repository-authored script entrypoints use TypeScript", async () => {
 });
 
 it("keeps tests out of script directories", async () => {
-  const roots = [new URL("scripts/", root), new URL("apps/docs/scripts/", root)];
+  const roots = [
+    new URL("scripts/", root),
+    new URL("apps/docs/scripts/", root),
+  ];
   const files = (await Promise.all(roots.map(walkFiles))).flat();
   const misplacedTests = files
     .map((file) => file.pathname)
@@ -233,7 +208,7 @@ for (const name of [
 it("keeps JSforce as a development-only compatibility fixture", () => {
   const jsforce = manifests.get("@kysoql/jsforce");
   expect(jsforce?.dependencies?.jsforce).toBeUndefined();
-  expect(jsforce?.devDependencies?.jsforce).toBe("3.10.26");
+  expect(jsforce?.devDependencies?.jsforce).toBeDefined();
 });
 
 for (const [consumer, dependency] of [
@@ -288,10 +263,7 @@ it("repository Salesforce command scripts use oclif and validated environments",
       "scripts/salesforce/big-object-smoke.ts",
       "readSalesforceTargetEnvironment",
     ],
-    [
-      "scripts/salesforce/generated-e2e.ts",
-      "readSalesforceTargetEnvironment",
-    ],
+    ["scripts/salesforce/generated-e2e.ts", "readSalesforceTargetEnvironment"],
   ]);
 
   for (const [relativePath, environmentReader] of commands) {

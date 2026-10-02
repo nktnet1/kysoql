@@ -49,10 +49,10 @@ function Home() {
           </Link>
           <Link
             to="/docs/$"
-            params={{ _splat: "framework/getting-started/quickstart" }}
+            params={{ _splat: "framework/getting-started" }}
             className="rounded-lg px-4 py-2 font-medium text-sm underline underline-offset-4"
           >
-            Follow the quickstart
+            Get started
           </Link>
         </div>
         <DynamicCodeBlock lang="ts" code={homeExample} />

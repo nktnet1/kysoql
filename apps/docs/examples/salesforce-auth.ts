@@ -1,4 +1,4 @@
-/** Compile/typecheck fixture matching the quickstart's authentication helper. */
+/** Compile/typecheck fixture matching the getting started guide's authentication helper. */
 import { SalesforceAuth } from "@kysoql/auth";
 
 const auth = new SalesforceAuth({
