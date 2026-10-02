@@ -20,17 +20,18 @@
     "docs:api:jsforce": "pnpm --filter @kysoql/typedoc docs:jsforce"
   },
   "dependencies": {
-    "@tanstack/react-router": "1.170.39",
+    "@tanstack/react-router": "1.170.41",
     "@tanstack/react-router-devtools": "1.167.2",
-    "@tanstack/react-start": "1.168.58",
-    "cn": "^0.3.3",
-    "fumadocs-core": "16.15.13",
-    "fumadocs-mdx": "15.4.3",
-    "fumadocs-ui": "npm:@fumadocs/base-ui@16.15.13",
-    "lucide-react": "^1.47.0",
+    "@tanstack/react-start": "1.168.60",
+    "cn": "^0.4.0",
+    "fumadocs-core": "16.15.17",
+    "fumadocs-mdx": "15.4.5",
+    "fumadocs-ui": "npm:@fumadocs/base-ui@16.15.17",
+    "lucide-react": "^1.49.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "seroval": "1.6.7"
+    "seroval": "1.6.7",
+    "url-join": "^5.0.0"
   },
   "devDependencies": {
     "@kysoql/auth": "workspace:*",
@@ -41,14 +42,14 @@
     "@kysoql/typedoc": "workspace:*",
     "@tailwindcss/vite": "^4.3.3",
     "@types/mdx": "^2.0.14",
-    "@types/node": "22.12.0",
+    "@types/node": "22.20.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "srvx": "^1.0.5",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
-    "vite": "^8.3.0"
+    "vite": "^8.3.1"
   },
   "engines": {
     "node": ">=22.12.0"
