@@ -1,6 +1,6 @@
 {
   "name": "@kysoql/rest",
-  "version": "0.1.0-beta.4",
+  "version": "0.1.0",
   "description": "Native Salesforce REST query executor for kysoql",
   "license": "MIT",
   "keywords": [
