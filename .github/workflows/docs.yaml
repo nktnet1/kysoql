@@ -9,7 +9,6 @@ on:
       - main
     paths:
       - ".github/workflows/docs.yaml"
-      - ".node-version"
       - "apps/docs/**"
       - "packages/**"
       - "tools/typedoc/**"
@@ -38,7 +37,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          node-version-file: .node-version
+          node-version: 24.x
           cache: pnpm
 
       - name: Install dependencies
