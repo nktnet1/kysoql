@@ -4,19 +4,13 @@ description: "Connect @kysoql/auth sessions and token providers to the native RE
 icon: "KeyRound"
 ---
 
-`@kysoql/rest` consumes Salesforce bearer access tokens; `@kysoql/auth` is the
-full authentication package. Keeping identity acquisition separate from query
-execution lets applications choose the Salesforce flow and token store that match
-their architecture without coupling the SOQL executor to browser or server login
-state.
+`@kysoql/rest` only needs a Salesforce instance URL and bearer token. [`@kysoql/auth`](/docs/auth) is the companion package for obtaining and renewing those tokens.
+
+Keeping authentication separate means the REST executor works the same way whether your application uses JWT bearer, refresh tokens, client credentials, an interactive login flow, or a session supplied by another system.
 
 <SalesforceReference title="Authorization Through External Client Apps or Connected Apps and OAuth 2.0" href="https://developer.salesforce.com/docs/platform/api-rest/guide/intro-oauth-and-connected-apps.html" />
 
-See [`@kysoql/auth`](/docs/auth) for current web-server/PKCE, refresh, client
-credentials, JWT, SAML, token exchange, device, hybrid, Code and Credentials, and
-first-party headless flows.
-
-## Existing access token
+## Use an existing access token
 
 ```ts
 import { createRestExecutor } from "@kysoql/rest";
@@ -26,10 +20,11 @@ export function executorForSession(instanceUrl: string, accessToken: string) {
 }
 ```
 
-Use the `instance_url` returned by Salesforce authentication, not a generic login
-host. A static token is never refreshed automatically.
+Use the `instance_url` returned by Salesforce authentication rather than a generic login host. A static token is never refreshed automatically.
 
-## Refresh-token-backed provider
+## Use a renewable token provider
+
+Flows that issue refresh tokens can plug directly into the REST executor through `storedRefreshToken()`:
 
 ```ts
 import {
@@ -43,10 +38,12 @@ export async function createRefreshingExecutor(refreshToken: string) {
     loginUrl: "https://example.my.salesforce.com",
     clientId: "oauth-client-id",
   });
+
   const sessionAuth = auth.storedRefreshToken({
     initialRefreshToken: refreshToken,
     refreshTokenStore: createMemoryRefreshTokenStore(),
   });
+
   const session = await sessionAuth.getSession();
 
   return createRestExecutor({
@@ -56,28 +53,18 @@ export async function createRefreshingExecutor(refreshToken: string) {
 }
 ```
 
-The REST client lazily acquires a provider token and caches it. Only a `401`
-Salesforce response containing `INVALID_SESSION_ID` requests another token with
-`refresh: true`; the failed HTTP operation is replayed at most once. Concurrent
-requests on one REST client share its in-flight acquisition or refresh.
+The REST client caches the provider's current token. If Salesforce returns `401 INVALID_SESSION_ID`, it asks the provider for a refreshed token and replays that request once.
 
-The auth manager separately single-flights the refresh exchange, reads the latest
-stored refresh token, and persists rotation before returning a refreshed session.
-For shared Redis state across multiple processes, add application-level distributed
-locking when refresh-token rotation is enabled.
+Concurrent requests on the same REST client share in-progress token acquisition and refresh work. If several application processes share a rotating refresh token in Redis, coordinate rotation across those processes with your normal distributed locking strategy.
 
-## Compatibility helpers in @kysoql/rest
+## Compatibility helpers
 
-`@kysoql/rest` retains its existing `authenticateClientCredentials()` and
-`refreshAccessToken()` exports for compatibility. New authentication code should prefer `SalesforceAuth` from `@kysoql/auth`,
-which binds common client configuration and exposes the complete flow and storage
-surface. The standalone functions remain available for lower-level composition. REST execution itself does not require either helper if your
-application already has a valid bearer token.
+`@kysoql/rest` still exports `authenticateClientCredentials()` and `refreshAccessToken()` for existing users. New authentication code should generally use `SalesforceAuth`, which keeps the full set of supported flows and token-storage behaviour in one package.
 
-## Security boundaries
+You do not need either package's authentication helpers if your application already has a valid Salesforce bearer token.
 
-Generated Salesforce types do not grant object, field, or record access.
-Authentication inherits the permissions of the Salesforce identity associated
-with the token. Keep client secrets, private keys, refresh tokens, and production
-access tokens out of source code and logs. See [security](/docs/core/reference/security)
-and [refresh-token storage](/docs/auth/storage).
+## Keep credentials at the application boundary
+
+Generated Salesforce types do not grant object, field, or record access. Salesforce applies the permissions of the identity behind the token.
+
+Keep client secrets, private keys, refresh tokens, and production access tokens out of source code and logs. See [security and production use](/docs/core/reference/security) and [refresh-token storage](/docs/auth/storage).

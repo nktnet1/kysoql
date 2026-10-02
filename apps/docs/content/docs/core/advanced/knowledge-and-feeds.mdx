@@ -1,17 +1,15 @@
 ---
 title: "Knowledge and feed queries"
-description: "Meet required filters and use object-specific category, tracking, and feed clauses."
+description: "Use the extra filters and clauses required by Salesforce Knowledge and feed objects."
 ---
 
-Generate the relevant Knowledge/feed objects and their metadata first. These
-examples are not guaranteed to exist in every org or to be visible to every
-integration identity.
+Generate the relevant Knowledge or feed objects first. Availability depends on
+your org and the permissions of the generation identity.
 
-## Knowledge requires a root filter
+## Knowledge root filters
 
-`KnowledgeArticleVersion` and article types ending in `__kav` require a root
-`WHERE` predicate on `PublishStatus` or `Id`. Compilation checks this rather
-than waiting for an avoidable Salesforce error.
+`KnowledgeArticleVersion` and article-version objects ending in `__kav` need a
+root filter on `PublishStatus` or `Id`:
 
 ```ts
 import { db } from "./db";
@@ -23,14 +21,11 @@ const query = db
   .limit(50);
 ```
 
-The compiler's supported-shape validation is not a substitute for every
-Salesforce Knowledge query restriction. Apex Knowledge article queries reject
-bind expressions, including binds in otherwise supported positions.
+Kysoql checks that basic shape locally. Salesforce can still apply additional
+Knowledge restrictions. Apex Knowledge queries do not accept Kysoql bind
+expressions.
 
 ## WITH DATA CATEGORY
-
-This example requires the shown category groups and categories in generated
-metadata; replace them with categories visible in your org:
 
 ```ts
 import { db } from "./db";
@@ -43,19 +38,14 @@ const query = db
   .withDataCategory("Product__c", "below", "mobile_phones__c");
 ```
 
-`withDataCategory(group, selector, categories)` accepts `"at"`, `"above"`,
-`"below"`, and `"above_or_below"`. The category argument is one generated
-category name or a non-empty list. A query permits at most three conditions,
-with no repeated category group.
+Category groups and category names come from generated metadata. Supported
+selectors are `at`, `above`, `below`, and `above_or_below`.
 
-These conditions accumulate within one `WITH DATA CATEGORY` clause. Salesforce
-restricts this clause to `Question`, `KnowledgeArticleVersion`, and concrete
-Knowledge article-version objects ending in `__kav`; Kysoql validates that root
-shape at compile time. They do not combine with another filtering `WITH` form.
-The child-query builder does not expose this method. See [schema generation](/docs/codegen/schema-generation#knowledge-categories)
-for visibility and REST discovery limitations.
+A query can contain up to three data-category conditions and cannot repeat a
+category group. This clause is available on `Question`, `KnowledgeArticleVersion`,
+and concrete `__kav` article versions.
 
-## Knowledge tracking and view statistics
+## Tracking and view statistics
 
 ```ts
 import { db } from "./db";
@@ -66,17 +56,11 @@ const query = db
   .where("PublishStatus", "=", "Online")
   .updateTracking()
   .updateViewstat();
-// ... UPDATE TRACKING, VIEWSTAT
 ```
 
-`updateTracking()` and `updateViewstat()` are available only on
-`KnowledgeArticleVersion` and `__kav` article objects, not `Question` or ordinary
-objects. The modes accumulate and emit canonical `UPDATE TRACKING, VIEWSTAT`
-when both are selected. They can follow an eligible `FOR VIEW`/`FOR REFERENCE`
-clause, but do not silently enable MRU tracking.
-
-These clauses affect tracking/statistics rather than changing selected fields.
-Consider their side effects before retrying a request automatically.
+These methods emit Knowledge `UPDATE TRACKING` and `VIEWSTAT` clauses. They can
+have observable side effects, so account for that before automatically retrying
+a request.
 
 ## UserProfileFeed
 
@@ -91,13 +75,8 @@ const query = db
   .limit(20);
 ```
 
-Replace the placeholder with a real user ID. `withUserId` is available only for
-`UserProfileFeed`, requires a non-empty string, and replaces the previous value.
-The compiler rejects a UserProfileFeed query without the clause. It cannot
-coexist with another filtering `WITH` form.
+`UserProfileFeed` requires `withUserId()`. `NewsFeed` and `UserProfileFeed` also
+reject relationship-path sorting.
 
-Both `NewsFeed` and `UserProfileFeed` reject relationship-path sorting; order
-only by fields on the root object. Permission-dependent row caps are left to
-the Salesforce execution context, not treated as unconditional compiler limits.
-Other required-filter objects are listed in
-[limitations](/docs/core/reference/limitations#object-specific-query-shapes).
+For other object-specific query shapes, see
+[support boundaries](/docs/core/reference/limitations#object-specific-rules).

@@ -1,13 +1,12 @@
 ---
 title: "Compile for Apex"
-description: "Keep API execution separate from static and dynamic Apex SOQL."
+description: "Generate SOQL for static or dynamic Apex without mixing it with API execution."
 ---
 
-Apex builders produce SOQL for code that will run **inside Salesforce Apex**.
-They do not execute Apex, deploy classes, resolve variables, or send queries
-through REST or JSforce. Both `apex()` and `dynamicApex()` are compile-only contexts.
+Apex builders produce SOQL for code that runs **inside Salesforce Apex**. They do
+not execute Apex, deploy classes, or resolve Apex variables from TypeScript.
 
-## Build the ordinary structure first
+## Enter Apex after shaping the query
 
 ```ts
 import { apexBind } from "@kysoql/core";
@@ -25,30 +24,24 @@ console.log(compiled.soql);
 // SELECT Id, Name FROM Account WHERE Id = :accountId WITH USER_MODE
 ```
 
-Define `accountId` in the Apex caller, not in the TypeScript program. A
-TypeScript `string` type marker describes compatibility; it does not create or
-validate that Apex variable.
+Define `accountId` in the Apex caller. The TypeScript generic only checks that
+the bind is compatible with the field. It does not create or validate the Apex
+variable.
 
-Finish ordinary selections, `TYPEOF`, sorting, grouping, and `HAVING` before
-switching context. The Apex record builder retains supported filters, limits,
-offsets, and child subqueries, but does not expose ordinary `select`,
-`selectFields`, `orderBy`, or `groupBy` methods. It cannot switch back to API
-execution.
+Finish ordinary selections, sorting, grouping, and `HAVING` before calling
+`.apex()` or `.dynamicApex()`. The Apex builder deliberately exposes a narrower
+set of methods after the switch.
 
-## Choose an explicit access mode
+## Choose the access mode intentionally
 
-`withUserMode()` emits `WITH USER_MODE`; `withSystemMode()` emits
-`WITH SYSTEM_MODE`. Repeated calls replace the previous access mode. Do not
-choose system mode merely to silence a permission error; make that decision in
-the Apex application's security design.
+`withUserMode()` emits `WITH USER_MODE` and `withSystemMode()` emits
+`WITH SYSTEM_MODE`. Calling one replaces the other.
 
-These clauses share SOQL's filtering `WITH` slot with data categories,
-`RecordVisibilityContext`, and `UserId`. The compiler rejects combinations
-that attempt to use more than one of these forms. Kysoql does not guess the
-Apex runtime's default security context. Confirm the target Apex API version
-supports the chosen mode.
+Kysoql does not decide which mode is appropriate for your security model. The
+mode also shares Salesforce's filtering `WITH` slot with data categories,
+`RecordVisibilityContext`, and `UserId`.
 
-## Record locking
+## Lock records
 
 ```ts
 import { apexBind } from "@kysoql/core";
@@ -63,13 +56,11 @@ const locked = db
   .compile();
 ```
 
-`forUpdate()` is only available on the Apex record builder, not aggregate or
-count builders. It cannot coexist with `ORDER BY` or `ALL ROWS`. Build locking
-queries without ordering, or use `clearOrderBy()` before compiling. Actual locks
-and transaction behaviour are controlled by Salesforce, not this TypeScript
-process.
+`forUpdate()` is available on Apex record queries. It cannot be combined with
+`ORDER BY` or `ALL ROWS`. Salesforce controls the actual transaction and lock
+behaviour.
 
-## Deleted records and archived activities
+## Include deleted records
 
 ```ts
 import { db } from "./db";
@@ -80,15 +71,15 @@ const compiled = db
   .apex()
   .allRows()
   .compile();
-// SELECT Id, Name FROM Account ALL ROWS
 ```
 
-`allRows()` is available on Apex record, aggregate, and count builders. Normal
-API builders instead use [`executeAll()`](/docs/rest/execution#queryall-is-not-pagination).
-The adapter does not execute an Apex query merely because its output is a
-string.
+`allRows()` is available on Apex record, aggregate, and count builders. For REST
+queries, use [`executeAll()`](/docs/rest/execution#queryall-is-a-separate-query-mode)
+instead.
 
-## Aggregate and count Apex queries
+## Aggregate and count queries
+
+Build the aggregate structure before entering Apex:
 
 ```ts
 import { apexBind } from "@kysoql/core";
@@ -99,44 +90,30 @@ const report = db
   .select(({ fn }) => fn.sum("Amount").as("totalAmount"))
   .groupBy("StageName")
   .select("StageName")
-  .having((eb) => eb(eb.fn.sum("Amount"), ">", 1000))
-  .orderBy("StageName")
   .apex()
   .where("IsClosed", "=", apexBind<boolean>("closed"))
   .limit(apexBind<number>("rowLimit"))
   .compile();
-
-const count = db
-  .selectFrom("Account")
-  .select(({ fn }) => fn.count())
-  .apex()
-  .where("Name", "like", apexBind<string>("namePattern"))
-  .compile();
 ```
 
-Build aggregate selections and grouping before entering Apex. These specialised
-builders accept supported WHERE binds and access modes, but do not expose
-post-switch aggregate selections or `HAVING` binds. Bare count stays limit-only.
+The specialised Apex aggregate builders accept supported filters and binds but
+do not reopen the full aggregate-building surface after the context switch.
 
-## Static versus dynamic Apex
+## Static and dynamic Apex
 
-`apex()` selects the static compile context. The structured bind expression
-helpers model supported static-Apex expression forms. `dynamicApex()` selects a
-separate compile context and permits bound `Database.QueryOptions` via
-[`setOptions`](/docs/core/advanced/data-360#managed-dynamic-apex-options).
+Use `.apex()` for the static compile context. Use `.dynamicApex()` when you need
+the dynamic-only features Kysoql models, such as bound `Database.QueryOptions`.
 
-These are not two JavaScript execution adapters. In particular, do not assume
-that every static-Apex expression emitted by a helper is accepted by every
-`Database.query` or `Database.queryWithBinds` API. Choose the appropriate Apex
-caller, bind resolution, access level, and supported syntax for the compiled
-query. The caller is responsible for defining values and executing it.
+Neither method is a JavaScript execution adapter. Your Apex code still owns bind
+values, access level, and the API used to execute the resulting SOQL.
 
-## Context restrictions
+<Accordions type="single">
+  <Accordion title="Apex-specific boundaries">
+    - Apex permits only the supported bounded `FIELDS(STANDARD)` form.
+    - Knowledge article queries reject Kysoql bind expressions.
+    - Relationship depth and syntax still depend on the target Apex API version.
+  </Accordion>
+</Accordions>
 
-Only bounded `FIELDS(STANDARD)` selections are permitted in Apex.
-Knowledge article queries reject bind expressions. Deeply nested relationship
-queries remain subject to the selected Salesforce transport and Apex API
-version, even when the builder can represent their structure.
-
-Continue with [Apex bindings](/docs/core/apex/bindings) for all exported expression
-helpers, and [API reference](/docs/core/reference/api) for the narrower method surfaces.
+Continue with [Apex bindings](/docs/core/apex/bindings) or the
+[Core API reference](/docs/core/reference/api).

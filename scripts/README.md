@@ -1,25 +1,17 @@
 # Repository scripts
 
-Scripts are grouped by responsibility:
+Repository automation is grouped by job:
 
-- `ci/` — repository-wide validation and CI orchestration.
-- `release/` — registry package bootstrap, stable/beta versioning, release checks,
-  package tarballs, publishing, trusted-publisher setup, and release metadata.
-- `salesforce/` — scratch-org setup, schema generation, and live Salesforce smoke tests.
-- `verify/` — package/public API shape and packed-consumer verification.
-- `lib/` — shared script utilities.
+- `ci/` runs the repository validation and CI entrypoints.
+- `release/` handles package bootstrap, versioning, release checks, tarballs, publishing, and trusted publishing setup.
+- `salesforce/` sets up the scratch org and runs live Salesforce smoke tests.
+- `verify/` checks package exports, publish shape, and packed consumer behaviour.
+- `lib/` contains utilities shared by the scripts above.
 
-Tests for repository scripts live under `tests/scripts/` using the same category
-structure. Documentation script tests live under `apps/docs/tests/`; test files
-should not be mixed into `scripts/` directories.
+Tests for repository scripts live under `tests/scripts/` with the same broad category structure. Docs-specific tests live under `apps/docs/tests/`.
 
-Package scripts in the root `package.json` are the supported entrypoints. Prefer
-those over invoking files directly unless a GitHub workflow specifically needs the
-lower-level release step. Registry bootstrap and release planning use pnpm. `oidc:trust` intentionally calls
-the official `npm trust` command because pnpm does not expose trusted-publisher
-governance, and the final GitHub OIDC publication step invokes the npm CLI bundled
-with the selected Node.js runtime.
+Use the root `package.json` scripts as the normal entrypoints instead of calling files in this directory directly. GitHub workflows may call lower-level release steps when they need a specific stage.
 
-Terminal output uses Node's `styleText()` through `lib/output.ts`. Style only
-status words, package/version identifiers, commands, and other key tokens; keep
-the surrounding explanatory text uncoloured.
+Most package and release orchestration uses pnpm. `oidc:trust` uses npm's official `npm trust` command because trusted-publisher configuration is owned by npm. The final OIDC publish step also uses the npm CLI bundled with the selected Node.js runtime.
+
+Terminal formatting goes through `lib/output.ts`. Keep colour focused on short status labels, commands, package names, and versions so the surrounding explanation remains easy to scan.

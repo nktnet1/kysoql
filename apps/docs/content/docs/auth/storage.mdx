@@ -1,21 +1,16 @@
 ---
 title: "Refresh-token storage"
-description: "Persist Salesforce refresh-token rotation in memory, localStorage, Redis, or a custom store."
+description: "Persist Salesforce refresh-token rotation in memory, localStorage, Redis, or your own store."
 icon: "Database"
 ---
 
-A Salesforce refresh token is a long-lived credential. `@kysoql/auth` exposes a
-small `RefreshTokenStore` interface so token rotation can be committed before a
-new access token is used.
+A Salesforce refresh token is a long-lived credential. `@kysoql/auth` provides a
+small `RefreshTokenStore` interface so rotated tokens can be saved safely.
 
 <SalesforceReference title="OAuth 2.0 Refresh Token Flow for Renewed Sessions" href="https://help.salesforce.com/s/articleView?id=sf.remoteaccess_oauth_refresh_token_flow.htm&language=en_US&type=5" />
 
-The package never writes access tokens to these refresh-token stores.
-`@kysoql/rest` caches access tokens from a provider in process memory instead,
-including tokens obtained through JWT bearer. In browser applications,
-`localStorage` is readable by JavaScript running on the page, so use it only when
-your threat model accepts that exposure. A server-side session or protected
-backend store is preferable when the application architecture permits it.
+Kysoql stores refresh tokens here, not access tokens. Choose storage that matches
+your application's security model.
 
 ## Store contract
 
@@ -24,6 +19,7 @@ import type { RefreshTokenStore } from "@kysoql/auth";
 
 export function encryptedStore(): RefreshTokenStore {
   let encrypted: string | undefined;
+
   return {
     getRefreshToken: async () => encrypted,
     setRefreshToken: async (token) => {
@@ -36,21 +32,21 @@ export function encryptedStore(): RefreshTokenStore {
 }
 ```
 
-A production custom store should encrypt at rest as appropriate for its platform.
-If `setRefreshToken()` fails during rotation, let the error propagate; treating a
-new access token as successful while losing its replacement refresh token can
-strand the session.
+A production store should protect tokens appropriately for its platform. If
+saving a rotated token fails, let the error propagate. Returning a new access
+token while losing its replacement refresh token can leave the session unable
+to refresh again.
 
 ## Memory
 
-Memory storage is useful for tests, command-line processes, or applications that
-do not need refresh state to survive a restart.
+Memory storage is useful for tests, short-lived processes, and tools that do not
+need refresh state after a restart.
 
 ```ts
 import { createMemoryRefreshTokenStore } from "@kysoql/auth";
 
-export function createStore(initialToken: string) {
-  return createMemoryRefreshTokenStore(initialToken);
+export function createStore(initialRefreshToken: string) {
+  return createMemoryRefreshTokenStore(initialRefreshToken);
 }
 ```
 
@@ -59,32 +55,24 @@ export function createStore(initialToken: string) {
 ```ts
 import { createLocalStorageRefreshTokenStore } from "@kysoql/auth";
 
-export function createBrowserStore() {
-  return createLocalStorageRefreshTokenStore({
-    key: "salesforce:refresh-token",
-  });
-}
+const store = createLocalStorageRefreshTokenStore({
+  key: "salesforce:refresh-token",
+});
 ```
 
-The default uses `globalThis.localStorage`. For SSR, tests, non-browser runtimes,
-or another Web Storage-compatible implementation, pass `storage` explicitly.
-The constructor throws when no storage object is available rather than silently
-falling back to memory.
+The browser adapter uses `globalThis.localStorage` by default. You can pass a
+Web Storage-compatible `storage` object for tests or other runtimes.
 
-Do not use a single key for multiple Salesforce users or orgs. Namespace the key
-by an application-owned opaque session identifier, not by putting a username or
-raw org credential into browser storage.
+`localStorage` is readable by JavaScript running on the page. Only use it when
+that exposure fits your threat model. For multi-user apps, use a separate key per
+application session rather than sharing one token key across users.
 
 ## Redis
-
-The Redis adapter intentionally uses only `get`, `set`, and `del`, so it works
-with Redis clients that expose those common methods without adding a Redis runtime
-dependency to Kysoql.
 
 ```ts
 import { createRedisRefreshTokenStore, type RedisLike } from "@kysoql/auth";
 
-export function createRedisStore(client: RedisLike, sessionId: string) {
+export function createStore(client: RedisLike, sessionId: string) {
   return createRedisRefreshTokenStore({
     client,
     key: sessionId,
@@ -93,19 +81,14 @@ export function createRedisStore(client: RedisLike, sessionId: string) {
 }
 ```
 
-The adapter does not set a TTL because Salesforce refresh-token validity and
-rotation policy belong to the configured OAuth application. Apply encryption,
-Redis ACLs, expiry, and backup policy at the application/infrastructure layer.
+The Redis adapter only needs `get`, `set`, and `del`. Kysoql does not add a TTL
+or distributed lock. Configure expiry, encryption, ACLs, and concurrency control
+at the application or infrastructure layer when you need them.
 
-If multiple processes can refresh the same rotating token concurrently, use a
-distributed lock or compare-and-set strategy around the auth manager. Reading the
-latest token from Redis before every refresh reduces stale-token use but is not a
-distributed synchronization primitive.
+## Use a stored token with REST
 
-## Reusable refresh provider
-
-`SalesforceAuth.storedRefreshToken()` combines a store with the refresh exchange
-and provides an `accessTokenProvider` compatible with `@kysoql/rest`.
+`SalesforceAuth.storedRefreshToken()` turns a store into a reusable session and
+an `accessTokenProvider` that can be passed straight to `@kysoql/rest`.
 
 ```ts
 import {
@@ -123,14 +106,15 @@ export async function createExecutor(
     loginUrl: "https://example.my.salesforce.com",
     clientId: "oauth-client-id",
   });
-  const store = createRedisRefreshTokenStore({
-    client,
-    key: "integration-user",
-  });
+
   const sessionAuth = auth.storedRefreshToken({
     initialRefreshToken,
-    refreshTokenStore: store,
+    refreshTokenStore: createRedisRefreshTokenStore({
+      client,
+      key: "integration-user",
+    }),
   });
+
   const session = await sessionAuth.getSession();
 
   return createRestExecutor({
@@ -140,42 +124,21 @@ export async function createExecutor(
 }
 ```
 
-If the Redis key is already populated, `initialRefreshToken` is only a fallback;
-the stored token wins. This makes it safe to bootstrap a new store while still
-honouring a token rotated by an earlier process.
+If the store already contains a token, that token takes precedence over
+`initialRefreshToken`. Refresh calls are single-flighted within one JavaScript
+process and rotated tokens are saved before the new session is returned.
 
-The manager single-flights refresh calls within one JavaScript process. It reads
-the store before each refresh, persists a rotated token before publishing the new
-session, and retains the previous refresh token when Salesforce does not rotate it.
-It does not predict token expiry or perform background refreshes.
-
-Set `clientSecretTransport: "basic"` when the OAuth client is configured to send
-its client secret with HTTP Basic authentication. For Salesforce hybrid-app
-refresh semantics, set `refreshMode: "hybrid"`; standard refresh is the default.
-
-For OAuth clients configured to authenticate refresh requests with a short-lived
-JWT client assertion, provide a function so a fresh assertion is minted for each
-refresh:
-
-```ts
-import {
-  createMemoryRefreshTokenStore,
-  SalesforceAuth,
-} from "@kysoql/auth";
-
-export function createAuth(initialRefreshToken: string) {
-  const auth = new SalesforceAuth({
-    loginUrl: "https://example.my.salesforce.com",
-    clientId: "oauth-client-id",
-  });
-
-  return auth.storedRefreshToken({
-    initialRefreshToken,
-    refreshTokenStore: createMemoryRefreshTokenStore(),
-    clientAssertion: () =>
-      auth.createClientAssertion({
-        privateKey: { type: "file", path: "./salesforce-auth-key.pem" },
-      }),
-  });
-}
-```
+<Accordions type="single">
+  <Accordion title="Client secret transport">
+    Set `clientSecretTransport: "basic"` when the Salesforce OAuth client expects
+    HTTP Basic authentication. The default sends the secret in the request body.
+  </Accordion>
+  <Accordion title="Hybrid refresh">
+    Set `refreshMode: "hybrid"` for Salesforce hybrid-app refresh semantics.
+    Standard refresh is the default.
+  </Accordion>
+  <Accordion title="Private-key client authentication">
+    Pass `clientAssertion` as a callback when each refresh needs a fresh
+    `private_key_jwt` assertion. See [private-key JWT](/docs/auth/flows/private-key-jwt).
+  </Accordion>
+</Accordions>

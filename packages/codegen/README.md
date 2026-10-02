@@ -1,9 +1,8 @@
 # @kysoql/codegen
 
-Salesforce Describe-driven schema generation for kysoql. Generated TypeScript
-captures the field and relationship capabilities used by `@kysoql/core` for
-compile-time query validation. It also derives Data 360 `SET OPTIONS` capability
-metadata from Salesforce's DLO (`__dll`) and DMO (`__dlm`) API-name suffixes.
+`@kysoql/codegen` turns Salesforce metadata into the TypeScript schema Kysoql uses for type-safe queries.
+
+Generate the objects your application uses, commit or build the generated file according to your workflow, and regenerate it whenever the Salesforce schema changes.
 
 ## Install
 
@@ -12,14 +11,12 @@ pnpm add @kysoql/auth @kysoql/core
 pnpm add -D @kysoql/codegen
 ```
 
-`@kysoql/auth` is used by the configuration example below, while generated
-schema files import the schema helper types from `@kysoql/core`.
-
-Create `kysoql.config.ts` beside your application's `package.json`:
+Create `kysoql.config.ts` next to your application's `package.json`:
 
 ```ts
 import { SalesforceAuth } from "@kysoql/auth";
 import { defineConfig } from "@kysoql/codegen";
+
 const auth = new SalesforceAuth({
   loginUrl: "https://login.salesforce.com",
   clientId: "external-client-app-id",
@@ -36,68 +33,19 @@ export default defineConfig({
 });
 ```
 
-Then run:
+Then generate the schema:
 
 ```bash
 pnpm exec kysoql generate
 ```
 
-The CLI also works without a config:
+If your project has a `src` directory, the default output is `src/kysoql/salesforce.generated.ts`. Otherwise it is `kysoql/salesforce.generated.ts`.
 
-```bash
-pnpm exec kysoql generate --no-config \
-  --auth config/salesforce.auth.ts \
-  --object Account \
-  --object Contact \
-  --output src/kysoql/salesforce.generated.ts \
-  --schema-name SalesforceSchema
-```
+## What gets generated
 
-## Configuration
+The generated TypeScript describes the Salesforce fields and relationships visible to the authenticated user. It also carries capabilities Kysoql needs for query validation, including filtering, sorting, grouping, aggregation, picklist values, relationship targets, and object-specific query features.
 
-`defineConfig` is a typed identity helper. `KysoqlConfig` accepts an optional `auth` provider plus `apiVersion`, `objects`, `fields`, `output`, and `schemaName`. Export a plain object; functions,
-promises, and config arrays are not supported. Unknown keys, invalid types, blank
-strings, and invalid schema names fail before connecting to Salesforce.
-
-Discovery checks the working directory only for `kysoql.config.ts`, `.mts`,
-`.cts`, `.js`, `.mjs`, and `.cjs`. The TypeScript-aware loader supports
-extensionless relative helper imports. Use a default export, or `module.exports`
-in `.cts`/`.cjs`. Multiple discovered configs require explicit selection:
-
-```bash
-pnpm exec kysoql generate --config config/kysoql.sandbox.ts
-```
-
-Explicit flags override config values, then built-in defaults apply. API version
-uses `--api-version`, then config `apiVersion`, then the pinned `65.0` default. Versions are strings without `v`, such as `"65.0"`. Keep
-runtime and generation versions aligned and check org support. The CLI uses native Salesforce metadata APIs; JSforce is neither used nor
-installed by codegen. Ordinary objects use REST Describe. Custom Big Objects
-(`__b`) explicitly listed in `objects`/`--object` use Tooling API metadata instead,
-because Salesforce does not support REST Describe for Big Objects. Repeated
-`--object` flags replace the configured list. Without a list (or with `objects:
-[]`), generation includes every queryable object returned by REST global Describe.
-When
-`output` is omitted, codegen writes `src/kysoql/salesforce.generated.ts` if the
-working directory has `src/`, otherwise `kysoql/salesforce.generated.ts`.
-The default interface name remains `SalesforceSchema`.
-
-The built-in default output is based on the working directory. A configured
-relative `output` is resolved from the config file's directory; an explicit
-`--output` is relative to the working directory. Absolute paths remain absolute.
-`--no-config` skips
-loading entirely and cannot be combined with `--config`.
-
-Configuration and `--auth` modules execute code: only load trusted files. The CLI
-does not read Salesforce access-token, instance-URL, or API-version environment
-variables. Resolve a session explicitly with `@kysoql/auth`, your secret manager,
-or another trusted provider. A config does not configure application runtime
-clients. Use environment-specific auth providers and output files for multiple orgs.
-Run `pnpm exec kysoql generate --help` for the complete command reference.
-
-Generated schema files are build artifacts: they include a `Do not edit manually`
-header and should be regenerated from Salesforce Describe metadata rather than
-hand-edited. Field capabilities use named metadata so generated output remains
-inspectable without memorising positional boolean arguments:
+A generated field looks like this:
 
 ```ts
 readonly AccountNumber: SalesforceField<
@@ -112,92 +60,94 @@ readonly AccountNumber: SalesforceField<
 >;
 ```
 
-Less common metadata is emitted only when it is meaningful. For example,
-`referenceTo`, `relationshipName`, `activePicklistValue`, `aggregatable`,
-`custom`, and `polymorphic` are omitted when they have their default
-`never`/`false` values.
+Generated files include a warning not to edit them by hand. Regenerate from Salesforce metadata instead.
 
-## Per-object field filters
+## Configuration
 
-Keep all fields by default, or opt into one exact-name rule per object:
+The most common options are:
 
 ```ts
 import { defineConfig } from "@kysoql/codegen";
 
+export default defineConfig({
+  auth: getSalesforceSession,
+  apiVersion: "65.0",
+  objects: ["Account", "Contact", "Opportunity"],
+  output: "src/kysoql/salesforce.generated.ts",
+  schemaName: "SalesforceSchema",
+});
+```
+
+CLI flags override config values. Use an explicit config when a repository has more than one:
+
+```bash
+pnpm exec kysoql generate --config config/kysoql.sandbox.ts
+```
+
+You can also generate without a config:
+
+```bash
+pnpm exec kysoql generate --no-config \
+  --auth config/salesforce.auth.ts \
+  --object Account \
+  --object Contact \
+  --output src/kysoql/salesforce.generated.ts
+```
+
+Config and auth modules execute code, so only load files you trust.
+
+## Generate fewer fields
+
+Field rules are useful when a very large Salesforce object creates more generated metadata than your application needs:
+
+```ts
 export default defineConfig({
   objects: ["Account", "Contact", "User"],
   fields: {
     Account: { include: ["Id", "Name", "OwnerId"] },
     Contact: { exclude: ["Description"] },
   },
-  output: "src/kysoql/salesforce.generated.ts",
 });
 ```
 
-`User` retains all described fields. `include` and `exclude` are mutually
-exclusive. Empty includes, unknown or unavailable fields, and rules that remove
-every field fail generation without updating the output. Empty excludes are
-allowed. Field names are exact and case-sensitive; wildcards, regular
-expressions, and dotted relationship paths are not supported.
+An object can have one `include` or `exclude` rule. Field names are exact and case-sensitive.
 
-Rules never add objects. `--object` replaces the object list, while rules for
-selected objects still apply; rules for other known objects are not described.
-All rule object names must be queryable in global Describe, even when inactive.
-Use `--no-config` to bypass configured rules entirely. There are no field CLI flags.
+Keep fields used by selections, filters, sorting, grouping, lookups, and relationship paths. Codegen does not silently restore `Id` or relationship fields you filtered out.
 
-Retain fields used in predicates, sorting, grouping, and lookups as well as
-selections. No fields (including `Id`) are silently restored. Removing a lookup
-removes its parent path and inverse child relationship. Polymorphic target unions
-remain intact; omitted targets are never reclassified as a single target.
+Filtered objects cannot use typed `selectFields("standard" | "custom" | "all")` selectors because Salesforce could expand fields that are not present in the generated schema. Use explicit selections for those objects.
 
-Every explicitly filtered object uses the trailing `SalesforceObject` parameter
-`FieldsComplete = false`. All typed `selectFields(...)` selectors are disabled on
-those objects and child subqueries; use explicit selections. This also applies
-to a no-op rule such as `exclude: []`. Update both codegen and core before
-regenerating. Unfiltered output is unchanged.
+Field filtering only changes generated metadata. It is not a Salesforce security boundary.
 
-Filtering reduces generated metadata, not Describe requests or runtime access.
-It is not a security boundary. The
-[field filtering guide](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/codegen/field-filtering.mdx)
-covers relationship dependencies, validation, and migration.
+## Big Objects
+
+Custom Big Objects ending in `__b` do not support ordinary REST Describe. When you explicitly include one, codegen reads the metadata it needs through Salesforce Tooling API instead.
+
+The generated schema includes ordered Big Object index metadata so Kysoql can validate the required leading index filters when you build a query.
 
 ## Library API
 
-The package exports `createRestDescribeClient`, `generateSchema`, `loadSchema`,
-`renderSchema`, and normalized Salesforce Describe types for programmatic generation.
+You can run generation from application tooling instead of the CLI:
 
 ```ts
 import { createRestDescribeClient, generateSchema } from "@kysoql/codegen";
 
-export async function generateForOrg(instanceUrl: string, accessToken: string) {
-  await generateSchema({
-    client: createRestDescribeClient({ instanceUrl, accessToken, apiVersion: "65.0" }),
-    objects: ["Account", "Contact"],
-    output: "src/kysoql/salesforce.generated.ts",
-  });
-}
+await generateSchema({
+  client: createRestDescribeClient({
+    instanceUrl,
+    accessToken,
+    apiVersion: "65.0",
+  }),
+  objects: ["Account", "Contact"],
+  output: "src/kysoql/salesforce.generated.ts",
+});
 ```
 
-The factory also accepts a shared `RestClient` from `@kysoql/rest`, with renewable
-token providers, fetch injection, cancellation, and timeout settings. It validates
-global/object metadata responses, verifies returned object identity, and loads
-complete Knowledge category trees with `topCategoriesOnly=false`. Failed taxonomy
-requests can be retried by the caller. Existing custom `SalesforceDescribeClient`
-implementations and field filtering remain supported.
-
-Programmatic generation does not discover config files: pass options explicitly.
-Its relative output paths continue to use the process working directory.
-
-
-`generateSchema({ client, output, objects, fields })` uses the same
-`ObjectFieldFilters` rules as the config. For a preview without writing a file,
-pass them to `loadSchema(client, objects, fields)` and then call `renderSchema`.
-`loadSchema` annotates filtered descriptions with `fieldsComplete: false`, and
-`renderSchema` preserves that annotation in the generated object type.
+The library API also exposes metadata loading and rendering helpers for custom generation workflows.
 
 ## Documentation
 
-Package guides live in the
-[codegen documentation](https://github.com/nktnet1/kysoql/tree/main/apps/docs/content/docs/codegen).
-The API reference is generated from this package's public `src/index.ts` entry
-point with TypeDoc as part of repository documentation validation.
+- [Codegen overview](https://nktnet1.github.io/kysoql/docs/codegen)
+- [Schema generation](https://nktnet1.github.io/kysoql/docs/codegen/schema-generation)
+- [Configuration](https://nktnet1.github.io/kysoql/docs/codegen/configuration)
+- [Field filtering](https://nktnet1.github.io/kysoql/docs/codegen/field-filtering)
+- [API reference](https://nktnet1.github.io/kysoql/docs/codegen/api)

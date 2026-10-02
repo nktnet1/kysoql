@@ -1,66 +1,54 @@
 ---
 title: "Data 360 and query options"
-description: "Use capability-checked SET OPTIONS and distinguish managed dynamic Apex options."
+description: "Use generated Data 360 capabilities and managed dynamic Apex query options."
 ---
 
-## Generated capabilities
+Kysoql codegen recognises Data Lake Objects (`__dll`) and Data Model Objects
+(`__dlm`) and records the `SET OPTIONS` capability on each generated object.
+Use the object and field names from your own org.
 
-This generator identifies Data Lake Objects from the `__dll` suffix and Data
-Model Objects from `__dlm`, then emits `setOptionsCapability`. It does not discover
-arbitrary Data 360 SQL capabilities or grant access to a dataspace.
+## Data Lake Objects
 
-Use the actual generated object and field names for your org. The names in the
-following examples are illustrative, not additional packages or built-in objects.
-
-## Data Lake Object options
+DLO queries can supply a dataspace and opt into empty-string handling:
 
 ```ts
 import { db } from "./db";
 
-const lakeRows = db
+const rows = db
   .selectFrom("ContactPoint__dll")
   .select(["Id", "EmailOptIn__c"])
-  .where("EmailOptIn__c", "=", "")
-  .setOptions({ dataspace: "default", honorEmptyStrings: true });
+  .setOptions({
+    dataspace: "default",
+    honorEmptyStrings: true,
+  });
 ```
 
-For DLOs, `setOptions` requires a non-empty `dataspace` and optionally accepts
-`honorEmptyStrings`. DLO record, aggregate-result, and bare-count builders support
-this shape. The compiler emits `SET OPTIONS` at the end of the query.
+When you call `setOptions()` on a DLO, `dataspace` is required and must be
+non-empty. Kysoql does not choose a dataspace for you.
 
-The requirement is enforced when `setOptions` is used; the builder does not
-silently add a dataspace to every DLO query. Choose the appropriate dataspace
-explicitly rather than assuming the org's configuration.
+## Data Model Objects
 
-## Data Model Object options
+DMO record queries can enable `honorEmptyStrings`:
 
 ```ts
 import { db } from "./db";
 
-const modelRows = db
+const rows = db
   .selectFrom("UnifiedIndividual__dlm")
   .select("Id")
   .setOptions({ honorEmptyStrings: true });
 ```
 
-The simple DMO record-query surface accepts `honorEmptyStrings` only. DMO
-aggregate/count option support is not exposed. Ordinary CRM objects have no
-Data 360 `setOptions` capability.
+Ordinary CRM objects do not expose these Data 360 options. Generated metadata
+also lets Kysoql catch several Data 360-specific grouping, `HAVING`, relationship,
+and semi-join restrictions before execution.
 
-`honorEmptyStrings: true` distinguishes empty strings from null in the supported
-Data 360 contexts. Generated runtime metadata also lets the compiler enforce Data
-360 query restrictions for `GROUP BY Id`, `HAVING Id`/`COUNT(Id)`, `HAVING ... IN`,
-null comparisons in `HAVING`, ordered comparisons on string fields, child-to-parent
-relationships, and DMO-to-DMO semi-joins that do not use lookup fields. Raw SOQL
-remains an explicit unsafe escape hatch for syntax the AST cannot inspect.
-
-Do not assume ordinary Salesforce CRM string-filter behaviour is identical. See Salesforce's [SET OPTIONS reference](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-set-options.html)
-for server-side behaviour and context restrictions.
+<SalesforceReference title="SET OPTIONS" href="https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-set-options.html" />
 
 ## Managed dynamic Apex options
 
-Bound `Database.QueryOptions` is a separate feature, not the object-shaped Data
-360 overload:
+A bound `Database.QueryOptions` value is a different feature from the object-shaped
+Data 360 options:
 
 ```ts
 import { apexBind, type ApexDatabaseQueryOptions } from "@kysoql/core";
@@ -72,14 +60,10 @@ const compiled = db
   .dynamicApex()
   .setOptions(apexBind<ApexDatabaseQueryOptions>("queryOptions"))
   .compile();
-// SELECT Id, Name FROM Account SET OPTIONS :queryOptions
 ```
 
-`ApexDatabaseQueryOptions` is a type-only marker. Kysoql does not instantiate
-that Apex object, set `explicitNamespace` on your behalf, or execute the query.
-The managed Apex caller must supply the options instance and use the supported
-dynamic-query API. Static `.apex()` does not enable this overload.
+`ApexDatabaseQueryOptions` is a type marker for the Apex value supplied by your
+caller. Kysoql does not create that Apex object or execute the query.
 
-The dynamic overload is available on record, aggregate, and count Apex builders.
-It does not turn `setOptions({ explicitNamespace: true })` into a supported
-TypeScript API, nor make it valid in an ordinary Salesforce REST or JSforce request.
+Use `dynamicApex()` for this overload. It is not available through normal REST,
+JSforce, or static `.apex()` queries.

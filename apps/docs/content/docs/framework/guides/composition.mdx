@@ -3,20 +3,22 @@ title: "Reusable and conditional queries"
 description: "Compose immutable builders with $call, $if, and clause-clearing methods."
 ---
 
+Kysoql builders are immutable, which makes it safe to share a base query and derive different versions from it.
+
 ## Reuse a base query
 
 ```ts
 import { db } from "./db";
 
 const base = db.selectFrom("Account").select(["Id", "Name"]);
+
 const firstPage = base.orderBy("Name").limit(25);
 const search = base.where("Name", "like", "Acme%").limit(10);
 ```
 
-Neither derived query modifies the other. Always use the return value of builder
-methods; this is not a mutable query object.
+`firstPage` and `search` do not change `base` or each other. Always keep the return value from a builder method.
 
-## $call returns the callback result
+## Use `$call` for reusable query helpers
 
 ```ts
 import { db } from "./db";
@@ -28,12 +30,11 @@ const soql = db
   .$call((query) => query.compile().soql);
 ```
 
-The callback receives the current specialised builder. It may return a modified
-builder, a compiled query, a promise, or another value; `$call` returns that
-value unchanged. It is useful for shared application functions without losing
-the current query type.
+`$call` passes the current builder to your callback and returns whatever the callback returns. That can be another builder, a compiled query, a promise, or a plain value.
 
-## Conditional filters and selections
+It is especially useful for shared query functions because the callback receives the specialised builder type you already have.
+
+## Add filters or selections conditionally
 
 ```ts
 import { db } from "./db";
@@ -42,37 +43,33 @@ export function accountSearch(prefix: string, includeRevenue: boolean) {
   return db
     .selectFrom("Account")
     .select(["Id", "Name"])
-    .$if(prefix.length > 0, (query) => query.where("Name", "like", `${prefix}%`))
+    .$if(prefix.length > 0, (query) =>
+      query.where("Name", "like", `${prefix}%`),
+    )
     .$if(includeRevenue, (query) => query.select("AnnualRevenue"))
     .limit(25);
 }
 ```
 
-`$if(condition, callback)` runs the callback only when true. Fields added inside
-it become optional in the inferred output, in addition to any existing
-nullability. Check for `undefined` before assuming a conditionally selected field
-was returned.
+`$if(condition, callback)` runs the callback only when the condition is true.
 
-Both branches must retain compatible structural query modes. Do not use `$if`
-to switch a record query to an aggregate, introduce a different grouping mode,
-or cross API/static-Apex/dynamic-Apex boundaries. Branch outside the builder when
-the query structure genuinely differs.
+A field selected inside `$if` becomes optional in the inferred result because TypeScript cannot know which branch ran. Check for `undefined` before using a conditionally selected field.
 
-Be explicit about empty filters. A false condition that removes an optional
-search filter is different from omitting a tenant or access-control restriction.
-See [security](/docs/core/reference/security).
+Use `$if` for changes within the same query shape. If one branch needs a record query and another needs an aggregate or a different Apex mode, branch outside the builder instead.
 
-## Clear clauses deliberately
+Be careful when the condition controls an authorization or tenant filter. Skipping an optional search condition is very different from skipping an access-control boundary. See [security and production use](/docs/core/reference/security).
 
-| Method | Effect |
+## Clear a clause when that is clearer than rebuilding
+
+| Method | What it removes |
 | --- | --- |
-| `clearWhere()` | Removes all accumulated `WHERE` filters, not one selected condition. |
-| `clearOrderBy()` | Removes all order terms. |
-| `clearLimit()` | Removes the result limit. |
-| `clearOffset()` | Removes root/grouped offset. |
-| `clearSelect()` | Removes selections and resets inferred output on builders that expose it. |
-| `clearGroupBy()` | Removes aggregate grouping only when no dependent clauses/selections remain. |
-| `pilot.clearOffset()` | Removes a child subquery's pilot offset. |
+| `clearWhere()` | All accumulated `WHERE` filters. |
+| `clearOrderBy()` | All ordering terms. |
+| `clearLimit()` | The result limit. |
+| `clearOffset()` | Root or grouped offset. |
+| `clearSelect()` | The current selection set and inferred output. |
+| `clearGroupBy()` | Grouping when no dependent aggregate clauses remain. |
+| `pilot.clearOffset()` | A child subquery's Pilot offset. |
 
 ```ts
 import { db } from "./db";
@@ -84,17 +81,12 @@ const query = db
   .orderBy("Name")
   .limit(25);
 
-const ids = query.clearSelect().select("Id").clearOrderBy();
-const unrestrictedNames = query.clearWhere();
+const idsOnly = query.clearSelect().select("Id").clearOrderBy();
+const unfiltered = query.clearWhere();
 ```
 
-Clearing preserves the earlier builder. `clearWhere` can invalidate required
-filters on Knowledge and other restricted objects; the compiler still rejects
-those queries. It can also remove an application security boundary, so prefer
-small, deliberate reusable functions rather than clearing arbitrary queries.
+Clearing a clause leaves the earlier builder unchanged.
 
-Methods exist only where their clause is modeled. Semi-joins expose `clearWhere`
-but no ordering or pagination to clear. Bare count has no selection reset or
-offset. Apex builders keep narrower interfaces; see the
-[API reference](/docs/core/reference/api). There is no generic `clear()` or
-`clearHaving()` in this snapshot.
+Use the helpers deliberately. `clearWhere()` can remove a required object predicate or an application security boundary. `clearGroupBy()` is only available when removing grouping would leave a valid query.
+
+Not every specialised builder exposes every clear method. The [Core API reference](/docs/core/reference/api) shows the methods available on each builder type.

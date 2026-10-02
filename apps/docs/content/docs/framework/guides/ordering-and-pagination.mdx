@@ -5,8 +5,7 @@ description: "Sort predictably, limit results, and choose OFFSET or cursor-based
 
 <SalesforceReference title="ORDER BY and OFFSET" href="https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-orderby.html" />
 
-
-## Order by generated sortable fields
+## Order by sortable fields
 
 ```ts
 import { db } from "./db";
@@ -20,16 +19,11 @@ const query = db
   .limit(25);
 ```
 
-`orderBy(field, direction?, nulls?)` accepts `"asc"` or `"desc"`, and `"first"`
-or `"last"` for null placement. Omitting direction leaves Salesforce's default
-ascending order. Use `undefined` as the second argument to specify only null
-placement: `.orderBy("AnnualRevenue", undefined, "last")`.
+`orderBy(field, direction?, nulls?)` accepts `"asc"` or `"desc"`, plus `"first"` or `"last"` for null placement.
 
-Calls append sorting terms. Use a stable tie-breaker such as `Id` when paging.
-Generated `sortable: true` is required; location fields need distance ordering,
-and the virtual polymorphic `.Type` field is not made sortable. Explicit null
-placement is deliberately unavailable for nullable reference-ID fields in this
-implementation.
+Calls append ordering terms. Add a stable tie-breaker such as `Id` when you paginate so rows with the same earlier sort value still have a deterministic order.
+
+The field must be generated as sortable. Geolocation uses [distance ordering](/docs/framework/guides/geolocation), and the virtual polymorphic `.Type` qualifier is not sortable.
 
 ## Limit and offset
 
@@ -45,37 +39,23 @@ const secondPage = db
   .offset(25);
 ```
 
-`limit(n)` accepts a non-negative safe integer, including zero. `offset(n)`
-accepts a safe integer from zero through 2000. Invalid numeric inputs throw
-`RangeError`. Repeated limit or offset calls replace the previous value rather
-than adding another clause.
+`limit(n)` accepts a non-negative safe integer. `offset(n)` accepts a safe integer from 0 through 2000.
 
-`clearLimit()`, `clearOffset()`, and `clearOrderBy()` remove their respective
-clauses immutably. Numeric limits are validated independently of Salesforce's
-object-specific or execution-context limits.
+A later `limit()` or `offset()` replaces the earlier value. `clearLimit()`, `clearOffset()`, and `clearOrderBy()` remove those clauses from the new builder they return.
 
-## OFFSET is not a bulk export mechanism
+## Use `OFFSET` for small page-based UIs
 
-Both bundled executors follow root continuation pages during normal `execute()`.
-Native REST also follows selected relationship-subquery continuations recursively
-and stops each query level when its compiled `LIMIT` has been satisfied. It also
-offers root page and record iterators; see
-[execution](/docs/rest/execution#iterate-without-accumulating-every-root-record).
-For a query or child subquery without a limit, this can accumulate a large result
-in memory.
-`executeAll()` is not needed to drain pages; it enables QueryAll, including
-eligible deleted records and archived activities.
+`LIMIT` plus `OFFSET` is convenient when a user moves through a modest number of pages.
 
-For a small page-based UI, `LIMIT` with `OFFSET` can be appropriate. Offset
-queries are independent requests, so concurrent data changes can shift rows.
-For larger datasets, use Salesforce query locators or a deliberate keyset
-strategy. Salesforce documents the 2000-row offset bound and the differences
-from `queryMore` in its [OFFSET reference](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-offset.html).
+It is not the right tool for exporting large datasets. Salesforce caps `OFFSET` at 2000 rows, and each page is a separate query. Data that changes between requests can also shift rows between pages.
+
+Normal `.execute()` already follows Salesforce query locators when one query produces multiple response pages. `.executeAll()` is for QueryAll semantics, not for ordinary pagination.
+
+For large result processing, use the [REST iterators](/docs/rest/execution#iterate-large-root-results) or an application-level keyset strategy.
 
 ## Keyset example
 
-This application-level pattern orders by one stable field and resumes after the
-last value. It is not a server-side snapshot or a built-in Kysoql cursor API:
+A simple ID cursor can resume after the last returned row:
 
 ```ts
 import { db } from "./db";
@@ -95,18 +75,12 @@ export async function loadPage(afterId?: string) {
 }
 ```
 
-Use the last returned row's `Id` for the next call. When sorting by a non-unique
-field such as `CreatedDate`, include a tie-breaker and encode both values in the
-cursor; a lone `CreatedDate > lastDate` predicate can skip rows sharing a date.
+This is an application pattern rather than a built-in Kysoql cursor API. If you sort by a non-unique field such as `CreatedDate`, include a tie-breaker and carry both values in the cursor.
 
-## Special query modes
+## Aggregate and child-query differences
 
-Grouped aggregate builders support `LIMIT` and `OFFSET` after grouping, and can
-order by grouped fields or supported unaliased expressions. Ungrouped aggregate
-results do not expose valid grouped pagination. Bare `COUNT()` is limit-only.
+Grouped aggregate queries can use `LIMIT` and `OFFSET` after grouping. Bare `COUNT()` has a narrower API.
 
-Child subqueries have no normal `offset()` method. The explicit
-[`pilot.offset()`](/docs/core/advanced/experimental#child-subquery-offset-pilot)
-requires an immediate parent with a literal `LIMIT 1` and is not recommended for
-production. Apex binds have separate
-[limit and offset rules](/docs/core/apex/bindings#limits-and-offsets).
+Child subqueries do not have normal offset support. Salesforce's child-query offset is a Pilot feature exposed through [`pilot.offset()`](/docs/core/advanced/experimental#child-subquery-offset-pilot) and has additional restrictions.
+
+Apex binds have their own [limit and offset rules](/docs/core/apex/bindings#limits-and-offsets).

@@ -5,11 +5,9 @@ description: "Use typed comparisons, grouped logic, lists, and multipicklist fil
 
 <SalesforceReference title="WHERE" href="https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-conditionexpression.html" />
 
-
 ## Basic conditions
 
-Repeated `where` calls are combined with `AND`. Pass values as structured
-builder arguments instead of concatenating SOQL yourself:
+Repeated `where` calls are joined with `AND`:
 
 ```ts
 import { db } from "./db";
@@ -21,35 +19,29 @@ const query = db
   .where("AnnualRevenue", ">=", 100_000);
 ```
 
-Unlike Kysely's SQL compilation model, ordinary Kysoql API compilation does not
-return a placeholder SQL string plus a parameter array. The compiler validates,
-serializes, and escapes these values as SOQL literals in `compile().soql`. Use the
-normal builder value positions for dynamic data; do not pre-quote values. Apex
-compile-only builders have separate explicit bind helpers.
+Pass application values through the builder instead of constructing SOQL strings yourself. Kysoql validates and escapes ordinary API values when it compiles the query.
+
+Do not pre-quote strings. Apex compile-only queries have separate typed bind helpers when you need Apex variables rather than SOQL literals.
 
 ## Operators and values
 
-| Operator | Accepted values and restrictions |
+| Operator | Accepted values |
 | --- | --- |
-| `=`, `!=` | Field-appropriate values; `null` only when the generated field permits it. |
-| `<`, `<=`, `>`, `>=` | Ordered field types and non-null values. |
+| `=`, `!=` | Values compatible with the generated field. `null` is allowed only where the field supports it. |
+| `<`, `<=`, `>`, `>=` | Ordered field types with non-null values. |
 | `like` | Supported string-like fields and a string pattern. |
-| `in`, `not in` | Non-empty homogeneous, field-appropriate lists; compatible ID/reference subqueries are also supported. |
-| `includes`, `excludes` | Non-empty lists of generated active values for multipicklist fields. |
+| `in`, `not in` | Non-empty homogeneous lists or compatible ID/reference subqueries. |
+| `includes`, `excludes` | Non-empty generated active values for multipicklist fields. |
 
-Operator names are lowercase in TypeScript; emitted SOQL uses uppercase
-keywords. `is`, `is not`, `between`, `ilike`, `not like`, and SQL `exists` are
-not part of this API. To negate a supported predicate, use `eb.not(...)`.
-Location fields require [distance expressions](/docs/framework/guides/geolocation).
+Operator names are lowercase in TypeScript. Compiled SOQL uses the normal uppercase Salesforce keywords.
 
-Null uses `where("Field", "=", null)` or `"!="`, not a string containing
-`"null"`. Date/time fields use [literal helpers](/docs/framework/guides/literals), not plain
-strings or JavaScript `Date` objects.
+For null checks, use `where("Field", "=", null)` or `"!="`. Do not pass the string `"null"`.
 
-## Group AND, OR, and NOT
+Date and time fields use [typed literal helpers](/docs/framework/guides/literals). Location fields use [distance expressions](/docs/framework/guides/geolocation).
 
-The expression builder is callable as `eb(field, operator, value)` and exposes
-`and`, `or`, and `not`:
+## Group `AND`, `OR`, and `NOT`
+
+The expression builder can be called as `eb(field, operator, value)` and also provides `and`, `or`, and `not`:
 
 ```ts
 import { db } from "./db";
@@ -68,16 +60,15 @@ const query = db
   );
 ```
 
-Use non-empty groups; do not depend on empty `and([])` or `or([])` having an
-SQL-style identity. Build optional conditions with
-[`$if`](/docs/framework/guides/composition) instead.
+Keep boolean groups non-empty. If a filter is optional, [`$if`](/docs/framework/guides/composition) is usually clearer than trying to define an empty `and([])` or `or([])`.
 
-## IN and NOT IN lists
+## `IN` and `NOT IN`
 
 ```ts
 import { db } from "./db";
 
 const ids: readonly string[] = ["001000000000001AAA"];
+
 if (ids.length === 0) {
   throw new Error("Choose at least one account ID");
 }
@@ -88,18 +79,15 @@ const query = db
   .where("Id", "in", ids);
 ```
 
-An empty list is rejected. For application helpers, decide explicitly whether
-an empty input means "no matches", "invalid request", or "omit this optional
-filter". Omitting an authorisation filter can unintentionally widen a query.
+Empty lists are rejected. Decide what an empty application input means before building the query. It might mean "no matches", "invalid request", or "skip this optional filter".
 
-For related-record existence checks, use a
-[semi-join or anti-join](/docs/framework/guides/relationships#semi-joins-and-anti-joins)
-instead of first fetching all IDs into JavaScript.
+Be especially careful with access-control filters. Silently dropping an empty authorization list can widen a query.
+
+For related-record existence checks, use a [semi-join or anti-join](/docs/framework/guides/relationships#semi-joins-and-anti-joins) instead of fetching IDs into JavaScript first.
 
 ## Multipicklists
 
-This example requires a custom multipicklist `Account.Interests__c` whose
-Describe metadata includes active values `Email` and `Events`:
+This example assumes `Account.Interests__c` is a generated multipicklist with active values `Email` and `Events`:
 
 ```ts
 import { soqlMultiSelectAnd } from "@kysoql/core";
@@ -120,55 +108,42 @@ const bothValues = db
   );
 ```
 
-A value array compiles to Salesforce's comma-separated OR form.
-`soqlMultiSelectAnd(...)` compiles the same generated active values into the
-semicolon-separated AND form. It can also appear inside the value array to express
-Salesforce's mixed form, for example `[soqlMultiSelectAnd("Email", "Events"),
-"Other"]` for `(Email AND Events) OR Other`. These helpers stay typed against the
-generated picklist. `soql.raw()` remains the explicit unsafe escape hatch for trusted
-SOQL that the builder does not model. Apex has a separate
-[bind-left INCLUDES form](/docs/core/apex/bindings#bind-left-includes).
+A normal array uses Salesforce's OR form. `soqlMultiSelectAnd(...)` produces the AND form while staying typed against generated active picklist values.
 
-## LIKE patterns and input safety
+Apex also has a separate [bind-left `INCLUDES` form](/docs/core/apex/bindings#bind-left-includes).
 
-Plain strings keep Salesforce LIKE semantics, so `%` matches zero or more
-characters and `_` matches one character:
+## Treat `LIKE` patterns deliberately
+
+Plain strings keep Salesforce `LIKE` behaviour, so `%` and `_` remain wildcard characters:
 
 ```ts
 import { db } from "./db";
 
-const patternQuery = db
+const query = db
   .selectFrom("Account")
   .select(["Id", "Name"])
   .where("Name", "like", "Acme_%");
 ```
 
-When user input should be matched literally, wrap it with `soql.likeLiteral()`.
-The helper escapes `%` and `_` as LIKE metacharacters while the compiler still
-escapes quotes and backslashes as SOQL string content:
+When user input should be matched literally, use `soql.likeLiteral()`:
 
 ```ts
 import { soql } from "@kysoql/core";
 import { db } from "./db";
 
 const search = "50%_off";
-const literalQuery = db
+
+const query = db
   .selectFrom("Account")
   .select(["Id", "Name"])
   .where("Name", "like", soql.likeLiteral(search));
 ```
 
-Object names, field/relationship references, aliases, operators, and other
-identifier-bearing query parts are runtime-validated as well as typed. Keep an
-application allowlist for which valid fields a caller may choose: syntax
-validation blocks arbitrary SOQL syntax in those inputs, but it is not
-authorisation. See
-[security](/docs/core/reference/security).
+Kysoql validates identifiers and escapes values, but that is not authorization. If users can choose fields or filters, keep an application allowlist for what they are allowed to query. See [security and production use](/docs/core/reference/security).
 
 ## Raw SOQL escape hatch
 
-For syntax Kysoql does not model yet, `soql.raw()` emits a trusted fragment
-verbatim:
+Use `soql.raw()` only for trusted syntax the builder does not model:
 
 ```ts
 import { soql } from "@kysoql/core";
@@ -180,16 +155,10 @@ const query = db
   .where(soql.raw("CALENDAR_YEAR(CreatedDate) = 2026"));
 ```
 
-`soql.raw()` deliberately bypasses identifier validation and value escaping.
-Only use it with trusted, application-owned SOQL. Never concatenate or
-interpolate request data, form values, search terms, IDs, or other untrusted
-input into a raw fragment. Prefer normal builder values or `soql.likeLiteral()`
-for user-controlled data.
+Raw fragments bypass normal identifier validation and value escaping. Never interpolate request data, search terms, IDs, form values, or other untrusted input into them.
 
-## Filters over functions
+## Filter with functions
 
-Expression callbacks also expose date functions, `toLabel`, and `distance` via
-`eb.fn`. Supported beta arithmetic lives under `eb.beta`, not `eb.fn`.
-See [date functions](/docs/framework/guides/date-functions),
-[translated labels](/docs/framework/guides/select-functions#translated-labels), and
-[experimental features](/docs/core/advanced/experimental).
+Expression callbacks expose supported date functions, `toLabel`, and `distance` through `eb.fn`. Beta arithmetic lives under `eb.beta` so experimental syntax is easy to spot.
+
+Continue with [date functions](/docs/framework/guides/date-functions), [translated labels](/docs/framework/guides/select-functions#translated-labels), or [Beta and pilot features](/docs/core/advanced/experimental).

@@ -4,14 +4,11 @@ description: "Execute Kysoql queries through Salesforce REST without JSforce."
 icon: "Cloud"
 ---
 
-`@kysoql/rest` is the native Salesforce transport for Kysoql. It implements the
-core executor contract with `fetch`, so applications can run ordinary Query,
-QueryAll, scalar counts, and paginated queries without installing JSforce.
+`@kysoql/rest` is Kysoql's native Salesforce transport. It uses `fetch`, so you can execute typed queries without adding JSforce to the application.
+
+The executor handles normal Query, QueryAll, scalar counts, Salesforce pagination, selected child relationship continuations, cancellation, and renewable access tokens.
 
 ## Install
-
-Install the REST adapter together with core when the application builds and
-executes Kysoql queries directly:
 
 <Tabs items={["npm", "yarn", "pnpm", "bun"]} defaultIndex={2}>
   <Tab value="npm">
@@ -44,7 +41,7 @@ bun add @kysoql/core @kysoql/rest
   </Tab>
 </Tabs>
 
-## Connect it to core
+## Connect it to Kysoql
 
 ```ts
 import { Kysoql } from "@kysoql/core";
@@ -58,15 +55,12 @@ export function createDatabase(instanceUrl: string, accessToken: string) {
 }
 ```
 
-The adapter follows root and selected relationship continuation pages automatically,
-including deeply nested parent-to-child subqueries, while respecting each compiled
-`LIMIT`. It also handles QueryAll continuation, structured Salesforce errors,
-cancellation, request deadlines, bounded collection, and async root-page/record
-iteration.
+That is enough for a static access token. Production applications usually pass an access-token provider so an expired Salesforce session can be renewed safely. See [authentication and token refresh](/docs/rest/authentication).
 
-## In this package
+## What happens during execution?
 
-- [Native REST execution](/docs/rest/execution)
-- [Authentication and token refresh](/docs/rest/authentication) with [`@kysoql/auth`](/docs/auth)
-- [`@kysoql/core`](/docs/core) for building the typed queries being executed
-- [`@kysoql/codegen`](/docs/codegen) for generating the Salesforce schema
+For ordinary record queries, the executor follows Salesforce continuation links until the query is complete. Selected child subqueries are completed too, including nested child relationships, while respecting each query level's compiled `LIMIT`.
+
+You can collect the whole result with `.execute()`, use QueryAll with `.executeAll()`, or process larger root result sets through the executor's async page and record iterators.
+
+Start with [native REST execution](/docs/rest/execution) for the full execution model, limits, cancellation, and error handling.

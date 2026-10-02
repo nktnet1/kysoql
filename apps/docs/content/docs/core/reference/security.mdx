@@ -1,113 +1,88 @@
 ---
 title: "Security and production use"
-description: "Treat typed queries as one layer of a secure Salesforce integration."
+description: "Use Kysoql as one layer of a secure Salesforce integration."
 ---
 
-## Keep credentials on the server
+Type-safe queries help prevent malformed SOQL. They do not replace OAuth,
+Salesforce permissions, application authorization, or input validation.
 
-Use your approved Salesforce OAuth flow, store tokens in a secret manager or
-protected process environment, and manage token refresh/revocation in the
-connection layer. Do not include access tokens in browser bundles, code examples,
-committed `.env` files, generated schemas, or public client-side configuration.
+## Keep credentials out of client code
 
-Codegen accepts an `auth` provider that returns a Salesforce session, but it is
-not a credential vault. Keep the provider and its secrets in an appropriate
-server-side or build-time secret boundary, and use an integration identity with
-only the access required for the task.
-See [native authentication](/docs/rest/authentication) and
-Salesforce's [OAuth documentation](https://developer.salesforce.com/docs/platform/mobile-sdk/guide/intro-oauth.html)
-for supported connection flows.
+Keep Salesforce access tokens, refresh tokens, client secrets, and signing keys
+inside an appropriate server-side or build-time secret boundary. Do not put them
+in browser bundles, generated schemas, committed `.env` files, or public Vite
+environment variables.
+
+For connection options, see [authentication](/docs/rest/authentication) and the
+[`@kysoql/auth` flows](/docs/auth/flows).
 
 ## Pass values through the builder
 
-The default compiler escapes literal values and uses structured expressions.
-Object names, field/relationship references, aliases, operators, and other
-identifier-bearing syntax are also checked at runtime, including when compiling
-a structurally constructed query node. Do not concatenate request input into the
-compiled SOQL afterward.
+Keep dynamic values in builder value positions:
 
-This is SOQL literal serialization, not Kysely-style SQL parameter binding.
-`compile().soql` contains the escaped literal values needed by the Salesforce API;
-there is no accompanying SQL placeholder/parameter array. Keep untrusted values in
-typed builder value positions so the compiler performs the encoding. For
-compile-only Apex, use the explicit Apex bind helpers where bind syntax is
-supported.
+```ts
+import { db } from "./db";
 
-Runtime syntax validation is not an application policy. An API endpoint should
-still validate input lengths, allowed operators, list sizes, and sortable fields,
-and should define a small allowlist for fields a caller may choose. A field can
-be a valid Salesforce identifier and still be inappropriate for that caller.
+export function findAccounts(prefix: string) {
+  return db
+    .selectFrom("Account")
+    .select(["Id", "Name"])
+    .where("Name", "like", `${prefix}%`)
+    .limit(50);
+}
+```
 
-Escaping is not authorisation. Every query still needs the application's
-appropriate tenant, account, or access scope. `clearWhere()` removes **all**
-filters, including any security condition you placed there. Treat optional
-filters and empty input lists deliberately to avoid broadening a query.
+Kysoql serializes those values as SOQL literals and validates identifiers and
+query structure. `compile().soql` contains the final escaped literals. This is
+not SQL-style placeholder binding.
 
-Plain LIKE strings preserve `%` and `_` as pattern characters. If input should
-be literal, use `soql.likeLiteral(value)`; it escapes both wildcard characters
-without changing the default pattern behaviour for ordinary strings.
+If `%` and `_` should be treated as literal characters in a `LIKE` value, use
+`soql.likeLiteral(value)`.
 
-`soql.raw()` is the deliberate exception to these protections. Raw fragments
-are emitted verbatim so advanced callers can use trusted SOQL that Kysoql does
-not model yet. Never build a raw fragment from user-controlled input, even after
-manual quoting or escaping. Keep dynamic values in normal builder arguments and
-reserve raw fragments for application-owned syntax.
+Avoid concatenating user input into compiled SOQL. `soql.raw()` intentionally
+bypasses normal structural protections and should only contain application-owned,
+trusted syntax.
 
-## Respect Salesforce access control
+## Treat filters as authorization-sensitive
 
-Describe-generated fields are not a guarantee of current permission. Use an
-identity appropriate to the user/task and let Salesforce enforce the selected
-execution context. An old generated schema or a cast cannot grant a permission.
+A syntactically valid field or filter is not automatically safe for every caller.
+Validate any user-selectable fields, operators, sort keys, list sizes, and limits
+against a small application allowlist.
 
-For Apex, choose an explicit access mode where appropriate. `withSystemMode()`
-is a security-sensitive design choice, not a fix for an inconvenient exception.
-Kysoql does not audit the caller's sharing, CRUD/FLS, or governor-limit design.
+Also remember that `clearWhere()` removes every predicate. If a `WHERE` clause
+contains a tenant or ownership boundary, do not casually clear it while composing
+a request.
 
-## Avoid accidental data exposure
+## Let Salesforce enforce access
 
-Select the minimum fields needed. `FIELDS(ALL)` can expand as the org changes,
-so it is usually unsuitable as a stable public API response contract. Treat
-compiled SOQL and complete error responses as potentially sensitive: they can
-contain names, IDs, email addresses, and filter values.
+Generated metadata reflects the identity used during generation. It does not
+guarantee that the current runtime user can still see the same rows or fields.
+Salesforce remains responsible for sharing, CRUD/FLS, org configuration, and
+execution-context rules.
 
-Prefer request IDs, object names, duration, success/failure, and sanitized error
-codes in operational telemetry. Do not log tokens or full record payloads by
-default. Schema files do not contain queried records, but can expose internal
-object names and business structure; review them before publishing.
+For Apex output, choose `WITH USER_MODE` or `WITH SYSTEM_MODE` intentionally as
+part of the Apex application's security design. Kysoql does not decide which mode
+is appropriate for you.
 
-## Bound resource use and side effects
+## Keep result exposure intentional
 
-Bundled `.execute()` methods accumulate all root pages in memory. Native REST
-supports `maxPages`/`maxRecords`, async iteration, per-request timeouts, and abort
-signals. Use intentional budgets and an overall operation deadline, not just the
-per-page timeout. Nested records still contribute to memory use and are outside
-root-record budgets. Neither adapter supplies application-wide concurrency or
-rate limiting. A large valid query is not automatically a safe HTTP endpoint.
+Only select fields the caller actually needs. This matters even when Salesforce
+allows the integration identity to see more.
 
-The REST client requires HTTPS and rejects redirects and unsafe continuation URLs.
-Only a provider-backed `401 INVALID_SESSION_ID` is replayed, at most once; generic
-transport, rate-limit, and server failures are not automatically retried. Handle
-structured error details carefully because server messages can contain query data.
+A few practical defaults help:
 
-`FOR VIEW`, `FOR REFERENCE`, Knowledge tracking, and Apex locking can have side
-effects. Account for those before caching, retrying, or using the query in a
-background job. QueryAll can reveal eligible deleted/archived data to authorised
-callers; it should not be enabled as a generic "get more rows" option.
+- prefer explicit field selections for API responses
+- keep query limits and pagination budgets bounded
+- avoid logging access tokens or full SOQL when literals may contain sensitive data
+- review generated schemas before publishing them because object and field names can reveal internal structure
+- use a dedicated integration identity with the minimum access needed for the job
 
-## Validate at each boundary
+## Retry narrowly
 
-Generate metadata from the right org; typecheck application code; test compiled
-queries; validate untrusted transport payloads where necessary; and run
-integration tests against a non-production org for the exact feature/context
-combination you deploy. Experimental syntax deserves explicit opt-in and
-fallback behaviour, not a silent dependency on a future Salesforce rollout.
+The native REST auth-provider path can refresh and replay a request after a
+provider-backed `401 INVALID_SESSION_ID`. Do not turn arbitrary Salesforce or
+network errors into broad automatic retries, especially for queries with
+observable tracking behaviour such as `FOR VIEW` or Knowledge `UPDATE` clauses.
 
-
-## Generated field filters are not access controls
-
-[Field rules](/docs/codegen/field-filtering) restrict generated TypeScript
-metadata, not Salesforce permissions or runtime response contents. They cannot
-prevent JavaScript, a cast, another client, or direct SOQL from requesting an
-excluded field. Apply authentication, authorisation, field-level security, and
-explicit application query policies independently. Neither `fieldsComplete`
-nor the `selectFields` type guard is a runtime enforcement mechanism.
+For transport limits and cancellation, see [REST execution](/docs/rest/execution).
+For the builder's supported query boundaries, see [limitations](/docs/core/reference/limitations).

@@ -4,18 +4,11 @@ description: "Authenticate Salesforce REST clients with supported OAuth flows an
 icon: "KeyRound"
 ---
 
-`@kysoql/auth` obtains Salesforce bearer tokens for applications that execute
-SOQL through [`@kysoql/rest`](/docs/rest). Authentication is separate from query
-construction and transport, so applications can choose the Salesforce flow that
-matches their deployment model.
+`@kysoql/auth` handles Salesforce OAuth separately from query building. Pick the flow that fits your application, get a Salesforce session, then pass the access token to [`@kysoql/rest`](/docs/rest) or another Salesforce client.
 
-For most applications, use the `SalesforceAuth` class. It binds the Salesforce
-login/site URL and client ID once, then exposes the supported flows as methods.
-The lower-level functions remain available for custom composition.
+For most applications, start with `SalesforceAuth`. It keeps the Salesforce login or site URL and client ID in one place, then exposes the supported flows as methods.
 
-For a server-to-server integration that can protect a private key, the default
-Kysoql path is Salesforce's **OAuth 2.0 JWT bearer flow**. It avoids interactive
-login and does not require storing a client secret or refresh token.
+For a server-to-server integration that can protect a private key, JWT bearer is the usual starting point. It does not require an interactive login or a stored refresh token.
 
 <SalesforceReference title="OAuth 2.0 JWT Bearer Flow for Server-to-Server Integration" href="https://help.salesforce.com/s/articleView?id=xcloud.remoteaccess_oauth_jwt_flow_ca.htm&language=en_US&type=5" />
 
@@ -52,7 +45,7 @@ bun add @kysoql/auth @kysoql/rest
   </Tab>
 </Tabs>
 
-## Server-to-server with a private key
+## Server-to-server with JWT bearer
 
 ```ts
 import { SalesforceAuth } from "@kysoql/auth";
@@ -78,54 +71,52 @@ export async function createSalesforceExecutor() {
     accessToken: async ({ refresh }) => {
       if (refresh) {
         const next = await authenticate();
+
         if (next.instanceUrl !== instanceUrl) {
-          throw new Error("Salesforce instance changed; recreate the REST client.");
+          throw new Error("Salesforce instance changed. Recreate the REST client.");
         }
+
         session = next;
       }
+
       return session.accessToken;
     },
   });
 }
 ```
 
-Keep the signing key server-side. `privateKey` uses an explicit source object:
-`{ type: "file", path }`, `{ type: "pem", value }`, or
-`{ type: "crypto-key", key }`. Kysoql does not guess whether a string contains
-PEM data or a file path.
+Keep the signing key server-side. Private keys use an explicit source object, so Kysoql never has to guess whether a string is a path or PEM content.
 
-See [JWT bearer](/docs/auth/flows/jwt-bearer) for Salesforce setup, assertion
-details, and renewal behaviour.
+Choose the source that matches where your key lives:
 
-## Other supported flows
+- File: `{ type: "file", path }`
+- PEM string: `{ type: "pem", value }`
+- Web Crypto key: `{ type: "crypto-key", key }`
 
-Use [authentication flows](/docs/auth/flows) to choose another supported method.
-The flow guides are grouped under the **Authentication flows** section in the
-navigation, with JWT bearer first as the server-to-server default.
+The [JWT bearer guide](/docs/auth/flows/jwt-bearer) covers Salesforce setup and token renewal in more detail.
 
-Salesforce's retiring username-password, user-agent, and hybrid user-agent flows
-are intentionally not implemented. Asset tokens identify connected devices and
-are not general bearer sessions for SOQL REST access.
+## Choose another flow
+
+Use the [authentication flow guide](/docs/auth/flows) when your application needs interactive login, refresh tokens, client credentials, Experience Cloud identity, SAML, token exchange, or one of Salesforce's first-party application flows.
 
 <SalesforceReference title="OAuth Authorization Flows" href="https://help.salesforce.com/s/articleView?id=remoteaccess_oauth_flows.htm&language=en_US&type=5" />
 
-## Token lifetime and persistence
+<Accordions type="single">
+  <Accordion title="What happens when a JWT bearer token expires?">
 
-JWT bearer never returns a refresh token. When used with `@kysoql/rest`, provide
-an access-token provider so the REST client can cache the current access token in
-memory and obtain a replacement JWT session after `401 INVALID_SESSION_ID`. See
-[JWT bearer](/docs/auth/flows/jwt-bearer#cache-and-renew-the-access-token).
+JWT bearer does not return a refresh token. Give `@kysoql/rest` an access-token provider and let it request a new JWT session after Salesforce returns `401 INVALID_SESSION_ID`.
 
-## Refresh-token persistence
+  </Accordion>
+  <Accordion title="What if my flow returns a refresh token?">
 
-Flows that issue refresh tokens can use the built-in memory, browser
-`localStorage`, Redis, or custom stores. See
-[refresh-token storage](/docs/auth/storage). Rotation is persisted before a newly
-refreshed session is published to the caller.
+Use [refresh-token storage](/docs/auth/storage). Kysoql can persist rotation in memory, browser `localStorage`, Redis, or a custom store before it exposes the refreshed session.
 
-## Functional API
+  </Accordion>
+  <Accordion title="Can I use the lower-level functions directly?">
 
-The standalone helpers such as `authenticateJwtBearer()`,
-`exchangeAuthorizationCode()`, and `refreshAccessToken()` remain exported. Use
-them when you want each operation to receive its full configuration explicitly,
-or when building a higher-level abstraction of your own.
+Yes. Helpers such as `authenticateJwtBearer()`, `exchangeAuthorizationCode()`, and `refreshAccessToken()` remain available when you prefer explicit per-call configuration.
+
+  </Accordion>
+</Accordions>
+
+Salesforce's retiring username-password, user-agent, and hybrid user-agent flows are not implemented. Asset tokens are device identity tokens rather than general bearer sessions for SOQL REST calls.

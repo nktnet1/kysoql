@@ -4,17 +4,13 @@ description: "Generate schema-aware Kysoql types from Salesforce Describe metada
 icon: "FileCode"
 ---
 
-`@kysoql/codegen` turns Salesforce Describe metadata into the schema types used by
-`@kysoql/core`. It includes the `kysoql generate` CLI as well as programmatic
-Describe, loading, filtering, and rendering APIs.
+`@kysoql/codegen` reads Salesforce metadata and generates the TypeScript schema Kysoql uses to validate queries.
 
-Native REST is used for CLI metadata requests, so code generation does not require
-JSforce.
+That schema reflects your org. Custom fields, relationship names, field capabilities, picklist values, and supported object features can all affect what TypeScript allows you to build.
 
 ## Install
 
-For the normal CLI/schema-generation workflow, install codegen as a development
-dependency:
+For the usual CLI workflow, keep codegen as a development dependency and core as an application dependency:
 
 <Tabs items={["npm", "yarn", "pnpm", "bun"]} defaultIndex={2}>
   <Tab value="npm">
@@ -51,12 +47,11 @@ bun add --dev @kysoql/codegen
   </Tab>
 </Tabs>
 
-Generated schema modules import schema helper types from `@kysoql/core`, so keep
-Core as a regular application dependency even when Codegen itself is dev-only.
-If application runtime code imports the programmatic codegen APIs, install
-`@kysoql/codegen` as a regular dependency instead.
+Install `@kysoql/codegen` as a normal dependency only when your runtime code calls its library API.
 
 ## Configure generation
+
+A small config is enough to choose the objects you want:
 
 ```ts title="kysoql.config.ts"
 import { defineConfig } from "@kysoql/codegen";
@@ -67,18 +62,18 @@ export default defineConfig({
 });
 ```
 
-This config only selects schema-generation settings. `kysoql generate` also
-requires a Salesforce session provider through config `auth` or the `--auth`
-flag; see [configuration](/docs/codegen/configuration).
+The generator also needs a Salesforce session provider through config `auth` or the `--auth` CLI option. See [configuration](/docs/codegen/configuration) for a complete example.
 
-With a `src` directory, that writes `src/kysoql/salesforce.generated.ts` by
-default. Set `output` when the application needs a different location. You can
-keep every described field or define exact per-object include/exclude rules when
-an application intentionally exposes a smaller query surface.
+Run:
 
-## In this package
+```bash
+pnpm exec kysoql generate
+```
 
-- [Configuration](/docs/codegen/configuration)
-- [Schema generation](/docs/codegen/schema-generation)
-- [Field filtering](/docs/codegen/field-filtering)
-- [`@kysoql/core`](/docs/core) for consuming the generated schema
+If the project has a `src` directory, the default output is `src/kysoql/salesforce.generated.ts`. Otherwise the generated file is written to `kysoql/salesforce.generated.ts`.
+
+## Keep the schema focused when you need to
+
+By default, selected objects keep all described fields. For very large objects, [field filtering](/docs/codegen/field-filtering) lets you generate an exact include or exclude set without pretending that the omitted fields no longer exist in Salesforce.
+
+Continue with [schema generation](/docs/codegen/schema-generation) for CLI and library workflows.

@@ -5,10 +5,7 @@ description: "Select translated labels and display values without confusing them
 
 <SalesforceReference title="SOQL SELECT functions" href="https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-functions.html" />
 
-
-Selected functions use a callback and an explicit alias. They can accompany
-ordinary record fields, but cannot be combined with a `TYPEOF` selection.
-Aliases must be valid, unique identifiers rather than raw SQL fragments.
+SELECT functions are added through the selection callback and need an explicit alias. They can sit beside normal record fields, but they cannot be mixed with a `TYPEOF` selection.
 
 ## Translated labels
 
@@ -21,12 +18,11 @@ const opportunities = db
   .select(({ fn }) => fn.toLabel("StageName").as("stageLabel"));
 ```
 
-`toLabel` accepts generated picklist and multipicklist fields, including supported
-parent paths. Output is a string with source/relationship nullability. The stored
-`StageName` and translated `stageLabel` serve different purposes: use stable
-stored values for application logic and translated labels for presentation.
+`toLabel()` works with supported generated picklist and multipicklist fields, including supported parent paths.
 
-Translated filtering is available separately in `WHERE`:
+Keep the stored value for application logic and use the translated label for display. A translated label can change with the Salesforce user's language.
+
+You can also filter using `toLabel()`:
 
 ```ts
 import { db } from "./db";
@@ -37,11 +33,7 @@ const query = db
   .where((eb) => eb(eb.fn.toLabel("StageName"), "like", "Pros%"));
 ```
 
-The field must be filterable. Translated picklists support `=`, `!=`, and
-`like`; translated multipicklists support `=` and `!=` only. Neither form
-exposes arbitrary ordered/list operators. Filtering translated `CurrencyIsoCode`
-and the standard `Division` field is intentionally rejected.
-The SELECT helper is not a general translated ORDER BY facility.
+Translated picklists support `=`, `!=`, and `like`. Translated multipicklists support `=` and `!=`.
 
 ## Currency conversion
 
@@ -55,13 +47,9 @@ const opportunities = db
   .orderBy("Amount", "desc");
 ```
 
-`convertCurrency` is a record SELECT function over currency fields. It uses the
-querying user's currency and returns a numeric value with source nullability.
-Order using the supported field/expression surface, not the selected alias.
-It is not a client-side exchange-rate service or an aggregate conversion helper.
+`convertCurrency()` converts a selected currency field using the querying Salesforce user's currency. The result is numeric and keeps the source nullability.
 
-Use [`soqlCurrency`](/docs/framework/guides/literals#currency-literals) for an ISO-coded
-filter literal; that is separate from converting selected output.
+This is different from an ISO-coded filter literal. Use [`soqlCurrency()`](/docs/framework/guides/literals#currency-literals) when a `WHERE` value needs a specific currency code.
 
 ## Localized display strings
 
@@ -77,12 +65,11 @@ const opportunities = db
   ]);
 ```
 
-`format` accepts `currency`, `double`, `int`, `percent`, `date`, `datetime`, and
-`time` fields, including supported parent paths. It can wrap an unaliased
-`convertCurrency` expression. Result values are strings with the source's
-nullability, not numbers/dates suitable for further calculations.
+`format()` returns display strings for supported numeric and temporal fields. It can also wrap an unaliased `convertCurrency()` expression.
 
-Aggregate results can also format unaliased field aggregates:
+Formatted values are for presentation. Keep the raw numeric or temporal field when downstream code still needs calculations, stable sorting, or locale-independent serialization.
+
+Aggregate expressions can be formatted too:
 
 ```ts
 import { db } from "./db";
@@ -95,7 +82,4 @@ const totals = db
   ]);
 ```
 
-Apply `.as(...)` to the outer function. Do not pass an already aliased expression
-into `format`. Bare `COUNT()` is not a field aggregate to format. Preserve the
-raw values separately when a downstream consumer needs arithmetic, sorting, or
-locale-independent serialization.
+Apply `.as(...)` to the outer `format()` call. Bare `COUNT()` uses the scalar count builder and is not a field aggregate expression to format.

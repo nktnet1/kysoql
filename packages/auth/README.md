@@ -1,69 +1,73 @@
 # @kysoql/auth
 
-Salesforce authentication for applications that execute SOQL through
-`@kysoql/rest`. `SalesforceAuth` is the primary application-facing API: bind the
-Salesforce URL and client ID once, then use flow methods. Lower-level functions
-remain available for custom composition. The package also provides opt-in
-refresh-token stores for memory, browser `localStorage`, Redis, or a custom
-backend.
+`@kysoql/auth` handles Salesforce OAuth for applications that use Kysoql. It provides a `SalesforceAuth` client for supported Salesforce flows plus optional refresh-token storage for memory, browser `localStorage`, Redis, or your own store.
+
+For a typical server-to-server integration, start with JWT bearer authentication and `@kysoql/rest`.
 
 ## Install
 
-```sh
-pnpm add @kysoql/auth @kysoql/rest @kysoql/core
+```bash
+pnpm add @kysoql/auth @kysoql/core @kysoql/rest
 ```
 
-## Default: server-to-server with a private key
+## Server-to-server with JWT bearer
 
-For a server-to-server integration that can protect a private key, start with
-Salesforce OAuth 2.0 JWT bearer authentication.
-
-Salesforce reference: [OAuth 2.0 JWT Bearer Flow for Server-to-Server Integration](https://help.salesforce.com/s/articleView?id=xcloud.remoteaccess_oauth_jwt_flow_ca.htm&language=en_US&type=5).
+Bind the Salesforce login URL and client ID once, then request a session with a private key:
 
 ```ts
 import { SalesforceAuth } from "@kysoql/auth";
-import { createRestExecutor } from "@kysoql/rest";
 
 const auth = new SalesforceAuth({
   loginUrl: "https://login.salesforce.com",
   clientId: "external-client-app-id",
 });
 
-export async function createExecutor() {
-  let session = await auth.jwtBearer({
-    username: "integration@example.com",
-    privateKey: { type: "file", path: "./salesforce-auth-key.pem" },
-  });
-  const instanceUrl = session.instanceUrl;
-
-  return createRestExecutor({
-    instanceUrl,
-    accessToken: async ({ refresh }) => {
-      if (refresh) {
-        const next = await auth.jwtBearer({
-          username: "integration@example.com",
-          privateKey: { type: "file", path: "./salesforce-auth-key.pem" },
-        });
-        if (next.instanceUrl !== instanceUrl) {
-          throw new Error("Salesforce instance changed; recreate the REST client.");
-        }
-        session = next;
-      }
-      return session.accessToken;
-    },
-  });
-}
+const session = await auth.jwtBearer({
+  username: "integration@example.com",
+  privateKey: { type: "file", path: "./salesforce-auth-key.pem" },
+});
 ```
 
-`privateKey` is explicit: use `{ type: "file", path }`,
-`{ type: "pem", value }`, or `{ type: "crypto-key", key }`. JWT bearer does not
-issue a refresh token. The REST client caches the provider's access token in
-memory and calls it again only after `401 INVALID_SESSION_ID`, at which point the
-example performs another JWT exchange.
+Private keys use an explicit source so a string is never guessed to be a file path or PEM content:
 
-## Refresh tokens
+```ts
+{ type: "file", path: "./salesforce-auth-key.pem" }
+{ type: "pem", value: process.env.SALESFORCE_PRIVATE_KEY! }
+{ type: "crypto-key", key }
+```
 
-Flows that issue refresh tokens can persist rotation through a storage adapter:
+JWT bearer does not issue a refresh token. When an access token expires, perform another JWT exchange.
+
+The REST executor can do that through an access-token provider:
+
+```ts
+import { createRestExecutor } from "@kysoql/rest";
+
+let session = await auth.jwtBearer({
+  username: "integration@example.com",
+  privateKey: { type: "file", path: "./salesforce-auth-key.pem" },
+});
+
+const instanceUrl = session.instanceUrl;
+
+const executor = createRestExecutor({
+  instanceUrl,
+  accessToken: async ({ refresh }) => {
+    if (refresh) {
+      session = await auth.jwtBearer({
+        username: "integration@example.com",
+        privateKey: { type: "file", path: "./salesforce-auth-key.pem" },
+      });
+    }
+
+    return session.accessToken;
+  },
+});
+```
+
+## Refresh-token sessions
+
+For flows that return refresh tokens, use a storage adapter so token rotation is not lost:
 
 ```ts
 import {
@@ -71,9 +75,8 @@ import {
   SalesforceAuth,
   type RedisLike,
 } from "@kysoql/auth";
-import { createRestExecutor } from "@kysoql/rest";
 
-export async function createRefreshingExecutor(
+export async function createSessionAuth(
   client: RedisLike,
   initialRefreshToken: string,
 ) {
@@ -81,62 +84,44 @@ export async function createRefreshingExecutor(
     loginUrl: "https://example.my.salesforce.com",
     clientId: "external-client-app-id",
   });
-  const store = createRedisRefreshTokenStore({
-    client,
-    key: "salesforce:integration-user",
-  });
-  const sessionAuth = auth.storedRefreshToken({
-    initialRefreshToken,
-    refreshTokenStore: store,
-  });
-  const session = await sessionAuth.getSession();
 
-  return createRestExecutor({
-    instanceUrl: session.instanceUrl,
-    accessToken: sessionAuth.accessTokenProvider,
+  return auth.storedRefreshToken({
+    initialRefreshToken,
+    refreshTokenStore: createRedisRefreshTokenStore({
+      client,
+      key: "salesforce:integration-user",
+    }),
   });
 }
 ```
 
-`createLocalStorageRefreshTokenStore()` is available for browser applications
-that deliberately accept JavaScript-readable browser persistence. Prefer a
-server-side store when the architecture permits it. Access tokens are never
-written to refresh-token stores by this package.
+If Salesforce rotates the refresh token, Kysoql stores the replacement before exposing the new session. Access tokens are not written to refresh-token stores.
 
-Salesforce refresh reference: [OAuth 2.0 Refresh Token Flow for Renewed Sessions](https://help.salesforce.com/s/articleView?id=sf.remoteaccess_oauth_refresh_token_flow.htm&language=en_US&type=5).
+For browser applications, `createLocalStorageRefreshTokenStore()` is available when your threat model explicitly allows JavaScript-readable token persistence. A server-side store is usually the better choice when your architecture supports one.
 
 ## Supported flows
 
-The end-user documentation keeps each authentication method in the nested
-`Authentication flows` section:
+Kysoql supports the Salesforce authentication flows documented in the [authentication flow guide](https://nktnet1.github.io/kysoql/docs/auth/flows), including:
 
-- [JWT bearer](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/auth/flows/jwt-bearer.mdx)
-- [web-server authorization code with PKCE](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/auth/flows/web-server-pkce.mdx)
-- [refresh token](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/auth/flows/refresh-token.mdx)
-- [client credentials](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/auth/flows/client-credentials.mdx)
-- [`private_key_jwt` client authentication](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/auth/flows/private-key-jwt.mdx)
-- [SAML bearer assertion](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/auth/flows/saml-bearer.mdx)
-- [Salesforce SAML assertion](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/auth/flows/saml-assertion.mdx)
-- [OAuth token exchange](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/auth/flows/token-exchange.mdx)
-- [device flow](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/auth/flows/device.mdx)
-- [hybrid web-server](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/auth/flows/hybrid-web-server.mdx)
-- [hybrid refresh token](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/auth/flows/hybrid-refresh-token.mdx)
-- [Experience Cloud Code and Credentials](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/auth/flows/experience-cloud-code-credentials.mdx)
-- [Experience Cloud guest authorization](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/auth/flows/experience-cloud-guest.mdx)
-- [OAuth 2.0 for First-Party Applications](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/auth/flows/first-party-applications.mdx)
-  - [username-password](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/auth/flows/first-party-username-password.mdx)
-  - [passwordless login](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/auth/flows/first-party-passwordless.mdx)
-  - [registration](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/auth/flows/first-party-registration.mdx)
+- JWT bearer
+- web-server authorization code with PKCE
+- refresh token
+- client credentials
+- `private_key_jwt` client authentication
+- SAML bearer and Salesforce SAML assertion flows
+- OAuth token exchange
+- device flow
+- hybrid web-server and hybrid refresh flows
+- Experience Cloud headless identity flows
+- OAuth 2.0 for First-Party Applications flows
 
-Salesforce reference: [OAuth Authorization Flows](https://help.salesforce.com/s/articleView?id=remoteaccess_oauth_flows.htm&language=en_US&type=5).
-
-Salesforce's retiring username-password, user-agent, and hybrid user-agent flows
-are intentionally not implemented. Asset tokens are device identity tokens, not
-general bearer sessions for SOQL REST calls.
+Salesforce's retiring username-password, user-agent, and hybrid user-agent flows are not implemented.
 
 ## Documentation
 
-Package guides live in the
-[auth documentation](https://github.com/nktnet1/kysoql/tree/main/apps/docs/content/docs/auth).
-The API reference is generated from this package's public `src/index.ts` entry
-point with TypeDoc as part of repository documentation validation.
+- [Authentication overview](https://nktnet1.github.io/kysoql/docs/auth)
+- [Choose an authentication flow](https://nktnet1.github.io/kysoql/docs/auth/flows)
+- [JWT bearer](https://nktnet1.github.io/kysoql/docs/auth/flows/jwt-bearer)
+- [Refresh-token storage](https://nktnet1.github.io/kysoql/docs/auth/storage)
+- [REST authentication](https://nktnet1.github.io/kysoql/docs/rest/authentication)
+- [API reference](https://nktnet1.github.io/kysoql/docs/auth/api)

@@ -1,119 +1,91 @@
 ---
 title: "Support boundaries and limits"
-description: "Distinguish compiler checks from org, API, transport, and runtime restrictions."
+description: "See what Kysoql validates and what remains a Salesforce runtime concern."
 ---
 
-Kysoql models a substantial SOQL SELECT surface, not every Salesforce API or SQL
-feature. It is Kysely-inspired rather than Kysely-compatible: a Kysely method or
-SQL construct is not implicitly supported unless Kysoql documents a SOQL mapping
-for it. Generated types and structural validation are useful guardrails; the
-Salesforce server remains authoritative for the selected org and execution
-context.
+Kysoql models SOQL `SELECT` queries. It is Kysely-inspired, not a drop-in Kysely
+implementation, and it does not try to represent every Salesforce API feature.
 
-## Not part of this builder
+## Outside the builder
 
-There is no DML/CRUD API, SOSL builder, SQL join syntax, generic `SELECT *`, live
-runtime schema loading, automatic schema refresh, Bulk API export, or Apex executor.
-For trusted SOQL syntax outside the modeled builder surface, `soql.raw()` is the
-explicit unsafe escape hatch. Native REST provides page/record async iterators,
-request cancellation, and client-credentials/refresh-token OAuth helpers; these
-are adapter APIs, not new core builder methods. Interactive OAuth orchestration,
-JWT signing, secret storage, and distributed refresh coordination remain outside
-this package's scope.
+Kysoql does not provide DML/CRUD, SOSL, SQL joins, `SELECT *`, live runtime schema
+loading, automatic schema refresh, Bulk API exports, or Apex execution.
 
-Selected fields can use Kysely-style `"Field as alias"` strings. Record and
-aggregate builders also expose Kysely-style single-row execution and result-type
-helpers. There is no `clearHaving` or universal mutable query surface. The
-[API reference](/docs/core/reference/api) documents the actual supported surfaces.
+Use `soql.raw()` only for trusted SOQL syntax that the typed builder does not yet
+model. Raw fragments deliberately opt out of normal structural safeguards.
 
-## Structural checks in this snapshot
+## Common validated limits
 
-| Feature | Boundary |
+| Feature | Kysoql boundary |
 | --- | --- |
-| `LIMIT` | Non-negative safe integer; additional query/object rules may apply. |
-| Root/grouped `OFFSET` | Integer from 0 to 2000; grouped aggregate mode required for aggregate offset. |
-| Child `OFFSET` | Pilot namespace only; immediate parent literal `LIMIT 1`. |
-| `FIELDS(...)` on filtered objects | All selectors are blocked at the type level; explicit selections remain available. |
-| `FIELDS(CUSTOM/ALL)` | API only, provably bounded to at most 200 records; no overlapping selections. |
-| Parent paths | Up to five child-to-parent levels in typed references. |
-| Nested child subqueries | Up to four levels below root in the builder; actual context support varies. |
-| Query-wide relationships | At most 20 parent-to-child and 55 child-to-parent, with path-aware counting. |
-| Semi/anti-joins | At most two, top-level WHERE only, compatible direct ID/reference fields. |
-| ROLLUP/CUBE | Up to three fields; cannot mix grouping modes. |
-| Data categories | At most three conditions with distinct groups; roots must be `Question`, `KnowledgeArticleVersion`, or a concrete `__kav` article version. |
-| Filtering WITH clauses | Only one of data category, UserId, RecordVisibilityContext, or Apex access mode. |
-| `FOR UPDATE` | Apex record queries only; incompatible with ORDER BY and ALL ROWS. |
-| `TYPEOF` | Cannot mix with SELECT functions, aggregate/grouping, or same-relationship ordinary selections. |
+| `LIMIT` | Non-negative safe integer, with extra rules where Salesforce requires them |
+| Root `OFFSET` | `0..2000` |
+| Child `OFFSET` | Pilot API only and immediate parent must have literal `LIMIT 1` |
+| Parent paths | Up to five child-to-parent levels in typed references |
+| Nested child subqueries | Up to four levels below the root builder |
+| Query relationships | Up to 20 parent-to-child and 55 child-to-parent relationships |
+| Semi and anti-joins | At most two at the root `WHERE` level |
+| ROLLUP and CUBE | Up to three grouping fields |
+| Data categories | Up to three conditions with distinct category groups |
+| `FOR UPDATE` | Apex record queries only, without `ORDER BY` or `ALL ROWS` |
+| `TYPEOF` | Cannot be mixed with aggregate/grouping or conflicting selections |
 
-Clearing or conditionally adding clauses does not bypass validation. A query
-that was valid before `clearWhere` or `clearGroupBy` can become invalid afterward.
+Filtered codegen objects cannot use `selectFields(...)`. Explicit selections are
+still available. See [field filtering](/docs/codegen/field-filtering).
 
-## Object-specific query shapes
+## Object-specific rules
 
-These are the current compiler's object-family checks, not an exhaustive list
-of every Salesforce limitation:
+Some Salesforce objects have stricter query shapes. Kysoql catches the cases it
+can identify from the query and generated metadata.
 
-| Object/family | Enforced shape |
-| --- | --- |
-| `KnowledgeArticleVersion`, `__kav` | Root predicate on PublishStatus or Id; Apex binds rejected. |
-| `UserProfileFeed` | Requires `withUserId`; relationship-path ordering rejected. |
-| `NewsFeed` | Relationship-path ordering rejected. |
-| `ContentDocumentLink` | Positive root `=`/`IN` predicate on Id, ContentDocumentId, or LinkedEntityId. |
-| `ContentHubItem` | Root predicate on Id, ExternalId, or ContentHubRepositoryId. |
-| `Vote` | ParentId equality, Parent.Type equality, Id equality, or Id IN a literal list. |
-| `UserRecordAccess` | Coupled user/record filters, selected access fields, and ordering constraints described below. |
-| Custom metadata `__mdt` | Restricted WHERE operators/boolean groups; no relationship-path ordering. |
-| External objects `__x` | Reject the unsupported aggregate/grouping/filter/function/clauses described below. |
+<Accordions type="single">
+  <Accordion title="Knowledge and feeds">
+    `KnowledgeArticleVersion` and concrete `__kav` article versions require a root
+    filter on `PublishStatus` or `Id`. `UserProfileFeed` requires `withUserId()`.
+    Feed relationship-path ordering is restricted. See [Knowledge and feeds](/docs/core/advanced/knowledge-and-feeds).
+  </Accordion>
+  <Accordion title="UserRecordAccess">
+    Queries require a user filter plus a record filter. Record ID lists are
+    limited to 200 IDs, and selected access fields have matching ordering rules.
+  </Accordion>
+  <Accordion title="Custom metadata">
+    `__mdt` filtering supports a narrower set of operators and boolean shapes.
+    Metadata relationship fields can be selected and filtered where Salesforce
+    supports them, but are not available for relationship-path ordering.
+  </Accordion>
+  <Accordion title="External objects">
+    `__x` objects reject several aggregate, grouping, function, tracking, and
+    filtering features that are available on normal CRM objects. Bare `COUNT()`
+    remains available. Salesforce Connect can impose additional runtime rules.
+  </Accordion>
+  <Accordion title="Data 360">
+    Generated DLO and DMO capabilities control `SET OPTIONS` and related query
+    restrictions. See [Data 360 and query options](/docs/core/advanced/data-360).
+  </Accordion>
+</Accordions>
 
-### UserRecordAccess
+## Salesforce still has the final say
 
-Use exactly one `UserId = ...` predicate and either `RecordId = ...` or a literal
-`RecordId IN (...)` list of no more than 200 IDs. Normally select `RecordId` and
-only permitted `Has*Access`/`MaxAccessLevel` fields. Each selected access field
-or MaxAccessLevel must also be ordered, and ordering cannot reference unselected
-fields. With an optional single `Has*Access = true` filter, select only RecordId.
-Aggregate and bare-count forms are rejected.
+Generated types are a snapshot. They cannot guarantee current sharing, CRUD/FLS,
+package licensing, feature enrollment, selectivity, governor limits, or the
+behaviour of every API version.
 
-### Custom metadata
+The bundled executors validate Salesforce response envelopes and paging metadata,
+but they do not runtime-validate every selected field value against your generated
+TypeScript schema. A `CompiledQuery` is also not a server-validated query plan.
 
-WHERE permits `in`, `not in`, equality/ordered comparisons, `like`, and AND.
-An OR group must use the same field with only equality/LIKE predicates. Metadata
-relationship fields remain valid in supported selections/filters, but not in
-ORDER BY. General NOT groups and arbitrary mixed-field OR logic are not enabled.
+Native REST can iterate root pages and records with explicit budgets and
+cancellation. `execute()` collects root pages into memory. The JSforce adapter
+handles root pagination but does not recursively drain child query locators in
+the same way as the native REST adapter. See [REST execution](/docs/rest/execution)
+and [JSforce](/docs/jsforce).
 
-### External objects
+## Experimental and versioned features
 
-The compiler rejects `GROUP BY`, `HAVING`, fielded COUNT/AVG/MIN/MAX/SUM,
-`like`, `includes`, `excludes`, `toLabel`, `TYPEOF`, `FOR VIEW`/`FOR REFERENCE`,
-and filtering `WITH` clauses. Bare `COUNT()` remains available. Do not infer
-universal support for every other function: adapter-specific and Salesforce
-Connect restrictions still apply.
+Some features depend on Salesforce API version, org type, or feature enrollment.
+The compiler does not negotiate these for you. Check the target org when using
+beta or pilot features, external objects, Data 360, or Apex-specific syntax.
 
-## Runtime boundaries
-
-Generated types are a snapshot. They cannot guarantee live field visibility,
-sharing, CRUD/FLS, API access, package licensing, Data 360 permissions, selectivity,
-query time, concurrency, or governor limits. Permission-dependent feed caps and
-adapter-specific external-object limits are deliberately not hard-coded as
-universal errors.
-
-Both bundled executors validate root response structure but trust field payloads
-as the inferred type. `.execute()` drains root results into memory. Native REST
-also recursively completes selected parent-to-child continuation pages, while the
-JSforce adapter only drains root pagination. Neither adapter bypasses Salesforce's
-aggregate pagination restrictions. Native REST offers bounded page/record
-iteration and request cancellation. See [execution](/docs/rest/execution).
-A `CompiledQuery` is not a server-validated query plan.
-
-## Version and feature availability
-
-The compiler does not negotiate an API version for each feature. Set the
-transport's version and check target-org support. Distinguish ordinary API SOQL,
-static Apex, managed dynamic Apex, external objects, and Data 360 rather than
-assuming a query accepted in one context works in all others.
-
-Beta arithmetic and child-offset pilot support are documented under
-[experimental features](/docs/core/advanced/experimental). Verify current Salesforce
-availability before using them. For external platform rules, use the official
-[SOQL object limits reference](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-limits.html)
-and [SOQL SELECT reference](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select.html).
+See [beta and pilot features](/docs/core/advanced/experimental) for the opt-in
+APIs and the [Salesforce reference map](/docs/core/reference/salesforce) for the
+upstream documentation.

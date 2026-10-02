@@ -1,11 +1,11 @@
 ---
 title: "Apex bindings and expressions"
-description: "Use typed variable references instead of raw Apex or SOQL fragments."
+description: "Build typed Apex variable references without dropping down to raw SOQL."
 ---
 
-These helpers are exported by `@kysoql/core`. Use them only after entering
-`apex()` or `dynamicApex()`; they are intentionally unavailable on normal
-API-executable builders. Read the [context overview](/docs/core/apex/overview) first.
+The helpers on this page are exported by `@kysoql/core` and become available
+after `.apex()` or `.dynamicApex()`. They describe expressions that your Apex
+caller will provide at runtime.
 
 ## Scalar and collection binds
 
@@ -26,20 +26,12 @@ const compiled = db
   .compile();
 ```
 
-`apexBind<T>(expression)` accepts only identifiers or dotted member paths:
-letters, digits, and underscores, with no path segment beginning with a digit.
-Do not include the leading colon. `accountIds` becomes `:accountIds`.
+`apexBind<T>(expression)` accepts an Apex identifier or dotted member path.
+Leave off the leading colon. Calls, indexing, whitespace, and arbitrary
+expression text are rejected.
 
-Calls, indexing, whitespace, and raw arithmetic text are rejected. Use the
-structured helpers below instead of `apexBind("name.substring(0, 2)")` or
-`apexBind("limit + 1")`.
-
-`T` is checked against the selected field's expected value. Collection binds
-use `readonly T[]` for `in`/`not in`. The TypeScript parameter does not prove
-that an Apex variable exists, has that type, or contains valid data at runtime.
-Temporal Apex binds use the generated field value type rather than a
-`soqlDate`/`soqlDateTime` wrapper; the actual Apex variable must have an appropriate
-Date, DateTime, or Time value.
+The generic `T` checks compatibility with the surrounding query. It cannot prove
+that the Apex variable exists or has a valid value at runtime.
 
 ## Limits and offsets
 
@@ -56,12 +48,12 @@ const compiled = db
   .compile();
 ```
 
-Literal numeric values retain the normal safe-integer/range checks. A bind's
-runtime value cannot be validated in TypeScript; enforce its range in the Apex
-caller. Bare count has no offset, and a bound limit cannot satisfy the child
-OFFSET pilot's requirement for a literal parent `LIMIT 1`.
+Literal limits and offsets are validated by Kysoql. Bound values only exist in
+Apex, so validate their runtime range there.
 
-## Structured addition and concatenation
+## Addition and concatenation
+
+Use `apexAdd()` for supported string concatenation or numeric addition:
 
 ```ts
 import { apexAdd, apexBind } from "@kysoql/core";
@@ -74,12 +66,10 @@ const compiled = db
   .where("Name", "=", apexAdd("Ac", "me"))
   .limit(apexAdd(apexBind<number>("page.baseLimit"), 1))
   .compile();
-// WHERE Name = :('Ac' + 'me') LIMIT :(page.baseLimit + 1)
 ```
 
-`apexAdd` accepts string-plus-string or number-plus-number, including nested
-bind expressions. It is not an arbitrary Apex arithmetic parser and does not
-support mixed string/number coercion.
+This helper is intentionally small. It is not an arbitrary Apex expression
+parser.
 
 ## String substring
 
@@ -99,12 +89,11 @@ const compiled = db
   .compile();
 ```
 
-`apexSubstring(value, beginIndex, endIndex)` accepts a string literal or a
-string-valued bind expression. Indices must be non-negative integers, with the
-end not preceding the beginning. The helper cannot check the length of an Apex
-string that will exist only at runtime. Arbitrary method calls are not supported.
+`apexSubstring()` accepts a string literal or string-valued bind expression and
+non-negative literal indices. Runtime string length still belongs to the Apex
+caller.
 
-## Query-result field access
+## Read a field from a single-record query
 
 ```ts
 import { apexBind, apexQueryField } from "@kysoql/core";
@@ -122,18 +111,14 @@ const compiled = db
   .apex()
   .where("Name", "=", apexQueryField(sourceAccount, "Name"))
   .compile();
-// WHERE Name = :[SELECT Name FROM Account WHERE Id = :sourceAccount.Id].Name
 ```
 
-`apexQueryField(query, field)` requires a plain-mode static Apex record query
-and a simple selected field key. It models single-record bracket-query access,
-not a JavaScript subquery execution or a list result.
-
-Kysoql does not silently add `LIMIT 1`. The Apex caller must constrain the query
-to one record; zero or multiple records can fail at runtime. Do not use this
-helper as a substitute for a proper relationship or semi-join.
+`apexQueryField()` models Apex bracket-query field access. Kysoql does not add
+`LIMIT 1`, so make sure the inner query is constrained to exactly one record.
 
 ## Bind-left INCLUDES
+
+Apex also supports Kysoql's bind-left `includes` overload:
 
 ```ts
 import { apexBind } from "@kysoql/core";
@@ -149,12 +134,11 @@ const compiled = db
   .compile();
 ```
 
-This is a distinct Apex-only overload: the left side is a string bind and the
-right side is a non-empty literal string list. It supports `includes`, not an
-arbitrary bind-left operator. The ordinary field-left `includes`/`excludes`
-overload does not accept a right-hand Apex bind.
+This is a specific overload for `includes`, not a general bind-left filter API.
 
-## Binds inside child subqueries
+## Binds in child subqueries
+
+Enter Apex before creating the child subquery when its filters need binds:
 
 ```ts
 import { apexBind } from "@kysoql/core";
@@ -172,11 +156,8 @@ const compiled = db
   .compile();
 ```
 
-Enter Apex before constructing that subquery to enable typed child WHERE binds.
-Child builders remain restricted: they do not become independent Apex root
-builders, do not expose semi-joins, and their literal pagination surface is not
-a general bind-enabled pagination API.
+Child builders remain child builders. They do not gain root-only Apex features.
+Knowledge article Apex queries also reject bind expressions.
 
-Knowledge article Apex queries reject all bind forms. These helpers also do not
-add arbitrary `HAVING` binds, raw expressions, or support for unknown Salesforce
-syntax. Refer to [limitations](/docs/core/reference/limitations).
+See [Compile for Apex](/docs/core/apex/overview) for context rules and
+[support boundaries](/docs/core/reference/limitations) for broader restrictions.

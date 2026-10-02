@@ -6,39 +6,13 @@ icon: "House"
 
 <SalesforceReference title="Salesforce Object Query Language (SOQL) reference" href="https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql.html" />
 
-Kysoql is a **Kysely-inspired query builder for Salesforce Object Query Language
-(SOQL)** using your org's Describe metadata. Select fields, filter records,
-traverse relationships, and build aggregate reports with inferred TypeScript
-results.
+Kysoql gives Salesforce SOQL a fluent, type-safe TypeScript API. You write queries with familiar builder methods, while the generated schema keeps object names, fields, relationships, and supported operations tied to your Salesforce org.
 
-The inspiration is in the TypeScript API design, not SQL compatibility.
-[Kysely](https://kysely.dev/) is a SQL query builder; Kysoql is not Kysely, does
-not depend on Kysely, and is not a Kysely dialect or adapter. Salesforce SOQL is
-the target language and its rules are authoritative.
-
-It is a query builder, not an ORM: it does not create records, update records,
-manage transactions, or generate Salesforce objects. You can compile queries
-without a connection, execute API queries through an adapter, or produce
-compile-only SOQL for an Apex caller.
-
-## Kysely-inspired, SOQL-native
-
-Kysoql intentionally carries over familiar ideas such as immutable fluent
-builders, `selectFrom`, `select`, `where`, `orderBy`, `$if`, `$call`, result-type
-helpers, and query/result plugins. Those similarities are ergonomic rather than a
-compatibility promise.
-
-Where SQL and SOQL differ, Kysoql follows SOQL. Relationship paths, parent-to-child
-subqueries, and semi-joins replace arbitrary SQL joins; ordinary REST queries
-compile values into escaped SOQL literals rather than producing a SQL-style
-parameter array; mutations and transactions are outside a SOQL query builder; and
-methods are omitted when Salesforce does not support the corresponding operation.
+If you know Kysely, the shape of the API should feel familiar. Kysoql is still its own query builder. It targets SOQL directly and follows Salesforce rules whenever SQL and SOQL behave differently.
 
 ## Start here
 
-Follow the [quickstart](/docs/framework/getting-started/quickstart) to install the
-packages, generate an org-specific schema, compile a query, and execute it through
-native REST, without JSforce.
+The [quickstart](/docs/framework/getting-started/quickstart) takes you from installation to a real REST query. If you only want to see the builder first, this is the basic idea:
 
 ```ts
 import { Kysoql } from "@kysoql/core";
@@ -54,57 +28,67 @@ const query = db
   .limit(25);
 
 console.log(query.compile().soql);
-// SELECT Id, Name FROM Account WHERE Name LIKE 'Acme%'
-// ORDER BY Name LIMIT 25
+// SELECT Id, Name FROM Account WHERE Name LIKE 'Acme%' ORDER BY Name LIMIT 25
 ```
 
-This example only compiles. Calling `execute()` requires an
-[executor](/docs/rest/execution).
+Compilation does not need a Salesforce connection. Add an [executor](/docs/rest/execution) when you want `.execute()` and related methods to send the query to Salesforce.
 
-## Follow Salesforce concepts
+## What feels familiar from Kysely?
 
-The guide navigation follows Salesforce SOQL concepts such as `SELECT`, `WHERE`,
-relationships, aggregation, functions, and REST query execution. Each major
-guide links back to the corresponding Salesforce reference so you can compare
-the typed builder with the platform syntax and limits.
+<Accordions type="single">
+  <Accordion title="Immutable fluent builders">
 
-[Open the Salesforce reference map](/docs/core/reference/salesforce).
+Methods such as `select`, `where`, and `orderBy` return a new builder. You can reuse a base query without one branch changing another.
+
+  </Accordion>
+  <Accordion title="Composition helpers">
+
+`$if` and `$call` make it easier to share query logic while preserving useful TypeScript inference.
+
+  </Accordion>
+  <Accordion title="Inferred result types">
+
+The result type follows what you select, including aliases, nullable relationships, conditional selections, aggregates, and `TYPEOF` branches.
+
+  </Accordion>
+</Accordions>
+
+The important difference is the target language. SOQL uses relationship paths, parent-to-child subqueries, and semi-joins instead of arbitrary SQL joins. Ordinary API values become escaped SOQL literals rather than SQL placeholder parameters. Mutations and transactions live outside this package because they are not part of SOQL.
 
 ## Packages
 
-| Package | Purpose |
+| Package | What it does |
 | --- | --- |
-| [`@kysoql/core`](/docs/core) | Query builders, schema types, SOQL compiler, and executor contract. |
-| [`@kysoql/rest`](/docs/rest) | Native query/QueryAll execution, counts, pagination, token-provider renewal, and cancellation. |
-| [`@kysoql/auth`](/docs/auth) | Private-key JWT bearer server-to-server auth, other supported Salesforce OAuth flows, and refresh-token storage. |
-| [`@kysoql/codegen`](/docs/codegen) | Describe-driven schema generation and the `kysoql` CLI. |
-| [`@kysoql/jsforce`](/docs/jsforce) | Optional adapter for applications that already use JSforce. |
+| [`@kysoql/core`](/docs/core) | Builds and compiles typed SOQL queries. |
+| [`@kysoql/rest`](/docs/rest) | Executes queries with Salesforce REST and native `fetch`. |
+| [`@kysoql/auth`](/docs/auth) | Handles supported Salesforce OAuth flows and refresh-token storage. |
+| [`@kysoql/codegen`](/docs/codegen) | Generates org-specific TypeScript schema metadata. |
+| [`@kysoql/jsforce`](/docs/jsforce) | Connects Kysoql to an existing JSforce connection. |
 
-Kysoql is split into focused `@kysoql/*` packages so applications can install
-only the pieces they need. Keep the Kysoql packages in an application on aligned
-versions.
+Install only the pieces your application needs, but keep all `@kysoql/*` packages on aligned versions.
 
 ## Find the right guide
 
-| Task | Read |
+| I want to... | Read |
 | --- | --- |
-| Understand builders and inferred results | [Mental model](/docs/framework/guides/mental-model) |
-| Select fields and build search filters | [Selecting](/docs/framework/guides/selecting) and [filtering](/docs/framework/guides/filtering) |
-| Query parents, children, and related records | [Relationships, semi-joins, and anti-joins](/docs/framework/guides/relationships) |
-| Build grouped reports | [Aggregates](/docs/framework/guides/aggregates) and [date functions](/docs/framework/guides/date-functions) |
-| Run queries or include deleted records | [Execution](/docs/rest/execution) |
-| Check an available method or a restriction | [API reference](/docs/core/reference/api) and [limitations](/docs/core/reference/limitations) |
+| Understand how builders and result types work | [Mental model](/docs/framework/guides/mental-model) |
+| Choose fields and shape a result | [Selecting fields](/docs/framework/guides/selecting) |
+| Build `WHERE` conditions | [Filtering records](/docs/framework/guides/filtering) |
+| Query parent or child relationships | [Relationships](/docs/framework/guides/relationships) |
+| Build grouped reports | [Counts and aggregate reports](/docs/framework/guides/aggregates) |
+| Sort or paginate results | [Ordering and pagination](/docs/framework/guides/ordering-and-pagination) |
+| Run queries through Salesforce REST | [Native REST execution](/docs/rest/execution) |
+| Compile SOQL for Apex | [Compile for Apex](/docs/core/apex/overview) |
+| Check a platform-specific restriction | [Support boundaries and limits](/docs/core/reference/limitations) |
 | Diagnose an error | [Troubleshooting](/docs/core/reference/troubleshooting) |
-| Produce SOQL with Apex binds | [Apex overview](/docs/core/apex/overview) |
+| Look up a public API | [Core API reference](/docs/core/reference/api) |
 
-## What validation does and does not guarantee
+## Types help, Salesforce still decides
 
-Generated types constrain object names, field names, relationship paths, values,
-and capabilities such as `filterable` or `groupable`. Builder and compiler
-validation also reject many invalid clause combinations. Neither replaces the
-Salesforce server: org permissions, API versions, enabled features, current
-metadata, query selectivity, and runtime governor limits still apply.
+Generated metadata catches a lot before runtime, including invalid names, unsupported operators, and many incompatible query shapes. It cannot replace Salesforce itself.
 
-Beta and pilot features are [explicitly separated](/docs/core/advanced/experimental),
-not presented as ordinary production features. `soql.raw()` is the explicit unsafe
-escape hatch for trusted SOQL syntax the builder does not model.
+Permissions, enabled org features, API-version behaviour, query selectivity, current metadata, and runtime limits still apply when Salesforce receives the query.
+
+Beta and Pilot features live under [Beta and pilot features](/docs/core/advanced/experimental) so they do not blend into the normal production API. `soql.raw()` remains the explicit escape hatch for trusted syntax Kysoql does not model.
+
+For a direct map from builder concepts to Salesforce documentation, use the [Salesforce reference map](/docs/core/reference/salesforce).

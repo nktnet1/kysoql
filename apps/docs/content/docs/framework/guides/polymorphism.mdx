@@ -3,11 +3,13 @@ title: "Polymorphic relationships"
 description: "Filter relationship types and select type-specific fields with TYPEOF."
 ---
 
-A polymorphic reference can point to more than one kind of Salesforce object.
-The generated field must be explicitly marked polymorphic; a multi-target
-reference alone does not enable these helpers.
+Some Salesforce references can point to more than one object type. `Event.What` is a common example.
 
-## Filter with the virtual Type qualifier
+Kysoql enables its polymorphic helpers only when the generated Salesforce metadata marks the reference as polymorphic.
+
+## Filter by the runtime object type
+
+The virtual `.Type` qualifier can be selected and filtered:
 
 ```ts
 import { db } from "./db";
@@ -19,14 +21,13 @@ const query = db
   .where("What.Type", "like", "Acc%");
 ```
 
-Equality and set values are constrained to generated reference targets.
-`like` accepts a string pattern. `.Type` can be selected or filtered, but is not
-synthesized as sortable, groupable, or aggregatable. Generating all referenced
-target objects is unnecessary when this virtual qualifier is all you need.
+Equality and list values are constrained to the generated reference targets. `.Type` is not treated as sortable, groupable, or aggregatable.
 
-## Select different fields by runtime type
+If `.Type` is all you need, you do not have to generate every possible target object.
 
-Generate `Event`, `Account`, and `Opportunity` for the following example:
+## Select different fields with `TYPEOF`
+
+Generate `Event`, `Account`, and `Opportunity` for this example:
 
 ```ts
 import { db } from "./db";
@@ -53,6 +54,7 @@ function isObjectType<T extends RelatedRecord["attributes"]["type"]>(
 
 for (const event of events) {
   const related = event.What;
+
   if (isObjectType(related, "Account")) {
     console.log(related.Phone, related.NumberOfEmployees);
   } else if (isObjectType(related, "Opportunity")) {
@@ -61,27 +63,18 @@ for (const event of events) {
 }
 ```
 
-Use the relationship name `What`, not `WhatId`. Each `when` field list is
-checked against its target object. Results are discriminated by Salesforce's
-returned `attributes.type`. Nullable lookups remain nullable, and unmatched
-runtime targets add `null` when there is no `else` branch. The type guard narrows
-the containing record from its nested discriminator; checking
-`record.attributes.type` alone does not reliably narrow the whole union. This
-guard assumes the declared response shape, not arbitrary unvalidated JSON.
+Use the relationship name such as `What`, not the foreign-key field `WhatId`.
 
-## ELSE and selection constraints
+Each `when()` selection is checked against its target object. The result union is discriminated by Salesforce's returned `attributes.type`. Nullable lookups stay nullable.
 
-A final `.else(["Name"])` is available when that field is valid across every
-remaining generated target. Kysoql's typing is intentionally conservative:
-it does not model Salesforce's complete `Name` pseudo-object surface. Do not
-force a failing `else` branch with a type assertion; generate the missing target
-or select explicit supported branches instead.
+## Add an `ELSE` branch when the remaining targets share fields
 
-`TYPEOF` cannot be mixed with SELECT-function expressions or aggregate/grouping
-queries. Do not select an ordinary field path through the same polymorphic
-relationship alongside its `TYPEOF` selection. A filter on `What.Type` remains
-valid, allowing a query to restrict runtime types without duplicating selections.
+A final `.else(["Name"])` is available when the field is valid across every generated target that is not already covered by a `when()` branch.
 
-Nested polymorphic paths such as `Event__r.What` retain parent nullability, but
-require the corresponding generated relationship metadata. Relationship counts
-still apply; see [relationships](/docs/framework/guides/relationships).
+Kysoql is conservative here. If a field is not safe across the remaining generated targets, add explicit branches or generate the missing target metadata instead of forcing the type with a cast.
+
+`TYPEOF` cannot be mixed with aggregate queries or SELECT-function expressions. Do not also select a normal field path through the same polymorphic relationship.
+
+Filtering on `What.Type` is still fine, which lets you narrow the runtime types without duplicating selections.
+
+Nested polymorphic paths keep the nullability of their parent relationships. Normal [relationship limits](/docs/framework/guides/relationships#query-wide-relationship-limits) still apply.

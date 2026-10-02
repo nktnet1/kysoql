@@ -3,42 +3,34 @@ title: "Mental model"
 description: "Understand immutability, query modes, metadata, and result inference."
 ---
 
-## Kysely inspiration stops at the API boundary
+A few ideas make the rest of Kysoql much easier to reason about.
 
-Kysoql is Kysely-inspired, not Kysely-compatible. Familiar method names and
-immutable composition patterns are used where they fit Salesforce, but the
-operation tree and compiler model SOQL rather than SQL. Do not assume a Kysely
-feature exists unless it is documented here.
+## Kysely inspires the API, not the query language
 
-In particular, there are no arbitrary SQL joins, DML builders, transactions, CTEs,
-or SQL placeholder-parameter arrays. Salesforce relationship paths, child
-subqueries, semi/anti-joins, query modes, and object-specific restrictions replace
-those concepts where SOQL provides an equivalent. Ordinary API values are
-serialized and escaped into the compiled SOQL string; explicit Apex bind helpers
-are a separate compile-only feature.
+Kysoql borrows fluent, immutable TypeScript patterns from Kysely where they fit. It does not try to turn SOQL into SQL.
 
-| Kysely concept | Kysoql / SOQL behaviour |
+| Familiar idea | Kysoql behaviour |
 | --- | --- |
-| `selectFrom`, `select`, `where`, `orderBy`, `limit`, `offset` | Familiar fluent names where SOQL has a direct equivalent. |
-| SQL joins | No arbitrary join API. Use Salesforce parent paths, child relationship subqueries, and supported semi/anti-joins. |
-| `CompiledQuery.sql` + `parameters` | `CompiledQuery.soql`; ordinary API values are escaped SOQL literals, with no SQL parameter array. |
-| Insert/update/delete builders and transactions | Not part of a SOQL query builder. |
-| Kysely plugins | Kysoql has its own `KysoqlPlugin` contract; Kysely plugins are not drop-in compatible. |
-| Raw SQL | `soql.raw()` is an explicit unsafe SOQL escape hatch, not Kysely's `sql` tag. |
+| `selectFrom`, `select`, `where`, `orderBy`, `limit`, `offset` | Similar fluent names where SOQL has a matching concept. |
+| SQL joins | Use Salesforce parent paths, child subqueries, and supported semi-joins or anti-joins. |
+| SQL placeholders | Ordinary API values are escaped directly into compiled SOQL. |
+| Mutations and transactions | Outside the scope of a SOQL query builder. |
+| Kysely plugins | Kysoql has its own `KysoqlPlugin` contract. |
+| Raw SQL | `soql.raw()` is Kysoql's explicit unsafe SOQL escape hatch. |
 
-## A schema is compile-time metadata
+Apex binds are different from ordinary API values. They are available only in the compile-only Apex builders.
 
-`new Kysoql<YourSchema>()` uses the generated interface as a type parameter. It
-does not load metadata at runtime. Types prevent many invalid queries while you
-write code; the compiler validates the operation tree and emits SOQL.
+## Your schema describes the org to TypeScript
 
-Do not import the generic `SalesforceSchema` helper from `@kysoql/core` as a
-substitute for your generated interface. That broad helper cannot describe your
-org's particular objects and fields.
+`new Kysoql<YourSchema>()` uses the schema type to constrain what you can build. The usual schema comes from `@kysoql/codegen` and reflects Salesforce metadata such as fields, relationships, nullability, and query capabilities.
+
+The TypeScript type itself is compile-time metadata. For features that need runtime metadata, such as Big Object index validation, pass the generated `salesforceSchemaMetadata` value as shown in the codegen guide.
+
+Do not use the broad helper types from `@kysoql/core` as a replacement for an org-specific generated schema. They cannot know your custom objects or fields.
 
 ## Builders are immutable
 
-Each clause returns a new builder. Preserve the returned value or chain methods:
+Every query method returns a new builder:
 
 ```ts
 import { db } from "./db";
@@ -47,63 +39,52 @@ const base = db.selectFrom("Account").select(["Id", "Name"]);
 const acme = base.where("Name", "like", "Acme%");
 const firstPage = acme.orderBy("Name").limit(25);
 
-// base has no WHERE, ORDER BY, or LIMIT.
-// acme has a WHERE, but no ORDER BY or LIMIT.
 console.log(firstPage.compile().soql);
 ```
 
-Calling `base.where(...)` without using its return value does not change `base`.
-This makes it safe to derive multiple queries from a shared base.
+`base` still has no `WHERE`, `ORDER BY`, or `LIMIT`. That makes it safe to derive several queries from one starting point.
 
-## A query has a mode
+## Query modes narrow the API
 
-| Mode | How to enter it | Result or purpose |
+Kysoql changes the available methods as the query shape becomes more specific.
+
+| Mode | How you enter it | Result or purpose |
 | --- | --- | --- |
-| Record selection | `select("Id")`, field arrays, supported select functions | Readonly array of selected records. |
-| Aggregate result | An aliased aggregate selection, or `groupBy` before ordinary selections | Readonly array of aggregate rows. |
-| Scalar count | `select(({ fn }) => fn.count())` on an unselected builder | A single `number`. |
-| Relationship subquery | A `selectSubquery` callback | Nested result envelope in the parent row. |
-| Semi-join | An `in` or `not in` subquery callback | A filter, not a separately returned result. |
-| Apex | Finish API-style selections, then call `apex()` or `dynamicApex()` | Compile-only SOQL. No execution methods. |
+| Record query | Select normal fields or supported SELECT functions | Readonly array of selected records. |
+| Aggregate query | Select an aggregate or group first | Readonly array of aggregate rows. |
+| Scalar count | Select bare `fn.count()` | One `number`. |
+| Relationship subquery | Use `selectSubquery()` | Nested relationship result in the parent row. |
+| Semi-join | Use an `in` or `not in` subquery callback | A filter only. |
+| Apex | Call `apex()` or `dynamicApex()` at the supported point | Compile-only SOQL. |
 
-Methods are intentionally unavailable when they cannot describe valid SOQL.
-For example, an ordinary selected record query does not later become an
-aggregate query, bare `COUNT()` does not expose `OFFSET`, and child-query
-builders do not expose a general `execute()` method.
+Methods disappear when they would no longer describe valid SOQL. A bare count, for example, does not expose the same pagination API as a normal record query.
 
-## Results follow selections
+## Result types follow selections
 
-`select(["Id", "Name"])` infers only those fields. Nullable Describe fields
-include `null`; optional selections added by `$if` include `undefined` when
-not selected. Parent paths infer nested objects, and nullable lookups can make
-the parent object `null`.
+```ts
+import { db } from "./db";
 
-Selected fields can use Kysely-style aliases such as `"Name as name"`, which
-infer a flat `name` property. Selected functions and aggregates continue to use
-`.as("totalAmount")`.
+const query = db
+  .selectFrom("Account")
+  .select(["Id", "Name as name", "Owner.Name"]);
+```
 
-The bundled executors validate the query response envelope, not every selected
-field's runtime type. Types are not a runtime data-validation or authorisation
-layer. See [security](/docs/core/reference/security).
+The result type contains only what you selected.
 
-## Compile, inspect, or execute
+Generated nullability carries through to field and relationship types. A field added inside `$if` becomes optional because it might not be selected at runtime. Aliases create the aliased property name in the result.
 
-`compile().soql` gives the SOQL string. `compile().query` and
-`toOperationNode()` expose the operation tree for inspection or testing. Normal
-builders use the default compiler unless a custom `queryCompiler` is supplied.
+The bundled executors validate the Salesforce response envelope, not every selected field value at runtime. Types are not an authorization or runtime validation layer. See [security and production use](/docs/core/reference/security).
 
-`execute()` requires an executor. With either bundled executor it already drains
-root result pages. `executeAll()` changes the Salesforce query mode to QueryAll;
-it does not simply mean "fetch every page".
+## Compile or execute
 
-## Conventions used in these guides
+`compile().soql` gives you the final SOQL string.
 
-Query examples import `db` from the [quickstart](/docs/framework/getting-started/quickstart).
-Generate every object used by an example. `Opportunity`, `User`, `Event`,
-Knowledge, Data 360, and custom objects are additional requirements, not objects
-automatically included by the quickstart command. Custom names such as
-`Office__c` and `Interests__c` are illustrative: replace them with real API names
-and regenerate before running those examples.
+`execute()` needs a configured executor. The bundled executors follow root pagination for you. `.executeAll()` switches to Salesforce QueryAll mode rather than meaning "fetch all pages".
 
-Examples are independent unless a section explicitly says to continue the same
-snippet. SQL blocks show generated SOQL, not statements to send to a SQL database.
+Use [native REST execution](/docs/rest/execution) for the normal transport and [compile for Apex](/docs/core/apex/overview) for Apex-only SOQL.
+
+## About the examples
+
+Most guide snippets import `db` from the [quickstart](/docs/framework/getting-started/quickstart).
+
+Generate every object and field an example uses before running it. Names such as `Office__c` and `Interests__c` are illustrative custom metadata and should be replaced with API names from your org.

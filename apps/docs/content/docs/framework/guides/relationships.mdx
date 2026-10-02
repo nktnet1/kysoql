@@ -5,18 +5,11 @@ description: "Traverse parents, select child records, and filter with semi-joins
 
 <SalesforceReference title="Relationship queries" href="https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-relationships.html" />
 
+SOQL relationships are not SQL joins. Use dotted paths to move from a child record to a parent, relationship subqueries to select children, and semi-joins or anti-joins when related records should decide whether a root record matches.
 
-Kysoql does not expose Kysely-style SQL join methods. In SOQL, related data is
-reached through Salesforce relationship paths and parent-to-child subqueries;
-`semi-join` and `anti-join` below use Salesforce's own `IN (SELECT ...)` /
-`NOT IN (SELECT ...)` terminology.
-
-Generate every referenced object before using these examples. Relationship
-names are Salesforce API relationship names, not arbitrary SQL aliases.
+Generate every object you traverse in the examples below.
 
 ## Child-to-parent paths
-
-Use a dotted path in selection, filtering, or sorting:
 
 ```ts
 import { db } from "./db";
@@ -34,17 +27,15 @@ for (const contact of contacts) {
 }
 ```
 
-The related terminal field retains its generated capability checks. A nullable
-lookup makes the nested parent value nullable. The builder supports up to five
-child-to-parent relationship levels. For custom lookups, use the generated
-relationship name such as `Account__r`, not the foreign-key field `Account__c`.
+Use Salesforce relationship API names. For a custom lookup, that often means a relationship such as `Account__r` rather than the foreign-key field `Account__c`.
 
-A `WHERE` predicate does not generally narrow the inferred nullability of a
-selected relationship. Keep the appropriate null checks.
+A nullable lookup makes the nested parent value nullable in the result type. Filtering on a parent field does not generally remove that nullability from the selected relationship type.
+
+Kysoql supports up to five child-to-parent relationship levels.
 
 ## Parent-to-child subqueries
 
-Use `selectSubquery(relationshipName, callback)`:
+Use `selectSubquery()` with the child relationship name:
 
 ```ts
 import { db } from "./db";
@@ -62,19 +53,9 @@ const query = db
   .limit(25);
 ```
 
-This example additionally needs `User` in the generated schema for
-`CreatedBy.Alias`. `Contacts` is a child relationship on `Account`; using
-`Contact` as a guessed subquery `FROM` name is not equivalent.
+`Contacts` is the relationship name on `Account`. Guessing the object name `Contact` is not equivalent.
 
-The dedicated child builder supports ordinary fields, supported select
-functions, `FIELDS` selectors, scalar/grouped filters, ordering, limits,
-composition helpers, and further child subqueries. It intentionally omits root
-execution, semi-joins, aggregates, and root-only Salesforce clauses. Nested child
-queries are capped at four child levels below the root by the typed surface;
-actual support depends on the Salesforce API and execution context. API 58+
-supports up to five parent-to-child levels through REST, SOAP, and Apex for
-standard and custom objects; Bulk APIs, big objects, and external objects have
-stricter limits.
+The child builder supports normal selections, filters, sorting, limits, composition helpers, and further child subqueries where Salesforce allows them. Root-only features such as direct execution and semi-joins are not exposed there.
 
 ## Read child results
 
@@ -91,33 +72,23 @@ const accounts = await db
   .execute();
 
 for (const account of accounts) {
-  const childResult = account.Contacts;
-  console.log(childResult.totalSize, childResult.done);
-  for (const contact of childResult.records) {
+  for (const contact of account.Contacts.records) {
     console.log(contact.Id, contact.LastName);
   }
-  // With @kysoql/rest this selected child result is already complete
-  // up to the subquery LIMIT. No locator handling is required here.
 }
 ```
 
-The inferred value is `SalesforceQueryResult<Row>` with `totalSize`, `done`,
-`records`, and optional `nextRecordsUrl`. With `@kysoql/rest`, selected child
-subqueries are completed automatically: the executor follows each child locator
-up to that subquery's `LIMIT`, recurses through further selected child subqueries,
-and returns the materialised relationship as `done: true`. Application code does
-not need to follow `nextRecordsUrl`.
+The relationship value uses `SalesforceQueryResult<Row>` with `totalSize`, `done`, and `records`.
 
-The optional locator remains part of the shared core type because raw Salesforce
-responses and other executors can expose it. The JSforce adapter currently drains
-root pages only. For very large child collections, a direct child-object query
-with a parent-ID filter can still be a better memory/processing strategy than an
-unbounded relationship subquery.
+With `@kysoql/rest`, selected child relationship pages are completed automatically up to the child query's `LIMIT`. You do not need to follow `nextRecordsUrl` yourself.
+
+The shared core type still includes an optional locator because raw Salesforce responses and other executors can expose one. The JSforce adapter follows root pagination only.
+
+For very large child collections, a direct query against the child object can be easier to stream and control than an unbounded relationship subquery.
 
 ## Semi-joins and anti-joins
 
-Use `in` to keep parents with matching child records, or `not in` to exclude
-parents with matching child records:
+Use `in` to keep records that have a related match and `not in` to exclude them:
 
 ```ts
 import { db } from "./db";
@@ -140,33 +111,25 @@ const accountsWithoutContacts = db
   );
 ```
 
-Both operands must identify compatible Salesforce object types. The outer
-operand is a direct ID/reference field; the subquery selects exactly one
-compatible direct ID/reference field. This uses generated `referenceTo`
-metadata rather than treating every ID-looking string as interchangeable.
+The outer field and the subquery's selected field must be compatible Salesforce ID or reference fields. Kysoql uses generated `referenceTo` metadata instead of assuming every ID-shaped string is interchangeable.
 
-A semi-join is a filter only. It does not select child rows into the output.
+A semi-join changes which root records match. It does not add the child records to the returned result.
 
-Restrictions enforced by the builder/compiler include:
+Salesforce also places tight restrictions on these subqueries. Kysoql enforces the main ones, including:
 
-- At most two semi/anti-joins per query, as top-level `WHERE` terms; not under
-  `OR` or `NOT`.
-- No same-object outer/inner query, nested semi-joins, relationship-path selected
-  fields, ordering, limit, or offset in the subquery.
-- `ActivityHistory`, `Attachment`, `Event`, `Note`, `OpenActivity`, `Task`, and
-  `*Tag` objects cannot be used as the semi/anti-join subquery object.
-- No semi-joins inside a relationship subquery or `HAVING` expression.
+- at most two semi-joins or anti-joins per query
+- top-level `WHERE` placement rather than inside `OR` or `NOT`
+- no nested semi-joins
+- no ordering, limit, or offset inside the semi-join subquery
+- exactly one compatible direct ID or reference field selected by the subquery
+- no semi-joins inside relationship subqueries or `HAVING`
 
-To negate existence, use `not in`, not `eb.not(...)` around a semi-join.
+Use `not in` for the anti-join form instead of wrapping an `in` semi-join with `eb.not()`.
 
 ## Query-wide relationship limits
 
-Compilation counts relationships across the full query: at most 20
-parent-to-child and 55 child-to-parent relationships. Repeated use of a parent
-path shares a counted relationship; a deeper traversal adds another one.
-`TYPEOF` targets also affect this count, with the compiler's direct-root-ID
-single-record exception. These checks are not a promise that all API transports
-support every relationship depth or object combination.
+Kysoql counts relationships across the whole query. The compiler allows at most 20 parent-to-child relationships and 55 child-to-parent relationships.
 
-See [polymorphism](/docs/framework/guides/polymorphism) for `What.Type` and `TYPEOF`, and
-[limitations](/docs/core/reference/limitations) for execution-context boundaries.
+Reusing the same parent path does not count it again, while traversing a deeper relationship adds another level. `TYPEOF` targets also contribute to relationship accounting.
+
+These compiler checks do not guarantee that every transport and Salesforce object supports the same maximum depth. See [support boundaries and limits](/docs/core/reference/limitations) for context-specific restrictions.

@@ -4,17 +4,9 @@ description: "Use the Kysely-inspired, type-safe core query builder and compiler
 icon: "Cpu"
 ---
 
-`@kysoql/core` is the Kysely-inspired query-builder package for Salesforce SOQL.
-It borrows Kysely-style TypeScript ergonomics without being Kysely, a Kysely
-dialect, or a SQL compatibility layer. SOQL semantics remain authoritative.
+`@kysoql/core` is where you build and compile typed SOQL queries. It has no Salesforce HTTP dependency, so you can use it for compile-only workflows or pair it with any executor that implements Kysoql's execution contract.
 
-Core owns the typed SOQL builders, expression helpers, compiler, schema contracts,
-and the executor interface used by transport adapters. It also provides
-compile-only Apex modes for server-side use.
-
-It has no Salesforce HTTP dependency. You can compile SOQL without a connection,
-or provide an executor such as [`@kysoql/rest`](/docs/rest) or the optional
-[`@kysoql/jsforce`](/docs/jsforce) adapter when you want `.execute()` support.
+The API takes inspiration from Kysely, but the behaviour is Salesforce-native. SOQL relationships, aggregates, `TYPEOF`, `FIELDS()`, Apex-only clauses, and other Salesforce features are modelled directly rather than squeezed into SQL concepts.
 
 ## Install
 
@@ -49,7 +41,9 @@ bun add @kysoql/core
   </Tab>
 </Tabs>
 
-## Start with a typed query
+## Build a typed query
+
+Most applications generate `SalesforceSchema` and `salesforceSchemaMetadata` with [`@kysoql/codegen`](/docs/codegen):
 
 ```ts
 import { Kysoql } from "@kysoql/core";
@@ -72,16 +66,17 @@ const query = db
 console.log(query.compile().soql);
 ```
 
-The generated `SalesforceSchema` normally comes from
-[`@kysoql/codegen`](/docs/codegen), but core also supports hand-authored schema
-types for specialised integrations.
+You can also hand-author a schema for specialised or offline use cases. Generated schemas are the normal path because they reflect the objects and capabilities of a real Salesforce org.
 
-## What belongs to core
+## What core gives you
 
-- Query creation, selections, filters, relationships, aggregates, and functions.
-- Schema capability types and inferred result shapes.
-- The `QueryExecutor` contract used by native REST, JSforce, and custom adapters.
-- Compile-only Apex-oriented modes for code that runs inside Salesforce.
+- immutable query builders with inferred result types
+- typed filters, relationship paths, subqueries, aggregates, and Salesforce functions
+- schema capability types used by generated metadata
+- the `QueryExecutor` contract for REST, JSforce, and custom transports
+- compile-only Apex builders for Apex-specific syntax
+- plugins for query and result transformations
 
-Continue with the [mental model](/docs/framework/guides/mental-model), or use the
-[quickstart](/docs/framework/getting-started/quickstart) for an end-to-end flow.
+Core does not authenticate to Salesforce or make HTTP requests. Use [`@kysoql/rest`](/docs/rest) for the native transport or [`@kysoql/jsforce`](/docs/jsforce) when your application already has a JSforce connection.
+
+Continue with the [mental model](/docs/framework/guides/mental-model), or follow the [quickstart](/docs/framework/getting-started/quickstart) for a complete setup.

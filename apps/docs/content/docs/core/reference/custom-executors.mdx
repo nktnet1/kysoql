@@ -1,12 +1,15 @@
 ---
 title: "Custom executors and testing"
-description: "Implement the execution contract, preserve capabilities, and test without Salesforce."
+description: "Connect Kysoql to another transport or test queries without a live Salesforce org."
 ---
+
+Most applications can use [`@kysoql/rest`](/docs/rest) or
+[`@kysoql/jsforce`](/docs/jsforce). Build a custom executor when you already have
+a transport layer or need tighter control over execution.
 
 ## Executor contract
 
-Core does not depend on a specific transport. A custom executor implements this
-public interface:
+Only `executeQuery` is required:
 
 ```ts
 import type {
@@ -14,19 +17,22 @@ import type {
   CompiledQuery,
 } from "@kysoql/core";
 
-interface ExampleExecutorContract {
+interface ExampleExecutor {
   executeQuery<O>(
     query: CompiledQuery<O>,
     options?: AbortableQueryOptions,
   ): Promise<readonly O[]>;
+
   executeAllQuery?<O>(
     query: CompiledQuery<O>,
     options?: AbortableQueryOptions,
   ): Promise<readonly O[]>;
+
   executeCountQuery?(
     query: CompiledQuery<number>,
     options?: AbortableQueryOptions,
   ): Promise<number>;
+
   executeAllCountQuery?(
     query: CompiledQuery<number>,
     options?: AbortableQueryOptions,
@@ -34,24 +40,18 @@ interface ExampleExecutorContract {
 }
 ```
 
-Only `executeQuery` is required. The builder checks optional capabilities and
-throws when a requested mode is unsupported; it does not silently fall back
-from QueryAll to ordinary execution or reinterpret row arrays as counts.
-Executable builders forward the optional `AbortableQueryOptions` object, so a
-custom executor should honour `signal` when it can stop or abandon work safely.
+Expose an optional method only when the transport genuinely supports it. Kysoql
+will not silently turn QueryAll into a normal query or reinterpret record arrays
+as scalar counts.
 
-A transport implementation is responsible for authentication, sending SOQL,
-validating untrusted responses, pagination policy, errors, and returning the
-contract's result shape. The generic `O` is erased at runtime. Merely asserting
-an arbitrary JSON response as `O[]` does not validate it. Root builder
-`.execute()` calls apply Kysoql's field-alias projection after the executor
-returns; direct adapter-style executor APIs can use `applyQueryResultAliases`
-when they expose compiled-query execution themselves.
+A custom executor owns authentication, network calls, paging, response
+validation, and transport errors. The generic output type is erased at runtime,
+so casting arbitrary JSON to `O[]` is not validation.
 
-## Wrap an existing executor without inventing capabilities
+## Wrap an existing executor
 
-This wrapper records duration without logging tokens or SOQL values. It only
-exposes optional methods actually supported by its delegate:
+Wrappers are useful for tracing, metrics, or policy checks. Preserve optional
+capabilities instead of replacing missing methods with fake fallbacks:
 
 ```ts
 import type { QueryExecutor } from "@kysoql/core";
@@ -60,52 +60,41 @@ export function timedExecutor(
   inner: QueryExecutor,
   observe: (method: string, milliseconds: number) => void,
 ): QueryExecutor {
-  async function timed<T>(method: string, run: () => Promise<T>): Promise<T> {
-    const start = performance.now();
-    try {
-      return await run();
-    } finally {
-      // A telemetry failure must not replace a query result or original error.
-      try {
-        observe(method, performance.now() - start);
-      } catch {
-        // Report telemetry failures through a separate, non-throwing channel.
-      }
-    }
-  }
-
   const wrapped: QueryExecutor = {
-    executeQuery: (query, options) =>
-      timed("executeQuery", () => inner.executeQuery(query, options)),
+    async executeQuery(query, options) {
+      const started = performance.now();
+      try {
+        return await inner.executeQuery(query, options);
+      } finally {
+        observe("executeQuery", performance.now() - started);
+      }
+    },
   };
-  const executeAllQuery = inner.executeAllQuery?.bind(inner);
-  const executeCountQuery = inner.executeCountQuery?.bind(inner);
-  const executeAllCountQuery = inner.executeAllCountQuery?.bind(inner);
 
-  if (executeAllQuery) {
-    wrapped.executeAllQuery = (query, options) =>
-      timed("executeAllQuery", () => executeAllQuery(query, options));
+  if (inner.executeCountQuery) {
+    wrapped.executeCountQuery = inner.executeCountQuery.bind(inner);
   }
-  if (executeCountQuery) {
-    wrapped.executeCountQuery = (query, options) =>
-      timed("executeCountQuery", () => executeCountQuery(query, options));
+
+  if (inner.executeAllQuery) {
+    wrapped.executeAllQuery = inner.executeAllQuery.bind(inner);
   }
-  if (executeAllCountQuery) {
-    wrapped.executeAllCountQuery = (query, options) =>
-      timed("executeAllCountQuery", () => executeAllCountQuery(query, options));
+
+  if (inner.executeAllCountQuery) {
+    wrapped.executeAllCountQuery = inner.executeAllCountQuery.bind(inner);
   }
+
   return wrapped;
 }
 ```
 
-Supply the wrapper as the `executor` option on `Kysoql`. Preserving the delegate's
-`this` binding is important when adapting class-based executors.
+Avoid logging raw tokens or query text when SOQL literals may contain sensitive
+values.
 
-## A complete offline adapter test
+## Test without Salesforce
 
-This is a test double for exactly one query, not an executor that returns valid
-results for arbitrary queries. It exercises the native REST adapter without
-credentials or network calls:
+For most builder tests, compile the query and assert the SOQL. For adapter tests,
+inject a fake `fetch` or a small executor that returns the exact response your
+test needs.
 
 ```ts
 import assert from "node:assert/strict";
@@ -113,17 +102,12 @@ import { Kysoql } from "@kysoql/core";
 import { createRestExecutor } from "@kysoql/rest";
 import type { SalesforceSchema } from "./kysoql/salesforce.generated";
 
-const fetch: typeof globalThis.fetch = async (input, options) => {
-  const url = new URL(String(input));
-  assert.equal(url.pathname, "/services/data/v65.0/query");
-  assert.equal(url.searchParams.get("q"), "SELECT Id, Name FROM Account LIMIT 1");
-  assert.equal(options?.method, "GET");
-  return Response.json({
+const fetch: typeof globalThis.fetch = async () =>
+  Response.json({
     done: true,
     totalSize: 1,
     records: [{ Id: "001000000000001AAA", Name: "Example account" }],
   });
-};
 
 const db = new Kysoql<SalesforceSchema>({
   executor: createRestExecutor({
@@ -132,22 +116,18 @@ const db = new Kysoql<SalesforceSchema>({
     fetch,
   }),
 });
+
 const rows = await db.selectFrom("Account").select(["Id", "Name"]).limit(1).execute();
 assert.equal(rows[0]?.Name, "Example account");
 ```
 
-Add tests for multi-page responses, incomplete responses without a locator,
-scalar count envelopes, QueryAll options, and propagated transport failures.
-Use compile-only tests to assert expected SOQL, and TypeScript negative tests to
-protect rejected field/operator/mode combinations.
+Add transport-focused cases for pagination, malformed responses, count results,
+QueryAll, abort signals, and error propagation when those behaviours matter to
+your executor.
 
-## Custom compiler
+## Custom compilers
 
-`QueryCompiler.compileQuery<O>(query, context?)` receives a `SelectQueryNode`
-and optional `QueryCompileContext` flags (`apex`, `dynamicApex`) and returns a
-`CompiledQuery<O>`. `DefaultQueryCompiler` is the public default implementation.
-
-Replacing it is an advanced extension point, not a raw-SOQL shortcut. A custom
-compiler must preserve escaping and context/structural validation; otherwise it
-can remove guarantees described elsewhere in these docs. Operation-node exports
-from core are primarily types for inspection, not public runtime constructors.
+`DefaultQueryCompiler` is the normal compiler. Replacing it is an advanced
+extension point for callers that deliberately own their query serialization.
+A custom compiler is responsible for preserving the escaping and structural
+validation guarantees your application depends on.

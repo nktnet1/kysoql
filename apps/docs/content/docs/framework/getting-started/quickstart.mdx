@@ -3,11 +3,9 @@ title: "Quickstart"
 description: "Install Kysoql, authenticate to Salesforce, generate a schema, and execute a typed REST query."
 ---
 
-This walkthrough shows the complete native REST path: install Kysoql, configure
-Salesforce JWT bearer authentication, generate the schema, execute a query, and
-inspect the data returned by Salesforce.
+This guide takes you from a new TypeScript project to a typed Salesforce query using Kysoql's native REST transport.
 
-Kysoql is ESM-only. The current packages require **Node.js `>=22.12.0`**.
+Kysoql is ESM-only and currently requires **Node.js `>=22.12.0`**.
 
 ## 1. Install Kysoql
 
@@ -48,8 +46,7 @@ bun add --dev @kysoql/codegen
 
 ## 2. Configure Salesforce authentication
 
-For a server-to-server integration, create a `SalesforceAuth` client and use the
-JWT bearer flow. The private-key source is explicit: this example loads a PEM file.
+For a server-to-server integration, JWT bearer is a good default when your application can protect a private key.
 
 ```ts title="salesforce-auth.ts"
 import { SalesforceAuth } from "@kysoql/auth";
@@ -66,16 +63,13 @@ export const getSalesforceSession = () =>
   });
 ```
 
-Use `{ type: "pem", value: "..." }` when the PEM comes from a secret manager, or
-`{ type: "crypto-key", key }` when your application already owns an RS256
-`CryptoKey`. Kysoql never guesses whether a string is a path or PEM content.
+If the PEM comes from a secret manager, use `{ type: "pem", value }`. If your application already has an RS256 `CryptoKey`, use `{ type: "crypto-key", key }`.
 
-See [JWT bearer authentication](/docs/auth/flows/jwt-bearer) for the Salesforce
-external-client-app setup.
+See [JWT bearer authentication](/docs/auth/flows/jwt-bearer) for the Salesforce external client app setup.
 
-## 3. Generate the Salesforce schema
+## 3. Generate your Salesforce schema
 
-Create `kysoql.config.ts` and tell codegen which objects your queries use:
+Create `kysoql.config.ts` and list the objects your application will query:
 
 ```ts title="kysoql.config.ts"
 import { defineConfig } from "@kysoql/codegen";
@@ -121,18 +115,13 @@ bunx kysoql generate
   </Tab>
 </Tabs>
 
-Because this example keeps its files at the project root, Kysoql writes
-`kysoql/salesforce.generated.ts`. If your project already has a `src` directory,
-the default output is `src/kysoql/salesforce.generated.ts`. The generated schema
-describes the objects, fields, and relationships visible to the authenticated
-Salesforce user.
+If the project has a `src` directory, the generated file goes to `src/kysoql/salesforce.generated.ts` by default. Otherwise it goes to `kysoql/salesforce.generated.ts`.
 
-## 4. Create a REST-backed query builder
+The generated schema reflects the objects, fields, relationships, and capabilities visible to the Salesforce user you authenticated as.
 
-Authenticate once to discover the Salesforce instance, then give the REST client
-an access-token provider. `@kysoql/rest` caches the access token in memory. If
-Salesforce rejects it with `401 INVALID_SESSION_ID`, the client calls the provider
-with `refresh: true`, caches the replacement token, and replays that request once.
+## 4. Create a REST-backed database
+
+Use the same authentication function as an access-token provider. The REST client keeps the current access token in memory and asks for a replacement if Salesforce reports that the session is invalid.
 
 ```ts title="db.ts"
 import { Kysoql } from "@kysoql/core";
@@ -152,11 +141,14 @@ const executor = createRestExecutor({
   accessToken: async ({ refresh }) => {
     if (refresh) {
       const next = await getSalesforceSession();
+
       if (next.instanceUrl !== instanceUrl) {
-        throw new Error("Salesforce instance changed; recreate the REST client.");
+        throw new Error("Salesforce instance changed. Recreate the REST client.");
       }
+
       session = next;
     }
+
     return session.accessToken;
   },
 });
@@ -167,12 +159,9 @@ export const db = new Kysoql<SalesforceSchema>({
 });
 ```
 
-JWT bearer does not issue a refresh token. The access token is deliberately kept
-in memory rather than written to refresh-token storage; when it becomes invalid,
-the private key is used to mint a new JWT assertion and obtain a replacement
-access token.
+JWT bearer does not use refresh tokens. When the access token expires, the provider performs another JWT exchange.
 
-## 5. Execute a query
+## 5. Run a typed query
 
 ```ts title="query.ts"
 import { db } from "./db";
@@ -185,64 +174,36 @@ const accounts = await db
   .limit(25)
   .execute();
 
-console.log(accounts);
+for (const account of accounts) {
+  console.log(account.Id, account.Name);
+}
 ```
 
-Kysoql compiles that builder to:
+Kysoql compiles the builder to:
 
 ```sql
 SELECT Id, Name FROM Account WHERE Name LIKE 'Acme%' ORDER BY Name LIMIT 25
 ```
 
-The native executor sends the equivalent Salesforce REST request and follows any
-root query continuations automatically:
+The result type follows the generated Salesforce schema and the fields you selected. No matching rows returns an empty array.
 
-```text
-GET /services/data/v65.0/query?q=SELECT+Id%2C+Name+FROM+Account+WHERE+Name+LIKE+%27Acme%25%27+ORDER+BY+Name+LIMIT+25
-Authorization: Bearer <cached access token>
-```
+<Accordions type="single">
+  <Accordion title="Do I need JSforce?">
 
-For example, Salesforce can return a response like this:
+No. This quickstart uses `@kysoql/rest`, which sends queries with native `fetch`. Use `@kysoql/jsforce` only when your application already has a JSforce connection you want to reuse.
 
-```json
-{
-  "totalSize": 1,
-  "done": true,
-  "records": [
-    {
-      "attributes": {
-        "type": "Account",
-        "url": "/services/data/v65.0/sobjects/Account/001000000000001AAA"
-      },
-      "Id": "001000000000001AAA",
-      "Name": "Acme Corporation"
-    }
-  ]
-}
-```
+  </Accordion>
+  <Accordion title="Do generated types replace Salesforce runtime checks?">
 
-`.execute()` resolves to the query rows, so `accounts` contains:
+No. The generated schema catches many mistakes while you write the query, but Salesforce still applies permissions, API-version behaviour, enabled features, query limits, and runtime validation.
 
-```json
-[
-  {
-    "attributes": {
-      "type": "Account",
-      "url": "/services/data/v65.0/sobjects/Account/001000000000001AAA"
-    },
-    "Id": "001000000000001AAA",
-    "Name": "Acme Corporation"
-  }
-]
-```
-
-The IDs and names above are illustrative. No matches return an empty array. The
-selected field types come from your generated schema, while Salesforce REST record
-metadata such as `attributes` is preserved by the native executor.
+  </Accordion>
+</Accordions>
 
 ## Next steps
 
-Use [filtering](/docs/framework/guides/filtering) for grouped conditions,
-[relationships](/docs/framework/guides/relationships) for parent/child queries,
-and [REST execution](/docs/rest/execution) for pagination, QueryAll, limits,
-cancellation, and lower-level request control.
+- [Selecting fields](/docs/framework/guides/selecting)
+- [Filtering records](/docs/framework/guides/filtering)
+- [Relationships](/docs/framework/guides/relationships)
+- [Counts and aggregate reports](/docs/framework/guides/aggregates)
+- [Native REST execution](/docs/rest/execution)

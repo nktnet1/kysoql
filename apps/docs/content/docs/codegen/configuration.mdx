@@ -4,20 +4,18 @@ description: "Keep schema-generation settings in kysoql.config.ts and override t
 icon: "Settings"
 ---
 
-Use a configuration file to make schema generation repeatable across developers
-and CI. The file configures **`kysoql generate` only**. It does not create a
-runtime query builder, configure a REST or JSforce executor, or change application
-queries. Continue to construct your application client as shown in the
-[quickstart](/docs/framework/getting-started/quickstart#4-create-a-rest-backed-query-builder).
+Use `kysoql.config.ts` when you want schema generation to behave the same way for local development and CI.
+
+The config only affects `kysoql generate`. It does not configure your runtime `Kysoql` instance or Salesforce executor.
 
 ## Create a config
 
-Place `kysoql.config.ts` in the directory where you run the CLI, usually beside
-your application's `package.json`:
+Place the file in the directory where you run the CLI, usually beside `package.json`:
 
 ```ts title="kysoql.config.ts"
 import { SalesforceAuth } from "@kysoql/auth";
 import { defineConfig } from "@kysoql/codegen";
+
 const salesforce = new SalesforceAuth({
   loginUrl: "https://login.salesforce.com",
   clientId: "external-client-app-id",
@@ -34,20 +32,9 @@ export default defineConfig({
 });
 ```
 
-`defineConfig` provides editor completion and typechecking. It is a typed identity
-helper, not a function that reads files, logs in, or generates a schema. A
-`satisfies` annotation works as well:
+`defineConfig` gives you editor completion and typechecking. A `satisfies KysoqlConfig` annotation works too.
 
-```ts title="kysoql.config.ts"
-import type { KysoqlConfig } from "@kysoql/codegen";
-
-export default {
-  objects: ["Account", "Contact"],
-  output: "src/kysoql/salesforce.generated.ts",
-} satisfies KysoqlConfig;
-```
-
-Run the generator; the `auth` provider resolves the Salesforce session when needed:
+Run:
 
 ```bash
 pnpm exec kysoql generate
@@ -55,25 +42,20 @@ pnpm exec kysoql generate
 
 ## Settings
 
-| Key | Type | Default | Behaviour |
-| --- | --- | --- | --- |
-| `auth` | `SalesforceAuthProvider` | `undefined` | Returns the Salesforce OAuth session used by CLI generation. May be overridden with `--auth`. |
-| `apiVersion` | `string` | `65.0` | REST version for the CLI, without `v`. Overridden by `--api-version`. |
-| `objects` | `readonly string[]` | All queryable objects | Salesforce API names. `[]` also means all queryable objects. Include relationship targets explicitly. |
-| `fields` | `ObjectFieldFilters` | All described fields | Optional per-object exact include/exclude rules. See [field filtering](/docs/codegen/field-filtering). |
-| `output` | `string` | `src/kysoql/salesforce.generated.ts` when `./src` exists; otherwise `kysoql/salesforce.generated.ts` | Override the generated file. Configured relative paths are resolved from the config directory; parent directories are created. |
-| `schemaName` | `string` | `SalesforceSchema` | Generated interface name; must pass identifier validation. |
+| Key | Default | What it controls |
+| --- | --- | --- |
+| `auth` | None | Returns the Salesforce session used by CLI generation. |
+| `apiVersion` | `65.0` | Salesforce REST API version without the `v` prefix. |
+| `objects` | All queryable objects | Salesforce object API names to generate. |
+| `fields` | All described fields | Optional include or exclude rules per object. |
+| `output` | `src/kysoql/salesforce.generated.ts` when `src` exists, otherwise `kysoql/salesforce.generated.ts` | Generated file location. |
+| `schemaName` | `SalesforceSchema` | Name of the generated TypeScript interface. |
 
-Export a plain object. Configuration factories, promises, and arrays of configs
-are not supported. Optional settings may be omitted. Empty or whitespace-only
-strings, wrong value types, and unknown properties are rejected before a
-Salesforce connection is constructed. Prefer an explicit object list for a
-large org; the current generator describes selected objects concurrently.
+For large orgs, an explicit `objects` list keeps generation focused and makes changes easier to review.
 
-## Filter fields per object
+## Filter fields when a schema is too large
 
-Add a `fields` map to limit generated field declarations without changing which
-objects are selected. Choose `include` or `exclude` for each object, not both:
+Use one exact include or exclude rule per object:
 
 ```ts title="kysoql.config.ts"
 import { defineConfig } from "@kysoql/codegen";
@@ -84,79 +66,56 @@ export default defineConfig({
     Account: { include: ["Id", "Name", "Industry", "OwnerId"] },
     Contact: { exclude: ["Description"] },
   },
-  output: "src/kysoql/salesforce.generated.ts",
 });
 ```
 
-`User` has no rule, so all its described fields remain available. An include
-list must also contain fields used for filtering, sorting, grouping, and lookup
-traversals, not just selected fields. Filtered objects deliberately disallow
-`selectFields(...)`; use explicit selections instead. Rules are not access
-controls. Read the [field filtering guide](/docs/codegen/field-filtering)
-for validation, relationship dependencies, CLI overrides, and the programmatic API.
+`User` has no field rule, so all described `User` fields remain in the generated schema.
 
-## Discovery and module loading
+An include list needs every field your queries depend on, not just fields you return. Remember filters, ordering, grouping, aggregates, lookups, and relationship paths. See [field filtering](/docs/codegen/field-filtering) for the full rules.
 
-The CLI looks in the **current working directory only** for
-`kysoql.config.ts`, `.mts`, `.cts`, `.js`, `.mjs`, or `.cjs`. It does not walk up
-to a parent workspace. This prevents a workspace package from accidentally
-using another application's org configuration.
+## CLI overrides
 
-If no file is found, CLI-only settings still work when an authentication provider is supplied with `--auth`. If more than one
-supported file exists, generation fails with a message asking you to select one.
-For an explicit path, a missing or invalid file is an error, not a silent
-fallback to defaults.
-
-TypeScript and ESM configs use a default export. `.cjs` and `.cts` files can also
-use `module.exports`. The CLI uses a TypeScript-aware loader, so extensionless
-relative imports of local helpers work. For example, a config may import a list
-from `./salesforce-objects` when that module exports the required array. This
-loader applies to the config, not your application runtime. Do not assume
-application-specific bundler plugins or path aliases are available to it.
-
-A config and its imports are **executable code**. Only run trusted configuration
-files. In particular, do not give an untrusted pull request access to Salesforce
-credentials just because the job only runs codegen.
-
-## Overrides and paths
+CLI flags take precedence over config values:
 
 ```bash
 pnpm exec kysoql generate --config config/kysoql.sandbox.ts
 pnpm exec kysoql generate --object Account --output tmp/account.ts
-pnpm exec kysoql generate --no-config --auth config/salesforce.auth.ts --object Account --output tmp/account.ts
-```
-
-Precedence is **explicit CLI flags, then config settings, then built-in
-defaults**. API version is **`--api-version`, then config `apiVersion`, then the
-pinned `65.0` default**. Use a version
-supported by your org; this is not automatic API-version negotiation. For example:
-
-```bash
 pnpm exec kysoql generate --api-version 65.0
 ```
 
-A supplied `--object` list replaces the configured list; it does not
-append to it. Settings not overridden on the command line remain configured.
+A repeated `--object` list replaces the configured object list rather than appending to it.
 
-`--config` is resolved relative to the current working directory. When `output` is
-omitted, codegen writes `src/kysoql/salesforce.generated.ts` if the working
-directory contains `src/`, otherwise `kysoql/salesforce.generated.ts`. A
-configured relative `output` is resolved from the config file's directory, while
-a CLI `--output` override is resolved from the current working directory. Absolute
-paths stay absolute. For example, a config at `config/kysoql.sandbox.ts` with
-`output: "../src/sandbox.generated.ts"` writes under the project `src/` directory.
-
-`--no-config` disables discovery and evaluation entirely. It cannot be combined
-with `--config`. Use it with no `--object` flags to explicitly generate all
-queryable objects, ignoring any configured allowlist:
+`--no-config` skips config discovery completely:
 
 ```bash
-pnpm exec kysoql generate --no-config --auth config/salesforce.auth.ts --output src/all.generated.ts
+pnpm exec kysoql generate --no-config \
+  --auth config/salesforce.auth.ts \
+  --object Account \
+  --output src/account.generated.ts
 ```
 
-## Multiple orgs and CI
+`--config` and `--no-config` cannot be used together.
 
-Keep settings for different orgs in separate files and select one explicitly:
+## Config discovery and paths
+
+The CLI looks in the current working directory for:
+
+- `kysoql.config.ts`
+- `kysoql.config.mts`
+- `kysoql.config.cts`
+- `kysoql.config.js`
+- `kysoql.config.mjs`
+- `kysoql.config.cjs`
+
+It does not walk up through parent directories. If more than one supported config exists, choose one explicitly with `--config`.
+
+A relative `output` inside the config is resolved from the config file's directory. A relative `--output` CLI value is resolved from the current working directory.
+
+Config files and their imports are executable code. Only run trusted config and auth modules, especially in CI jobs that have Salesforce credentials.
+
+## Multiple Salesforce orgs
+
+Keep separate configs when different orgs have meaningfully different schemas:
 
 ```json title="package.json"
 {
@@ -167,27 +126,22 @@ Keep settings for different orgs in separate files and select one explicitly:
 }
 ```
 
-The `auth` provider chooses the authenticated org. Prefer `@kysoql/auth` with a
-secret manager, key store, or refresh-token store rather than embedding tokens in
-config. For multiple orgs, use separate providers/configs and output files.
-Generated type files never contain credentials.
+Use separate auth providers and output files where that makes the environment boundary clearer. Generated schema files do not contain credentials.
 
-## Troubleshooting
+<Accordions type="single">
+  <Accordion title="Why is my output file in the wrong place?">
 
-**The wrong output file is being updated:** omitted output uses the working
-directory's `src/kysoql/` or `kysoql/` default. Configured relative output paths
-use the config directory; CLI output overrides use the working directory.
+Check whether the path came from the config or a CLI flag. Config-relative paths use the config directory. CLI `--output` paths use the directory where you ran the command.
 
-**A configured setting appears ignored:** check for flags in package scripts.
-Explicit flags win. Also confirm the command is run from the config's directory
-or uses `--config`; discovery does not search parents.
+  </Accordion>
+  <Accordion title="Why is a config setting being ignored?">
 
-**The config fails to load:** read the reported filename and underlying import or
-syntax error. Check the default export and any imported modules. Configuration
-validation also rejects misspelled settings such as `out` instead of `output`.
+Look for an explicit CLI flag in package scripts or CI. CLI flags always win over config values.
 
-**The editor accepts the config but generation fails:** `defineConfig` checks
-types, not Salesforce metadata or authentication. Describe permissions, object
-availability, token validity, and schema identifier validation still apply.
-See [schema generation](/docs/codegen/schema-generation) and
-[troubleshooting](/docs/core/reference/troubleshooting).
+  </Accordion>
+  <Accordion title="Why does generation fail when the config typechecks?">
+
+TypeScript can validate the config shape, but Salesforce metadata and authentication are runtime inputs. The connected user still needs access to the requested objects and metadata.
+
+  </Accordion>
+</Accordions>

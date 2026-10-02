@@ -1,19 +1,17 @@
 # @kysoql/rest
 
-Native Salesforce REST transport for Kysoql. Uses `fetch`; JSforce is not a
-runtime dependency. Supports ordinary queries, QueryAll, scalar counts, automatic
-root and nested relationship pagination, async iteration, cancellation, and
-access-token provider renewal.
+`@kysoql/rest` executes Kysoql queries through Salesforce REST using native `fetch`. It is the default transport for applications that do not already depend on JSforce.
 
-## Install and query
+It handles ordinary queries, QueryAll, scalar `COUNT()`, Salesforce query pagination, selected child relationship continuations, cancellation, and renewable access tokens.
+
+## Install
 
 ```bash
 pnpm add @kysoql/auth @kysoql/core @kysoql/rest
 pnpm add -D @kysoql/codegen
 ```
 
-Requires a Node.js version allowed by the package `engines` field and ESM. Generate your schema first; see
-[codegen](https://github.com/nktnet1/kysoql/blob/main/packages/codegen/README.md).
+Generate your Salesforce schema first, then create an executor:
 
 ```ts
 import { SalesforceAuth } from "@kysoql/auth";
@@ -25,135 +23,127 @@ const auth = new SalesforceAuth({
   loginUrl: "https://login.salesforce.com",
   clientId: "external-client-app-id",
 });
+
 let session = await auth.jwtBearer({
   username: "integration@example.com",
   privateKey: { type: "file", path: "./salesforce-auth-key.pem" },
 });
+
 const instanceUrl = session.instanceUrl;
 
-const executor = createRestExecutor(
-  {
-    instanceUrl,
-    accessToken: async ({ refresh }) => {
-      if (refresh) {
-        const next = await auth.jwtBearer({
-          username: "integration@example.com",
-          privateKey: { type: "file", path: "./salesforce-auth-key.pem" },
-        });
-        if (next.instanceUrl !== instanceUrl) {
-          throw new Error("Salesforce instance changed; recreate the REST client.");
-        }
-        session = next;
+const executor = createRestExecutor({
+  instanceUrl,
+  apiVersion: "65.0",
+  accessToken: async ({ refresh }) => {
+    if (refresh) {
+      const next = await auth.jwtBearer({
+        username: "integration@example.com",
+        privateKey: { type: "file", path: "./salesforce-auth-key.pem" },
+      });
+
+      if (next.instanceUrl !== instanceUrl) {
+        throw new Error("Salesforce instance changed. Recreate the REST client.");
       }
-      return session.accessToken;
-    },
-    apiVersion: "65.0",
-    timeoutMs: 30_000,
+
+      session = next;
+    }
+
+    return session.accessToken;
   },
-  { batchSize: 1000, maxPages: 100, maxRecords: 100_000 },
-);
+});
+
 const db = new Kysoql<SalesforceSchema>({ executor });
-const accounts = await db.selectFrom("Account").select(["Id", "Name"]).execute();
-const count = await db.selectFrom("Account").select(({ fn }) => fn.count()).execute();
+
+const accounts = await db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .execute();
 ```
 
-Keep the private key outside source control. `privateKey` uses an explicit source
-object: `{ type: "file", path }`, `{ type: "pem", value }`, or
-`{ type: "crypto-key", key }`. The REST client caches provider access tokens in
-memory. JWT bearer has no refresh token; after `401 INVALID_SESSION_ID`, the
-provider performs another JWT exchange and the failed request is replayed once.
+Keep private keys and tokens outside source control.
 
-Both `.execute()` and `.executeAll()` follow Salesforce query locators internally.
-Root pages are drained automatically, and selected parent-to-child subqueries are
-completed recursively at every nested level described by the compiled query. Each
-root or child `LIMIT` acts as that level's record ceiling, so the executor does not
-fetch a continuation after the requested limit has already been satisfied. The
-latter method uses Salesforce QueryAll to include qualifying deleted/archived
-records; it is not a pagination switch. Counts return `number`; fielded counts and
-other aggregates return rows. No core query-building API changes are required.
+## Pagination is automatic
 
-## Resource controls
+`.execute()` follows Salesforce query locators until the result is complete. If you select parent-to-child relationships, the native executor also follows the continuation links for those selected child results.
 
-The example's budgets are application choices. Defaults are a 30-second timeout
-per HTTP request (including token acquisition/body), `maxPages: 10_000` across
-root and relationship continuation requests, and no configured root-record cap.
-`batchSize` is optional and accepts integers from 200 to 2000. API version is
-deliberately pinned to `65.0`, not negotiated.
+```ts
+const accounts = await db
+  .selectFrom("Account")
+  .select(["Id", "Name"])
+  .selectSubquery("Contacts", (contacts) =>
+    contacts.select(["Id", "Name"]).orderBy("Name"),
+  )
+  .execute();
+```
+
+A `LIMIT` on a root query or child subquery remains that query level's record ceiling.
+
+Use `.executeAll()` when you specifically need Salesforce QueryAll semantics for qualifying deleted or archived records. QueryAll is not a pagination setting.
+
+## Stream larger result sets
+
+Use the executor directly when you want to process root records as they arrive instead of collecting the whole result first:
 
 ```ts
 const query = db.selectFrom("Account").select(["Id", "Name"]).compile();
-const signal = AbortSignal.timeout(60_000); // Overall operation deadline.
-for await (const account of executor.iterateQuery(query, { signal })) {
-  // Process one record. Do not log sensitive fields indiscriminately.
+
+for await (const account of executor.iterateQuery(query, {
+  signal: AbortSignal.timeout(60_000),
+})) {
   console.log(account.Id);
 }
 ```
 
-`queryPages(query, options?)` yields root envelopes without exposing Salesforce
-continuation locators; `iterateQuery` yields root records. Both accept `queryAll`,
-`signal`, and `timeoutMs`, and reject bare `COUNT()`. Before a root page is yielded,
-its selected nested subqueries are fully materialised up to their compiled limits.
-Collection and iteration throw `SalesforceQueryLimitError` on budget overflow
-instead of silently truncating. Iterators can have yielded earlier pages when
-later pages fail. This is not a Bulk API or byte-streaming client.
+`queryPages()` yields complete root response pages. `iterateQuery()` yields root records. Selected child relationship results are completed before their root page is yielded.
 
-For per-call options with collection or counts, use the executor directly with
-`.compile()`, e.g. `executor.executeQuery(query, { signal })`. The core builder's
-`.execute()` signature is unchanged. Client-level signals apply to every request
-on that client; per-call signals affect just that operation.
+This is still Salesforce Query REST, not Bulk API streaming.
 
-Parent objects, nested child envelopes, and record `attributes` are preserved.
-Selected child envelopes are recursively drained by the executor; applications do
-not need to inspect or follow `nextRecordsUrl`. The page budget covers root and
-relationship continuation requests, while the record budget counts root records
-only. Generic row types remain compile-time projections rather than runtime field
-validation.
+## Resource controls
 
-## Authentication and shared clients
+You can set request and collection limits when creating the executor:
 
-`createRestClient(options)` returns a reusable GET-only `RestClient`.
-`createRestExecutor(client)` and codegen's `createRestDescribeClient(client)` can
-share it, including the token cache and refresh coordination. `request(path)`
-returns `unknown`; prefer the executor and Describe factory for validated shapes.
+```ts
+const executor = createRestExecutor(
+  {
+    instanceUrl,
+    accessToken,
+    timeoutMs: 30_000,
+  },
+  {
+    batchSize: 1000,
+    maxPages: 500,
+    maxRecords: 100_000,
+  },
+);
+```
 
-`accessToken` accepts a string or an `AccessTokenProvider`:
-`({ refresh: boolean }) => string | Promise<string>`. The provider is called
-lazily and its token cached. Concurrent acquisition/refresh is single-flight
-within one client. Only `401 INVALID_SESSION_ID` triggers a refresh and at most
-one replay. Static tokens, generic 401s, rate limits, network errors, and 5xx
-responses are not automatically retried. Providers must return tokens for the
-same configured org; recreate the client if authentication changes the instance.
+Budget overruns throw `SalesforceQueryLimitError` instead of returning a silently truncated result.
 
-The original `authenticateClientCredentials()` and `refreshAccessToken()` helpers
-remain exported for compatibility. New authentication code should use
-`@kysoql/auth`, which adds the complete current Salesforce flow surface, PKCE/JWT
-helpers, refresh-token rotation persistence, and memory, browser `localStorage`,
-Redis, or custom token stores.
+Per-call `signal` and `timeoutMs` options are available when you call executor methods directly. Builder execution also accepts `{ signal }`.
 
-## Errors and transport boundaries
+## Access-token renewal
 
-- `SalesforceRestError`: `status` and structured `errors` details. Default messages
-  omit server descriptions, but details can contain sensitive query data.
-- `SalesforceResponseError`: malformed JSON/envelopes, unsafe/repeated locators,
-  or invalid/incomplete count results.
-- `SalesforceQueryLimitError`: `limit` is `maxPages` or `maxRecords`.
-- `SalesforceOAuthError`: token exchange `status` and optional error `code`.
+`accessToken` can be a static string or a provider function. Provider tokens are cached in memory.
 
-Native network/abort failures propagate. HTTPS is required, redirects are rejected,
-and query locators must be relative paths in the configured API version. An
-injected `fetch` must honour `signal` and `redirect: "error"`. There is no automatic
-DML, SOSL, Apex execution, Bulk API, rate limiter, or general retry policy. OAuth
-application setup and credential storage remain outside this package's scope; use
-`@kysoql/auth` for authentication orchestration and refresh-token persistence. Runtime options do not read CLI configuration or environment
-variables automatically.
+When Salesforce returns `401 INVALID_SESSION_ID`, the client asks the provider for a refreshed token and replays that request once. Other 401 responses, rate limits, network errors, and server errors are not automatically retried.
 
-Full guides: [execution](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/rest/execution.mdx),
-[authentication](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/rest/authentication.mdx), and
-[security](https://github.com/nktnet1/kysoql/blob/main/apps/docs/content/docs/core/reference/security.mdx).
+For OAuth flows and refresh-token storage, use [`@kysoql/auth`](https://nktnet1.github.io/kysoql/docs/auth).
+
+## Errors
+
+The main transport errors are:
+
+- `SalesforceRestError` for Salesforce HTTP error responses
+- `SalesforceResponseError` for malformed or unsafe response data
+- `SalesforceQueryLimitError` when a configured page or record budget is exceeded
+- `SalesforceOAuthError` when token acquisition fails
+
+Native fetch and abort errors pass through so your application can handle them at its normal network boundary.
 
 ## Documentation
 
-Package guides live in the
-[rest documentation](https://github.com/nktnet1/kysoql/tree/main/apps/docs/content/docs/rest).
-The API reference is generated from this package's public `src/index.ts` entry
-point with TypeDoc as part of repository documentation validation.
+- [REST overview](https://nktnet1.github.io/kysoql/docs/rest)
+- [Native REST execution](https://nktnet1.github.io/kysoql/docs/rest/execution)
+- [Authentication and token refresh](https://nktnet1.github.io/kysoql/docs/rest/authentication)
+- [Security and production use](https://nktnet1.github.io/kysoql/docs/core/reference/security)
+- [API reference](https://nktnet1.github.io/kysoql/docs/rest/api)

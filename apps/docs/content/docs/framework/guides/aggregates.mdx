@@ -1,15 +1,16 @@
 ---
 title: "Counts and aggregate reports"
-description: "Count records, group data, filter totals, and generate rollups or cubes."
+description: "Count records, group data, filter totals, and build rollups or cubes."
 ---
 
 <SalesforceReference title="Aggregate functions and GROUP BY" href="https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-select-agg-functions.html" />
 
+Generate `Opportunity` before trying these examples. Kysoql uses the org's
+Describe metadata to decide which fields can be grouped or aggregated.
 
-Generate `Opportunity` before running these examples. Capabilities such as
-`aggregatable` and `groupable` come from the connected org's Describe metadata.
+## Count records
 
-## Scalar COUNT versus row-producing COUNT
+Use bare `count()` when you only need a number:
 
 ```ts
 import { db } from "./db";
@@ -19,23 +20,22 @@ const count = await db
   .where("IsClosed", "=", false)
   .select(({ fn }) => fn.count())
   .execute();
-// count is a number.
+```
+
+Use `count(field)` or another aggregate when you want rows that can also be
+grouped, filtered, or sorted:
+
+```ts
+import { db } from "./db";
 
 const rows = await db
   .selectFrom("Opportunity")
   .select(({ fn }) => fn.count("Id").as("opportunityCount"))
   .execute();
-// rows is a readonly array with an opportunityCount property on each row.
 ```
 
-Bare `fn.count()` compiles to `COUNT()` and uses a dedicated scalar builder.
-It has no alias, additional selections, grouping, ordering, or offset. The
-executor needs `executeCountQuery`; both bundled executors implement it using
-Salesforce's validated `totalSize` response.
-
-`fn.count(field)` and `fn.countDistinct(field)` are row-producing aggregate
-expressions. Every selected aggregate needs `.as(...)`. Do not rely on
-Salesforce's generated `expr0` property names.
+Give row-producing aggregates an alias rather than relying on Salesforce names
+such as `expr0`.
 
 ## Aggregate functions
 
@@ -55,18 +55,16 @@ const totals = db
   .where("IsClosed", "=", false);
 ```
 
-| Function | Selected result |
+| Function | Result |
 | --- | --- |
 | `count(field)`, `countDistinct(field)` | `number` |
-| `sum(field)`, `avg(field)` | `number \| null`; numeric aggregatable fields only. |
-| `min(field)`, `max(field)` | Field-derived value, including `null`. |
-| `format(aggregate)` | Localized string, retaining aggregate nullability. |
+| `sum(field)`, `avg(field)` | `number \| null` |
+| `min(field)`, `max(field)` | The field value, including `null` when applicable |
+| `format(aggregate)` | A localized string with the aggregate's nullability |
 
-Use finite numeric filters for numeric aggregates and the corresponding temporal
-literal when comparing a temporal `min` or `max`. An alias must be a valid,
-unique identifier; aliases are not references for `HAVING` or `ORDER BY`.
+## Group results
 
-## Group before selecting ordinary fields
+Group before selecting ordinary fields:
 
 ```ts
 import { db } from "./db";
@@ -76,21 +74,11 @@ const byStage = db
   .select(({ fn }) => fn.sum("Amount").as("totalAmount"))
   .groupBy("StageName")
   .select("StageName")
-  .orderBy("StageName")
-  .limit(20)
-  .offset(20);
+  .orderBy("StageName");
 ```
 
-Grouping calls accumulate fields. Ordinary selected fields must already be
-part of the grouping set. Begin aggregate selection on an unselected root
-builder; do not select ordinary fields first and then attempt to convert them
-into an aggregate query.
-
-Standard parent paths can be grouped when their fields permit it. Queries using
-`GROUP BY` reject custom relationship expressions containing `__r`, including
-such expressions elsewhere in that grouped query.
-
-## Distinct grouped values without a dummy aggregate
+You can also use grouping to return distinct grouped values without adding a
+dummy aggregate:
 
 ```ts
 import { db } from "./db";
@@ -102,10 +90,11 @@ const stages = db
   .orderBy("StageName");
 ```
 
-Start `groupBy` from the unselected root builder. This returns grouped values,
-including null where applicable; it is not a general SQL `distinct()` method.
+This is SOQL grouping, not a general SQL `distinct()` method.
 
 ## Filter groups with HAVING
+
+`WHERE` filters source records. `HAVING` filters the grouped result.
 
 ```ts
 import { db } from "./db";
@@ -127,11 +116,9 @@ const significantStages = db
   );
 ```
 
-`WHERE` filters input records; `HAVING` filters grouped results. Direct `having`
-field operands must be grouped. Callbacks support `and`, `or`, and `not` plus
-supported aggregate/date/grouping expressions. They do not allow semi-joins.
+## Order by an aggregate
 
-## Order by aggregate expressions
+Use the aggregate expression itself rather than its alias:
 
 ```ts
 import { db } from "./db";
@@ -145,11 +132,7 @@ const ranked = db
   .orderBy("StageName");
 ```
 
-Use an unaliased expression in the callback, not `"totalAmount"` as a field
-name. An ordering expression need not be selected. Bare `fn.count()` cannot
-be used for ordering; fielded `fn.count("Id")` can.
-
-## ROLLUP, CUBE, and GROUPING
+## Rollups and cubes
 
 ```ts
 import { db } from "./db";
@@ -162,32 +145,28 @@ const pipeline = db
   .select(({ fn }) => [
     fn.grouping("StageName").as("stageSubtotal"),
     fn.grouping("Type").as("typeSubtotal"),
-  ])
-  .having((eb) => eb(eb.fn.grouping("StageName"), "=", 0))
-  .orderBy(({ fn }) => fn.grouping("Type"));
+  ]);
 ```
 
-Use `groupByCube` instead for cube grouping. These forms accept at most three
-fields across calls. Ordinary grouping, rollup, and cube modes cannot be mixed;
-these advanced forms do not accept date-function expressions.
+Use `groupByCube()` for cube grouping. Rollup and cube accept up to three fields.
+Their subtotal rows can make grouping fields nullable. `fn.grouping(field)`
+returns `0 | 1`, where `1` marks a subtotal for that field.
 
-Subtotal and grand-total rows make selected grouping fields nullable, even if
-the source field is non-nullable. `fn.grouping(field)` returns `0 | 1` and is
-available only for fields already in the rollup/cube set: `1` identifies a
-subtotal for that field, while `0` identifies an ordinary grouped row.
+<Accordions type="single">
+  <Accordion title="Aggregate query rules worth knowing">
+    - Ordinary selected fields must be part of the grouping set.
+    - Ordinary grouping, rollup, and cube cannot be mixed in one query.
+    - `HAVING` does not support semi-joins.
+    - Root aggregate `OFFSET` is limited to `0..2000`.
+    - Bare `count()` has a deliberately smaller builder surface than grouped aggregates.
+    - Salesforce still decides whether a particular aggregate result can be paged.
+  </Accordion>
+  <Accordion title="Removing grouping">
+    `clearGroupBy()` refuses to leave behind selections or clauses that still depend
+    on grouping. When you need to turn a grouped report back into a record query,
+    rebuilding the query is usually clearer.
+  </Accordion>
+</Accordions>
 
-## Pagination, execution, and clearing
-
-`LIMIT` and `OFFSET` are available after grouping; offset stays within 0..2000.
-Ungrouped aggregate rows and bare counts have different surfaces. Salesforce
-can reject aggregate result sets that require unsupported cursor behaviour;
-do not assume the adapter's root pagination can bypass aggregate restrictions.
-
-`clearGroupBy()` refuses to leave behind grouped selections, grouping-dependent
-functions, `HAVING`, ordering, limit, or offset. There is no `clearHaving()`
-helper in this snapshot. Rebuild a clean query when removing grouping would
-invalidate the remaining structure.
-
-Build grouping, selections, and `HAVING` before switching to the narrower
-[Apex context](/docs/core/apex/overview). For calendar reports, continue with
-[date functions](/docs/framework/guides/date-functions).
+For calendar-style reports, continue with [date functions](/docs/framework/guides/date-functions).
+For Apex output, see [Compile for Apex](/docs/core/apex/overview).

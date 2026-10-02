@@ -4,10 +4,11 @@ description: "Use the optional JSforce adapter when an application already owns 
 icon: "Plug"
 ---
 
-## Use an existing JSforce connection
+Use `@kysoql/jsforce` when your application already has a JSforce connection and you want Kysoql queries to run through it.
 
-Native REST is the default integration. Install this adapter only when your
-application already uses JSforce:
+For a new application that only needs SOQL execution, [`@kysoql/rest`](/docs/rest) is the simpler default.
+
+## Install
 
 <Tabs items={["npm", "yarn", "pnpm", "bun"]} defaultIndex={2}>
   <Tab value="npm">
@@ -40,122 +41,60 @@ bun add @kysoql/core @kysoql/jsforce jsforce
   </Tab>
 </Tabs>
 
+## Use your existing connection
+
 ```ts
 import { Kysoql } from "@kysoql/core";
 import { createJsforceExecutor } from "@kysoql/jsforce";
-import { Connection } from "jsforce";
+import type { Connection } from "jsforce";
 import type { SalesforceSchema } from "./kysoql/salesforce.generated";
 
-export function createDatabase(instanceUrl: string, accessToken: string) {
-  const connection = new Connection({ instanceUrl, accessToken, version: "65.0" });
+export function createDatabase(connection: Connection) {
   return new Kysoql<SalesforceSchema>({
     executor: createJsforceExecutor(connection),
   });
 }
 ```
 
-Authentication, refresh, connection lifetime, and API version selection remain
-JSforce/application responsibilities. Native REST client settings do not affect
-this connection. See the official
-[JSforce connection documentation](https://jsforce.github.io/document/#connection).
+Authentication, token refresh, connection lifetime, and API-version selection remain part of your JSforce setup.
 
-The examples below assume `db` is configured with this adapter. For native
-pagination budgets, async iteration, cancellation, and structured HTTP errors,
-use the [REST execution guide](/docs/rest/execution) instead.
-
-## Normal execution
+## Normal queries and QueryAll
 
 ```ts
 import { db } from "./db";
 
-const rows = await db
+const accounts = await db
   .selectFrom("Account")
   .select(["Id", "Name"])
   .limit(100)
   .execute();
-```
 
-Record and aggregate builders return `Promise<readonly Row[]>`. Bare `COUNT()`
-returns `Promise<number>`. A builder created without an executor still compiles,
-but execution throws rather than silently returning an empty result.
-
-Record and aggregate builders expose Kysely-style `executeTakeFirst()` and
-`executeTakeFirstOrThrow()` helpers. Add `limit(1)` when only one server-side row
-should be fetched. Builder execution also accepts `{ signal }`; the JSforce adapter
-stops waiting and prevents further `queryMore` calls after abort, although JSforce's
-underlying in-flight request is not itself cancelled. Streaming and async iteration
-remain native REST-only adapter features.
-
-## QueryAll is a different Salesforce mode
-
-```ts
-import { db } from "./db";
-
-const rowsIncludingDeleted = await db
+const accountsIncludingDeleted = await db
   .selectFrom("Account")
   .select(["Id", "Name", "IsDeleted"])
-  .limit(100)
-  .executeAll();
-
-const totalIncludingDeleted = await db
-  .selectFrom("Account")
-  .select(({ fn }) => fn.count())
   .executeAll();
 ```
 
-With this adapter, `executeAll()` calls `connection.query(soql, { scanAll: true })`
-for the first request, then follows the associated query locators. It enables
-Salesforce QueryAll semantics for eligible soft-deleted records and archived
-activities. It does not bypass permissions or recover permanently removed data.
+The adapter follows JSforce `queryMore` pagination for root results. `.executeAll()` starts the query in Salesforce QueryAll mode through JSforce's `scanAll` option.
 
-Do not confuse three different operations:
+<Accordions type="single">
+  <Accordion title="What does cancellation do?">
 
-| Operation | Meaning |
-| --- | --- |
-| `execute()` | Ordinary query; adapter already drains root pages. |
-| `executeAll()` | QueryAll mode; adapter also drains root pages. |
-| `apex().allRows().compile()` | Compiles Apex-only `ALL ROWS`; does not execute anything. |
+Builder execution accepts `{ signal }`. When the signal aborts, the adapter stops waiting for the current JSforce promise and will not issue more `queryMore` calls. It cannot cancel a JSforce request that is already in flight.
 
-## What the adapter validates
+  </Accordion>
+  <Accordion title="Does it drain child relationship pages?">
 
-For record results it checks `done`, optional `nextRecordsUrl`, and an array of
-record objects. When `done` is false, it requires a usable next locator and
-calls `queryMore` until complete. All root records are accumulated in memory.
+No. The JSforce adapter follows root pagination only. If you need automatic continuation for selected child relationship results, use the native REST executor or query the child object directly.
 
-It does not recursively drain child envelopes, validate each selected field
-against Describe, stream large results, add automatic retries, or impose an
-application-level page/record budget. Set deliberate limits and use a custom
-transport for large exports or specialised resource controls.
+  </Accordion>
+  <Accordion title="Does it stream records?">
 
-For bare `COUNT()`, the adapter validates a complete response and a non-negative
-safe-integer `totalSize`, then returns that number. An incomplete scalar count
-response is an error, not a request to paginate the count.
+No. Async page and record iteration are features of `@kysoql/rest`.
 
-## Handle failures at the application boundary
+  </Accordion>
+</Accordions>
 
-```ts
-import { db } from "./db";
+Failures from Salesforce, authentication, and JSforce pass through to your application. Handle retries and session renewal at the same boundary where you manage the JSforce connection.
 
-export async function loadAccounts() {
-  try {
-    return await db
-      .selectFrom("Account")
-      .select(["Id", "Name"])
-      .limit(100)
-      .execute();
-  } catch (cause) {
-    // Map to your service's error policy; do not turn failures into empty success.
-    throw new Error("Unable to load Salesforce accounts", { cause });
-  }
-}
-```
-
-Salesforce/authentication/transport failures propagate. Decide centrally which
-failures are retryable, how to refresh expired sessions, and what sanitized
-telemetry to record. Avoid blindly retrying queries that carry side effects such
-as MRU or Knowledge tracking clauses.
-
-The adapter cannot turn server-rejected aggregate pagination, unsupported object
-features, or insufficient permissions into successful queries. See
-[troubleshooting](/docs/core/reference/troubleshooting) and
-[custom executors](/docs/core/reference/custom-executors).
+For transport-specific limits and alternatives, see [custom executors](/docs/core/reference/custom-executors) and [troubleshooting](/docs/core/reference/troubleshooting).
